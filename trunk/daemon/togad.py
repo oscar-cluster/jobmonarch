@@ -18,7 +18,7 @@ import re
 # >=9  = RRD activity,gmetad config parsing
 # >=7  = daemon threading
 #
-DEBUG_LEVEL = 7
+DEBUG_LEVEL = 9
 
 # Where is the gmetad.conf located
 #
@@ -228,7 +228,7 @@ class GangliaXMLProcessor:
 				debug_msg( 7, self.printTime() + ' - xmlthread()  - Start XML processing..' )
 				self.processXML()
 				debug_msg( 7, self.printTime() + ' - xmlthread()  - Done processing; exiting.' )
-				sys.exit(0)
+				sys.exit( 0 )
 
 			elif pid > 0:
 				# Parent - Daemon Thread
@@ -238,8 +238,12 @@ class GangliaXMLProcessor:
 				debug_msg( 7, self.printTime() + ' - mainthread() - Awoken: waiting for XML thread..' )
 
 				r = os.wait()
+				ret = r[1]
+				if ret != 0:
+					debug_msg( 7, self.printTime() + ' - mainthread() - Done waiting: ERROR! xmlthread() exited with status %d' %(ret) )
+				else:
 
-				debug_msg( 7, self.printTime() + ' - mainthread() - Done waiting.' )
+					debug_msg( 7, self.printTime() + ' - mainthread() - Done waiting: xmlthread() finished succesfully' )
 
 	def processXML( self ):
 		"Process XML"
@@ -416,10 +420,11 @@ class RRDHandler:
 
 		try:
 			rrdtool.update( str(rrd_file), str(update_string) )
-		except error, detail:
+		except rrdtool.error, detail:
 			debug_msg( 0, 'EXCEPTION! While trying to update rrd:' )
 			debug_msg( 0, '\trrd %s with %s' %( str(rrd_file), update_string ) )
-			debug_msg( 0, detail )
+			debug_msg( 0, str(detail) )
+			sys.exit( 1 )
 		
 		debug_msg( 9, 'updated rrd %s with %s' %( str(rrd_file), update_string ) )
 
