@@ -5,42 +5,60 @@ from xml.sax.handler import ContentHandler
 import socket
 import sys
 
-class GangliaXMLHandler(ContentHandler):
+DEBUG = 1
+
+class GangliaXMLHandler( ContentHandler ):
 	"""
 	Parse/Handle XML
 	"""
 
-	def __init__ (self, searchTerm):
-		self.isHostElement, self.isxReboundsElement = 0, 0;
-   
-	def startElement(self, name, attrs):
+	metrics = [ ]
 
-		if name == 'player':     
-			self.playerName = attrs.get('name',"")
-			self.playerAge = attrs.get('age',"")
-			self.playerHeight = attrs.get('height',"")
-		elif name == 'points':
-			self.isPointsElement= 1;
-			self.playerPoints = "";
-		elif name == 'rebounds':
-			self.isReboundsElement = 1;
-			self.playerRebounds = "";
+	#def __init__ ( self ):
+		#self.isHostElement, self.isMetricElement, self.isGridElement, self.isClusterElement = 0, 0, 0, 0
+		#self.isGangliaXMLElement = 0
+   
+	def startElement( self, name, attrs ):
+
+		if name == 'ganglia_xml':
+			self.XMLSource = attrs.get('source',"")
+			self.gangliaVersion = attrs.get('version',"")
+
+		elif name == 'grid':
+			self.gridName = attrs.get('name',"")
+
+		elif name == 'cluster':
+			self.clusterName = attrs.get('name',"")
+
+		elif name == 'host':     
+			self.hostName = attrs.get('name',"")
+			self.hostIp = attrs.get('ip',"")
+			self.hostReported = attrs.get('reported',"")
+
+		elif name == 'metric':
+			myMetric = { }
+			myMetric['name'] = attrs.get('name',"")
+			myMetric['val'] = attrs.get('val',"")
+
+			self.metrics.append( myMetric ) 
+			if DEBUG: print ' | | |-metric: %s:%s' %( myMetric['name'], myMetric['val'] )
+
 		return
 
-	def characters (self, ch):
-		if self.isPointsElement== 1:
-			self.playerPoints += ch
-		if self.isReboundsElement == 1:
-			self.playerRebounds += ch
+	def endElement( self, name ):
+		if name == 'ganglia_xml':
+			if DEBUG: print 'Found XML data: source %s version %s' %( self.XMLSource, self.gangliaVersion )
 
-	def endElement(self, name):
-		if name == 'points':
-			self.isPointsElement= 0
-		if name == 'rebounds':
-			self.inPlayersContent = 0
-		if name == 'player' and self.searchTerm== self.playerName :
-			print '<h2>Statistics for player:' , self.playerName, '</h2><br>(age:', self.playerAge , 'height' , self.playerHeight , ")<br>"
-			print 'Match average:', self.playerPoints , 'points,' , self.playerRebounds, 'rebounds'
+		if name == 'grid':
+			if DEBUG: print '`-Grid found: %s' %( self.gridName )
+
+		if name == 'cluster':
+			if DEBUG: print ' |-Cluster found: %s' %( self.clusterName )
+
+		if name == 'host':     
+			if DEBUG: print ' | |-Host found: %s - ip %s reported %s' %( self.hostName, self.hostIp, self.hostReported )
+
+		#if name == 'metric':
 
 class GangliaXMLGatherer:
 	"""
@@ -72,7 +90,7 @@ class GangliaXMLGatherer:
 			print 'could not open socket'
 			sys.exit(1)
 
-		return s.fileno()
+		return s.makefile()
 
 		#s.send('Hello, world')
 		#data = s.recv(1024)
@@ -84,7 +102,7 @@ def main():
 	My Main
 	"""
 
-	myXMLGatherer = GangliaXMLGatherer( localhost, 8651 ) 
+	myXMLGatherer = GangliaXMLGatherer( 'localhost', 8651 ) 
 
 	myParser = make_parser()   
 	myHandler = GangliaXMLHandler()
