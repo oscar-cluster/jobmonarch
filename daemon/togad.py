@@ -19,7 +19,7 @@ import re
 # <=8  = host processing
 # <=7  = daemon threading - NOTE: Daemon will 'halt on all errors' from this level
 #
-DEBUG_LEVEL = 8
+DEBUG_LEVEL = 9
 
 # Where is the gmetad.conf located
 #
@@ -36,10 +36,6 @@ ARCHIVE_SOURCES = [ "LISA Cluster" ]
 # Amount of hours to store in one single archived .rrd
 #
 ARCHIVE_HOURS_PER_RRD = 12
-
-# Interval at which to grab&store XML
-#
-GRAB_INTERVAL = 15
 
 # Wether or not to run as a daemon in background
 #
@@ -62,9 +58,11 @@ This is TOrque-GAnglia's data Daemon
 class GangliaXMLHandler( ContentHandler ):
 	"Parse Ganglia's XML"
 
-	def __init__( self ):
-		self.metrics = [ ]
-		self.clusters = { }
+	clusters = { }
+	config = None
+
+	def __init__( self, config ):
+		self.config = config
 
 	def startElement( self, name, attrs ):
 		"Store appropriate data from xml start tags"
@@ -88,7 +86,9 @@ class GangliaXMLHandler( ContentHandler ):
 			self.clusterName = attrs.get( 'NAME', "" )
 			self.time = attrs.get( 'LOCALTIME', "" )
 
-			self.clusters[ self.clusterName ] = RRDHandler( self.clusterName )
+			if not self.clusters.has_key( self.clusterName ):
+
+				self.clusters[ self.clusterName ] = RRDHandler( self.clusterName )
 
 			debug_msg( 10, ' |-Cluster found: %s' %( self.clusterName ) )
 
@@ -117,13 +117,9 @@ class GangliaXMLHandler( ContentHandler ):
 
 	def storeMetrics( self, hostname, timeserial ):
 
-		for metric in self.metrics:
-			if metric['type'] not in UNSUPPORTED_ARCHIVE_TYPES:
+		for cluster in self.clusters:
 
-				self.rrd.createCheck( hostname, metric, timeserial )	
-				self.rrd.update( hostname, metric, timeserial )
-				debug_msg( 9, 'stored metric %s for %s: %s' %( hostname, metric['name'], metric['val'] ) )
-				#sys.exit(1)
+			cluster.storeMetrics()
 
 class GangliaXMLGatherer:
 	"Setup a connection and file object to Ganglia's XML"
@@ -135,14 +131,10 @@ class GangliaXMLGatherer:
 
 		self.host = host
 		self.port = port
+		self.connect()
 
-	def __del__( self ):
-		"Kill the socket before we leave"
-
-		self.s.close()
-
-	def getFileObject( self ):
-		"Connect, and return a file object"
+	def connect( self ):
+		"Setup connection to XML source"
 
 		for res in socket.getaddrinfo( self.host, self.port, socket.AF_UNSPEC, socket.SOCK_STREAM ):
 
@@ -171,12 +163,40 @@ class GangliaXMLGatherer:
 
 		if self.s is None:
 
-			print 'Could not open socket'
-			sys.exit(1)
+			debug_msg( 0, 'Could not open socket' )
+			sys.exit( 1 )
+
+	def disconnect( self ):
+		"Close socket"
+
+		if self.s:
+			self.s.close()
+			self.s = None
+
+	def __del__( self ):
+		"Kill the socket before we leave"
+
+		self.disconnect()
+
+	def getFileObject( self ):
+		"Connect, and return a file object"
+
+		if not self.s:
+			self.connect()
 
 		return self.s.makefile( 'r' )
 
 class GangliaXMLProcessor:
+
+	def __init__( self ):
+		"Setup initial XML connection and handlers"
+
+		self.config = GangliaConfigParser( GMETAD_CONF )
+
+		self.myXMLGatherer = GangliaXMLGatherer( 'localhost', 8651 ) 
+		self.myParser = make_parser()   
+		self.myHandler = GangliaXMLHandler( self.config )
+		self.myParser.setContentHandler( self.myHandler )
 
 	def daemon( self ):
 		"Run as daemon forever"
@@ -219,57 +239,76 @@ class GangliaXMLProcessor:
 		self.run()
 
 	def printTime( self ):
+		"Print current time in human readable format"
 
-		return time.strftime("%a, %d %b %Y %H:%M:%S")
+		return time.strftime("%a %d %b %Y %H:%M:%S")
+
+	def grabXML( self ):
+
+		debug_msg( 7, self.printTime() + ' - mainthread() - xmlthread() started' )
+		pid = os.fork()
+
+		if pid == 0:
+			# Child - XML Thread
+			#
+			# Process XML and exit
+
+			debug_msg( 7, self.printTime() + ' - xmlthread()  - Start XML processing..' )
+			self.processXML()
+			debug_msg( 7, self.printTime() + ' - xmlthread()  - Done processing; exiting.' )
+			sys.exit( 0 )
+
+		elif pid > 0:
+			# Parent - Time/sleep Thread
+			#
+			# Make sure XML is processed on time and at regular intervals
+
+			debug_msg( 7, self.printTime() + ' - mainthread() - Sleep '+ str( self.config.getInterval() ) +'s: zzzzz..' )
+			time.sleep( self.config.getInterval() )
+			debug_msg( 7, self.printTime() + ' - mainthread() - Awoken: waiting for XML thread..' )
+
+			r = os.wait()
+			ret = r[1]
+			if ret != 0:
+				debug_msg( 7, self.printTime() + ' - mainthread() - Done waiting: ERROR! xmlthread() exited with status %d' %(ret) )
+				if DEBUG_LEVEL>=7: sys.exit( 1 )
+			else:
+
+				debug_msg( 7, self.printTime() + ' - mainthread() - Done waiting: xmlthread() finished succesfully' )
 
 	def run( self ):
 		"Main thread"
 
-		while( 1 ):
-
-			debug_msg( 7, self.printTime() + ' - mainthread() - xmlthread() started' )
+		# Daemonized not working yet
+		if DAEMONIZE:
 			pid = os.fork()
 
+			# Handle XML grabbing in Child
 			if pid == 0:
-				# Child - XML Thread
-				#
-				# Process XML and exit
 
-				debug_msg( 7, self.printTime() + ' - xmlthread()  - Start XML processing..' )
-				self.processXML()
-				debug_msg( 7, self.printTime() + ' - xmlthread()  - Done processing; exiting.' )
-				sys.exit( 0 )
+				while( 1 ):
+					self.grabXML()
 
-			elif pid > 0:
-				# Parent - Daemon Thread
+			# Do scheduled RRD storing in Parent
+			#elif pid > ):
 
-				debug_msg( 7, self.printTime() + ' - mainthread() - Sleep '+ str(GRAB_INTERVAL) +'s: zzzzz..' )
-				time.sleep( GRAB_INTERVAL )
-				debug_msg( 7, self.printTime() + ' - mainthread() - Awoken: waiting for XML thread..' )
+		else:
+			self.grabXML()
+			self.storeMetrics()
 
-				r = os.wait()
-				ret = r[1]
-				if ret != 0:
-					debug_msg( 7, self.printTime() + ' - mainthread() - Done waiting: ERROR! xmlthread() exited with status %d' %(ret) )
-					if DEBUG_LEVEL>=7: sys.exit( 1 )
-				else:
+	def storeMetrics( self ):
+		"Store metrics retained in memory to disk"
 
-					debug_msg( 7, self.printTime() + ' - mainthread() - Done waiting: xmlthread() finished succesfully' )
+		self.myHandler.storeMetrics()
 
 	def processXML( self ):
 		"Process XML"
 
-		myXMLGatherer = GangliaXMLGatherer( 'localhost', 8651 ) 
-
-		myParser = make_parser()   
-		myHandler = GangliaXMLHandler()
-		myParser.setContentHandler( myHandler )
-
-		myParser.parse( myXMLGatherer.getFileObject() )
+		self.myParser.parse( self.myXMLGatherer.getFileObject() )
 
 class GangliaConfigParser:
 
-	sources = [ ]
+	sources = { }
 
 	def __init__( self, config ):
 
@@ -305,14 +344,13 @@ class GangliaConfigParser:
 
 							source['interval'] = word
 							debug_msg( 9, 'polling interval for %s = %s' %(source['name'], source['interval'] ) )
-		
-		# No interval found, use Ganglia's default	
-		if not source.has_key( 'interval' ):
+	
+					# No interval found, use Ganglia's default	
+					if not source.has_key( 'interval' ):
+						source['interval'] = 15
+						debug_msg( 9, 'polling interval for %s defaulted to 15' %(source['name']) )
 
-			source['interval'] = 15
-			debug_msg( 9, 'polling interval for %s defaulted to 15' %(source['name']) )
-
-		self.sources.append( source )
+					self.sources.append( source )
 
 	def getInterval( self, source_name ):
 
@@ -328,9 +366,9 @@ class RRDHandler:
 
 	myMetrics = { }
 
-	def __init__( self, cluster ):
+	def __init__( self, config, cluster ):
 		self.cluster = cluster
-		self.gmetad_conf = GangliaConfigParser( GMETAD_CONF )
+		self.config = config
 
 	def getClusterName( self ):
 		return self.cluster
@@ -364,18 +402,33 @@ class RRDHandler:
 
 		return update_string
 
+	def storeMetrics( self ):
+
+		for hostname, mymetrics in self.myMetrics.items():	
+
+			for metricname, mymetric in mymetrics.items():
+
+				self.rrd.createCheck( hostname, metricname, timeserial )	
+				update_okay = self.rrd.update( hostname, metricname, timeserial )
+
+				if not update_okay:
+
+					del self.myMetrics[ hostname ][ metricname ]
+					debug_msg( 9, 'stored metric %s for %s' %( hostname, metricname ) )
+				else:
+					debug_msg( 9, 'metric update failed' )
+
+				sys.exit(1)
+
 	def makeTimeSerial( self ):
 		"Generate a time serial. Seconds since epoch"
-
-		# YYYYMMDDhhmmss: 20050321143411
-		#mytime = time.strftime( "%Y%m%d%H%M%S" )
 
 		# Seconds since epoch
 		mytime = int( time.time() )
 
 		return mytime
 
-	def makeRrdPath( self, host, metric=None, timeserial=None ):
+	def makeRrdPath( self, host, metricname=None, timeserial=None ):
 		"""
 		Make a RRD location/path and filename
 		If a metric or timeserial are supplied the complete locations
@@ -387,7 +440,7 @@ class RRDHandler:
 		else:
 			rrd_dir = '%s/%s/%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster, host, timeserial )
 		if metric:
-			rrd_file = '%s/%s.rrd' %( rrd_dir, metric['name'] )
+			rrd_file = '%s/%s.rrd' %( rrd_dir, metricname )
 		else:
 			rrd_file = None
 
@@ -449,12 +502,23 @@ class RRDHandler:
 
 		return serial
 
-	def createCheck( self, host, metric, timeserial ):
+	def getFirstTime( self, host, metricname ):
+		"Get the first time of a metric we know of"
+
+		first_time = 0
+
+		for metric in self.myMetrics[ host ][ metricname ]:
+
+			if not first_time or metric['time'] <= first_time:
+
+				first_time = metric['time']
+
+	def createCheck( self, host, metricname, timeserial ):
 		"Check if an .rrd allready exists for this metric, create if not"
 
 		debug_msg( 9, 'rrdcreate: using timeserial %s for %s/%s' %( timeserial, host, metric['name'] ) )
 
-		rrd_dir, rrd_file = self.makeRrdPath( host, metric, timeserial )
+		rrd_dir, rrd_file = self.makeRrdPath( host, metricname, timeserial )
 
 		if not os.path.exists( rrd_dir ):
 			os.makedirs( rrd_dir )
@@ -462,14 +526,14 @@ class RRDHandler:
 
 		if not os.path.exists( rrd_file ):
 
-			interval = self.gmetad_conf.getInterval( self.cluster )
+			interval = self.config.getInterval( self.cluster )
 			heartbeat = 8 * int(interval)
 
 			param_step1 = '--step'
 			param_step2 = str( interval )
 
 			param_start1 = '--start'
-			param_start2 = str( int( metric['time'] ) - 1 )
+			param_start2 = str( int( self.getFirstTime( host, metricname ) ) - 1 )
 
 			param_ds = 'DS:sum:GAUGE:%d:U:U' %heartbeat
 			param_rra = 'RRA:AVERAGE:0.5:1:%s' %(ARCHIVE_HOURS_PER_RRD * 240)
@@ -478,16 +542,17 @@ class RRDHandler:
 
 			debug_msg( 9, 'created rrd %s' %( str(rrd_file) ) )
 
-	def update( self, host, metric, timeserial ):
+	def update( self, host, metricname, timeserial ):
 
 		debug_msg( 9, 'rrdupdate: using timeserial %s for %s/%s' %( timeserial, host, metric['name'] ) )
 
-		rrd_dir, rrd_file = self.makeRrdPath( host, metric, timeserial )
+		rrd_dir, rrd_file = self.makeRrdPath( host, metricname, timeserial )
 
-		timestamp = metric['time']
-		val = metric['val']
+		#timestamp = metric['time']
+		#val = metric['val']
 
-		update_string = '%s:%s' %(timestamp, val)
+		#update_string = '%s:%s' %(timestamp, val)
+		update_string = self.makeUpdateString( host, metricname )
 
 		try:
 
@@ -499,7 +564,7 @@ class RRDHandler:
 			debug_msg( 0, '\trrd %s with %s' %( str(rrd_file), update_string ) )
 			debug_msg( 0, str(detail) )
 
-			sys.exit( 1 )
+			return 1
 		
 		debug_msg( 9, 'updated rrd %s with %s' %( str(rrd_file), update_string ) )
 
