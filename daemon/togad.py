@@ -414,7 +414,13 @@ class RRDHandler:
 
 		update_string = '%s:%s' %(timestamp, val)
 
-		rrdtool.update( str(rrd_file), str(update_string) )
+		try:
+			rrdtool.update( str(rrd_file), str(update_string) )
+		except error, detail:
+			debug_msg( 0, 'EXCEPTION! While trying to update rrd:' )
+			debug_msg( 0, '\trrd %s with %s' %( str(rrd_file), update_string ) )
+			debug_msg( 0, detail )
+		
 		debug_msg( 9, 'updated rrd %s with %s' %( str(rrd_file), update_string ) )
 
 def main():
