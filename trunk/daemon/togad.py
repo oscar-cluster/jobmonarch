@@ -94,8 +94,6 @@ class RRDMutator:
 
 		for line in os.popen( self.binary + ' ' + action + ' ' + filename + ' ' + arg_string ).readlines():
 
-			print line
-
 			if line.find( 'ERROR' ) != -1:
 
 				error_msg = string.join( line.split( ' ' )[1:] )
@@ -514,6 +512,7 @@ class RRDHandler:
 	def makeUpdateList( self, host, metricname ):
 
 		update_list = [ ]
+		metric = None
 
 		while len( self.myMetrics[ host ][ metricname ] ) > 0:
 
@@ -522,15 +521,19 @@ class RRDHandler:
 			# <atomic>	
 			self.slot.acquire()
 
-			metric = self.myMetrics[ host ][ metricname ].pop()
+			# len might have changed since loop start
+			#
+			if len( self.myMetrics[ host ][ metricname ] ) > 0:
+				metric = self.myMetrics[ host ][ metricname ].pop()
 
 			self.slot.release()
 			# </atomic>
 
-			if self.checkStoreMetric( host, metricname, metric ):
-				update_list.append( '%s:%s' %( metric['time'], metric['val'] ) )
-			else:
-				print 'allready wrote metric %s with timestamp %s' %( metric['name'], metric['time'] )
+			if metric:
+				if self.checkStoreMetric( host, metricname, metric ):
+					update_list.append( '%s:%s' %( metric['time'], metric['val'] ) )
+				else:
+					print 'allready wrote metric %s with timestamp %s' %( metric['name'], metric['time'] )
 
 		return update_list
 
@@ -568,9 +571,6 @@ class RRDHandler:
 					debug_msg( 9, 'stored metric %s for %s' %( hostname, metricname ) )
 				else:
 					debug_msg( 9, 'metric update failed' )
-					return 1
-
-				return 1
 
 	def makeTimeSerial( self ):
 		"Generate a time serial. Seconds since epoch"
@@ -706,12 +706,13 @@ class RRDHandler:
 
 		update_list = self.makeUpdateList( host, metricname )
 
-		ret = self.rrdm.update( str(rrd_file), update_list )
+		if len( update_list ) > 0:
+			ret = self.rrdm.update( str(rrd_file), update_list )
 
-		if ret:
-			return 1
+			if ret:
+				return 1
 		
-		debug_msg( 9, 'updated rrd %s with %s' %( str(rrd_file), string.join( update_list ) ) )
+			debug_msg( 9, 'updated rrd %s with %s' %( str(rrd_file), string.join( update_list ) ) )
 
 		return 0
 
