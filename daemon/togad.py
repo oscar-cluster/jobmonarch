@@ -101,7 +101,7 @@ class GangliaXMLHandler( ContentHandler ):
 
 		for metric in self.metrics:
 			self.rrd.createCheck( hostname, metric )	
-			self.rrd.update( hostname, metric['name'], metric['val'] )
+			self.rrd.update( hostname, metric )
 			debug_msg( 9, 'stored metric %s for %s: %s' %( hostname, metric['name'], metric['val'] ) )
 			sys.exit(1)
 	
@@ -261,7 +261,6 @@ class RRDHandler:
 	def createCheck( self, host, metric ):
 		"Check if an .rrd allready exists for this metric, create if not"
 
-		rrd_parameters = [ ]
 		rrd_dir = '%s/%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster, host )
 		rrd_file = '%s/%s.rrd' %( rrd_dir, metric['name'] )
 
@@ -287,12 +286,18 @@ class RRDHandler:
 
 			debug_msg( 9, 'created rrd %s' %( str(rrd_file) ) )
 
-	def update( self, metric, timestamp, val ):
+	def update( self, host, metric ):
 
-		pass
+		rrd_dir = '%s/%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster, host )
+		rrd_file = '%s/%s.rrd' %( rrd_dir, metric['name'] )
 
-		#rrd.update( bla )
-		
+		timestamp = metric['time']
+		val = metric['val']
+
+		update_string = '%s:%s' %(timestamp, val)
+
+		rrdtool.update( str(rrd_file), str(update_string) )
+		debug_msg( 9, 'updated rrd %s with %s' %( str(rrd_file), update_string ) )
 
 def main():
 	"Program startup"
