@@ -17,7 +17,7 @@ import re
 # <=10 = host,cluster,grid,ganglia XML
 # <=9  = RRD activity,gmetad config parsing
 # <=8  = host processing
-# <=7  = daemon threading
+# <=7  = daemon threading - NOTE: Daemon will 'halt on all errors' from this level
 #
 DEBUG_LEVEL = 8
 
@@ -95,7 +95,7 @@ class GangliaXMLHandler( ContentHandler ):
 			myMetric = { }
 			myMetric['name'] = attrs.get('NAME',"")
 			myMetric['val'] = attrs.get('VAL',"")
-			myMetric['time'] = self.time
+			myMetric['time'] = self.hostReported
 			myMetric['type'] = attrs.get('TYPE',"")
 
 			self.metrics.append( myMetric ) 
@@ -116,7 +116,8 @@ class GangliaXMLHandler( ContentHandler ):
 			mytime = self.rrd.makeTimeSerial()
 			correct_serial = self.rrd.checkNewRrdPeriod( self.hostName, mytime )
 
-			debug_msg( 8, 'time %s: Storing metrics for %s' %(mytime, self.hostName) )
+			#debug_msg( 8, 'time %s: Storing metrics for %s' %(mytime, self.hostName) )
+			print 'Storing metrics for %s:' %(self.hostName),
 			self.storeMetrics( self.hostName, correct_serial )
 
 		#if name == 'METRIC':
@@ -127,9 +128,11 @@ class GangliaXMLHandler( ContentHandler ):
 			if metric['type'] not in UNSUPPORTED_ARCHIVE_TYPES:
 
 				self.rrd.createCheck( hostname, metric, timeserial )	
+				print ' [%s.%s]' %(metric['name'], metric['time']),
 				self.rrd.update( hostname, metric, timeserial )
 				debug_msg( 9, 'stored metric %s for %s: %s' %( hostname, metric['name'], metric['val'] ) )
 				#sys.exit(1)
+		print
 	
 
 class GangliaXMLGatherer:
