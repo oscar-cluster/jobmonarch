@@ -22,7 +22,7 @@ from types import *
 # 8  = RRD file activity
 # 7  = daemon threading
 #
-DEBUG_LEVEL = 7
+DEBUG_LEVEL = 8
 
 # Where is the gmetad.conf located
 #
@@ -123,6 +123,25 @@ class GangliaXMLHandler( ContentHandler ):
 	def __init__( self, config ):
 		self.config = config
 		self.clusters = { }
+		self.gatherClusters()
+
+	def gatherClusters( self ):
+
+		archive_dir = '%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster )
+
+		hosts = [ ]
+
+		if os.path.exists( archive_dir ):
+
+			dirlist = os.listdir( archive_dir )
+
+			for item in dirlist:
+
+				clustername = item
+
+				if not self.clusters.has_key( clustername ) and clustername in ARCHIVE_SOURCES:
+
+					self.clusters[ clustername ] = RRDHandler( self.config, clustername )
 
 	def startElement( self, name, attrs ):
 		"Store appropriate data from xml start tags"
@@ -347,8 +366,8 @@ class GangliaXMLProcessor:
 
 		# Store metrics somewhere between every 60 and 180 seconds
 		#
-		STORE_INTERVAL = random.randint( 60, 180 )
-		#STORE_INTERVAL = 30
+		#STORE_INTERVAL = random.randint( 360, 640 )
+		STORE_INTERVAL = 16
 
 		storethread = threading.Thread( None, self.storeThread, 'storemetricthread' )
 		storethread.start()
@@ -488,14 +507,21 @@ class RRDHandler:
 	slot = None
 
 	def __init__( self, config, cluster ):
+		self.block = 0
 		self.cluster = cluster
 		self.config = config
 		self.slot = threading.Lock()
 		self.rrdm = RRDMutator()
 		self.gatherLastUpdates()
 
+	def isBlocking( self ):
+
+		return self.block
+
 	def gatherLastUpdates( self ):
 		"Populate the lastStored list, containing timestamps of all last updates"
+
+		self.block = 1
 
 		cluster_dir = '%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster )
 
@@ -503,19 +529,11 @@ class RRDHandler:
 
 		if os.path.exists( cluster_dir ):
 
-			for root, dirs, files in os.walk( cluster_dir ):
+			dirlist = os.listdir( cluster_dir )
 
-				for dir in dirs:
+			for dir in dirlist:
 
-					valid_dir = 1
-
-					for letter in dir:
-						if letter not in string.digits:
-							valid_dir = 0
-
-					if valid_dir:
-						host = root.split( '/' )[-1]
-						hosts.append( host )
+				hosts.append( dir )
 
 		for host in hosts:
 
@@ -525,17 +543,17 @@ class RRDHandler:
 				metric_dir = cluster_dir + '/' + host + '/' + last_serial
 				if os.path.exists( metric_dir ):
 
-					for root, dirs, files in os.walk( metric_dir ):
+					dirlist = os.listdir( metric_dir )
 
-						for file in files:
+					for file in dirlist:
 
-							metricname = file.split( '.rrd' )[0]
+						metricname = file.split( '.rrd' )[0]
 
-							if not self.lastStored.has_key( host ):
+						if not self.lastStored.has_key( host ):
 
-								self.lastStored[ host ] = { }
+							self.lastStored[ host ] = { }
 
-							self.lastStored[ host ][ metricname ] = self.rrdm.grabLastUpdate( metric_dir + '/' + file )
+						self.lastStored[ host ][ metricname ] = self.rrdm.grabLastUpdate( metric_dir + '/' + file )
 
 	def getClusterName( self ):
 		return self.cluster
@@ -671,20 +689,20 @@ class RRDHandler:
 
 		if os.path.exists( rrd_dir ):
 
-			for root, dirs, files in os.walk( rrd_dir ):
+			dirlist = os.listdir( rrd_dir )
 
-				for dir in dirs:
+			for dir in dirlist:
 
-					valid_dir = 1
+				valid_dir = 1
 
-					for letter in dir:
-						if letter not in string.digits:
-							valid_dir = 0
+				for letter in dir:
+					if letter not in string.digits:
+						valid_dir = 0
 
-					if valid_dir:
-						timeserial = dir
-						if timeserial > newest_timeserial:
-							newest_timeserial = timeserial
+				if valid_dir:
+					timeserial = dir
+					if timeserial > newest_timeserial:
+						newest_timeserial = timeserial
 
 		if newest_timeserial:
 			return newest_timeserial
