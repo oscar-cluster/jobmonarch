@@ -12,15 +12,17 @@ import re
 import threading
 import mutex
 import random
+from types import *
 
 # Specify debugging level here;
 #
 # 11 = XML: metrics
 # 10 = XML: host, cluster, grid, ganglia
 # 9  = RRD activity, gmetad config parsing
-# 8  = daemon threading
+# 8  = RRD file activity
+# 7  = daemon threading
 #
-DEBUG_LEVEL = 8
+DEBUG_LEVEL = 9
 
 # Where is the gmetad.conf located
 #
@@ -67,14 +69,18 @@ class RRDMutator:
 			self.binary = binary
 
 	def create( self, filename, args ):
-		return self.perform( 'create' + ' "' + filename + '"', args )
+		return self.perform( 'create', '"' + filename + '"', args )
 
 	def update( self, filename, args ):
-		return self.perform( 'update' + ' "' + filename + '"', args )
+		return self.perform( 'update', '"' + filename + '"', args )
 
-	def perform( self, action, args ):
+	def perform( self, action, filename, args ):
 
 		arg_string = None
+
+		if type( args ) is not ListType:
+			debug_msg( 8, 'Arguments needs to be of type List' )
+			return 1
 
 		for arg in args:
 
@@ -84,14 +90,16 @@ class RRDMutator:
 			else:
 				arg_string = arg_string + ' ' + arg
 
-		debug_msg( 9, 'rrdm.perform(): ' + self.binary + ' ' + action + ' ' + arg_string  )
+		debug_msg( 8, 'rrdm.perform(): ' + self.binary + ' ' + action + ' ' + filename + ' ' + arg_string  )
 
-		for line in os.popen( self.binary + ' ' + action + ' ' + arg_string ).readlines():
+		for line in os.popen( self.binary + ' ' + action + ' ' + filename + ' ' + arg_string ).readlines():
+
+			print line
 
 			if line.find( 'ERROR' ) != -1:
 
 				error_msg = string.join( line.split( ' ' )[1:] )
-				debug_msg( 9, error_msg )
+				debug_msg( 8, error_msg )
 				return 1
 
 		return 0
@@ -322,68 +330,69 @@ class GangliaXMLProcessor:
 	def storeMetrics( self ):
 		"Store metrics retained in memory to disk"
 
-		debug_msg( 8, self.printTime() + ' - storethread(): started.' )
+		debug_msg( 7, self.printTime() + ' - storethread(): started.' )
 
 		# Store metrics somewhere between every 60 and 180 seconds
 		#
-		STORE_INTERVAL = random.randint( 60, 180 )
+		#STORE_INTERVAL = random.randint( 60, 180 )
+		STORE_INTERVAL = 40
 
 		storethread = threading.Thread( None, self.storeThread, 'storemetricthread' )
 		storethread.start()
 
-		debug_msg( 8, self.printTime() + ' - storethread(): Sleeping.. (%ss)' %STORE_INTERVAL )
+		debug_msg( 7, self.printTime() + ' - storethread(): Sleeping.. (%ss)' %STORE_INTERVAL )
 		time.sleep( STORE_INTERVAL )
-		debug_msg( 8, self.printTime() + ' - storethread(): Done sleeping.' )
+		debug_msg( 7, self.printTime() + ' - storethread(): Done sleeping.' )
 
 		if storethread.isAlive():
 
-			debug_msg( 8, self.printTime() + ' - storethread(): storemetricthread() still running, waiting to finish..' )
-			parsethread.join( 180 ) # Maximum time is for storing thread to finish
-			debug_msg( 8, self.printTime() + ' - storethread(): Done waiting.' )
+			debug_msg( 7, self.printTime() + ' - storethread(): storemetricthread() still running, waiting to finish..' )
+			storethread.join( 180 ) # Maximum time is for storing thread to finish
+			debug_msg( 7, self.printTime() + ' - storethread(): Done waiting.' )
 
-		debug_msg( 8, self.printTime() + ' - storethread(): finished.' )
+		debug_msg( 7, self.printTime() + ' - storethread(): finished.' )
 
 		return 0
 
 	def storeThread( self ):
 
-		debug_msg( 8, self.printTime() + ' - storemetricthread(): started.' )
-		debug_msg( 8, self.printTime() + ' - storemetricthread(): Storing data..' )
+		debug_msg( 7, self.printTime() + ' - storemetricthread(): started.' )
+		debug_msg( 7, self.printTime() + ' - storemetricthread(): Storing data..' )
 		ret = self.myHandler.storeMetrics()
-		debug_msg( 8, self.printTime() + ' - storemetricthread(): Done storing.' )
-		debug_msg( 8, self.printTime() + ' - storemetricthread(): finished.' )
+		debug_msg( 7, self.printTime() + ' - storemetricthread(): Done storing.' )
+		debug_msg( 7, self.printTime() + ' - storemetricthread(): finished.' )
 		
 		return ret
 
 	def processXML( self ):
 		"Process XML"
 
-		debug_msg( 8, self.printTime() + ' - xmlthread(): started.' )
+		debug_msg( 7, self.printTime() + ' - xmlthread(): started.' )
 
 		parsethread = threading.Thread( None, self.parseThread, 'parsethread' )
 		parsethread.start()
 
-		debug_msg( 8, self.printTime() + ' - xmlthread(): Sleeping.. (%ss)' %self.config.getLowestInterval() )
+		debug_msg( 7, self.printTime() + ' - xmlthread(): Sleeping.. (%ss)' %self.config.getLowestInterval() )
 		time.sleep( float( self.config.getLowestInterval() ) )	
-		debug_msg( 8, self.printTime() + ' - xmlthread(): Done sleeping.' )
+		debug_msg( 7, self.printTime() + ' - xmlthread(): Done sleeping.' )
 
 		if parsethread.isAlive():
 
-			debug_msg( 8, self.printTime() + ' - xmlthread(): parsethread() still running, waiting to finish..' )
+			debug_msg( 7, self.printTime() + ' - xmlthread(): parsethread() still running, waiting to finish..' )
 			parsethread.join( 60 ) # Maximum time for XML thread to finish
-			debug_msg( 8, self.printTime() + ' - xmlthread(): Done waiting.' )
+			debug_msg( 7, self.printTime() + ' - xmlthread(): Done waiting.' )
 
-		debug_msg( 8, self.printTime() + ' - xmlthread(): finished.' )
+		debug_msg( 7, self.printTime() + ' - xmlthread(): finished.' )
 
 		return 0
 
 	def parseThread( self ):
 
-		debug_msg( 8, self.printTime() + ' - parsethread(): started.' )
-		debug_msg( 8, self.printTime() + ' - parsethread(): Parsing XML..' )
+		debug_msg( 7, self.printTime() + ' - parsethread(): started.' )
+		debug_msg( 7, self.printTime() + ' - parsethread(): Parsing XML..' )
 		ret = self.myParser.parse( self.myXMLGatherer.getFileObject() )
-		debug_msg( 8, self.printTime() + ' - parsethread(): Done parsing.' )
-		debug_msg( 8, self.printTime() + ' - parsethread(): finished.' )
+		debug_msg( 7, self.printTime() + ' - parsethread(): Done parsing.' )
+		debug_msg( 7, self.printTime() + ' - parsethread(): finished.' )
 
 		return ret
 
@@ -462,12 +471,13 @@ class GangliaConfigParser:
 class RRDHandler:
 
 	myMetrics = { }
+	lastStored = { }
 	slot = None
 
 	def __init__( self, config, cluster ):
 		self.cluster = cluster
 		self.config = config
-		self.slot = mutex.mutex()
+		self.slot = threading.Lock()
 		self.rrdm = RRDMutator()
 
 	def getClusterName( self ):
@@ -491,19 +501,56 @@ class RRDHandler:
 			self.myMetrics[ host ] = { }
 			self.myMetrics[ host ][ metric['name'] ] = [ ]
 
-		self.slot.testandset()
+		# Ah, psst, push it
+		#
+		# <atomic>
+		self.slot.acquire()
+
 		self.myMetrics[ host ][ metric['name'] ].append( metric )
-		self.slot.unlock()
+
+		self.slot.release()
+		# </atomic>
 
 	def makeUpdateList( self, host, metricname ):
 
 		update_list = [ ]
 
-		for metric in self.myMetrics[ host ][ metricname ]:
+		while len( self.myMetrics[ host ][ metricname ] ) > 0:
 
-			update_list.append( '%s:%s' %( metric['time'], metric['val'] ) )
+			# Kabouter pop
+			#
+			# <atomic>	
+			self.slot.acquire()
+
+			metric = self.myMetrics[ host ][ metricname ].pop()
+
+			self.slot.release()
+			# </atomic>
+
+			if self.checkStoreMetric( host, metricname, metric ):
+				update_list.append( '%s:%s' %( metric['time'], metric['val'] ) )
+			else:
+				print 'allready wrote metric %s with timestamp %s' %( metric['name'], metric['time'] )
 
 		return update_list
+
+	def checkStoreMetric( self, host, metricname, metric ):
+
+		if self.lastStored.has_key( host ):
+
+			if self.lastStored[ host ].has_key( metricname ):
+
+				if self.lastStored[ host ][ metricname ] <= metric['time']:
+
+					# Allready wrote a value with this timestamp, skip tnx
+					return 0
+
+		else:
+			self.lastStored[ host ] = { }
+
+		self.lastStored[ host ][ metricname ] = metric['time']
+
+		return 1
 
 	def storeMetrics( self ):
 
@@ -512,18 +559,18 @@ class RRDHandler:
 			for metricname, mymetric in mymetrics.items():
 
 				mytime = self.makeTimeSerial()
-				self.createCheck( hostname, metricname, mytime )	
-				update_ret = self.update( hostname, metricname, mytime )
+				correct_serial = self.checkNewRrdPeriod( hostname, mytime )
+				self.createCheck( hostname, metricname, correct_serial )	
+				update_ret = self.update( hostname, metricname, correct_serial )
 
 				if update_ret == 0:
 
-					self.slot.testandset()
-					del self.myMetrics[ hostname ][ metricname ]
-					self.slot.unlock()
 					debug_msg( 9, 'stored metric %s for %s' %( hostname, metricname ) )
 				else:
 					debug_msg( 9, 'metric update failed' )
 					return 1
+
+				return 1
 
 	def makeTimeSerial( self ):
 		"Generate a time serial. Seconds since epoch"
