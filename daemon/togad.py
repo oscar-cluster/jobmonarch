@@ -35,6 +35,10 @@ ARCHIVE_SOURCES = [ "LISA Cluster" ]
 #
 ARCHIVE_HOURS_PER_RRD = 24
 
+# Interval at which to grab&store XML
+#
+GRAB_INTERVAL = 15
+
 ######################
 #                    #
 # Configuration ends #
@@ -191,8 +195,7 @@ class GangliaXMLProcessor:
 
 		sys.stdin.close()
 		sys.stdout.close()
-		if (DEBUGLEVEL == 0):
-			sys.stderr.close()
+		sys.stderr.close()
 
 		os.open('/dev/null', 0)
 		os.dup(0)
@@ -205,7 +208,7 @@ class GangliaXMLProcessor:
 
 		while ( 1 ):
 			self.processXML()
-			time.sleep( 5 )
+			time.sleep( GRAB_INTERVAL )
 
 	def processXML( self ):
 		"Process XML"
@@ -387,7 +390,8 @@ def main():
 	"Program startup"
 
 	myProcessor = GangliaXMLProcessor()
-	myProcessor.processXML()
+	#myProcessor.processXML()
+	myProcessor.daemon()
 
 def check_dir( directory ):
 	"Check if directory is a proper directory. I.e.: Does _not_ end with a '/'"
