@@ -209,11 +209,10 @@ class GangliaConfigParser:
 
 			if line.count( '"' ) > 1:
 
-				source = { }
-				source['name'] = line.split( '"' )[1]
-
 				if line.find( 'data_source' ) != -1 and line[0] != '#':
 
+					source = { }
+					source['name'] = line.split( '"' )[1]
 					source_words = line.split( '"' )[2].split( ' ' )
 
 					for word in source_words:
@@ -231,6 +230,7 @@ class GangliaConfigParser:
 		# No interval found, use Ganglia's default	
 		if not source.has_key( 'interval' ):
 			source['interval'] = 15
+			if (DEBUG_LEVEL>8): print 'polling interval for %s defaulted to 15' %(source['name'])
 
 		self.sources.append( source )
 
