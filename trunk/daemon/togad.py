@@ -11,16 +11,16 @@ import time
 import re
 import threading
 import mutex
+import random
 
 # Specify debugging level here;
 #
-# <=11 = metric XML
-# <=10 = host,cluster,grid,ganglia XML
-# <=9  = RRD activity,gmetad config parsing
-# <=8  = host processing
-# <=7  = daemon threading - NOTE: Daemon will 'halt on all errors' from this level
+# 11 = XML: metrics
+# 10 = XML: host, cluster, grid, ganglia
+# 9  = RRD activity, gmetad config parsing
+# 8  = daemon threading
 #
-DEBUG_LEVEL = 10
+DEBUG_LEVEL = 8
 
 # Where is the gmetad.conf located
 #
@@ -36,7 +36,7 @@ ARCHIVE_SOURCES = [ "LISA Cluster" ]
 
 # Amount of hours to store in one single archived .rrd
 #
-ARCHIVE_HOURS_PER_RRD = 12
+ARCHIVE_HOURS_PER_RRD = 1
 
 # Wether or not to run as a daemon in background
 #
@@ -57,6 +57,7 @@ This is TOrque-GAnglia's data Daemon
 """
 
 class RRDMutator:
+	"A class for handling .rrd mutations"
 
 	binary = '/usr/bin/rrdtool'
 
@@ -83,14 +84,14 @@ class RRDMutator:
 			else:
 				arg_string = arg_string + ' ' + arg
 
-		debug_msg( 7, 'rrdm.perform(): ' + self.binary + ' ' + action + ' ' + arg_string  )
+		debug_msg( 9, 'rrdm.perform(): ' + self.binary + ' ' + action + ' ' + arg_string  )
 
 		for line in os.popen( self.binary + ' ' + action + ' ' + arg_string ).readlines():
 
 			if line.find( 'ERROR' ) != -1:
 
 				error_msg = string.join( line.split( ' ' )[1:] )
-				debu_msg( 7, error_msg )
+				debug_msg( 9, error_msg )
 				return 1
 
 		return 0
@@ -157,8 +158,13 @@ class GangliaXMLHandler( ContentHandler ):
 
 		for clustername, rrdh in self.clusters.items():
 
-			print 'storing metrics of cluster ' + clustername
-			rrdh.storeMetrics()
+			ret = rrdh.storeMetrics()
+
+			if ret:
+				debug_msg( 9, 'An error occured while storing metrics for cluster %s' %clustername )
+				return 1
+
+		return 0
 
 class GangliaXMLGatherer:
 	"Setup a connection and file object to Ganglia's XML"
@@ -220,8 +226,12 @@ class GangliaXMLGatherer:
 	def getFileObject( self ):
 		"Connect, and return a file object"
 
-		self.disconnect()
-		self.connect()
+		if self.s:
+			# Apearantly, only data is received when a connection is made
+			# therefor, disconnect and connect
+			#
+			self.disconnect()
+			self.connect()
 
 		return self.s.makefile( 'r' )
 
@@ -282,51 +292,8 @@ class GangliaXMLProcessor:
 
 		return time.strftime("%a %d %b %Y %H:%M:%S")
 
-	def grabXML( self ):
-
-		debug_msg( 7, self.printTime() + ' - mainthread() - xmlthread() started' )
-		pid = os.fork()
-
-		if pid == 0:
-			# Child - XML Thread
-			#
-			# Process XML and exit
-
-			debug_msg( 7, self.printTime() + ' - xmlthread()  - Start XML processing..' )
-			self.processXML()
-			debug_msg( 7, self.printTime() + ' - xmlthread()  - Done processing; exiting.' )
-			sys.exit( 0 )
-
-		elif pid > 0:
-			# Parent - Time/sleep Thread
-			#
-			# Make sure XML is processed on time and at regular intervals
-
-			debug_msg( 7, self.printTime() + ' - mainthread() - Sleep '+ str( self.config.getLowestInterval() ) +'s: zzzzz..' )
-			time.sleep( float( self.config.getLowestInterval() ) )
-			debug_msg( 7, self.printTime() + ' - mainthread() - Awoken: waiting for XML thread..' )
-
-			r = os.wait()
-			ret = r[1]
-			if ret != 0:
-				debug_msg( 7, self.printTime() + ' - mainthread() - Done waiting: ERROR! xmlthread() exited with status %d' %(ret) )
-				if DEBUG_LEVEL>=7: sys.exit( 1 )
-			else:
-
-				debug_msg( 7, self.printTime() + ' - mainthread() - Done waiting: xmlthread() finished succesfully' )
-
 	def run( self ):
 		"Main thread"
-
-		#self.processXML()
-		#self.storeMetrics()
-
-		#time.sleep( 20 )
-
-		#self.processXML()
-		#self.storeMetrics()
-
-		#sys.exit(1)
 
 		xmlthread = threading.Thread( None, self.processXML, 'xmlthread' )
 		storethread = threading.Thread( None, self.storeMetrics, 'storethread' )
@@ -339,7 +306,7 @@ class GangliaXMLProcessor:
 				# threaded call to: self.processXML()
 				#
 				xmlthread = threading.Thread( None, self.processXML, 'xmlthread' )
-				debug_msg( 7, self.printTime() + ' - mainthread() - xmlthread() started' )
+				debug_msg( 8, self.printTime() + ' - mainthread() - xmlthread() started' )
 				xmlthread.start()
 
 			if not storethread.isAlive():
@@ -348,7 +315,7 @@ class GangliaXMLProcessor:
 				# threaded call to: self.storeMetrics()
 				#
 				storethread = threading.Thread( None, self.storeMetrics, 'storethread' )
-				debug_msg( 7, self.printTime() + ' - mainthread() - storethread() started' )
+				debug_msg( 8, self.printTime() + ' - mainthread() - storethread() started' )
 				storethread.start()
 		
 			# Just sleep a sec here, to prevent daemon from going mad. We're all threads here anyway
@@ -357,50 +324,54 @@ class GangliaXMLProcessor:
 	def storeMetrics( self ):
 		"Store metrics retained in memory to disk"
 
-		STORE_INTERVAL = 5
+		# Store metrics somewhere between every 60 and 180 seconds
+		#
+		STORE_INTERVAL = random.randint( 60, 180 )
 
-		debug_msg( 7, self.printTime() + ' - storethread() - Storing data..' )
+		debug_msg( 8, self.printTime() + ' - storethread() - storemetricthread() started: Storing data..' )
 
 		# threaded call to: self.myHandler.storeMetrics()
 		#
 		storethread = threading.Thread( None, self.myHandler.storeMetrics(), 'storemetricthread' )
 		storethread.start()
 
-		debug_msg( 7, self.printTime() + ' - storethread() - Sleeping.. (%ss)' %STORE_INTERVAL )
+		debug_msg( 8, self.printTime() + ' - storethread() - Sleeping.. (%ss)' %STORE_INTERVAL )
 		time.sleep( STORE_INTERVAL )
-		debug_msg( 7, self.printTime() + ' - storethread() - Done sleeping.' )
+		debug_msg( 8, self.printTime() + ' - storethread() - Done sleeping.' )
 
 		if storethread.isAlive():
 
-			debug_msg( 7, self.printTime() + ' - storethread() - storemetricthread() still running, waiting to finish..' )
+			debug_msg( 8, self.printTime() + ' - storethread() - storemetricthread() still running, waiting to finish..' )
 			parsethread.join( 180 ) # Maximum time is 3 minutes for storing thread to finish - more then enough
-			debug_msg( 7, self.printTime() + ' - storethread() - storemetricthread() finished.' )
 
-		debug_msg( 7, self.printTime() + ' - storethread() finished' )
+		debug_msg( 8, self.printTime() + ' - storethread() - storemetricthread() finished.' )
+
+		debug_msg( 8, self.printTime() + ' - storethread() finished' )
 
 		return 0
 
 	def processXML( self ):
 		"Process XML"
 
-		debug_msg( 7, self.printTime() + ' - xmlthread() - Parsing..' )
+		debug_msg( 8, self.printTime() + ' - xmlthread() - parsethread() started: Parsing..' )
 
 		# threaded call to: self.myParser.parse( self.myXMLGatherer.getFileObject() )
 		#
 		parsethread = threading.Thread( None, self.myParser.parse, 'parsethread', [ self.myXMLGatherer.getFileObject() ] )
 		parsethread.start()
 
-		debug_msg( 7, self.printTime() + ' - xmlthread() - Sleeping.. (%ss)' %self.config.getLowestInterval() )
+		debug_msg( 8, self.printTime() + ' - xmlthread() - Sleeping.. (%ss)' %self.config.getLowestInterval() )
 		time.sleep( float( self.config.getLowestInterval() ) )	
-		debug_msg( 7, self.printTime() + ' - xmlthread() - Done sleeping.' )
+		debug_msg( 8, self.printTime() + ' - xmlthread() - Done sleeping.' )
 
 		if parsethread.isAlive():
 
-			debug_msg( 7, self.printTime() + ' - xmlthread() - parsethread() still running, waiting to finish..' )
+			debug_msg( 8, self.printTime() + ' - xmlthread() - parsethread() still running, waiting to finish..' )
 			parsethread.join( 180 ) # Maximum time is 3 minutes for XML thread to finish - more then enough
-			debug_msg( 7, self.printTime() + ' - xmlthread() - parsethread() finished.' )
 
-		debug_msg( 7, self.printTime() + ' - xmlthread() finished.' )
+		debug_msg( 8, self.printTime() + ' - xmlthread() - parsethread() finished.' )
+
+		debug_msg( 8, self.printTime() + ' - xmlthread() finished.' )
 
 		return 0
 
@@ -512,23 +483,6 @@ class RRDHandler:
 		self.myMetrics[ host ][ metric['name'] ].append( metric )
 		self.slot.unlock()
 
-	def makeUpdateString( self, host, metricname ):
-
-		update_string = None
-
-		print self.myMetrics[ host ][ metricname ]
-
-		for m in self.myMetrics[ host ][ metricname ]:
-
-			print m
-
-			if not update_string:
-				update_string = '%s:%s' %( m['time'], m['val'] )
-			else:
-				update_string = update_string + ' %s:%s' %( m['time'], m['val'] )
-
-		return update_string
-
 	def makeUpdateList( self, host, metricname ):
 
 		update_list = [ ]
@@ -557,8 +511,7 @@ class RRDHandler:
 					debug_msg( 9, 'stored metric %s for %s' %( hostname, metricname ) )
 				else:
 					debug_msg( 9, 'metric update failed' )
-
-				return 1
+					return 1
 
 	def makeTimeSerial( self ):
 		"Generate a time serial. Seconds since epoch"
@@ -692,23 +645,12 @@ class RRDHandler:
 
 		rrd_dir, rrd_file = self.makeRrdPath( host, metricname, timeserial )
 
-		#timestamp = metric['time']
-		#val = metric['val']
-
-		#update_string = '%s:%s' %(timestamp, val)
 		update_list = self.makeUpdateList( host, metricname )
 
-		#try:
+		ret = self.rrdm.update( str(rrd_file), update_list )
 
-		self.rrdm.update( str(rrd_file), update_list )
-
-		#except rrdtool.error, detail:
-
-		#	debug_msg( 0, 'EXCEPTION! While trying to update rrd:' )
-		#	debug_msg( 0, '\trrd %s with %s' %( str(rrd_file), update_string ) )
-		#	debug_msg( 0, str(detail) )
-
-		#	return 1
+		if ret:
+			return 1
 		
 		debug_msg( 9, 'updated rrd %s with %s' %( str(rrd_file), string.join( update_list ) ) )
 
