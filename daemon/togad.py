@@ -241,6 +241,7 @@ class GangliaXMLProcessor:
 				ret = r[1]
 				if ret != 0:
 					debug_msg( 7, self.printTime() + ' - mainthread() - Done waiting: ERROR! xmlthread() exited with status %d' %(ret) )
+					if DEBUG_LEVEL>=7: sys.exit( 1 )
 				else:
 
 					debug_msg( 7, self.printTime() + ' - mainthread() - Done waiting: xmlthread() finished succesfully' )
