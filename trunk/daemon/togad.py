@@ -13,12 +13,13 @@ import re
 
 # Specify debugging level here;
 #
-# >=11 = metric XML
-# >=10 = host,cluster,grid,ganglia XML
-# >=9  = RRD activity,gmetad config parsing
-# >=7  = daemon threading
+# <=11 = metric XML
+# <=10 = host,cluster,grid,ganglia XML
+# <=9  = RRD activity,gmetad config parsing
+# <=8  = host processing
+# <=7  = daemon threading
 #
-DEBUG_LEVEL = 9
+DEBUG_LEVEL = 8
 
 # Where is the gmetad.conf located
 #
@@ -115,6 +116,7 @@ class GangliaXMLHandler( ContentHandler ):
 			mytime = self.rrd.makeTimeSerial()
 			correct_serial = self.rrd.checkNewRrdPeriod( self.hostName, mytime )
 
+			debug_msg( 8, 'time %s: Storing metrics for %s' %(mytime, self.hostName) )
 			self.storeMetrics( self.hostName, correct_serial )
 
 		#if name == 'METRIC':
@@ -364,7 +366,7 @@ class RRDHandler:
 	def checkNewRrdPeriod( self, host, current_timeserial ):
 
 		last_timeserial = int( self.getLastRrdTimeSerial( host ) )
-		debug_msg( 8, 'last timeserial of %s is %s' %( host, last_timeserial ) )
+		debug_msg( 9, 'last timeserial of %s is %s' %( host, last_timeserial ) )
 
 		if not last_timeserial:
 			serial = current_timeserial
@@ -382,7 +384,7 @@ class RRDHandler:
 	def createCheck( self, host, metric, timeserial ):
 		"Check if an .rrd allready exists for this metric, create if not"
 
-		debug_msg( 8, 'rrdcreate: using timeserial %s for %s/%s' %( timeserial, host, metric['name'] ) )
+		debug_msg( 9, 'rrdcreate: using timeserial %s for %s/%s' %( timeserial, host, metric['name'] ) )
 
 		rrd_dir, rrd_file = self.makeRrdPath( host, metric, timeserial )
 
@@ -410,7 +412,7 @@ class RRDHandler:
 
 	def update( self, host, metric, timeserial ):
 
-		debug_msg( 8, 'rrdupdate: using timeserial %s for %s/%s' %( timeserial, host, metric['name'] ) )
+		debug_msg( 9, 'rrdupdate: using timeserial %s for %s/%s' %( timeserial, host, metric['name'] ) )
 
 		rrd_dir, rrd_file = self.makeRrdPath( host, metric, timeserial )
 
