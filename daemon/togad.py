@@ -4,7 +4,6 @@ from xml.sax import make_parser
 from xml.sax.handler import ContentHandler 
 import socket
 import sys
-import rrdtool
 import string
 import os
 import os.path
@@ -56,6 +55,45 @@ UNSUPPORTED_ARCHIVE_TYPES = [ 'string' ]
 """
 This is TOrque-GAnglia's data Daemon
 """
+
+class RRDMutator:
+
+	binary = '/usr/bin/rrdtool'
+
+	def __init__( self, binary=None ):
+
+		if binary:
+			self.binary = binary
+
+	def create( self, filename, args ):
+		return self.perform( 'create' + ' "' + filename + '"', args )
+
+	def update( self, filename, args ):
+		return self.perform( 'update' + ' "' + filename + '"', args )
+
+	def perform( self, action, args ):
+
+		arg_string = None
+
+		for arg in args:
+
+			if not arg_string:
+
+				arg_string = arg
+			else:
+				arg_string = arg_string + ' ' + arg
+
+		debug_msg( 7, 'rrdm.perform(): ' + self.binary + ' ' + action + ' ' + arg_string  )
+
+		for line in os.popen( self.binary + ' ' + action + ' ' + arg_string ).readlines():
+
+			if line.find( 'ERROR' ) != -1:
+
+				error_msg = string.join( line.split( ' ' )[1:] )
+				debu_msg( 7, error_msg )
+				return 1
+
+		return 0
 
 class GangliaXMLHandler( ContentHandler ):
 	"Parse Ganglia's XML"
@@ -319,7 +357,7 @@ class GangliaXMLProcessor:
 	def storeMetrics( self ):
 		"Store metrics retained in memory to disk"
 
-		STORE_INTERVAL = 30
+		STORE_INTERVAL = 5
 
 		debug_msg( 7, self.printTime() + ' - storethread() - Storing data..' )
 
@@ -447,6 +485,7 @@ class RRDHandler:
 		self.cluster = cluster
 		self.config = config
 		self.slot = mutex.mutex()
+		self.rrdm = RRDMutator()
 
 	def getClusterName( self ):
 		return self.cluster
@@ -475,13 +514,30 @@ class RRDHandler:
 
 	def makeUpdateString( self, host, metricname ):
 
-		update_string = ''
+		update_string = None
+
+		print self.myMetrics[ host ][ metricname ]
 
 		for m in self.myMetrics[ host ][ metricname ]:
 
-			update_string = update_string + ' %s:%s' %( m['time'], m['val'] )
+			print m
+
+			if not update_string:
+				update_string = '%s:%s' %( m['time'], m['val'] )
+			else:
+				update_string = update_string + ' %s:%s' %( m['time'], m['val'] )
 
 		return update_string
+
+	def makeUpdateList( self, host, metricname ):
+
+		update_list = [ ]
+
+		for metric in self.myMetrics[ host ][ metricname ]:
+
+			update_list.append( '%s:%s' %( metric['time'], metric['val'] ) )
+
+		return update_list
 
 	def storeMetrics( self ):
 
@@ -615,16 +671,18 @@ class RRDHandler:
 			interval = self.config.getInterval( self.cluster )
 			heartbeat = 8 * int(interval)
 
-			param_step1 = '--step'
-			param_step2 = str( interval )
+			params = [ ]
 
-			param_start1 = '--start'
-			param_start2 = str( int( self.getFirstTime( host, metricname ) ) - 1 )
+			params.append( '--step' )
+			params.append( str( interval ) )
 
-			param_ds = 'DS:sum:GAUGE:%d:U:U' %heartbeat
-			param_rra = 'RRA:AVERAGE:0.5:1:%s' %(ARCHIVE_HOURS_PER_RRD * 240)
+			params.append( '--start' )
+			params.append( str( int( self.getFirstTime( host, metricname ) ) - 1 ) )
 
-			rrdtool.create( str(rrd_file), param_step1, param_step2, param_start1, param_start2, param_ds, param_rra )
+			params.append( 'DS:sum:GAUGE:%d:U:U' %heartbeat )
+			params.append( 'RRA:AVERAGE:0.5:1:%s' %(ARCHIVE_HOURS_PER_RRD * 240) )
+
+			self.rrdm.create( str(rrd_file), params )
 
 			debug_msg( 9, 'created rrd %s' %( str(rrd_file) ) )
 
@@ -638,21 +696,21 @@ class RRDHandler:
 		#val = metric['val']
 
 		#update_string = '%s:%s' %(timestamp, val)
-		update_string = self.makeUpdateString( host, metricname )
+		update_list = self.makeUpdateList( host, metricname )
 
-		try:
+		#try:
 
-			rrdtool.update( str(rrd_file), str(update_string) )
+		self.rrdm.update( str(rrd_file), update_list )
 
-		except rrdtool.error, detail:
+		#except rrdtool.error, detail:
 
-			debug_msg( 0, 'EXCEPTION! While trying to update rrd:' )
-			debug_msg( 0, '\trrd %s with %s' %( str(rrd_file), update_string ) )
-			debug_msg( 0, str(detail) )
+		#	debug_msg( 0, 'EXCEPTION! While trying to update rrd:' )
+		#	debug_msg( 0, '\trrd %s with %s' %( str(rrd_file), update_string ) )
+		#	debug_msg( 0, str(detail) )
 
-			return 1
+		#	return 1
 		
-		debug_msg( 9, 'updated rrd %s with %s' %( str(rrd_file), update_string ) )
+		debug_msg( 9, 'updated rrd %s with %s' %( str(rrd_file), string.join( update_list ) ) )
 
 		return 0
 
