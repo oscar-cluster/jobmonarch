@@ -20,43 +20,43 @@ class GangliaXMLHandler( ContentHandler ):
    
 	def startElement( self, name, attrs ):
 
-		if name == 'ganglia_xml':
-			self.XMLSource = attrs.get('source',"")
-			self.gangliaVersion = attrs.get('version',"")
+		if name == 'GANGLIA_XML':
+			self.XMLSource = attrs.get('SOURCE',"")
+			self.gangliaVersion = attrs.get('VERSION',"")
+			if DEBUG: print 'Found XML data: source %s version %s' %( self.XMLSource, self.gangliaVersion )
 
-		elif name == 'grid':
-			self.gridName = attrs.get('name',"")
+		elif name == 'GRID':
+			self.gridName = attrs.get('NAME',"")
+			if DEBUG: print '`-Grid found: %s' %( self.gridName )
 
-		elif name == 'cluster':
-			self.clusterName = attrs.get('name',"")
+		elif name == 'CLUSTER':
+			self.clusterName = attrs.get('NAME',"")
+			if DEBUG: print ' |-Cluster found: %s' %( self.clusterName )
 
-		elif name == 'host':     
-			self.hostName = attrs.get('name',"")
-			self.hostIp = attrs.get('ip',"")
-			self.hostReported = attrs.get('reported',"")
+		elif name == 'HOST':     
+			self.hostName = attrs.get('NAME',"")
+			self.hostIp = attrs.get('IP',"")
+			self.hostReported = attrs.get('REPORTED',"")
+			if DEBUG: print ' | |-Host found: %s - ip %s reported %s' %( self.hostName, self.hostIp, self.hostReported )
 
-		elif name == 'metric':
+		elif name == 'METRIC':
 			myMetric = { }
-			myMetric['name'] = attrs.get('name',"")
-			myMetric['val'] = attrs.get('val',"")
+			myMetric['name'] = attrs.get('NAME',"")
+			myMetric['val'] = attrs.get('VAL',"")
 
 			self.metrics.append( myMetric ) 
 			if DEBUG: print ' | | |-metric: %s:%s' %( myMetric['name'], myMetric['val'] )
 
 		return
 
-	def endElement( self, name ):
-		if name == 'ganglia_xml':
-			if DEBUG: print 'Found XML data: source %s version %s' %( self.XMLSource, self.gangliaVersion )
+	#def endElement( self, name ):
+		#if name == 'ganglia_xml':
 
-		if name == 'grid':
-			if DEBUG: print '`-Grid found: %s' %( self.gridName )
+		#if name == 'grid':
 
-		if name == 'cluster':
-			if DEBUG: print ' |-Cluster found: %s' %( self.clusterName )
+		#if name == 'cluster':
 
-		if name == 'host':     
-			if DEBUG: print ' | |-Host found: %s - ip %s reported %s' %( self.hostName, self.hostIp, self.hostReported )
+		#if name == 'host':     
 
 		#if name == 'metric':
 
@@ -76,12 +76,18 @@ class GangliaXMLGatherer:
 			try:
 				s = socket.socket(af, socktype, proto)
 			except socket.error, msg:
+				print socket.error
+				print msg
 				s = None
 				continue
 		    	try:
+				print 'connected'
 				s.connect(sa)
+				#s.setblocking(1)
 		    	except socket.error, msg:
 				s.close()
+				print socket.error
+				print msg
 				s = None
 				continue
 		    	break
@@ -90,7 +96,8 @@ class GangliaXMLGatherer:
 			print 'could not open socket'
 			sys.exit(1)
 
-		return s.makefile()
+		return s.makefile( 'r' )
+		#return s
 
 		#s.send('Hello, world')
 		#data = s.recv(1024)
@@ -107,6 +114,10 @@ def main():
 	myParser = make_parser()   
 	myHandler = GangliaXMLHandler()
 	myParser.setContentHandler( myHandler )
+
+	#for line in myXMLGatherer.getFileDescriptor().readlines():
+	#	print line
+
 	myParser.parse( myXMLGatherer.getFileDescriptor() )
 
 # Let's go
