@@ -15,7 +15,7 @@ import os.path
 # >9  = host,cluster,grid,ganglia XML
 # >8  = RRD activity,gmetad config parsing
 #
-DEBUG_LEVEL = 9
+DEBUG_LEVEL = 8
 
 # Where is the gmetad.conf located
 #
@@ -79,6 +79,7 @@ class GangliaXMLHandler( ContentHandler ):
 			myMetric['name'] = attrs.get('NAME',"")
 			myMetric['val'] = attrs.get('VAL',"")
 			myMetric['time'] = self.time
+			myMetric['type'] = attrs.get('TYPE',"")
 
 			self.metrics.append( myMetric ) 
 			debug_msg( 11, ' | | |-metric: %s:%s' %( myMetric['name'], myMetric['val'] ) )
@@ -100,10 +101,12 @@ class GangliaXMLHandler( ContentHandler ):
 	def storeMetrics( self, hostname ):
 
 		for metric in self.metrics:
-			self.rrd.createCheck( hostname, metric )	
-			self.rrd.update( hostname, metric )
-			debug_msg( 9, 'stored metric %s for %s: %s' %( hostname, metric['name'], metric['val'] ) )
-			sys.exit(1)
+			if metric['type'] not in [ 'string' ]:
+
+				self.rrd.createCheck( hostname, metric )	
+				self.rrd.update( hostname, metric )
+				debug_msg( 9, 'stored metric %s for %s: %s' %( hostname, metric['name'], metric['val'] ) )
+				#sys.exit(1)
 	
 
 class GangliaXMLGatherer:
