@@ -6,6 +6,8 @@ import socket
 import sys
 import rrdtool
 import string
+import os
+import os.path
 
 # Specify debugging level here;
 #
@@ -46,16 +48,18 @@ class GangliaXMLHandler( ContentHandler ):
 		if name == 'GANGLIA_XML':
 			self.XMLSource = attrs.get('SOURCE',"")
 			self.gangliaVersion = attrs.get('VERSION',"")
-			if (DEBUG_LEVEL>9): print 'Found XML data: source %s version %s' %( self.XMLSource, self.gangliaVersion )
+			debug_msg( 10, 'Found XML data: source %s version %s' %( self.XMLSource, self.gangliaVersion ) )
 
 		elif name == 'GRID':
 			self.gridName = attrs.get('NAME',"")
-			if (DEBUG_LEVEL>9): print '`-Grid found: %s' %( self.gridName )
+			self.time = attrs.get('LOCALTIME',"")
+			debug_msg( 10, '`-Grid found: %s' %( self.gridName ) )
 
 		elif name == 'CLUSTER':
 			self.clusterName = attrs.get('NAME',"")
+			self.time = attrs.get('LOCALTIME',"")
 			self.rrd = RRDHandler( self.clusterName )
-			if (DEBUG_LEVEL>9): print ' |-Cluster found: %s' %( self.clusterName )
+			debug_msg( 10, ' |-Cluster found: %s' %( self.clusterName ) )
 
 		elif name == 'HOST':     
 			self.hostName = attrs.get('NAME',"")
@@ -63,36 +67,37 @@ class GangliaXMLHandler( ContentHandler ):
 			self.hostReported = attrs.get('REPORTED',"")
 			# Reset the metrics list for each host
 			self.metrics = [ ]
-			if (DEBUG_LEVEL>9): print ' | |-Host found: %s - ip %s reported %s' %( self.hostName, self.hostIp, self.hostReported )
+			debug_msg( 10, ' | |-Host found: %s - ip %s reported %s' %( self.hostName, self.hostIp, self.hostReported ) )
 
 		elif name == 'METRIC':
 			myMetric = { }
 			myMetric['name'] = attrs.get('NAME',"")
 			myMetric['val'] = attrs.get('VAL',"")
+			myMetric['time'] = self.time
 
 			self.metrics.append( myMetric ) 
-			if (DEBUG_LEVEL>10): print ' | | |-metric: %s:%s' %( myMetric['name'], myMetric['val'] )
+			debug_msg( 11, ' | | |-metric: %s:%s' %( myMetric['name'], myMetric['val'] ) )
 
 		return
 
 	def endElement( self, name ):
-		#if name == 'ganglia_xml':
+		#if name == 'GANGLIA_XML':
 
-		#if name == 'grid':
+		#if name == 'GRID':
 
-		#if name == 'cluster':
+		#if name == 'CLUSTER':
 
-		if name == 'host':     
+		if name == 'HOST':     
 			self.storeMetrics( self.hostName )
 
-		#if name == 'metric':
+		#if name == 'METRIC':
 
 	def storeMetrics( self, hostname ):
 
 		for metric in self.metrics:
-			self.rrd.checkCreate( hostname, metric['name'] )	
+			self.rrd.createCheck( hostname, metric )	
 			self.rrd.update( hostname, metric['name'], metric['val'] )
-			if (DEBUG_LEVEL>8): print 'stored metric %s for %s: %s' %( hostname, metric['name'], metric['val'] )
+			debug_msg( 9, 'stored metric %s for %s: %s' %( hostname, metric['name'], metric['val'] ) )
 			sys.exit(1)
 	
 
@@ -166,7 +171,8 @@ class GangliaXMLProcessor:
 
 		sys.stdin.close()
 		sys.stdout.close()
-		sys.stderr.close()
+		if (DEBUGLEVEL == 0):
+			sys.stderr.close()
 
 		os.open('/dev/null', 0)
 		os.dup(0)
@@ -225,18 +231,18 @@ class GangliaConfigParser:
 
 						if valid_interval and len(word) > 0:
 							source['interval'] = word
-							if (DEBUG_LEVEL>8): print 'polling interval for %s = %s' %(source['name'], source['interval'] )
+							debug_msg( 9, 'polling interval for %s = %s' %(source['name'], source['interval'] ) )
 		
 		# No interval found, use Ganglia's default	
 		if not source.has_key( 'interval' ):
 			source['interval'] = 15
-			if (DEBUG_LEVEL>8): print 'polling interval for %s defaulted to 15' %(source['name'])
+			debug_msg( 9, 'polling interval for %s defaulted to 15' %(source['name']) )
 
 		self.sources.append( source )
 
 	def getInterval( self, source_name ):
 		for source in self.sources:
-			if source['name'] == name:
+			if source['name'] == source_name:
 				return source['interval']
 		return None
 
@@ -250,14 +256,24 @@ class RRDHandler:
 	def createCheck( self, host, metric ):
 		"Check if an .rrd allready exists for this metric, create if not"
 
+		rrd_parameters = [ ]
 		rrd_dir = '%s/%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster, host )
 
 		if not os.path.exists( rrd_dir ):
 			os.makedirs( rrd_dir )
 
-		rrd_file = '%s/%s.rrd' %( rrd_dir, metric )
+		rrd_file = '%s/%s.rrd' %( rrd_dir, metric['name'] )
 
 		interval = self.gmetad_conf.getInterval( self.cluster )
+		heartbeat = 8 * int(interval)
+
+		rrd_parameters.append( '--step' )
+		rrd_parameters.append( interval )
+
+		rrd_parameters.append( '--start' )
+		rrd_parameters.append( metric['time'] )
+
+		print rrd_parameters
 
 	def update( self, metric, timestamp, val ):
 
@@ -279,6 +295,11 @@ def check_dir( directory ):
 		directory = directory[:-1]
 
 	return directory
+
+def debug_msg( level, msg ):
+
+	if (DEBUG_LEVEL >= level):
+		sys.stderr.write( msg + '\n' )
 
 # Let's go
 if __name__ == '__main__':
