@@ -66,7 +66,7 @@ class GangliaXMLHandler( ContentHandler ):
 			self.rrd = RRDHandler( self.clusterName )
 			debug_msg( 10, ' |-Cluster found: %s' %( self.clusterName ) )
 
-		elif name == 'HOST':     
+		elif name == 'HOST' and self.clusterName in ARCHIVE_SOURCES:     
 			self.hostName = attrs.get('NAME',"")
 			self.hostIp = attrs.get('IP',"")
 			self.hostReported = attrs.get('REPORTED',"")
@@ -74,7 +74,7 @@ class GangliaXMLHandler( ContentHandler ):
 			self.metrics = [ ]
 			debug_msg( 10, ' | |-Host found: %s - ip %s reported %s' %( self.hostName, self.hostIp, self.hostReported ) )
 
-		elif name == 'METRIC':
+		elif name == 'METRIC' and self.clusterName in ARCHIVE_SOURCES:
 			myMetric = { }
 			myMetric['name'] = attrs.get('NAME',"")
 			myMetric['val'] = attrs.get('VAL',"")
@@ -92,7 +92,7 @@ class GangliaXMLHandler( ContentHandler ):
 
 		#if name == 'CLUSTER':
 
-		if name == 'HOST':     
+		if name == 'HOST' and self.clusterName in ARCHIVE_SOURCES:     
 			self.storeMetrics( self.hostName )
 
 		#if name == 'METRIC':
@@ -263,25 +263,29 @@ class RRDHandler:
 
 		rrd_parameters = [ ]
 		rrd_dir = '%s/%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster, host )
+		rrd_file = '%s/%s.rrd' %( rrd_dir, metric['name'] )
 
 		if not os.path.exists( rrd_dir ):
 			os.makedirs( rrd_dir )
+			debug_msg( 9, 'created dir %s' %( str(rrd_dir) ) )
 
-		rrd_file = '%s/%s.rrd' %( rrd_dir, metric['name'] )
+		if not os.path.exists( rrd_file ):
 
-		interval = self.gmetad_conf.getInterval( self.cluster )
-		heartbeat = 8 * int(interval)
+			interval = self.gmetad_conf.getInterval( self.cluster )
+			heartbeat = 8 * int(interval)
 
-		param_step1 = '--step'
-		param_step2 = str( interval )
+			param_step1 = '--step'
+			param_step2 = str( interval )
 
-		param_start1 = '--start'
-		param_start2 = str( int( metric['time'] ) - 1 )
+			param_start1 = '--start'
+			param_start2 = str( int( metric['time'] ) - 1 )
 
-		param_ds = 'DS:sum:GAUGE:%d:U:U' %heartbeat
-		param_rra = 'RRA:AVERAGE:0.5:1:%s' %(ARCHIVE_HOURS_PER_RRD * 240)
+			param_ds = 'DS:sum:GAUGE:%d:U:U' %heartbeat
+			param_rra = 'RRA:AVERAGE:0.5:1:%s' %(ARCHIVE_HOURS_PER_RRD * 240)
 
-		rrdtool.create( str(rrd_file), param_step1, param_step2, param_start1, param_start2, param_ds, param_rra )
+			rrdtool.create( str(rrd_file), param_step1, param_step2, param_start1, param_start2, param_ds, param_rra )
+
+			debug_msg( 9, 'created rrd %s' %( str(rrd_file) ) )
 
 	def update( self, metric, timestamp, val ):
 
