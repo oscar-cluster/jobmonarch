@@ -7,6 +7,12 @@ class PBSDataGatherer:
 	def __init__( self ):
 
 		self.pq = PBSQuery()
+		
+	def getJobList( self ):
+
+		joblist = self.pq.getjobs().items
+		#for name, job in joblist:
+			
 
 def main():
 
