@@ -19,7 +19,7 @@ import re
 # <=8  = host processing
 # <=7  = daemon threading - NOTE: Daemon will 'halt on all errors' from this level
 #
-DEBUG_LEVEL = 9
+DEBUG_LEVEL = 10
 
 # Where is the gmetad.conf located
 #
@@ -88,7 +88,7 @@ class GangliaXMLHandler( ContentHandler ):
 
 			if not self.clusters.has_key( self.clusterName ):
 
-				self.clusters[ self.clusterName ] = RRDHandler( self.clusterName )
+				self.clusters[ self.clusterName ] = RRDHandler( self.config, self.clusterName )
 
 			debug_msg( 10, ' |-Cluster found: %s' %( self.clusterName ) )
 
@@ -111,15 +111,16 @@ class GangliaXMLHandler( ContentHandler ):
 				myMetric['val'] = attrs.get( 'VAL', "" )
 				myMetric['time'] = self.hostReported
 
-				self.clusters[ self.clusterName ].memMetric( self.hostname, myMetric )
+				self.clusters[ self.clusterName ].memMetric( self.hostName, myMetric )
 
-			debug_msg( 11, ' | | |-metric: %s:%s' %( myMetric['name'], myMetric['val'] ) )
+				debug_msg( 11, ' | | |-metric: %s:%s' %( myMetric['name'], myMetric['val'] ) )
 
-	def storeMetrics( self, hostname, timeserial ):
+	def storeMetrics( self ):
 
-		for cluster in self.clusters:
+		for clustername, rrdh in self.clusters.items():
 
-			cluster.storeMetrics()
+			print 'storing metrics of cluster ' + clustername
+			rrdh.storeMetrics()
 
 class GangliaXMLGatherer:
 	"Setup a connection and file object to Ganglia's XML"
@@ -263,8 +264,8 @@ class GangliaXMLProcessor:
 			#
 			# Make sure XML is processed on time and at regular intervals
 
-			debug_msg( 7, self.printTime() + ' - mainthread() - Sleep '+ str( self.config.getInterval() ) +'s: zzzzz..' )
-			time.sleep( self.config.getInterval() )
+			debug_msg( 7, self.printTime() + ' - mainthread() - Sleep '+ str( self.config.getLowestInterval() ) +'s: zzzzz..' )
+			time.sleep( float( self.config.getLowestInterval() ) )
 			debug_msg( 7, self.printTime() + ' - mainthread() - Awoken: waiting for XML thread..' )
 
 			r = os.wait()
@@ -308,7 +309,7 @@ class GangliaXMLProcessor:
 
 class GangliaConfigParser:
 
-	sources = { }
+	sources = [ ]
 
 	def __init__( self, config ):
 
@@ -362,6 +363,22 @@ class GangliaConfigParser:
 
 		return None
 
+	def getLowestInterval( self ):
+
+		lowest_interval = 0
+
+		for source in self.sources:
+
+			if not lowest_interval or source['interval'] <= lowest_interval:
+
+				lowest_interval = source['interval']
+
+		# Return 15 when nothing is found, so that the daemon won't go insane with 0 sec delays
+		if lowest_interval:
+			return lowest_interval
+		else:
+			return 15
+
 class RRDHandler:
 
 	myMetrics = { }
@@ -375,20 +392,22 @@ class RRDHandler:
 
 	def memMetric( self, host, metric ):
 
-		for m in self.myMetrics[ host ]:
+		if self.myMetrics.has_key( host ):
 
-			if m['time'] == metric['time']:
+			if self.myMetrics[ host ].has_key( metric['name'] ):
 
-				# Allready have this metric, abort
-				return 1
+				for mymetric in self.myMetrics[ host ][ metric['name'] ]:
 
-		if not self.myMetrics.has_key( host ):
+					if mymetric['time'] == metric['time']:
 
+						# Allready have this metric, abort
+						return 1
+			else:
+				self.myMetrics[ host ][ metric['name'] ] = [ ]
+		else:
 			self.myMetrics[ host ] = { }
-
-		if not self.myMetrics[ host ].has_key( metric['name'] ):
-
 			self.myMetrics[ host ][ metric['name'] ] = [ ]
+
 
 		self.myMetrics[ host ][ metric['name'] ].append( metric )
 
