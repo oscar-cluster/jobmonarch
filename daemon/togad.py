@@ -74,6 +74,21 @@ class RRDMutator:
 	def update( self, filename, args ):
 		return self.perform( 'update', '"' + filename + '"', args )
 
+	def grabLastUpdate( self, filename ):
+
+		last_update = 0
+
+		for line in os.popen( self.binary + ' info "' + filename + '"' ).readlines():
+
+			if line.find( 'last_update') != -1:
+
+				last_update = line.split( ' = ' )[1]
+
+		if last_update:
+			return last_update
+		else:
+			return 0
+
 	def perform( self, action, filename, args ):
 
 		arg_string = None
@@ -333,7 +348,7 @@ class GangliaXMLProcessor:
 		# Store metrics somewhere between every 60 and 180 seconds
 		#
 		#STORE_INTERVAL = random.randint( 60, 180 )
-		STORE_INTERVAL = 40
+		STORE_INTERVAL = 180
 
 		storethread = threading.Thread( None, self.storeThread, 'storemetricthread' )
 		storethread.start()
@@ -477,6 +492,50 @@ class RRDHandler:
 		self.config = config
 		self.slot = threading.Lock()
 		self.rrdm = RRDMutator()
+		self.gatherLastUpdates()
+
+	def gatherLastUpdates( self ):
+		"Populate the lastStored list, containing timestamps of all last updates"
+
+		cluster_dir = '%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster )
+
+		hosts = [ ]
+
+		if os.path.exists( cluster_dir ):
+
+			for root, dirs, files in os.walk( cluster_dir ):
+
+				for dir in dirs:
+
+					valid_dir = 1
+
+					for letter in dir:
+						if letter not in string.digits:
+							valid_dir = 0
+
+					if valid_dir:
+						host = root.split( '/' )[-1]
+						hosts.append( host )
+
+		for host in hosts:
+
+			last_serial = self.getLastRrdTimeSerial( host )
+			if last_serial:
+
+				metric_dir = cluster_dir + '/' + host + '/' + last_serial
+				if os.path.exists( metric_dir ):
+
+					for root, dirs, files in os.walk( metric_dir ):
+
+						for file in files:
+
+							metricname = file.split( '.rrd' )[0]
+
+							if not self.lastStored.has_key( host ):
+
+								self.lastStored[ host ] = { }
+
+							self.lastStored[ host ][ metricname ] = self.rrdm.grabLastUpdate( metric_dir + '/' + file )
 
 	def getClusterName( self ):
 		return self.cluster
@@ -524,7 +583,7 @@ class RRDHandler:
 			# len might have changed since loop start
 			#
 			if len( self.myMetrics[ host ][ metricname ] ) > 0:
-				metric = self.myMetrics[ host ][ metricname ].pop()
+				metric = self.myMetrics[ host ][ metricname ].pop( 0 )
 
 			self.slot.release()
 			# </atomic>
