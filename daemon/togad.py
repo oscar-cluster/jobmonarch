@@ -58,11 +58,9 @@ This is TOrque-GAnglia's data Daemon
 class GangliaXMLHandler( ContentHandler ):
 	"Parse Ganglia's XML"
 
-	clusters = { }
-	config = None
-
 	def __init__( self, config ):
 		self.config = config
+		self.clusters = { }
 
 	def startElement( self, name, attrs ):
 		"Store appropriate data from xml start tags"
@@ -86,11 +84,11 @@ class GangliaXMLHandler( ContentHandler ):
 			self.clusterName = attrs.get( 'NAME', "" )
 			self.time = attrs.get( 'LOCALTIME', "" )
 
-			if not self.clusters.has_key( self.clusterName ):
+			if not self.clusters.has_key( self.clusterName ) and self.clusterName in ARCHIVE_SOURCES:
 
 				self.clusters[ self.clusterName ] = RRDHandler( self.config, self.clusterName )
 
-			debug_msg( 10, ' |-Cluster found: %s' %( self.clusterName ) )
+				debug_msg( 10, ' |-Cluster found: %s' %( self.clusterName ) )
 
 		elif name == 'HOST' and self.clusterName in ARCHIVE_SOURCES:     
 
@@ -294,7 +292,8 @@ class GangliaXMLProcessor:
 			#elif pid > ):
 
 		else:
-			self.grabXML()
+			#self.grabXML()
+			self.processXML()
 			self.storeMetrics()
 
 	def storeMetrics( self ):
@@ -411,13 +410,13 @@ class RRDHandler:
 
 		self.myMetrics[ host ][ metric['name'] ].append( metric )
 
-	def makeUpdateString( self, host, metric ):
+	def makeUpdateString( self, host, metricname ):
 
 		update_string = ''
 
-		for m in self.myMetrics[ host ][ metric['name'] ]:
+		for m in self.myMetrics[ host ][ metricname ]:
 
-			update_string = update_string + ' %s:%s' %( metric['time'], metric['val'] )
+			update_string = update_string + ' %s:%s' %( m['time'], m['val'] )
 
 		return update_string
 
@@ -427,8 +426,9 @@ class RRDHandler:
 
 			for metricname, mymetric in mymetrics.items():
 
-				self.rrd.createCheck( hostname, metricname, timeserial )	
-				update_okay = self.rrd.update( hostname, metricname, timeserial )
+				mytime = self.makeTimeSerial()
+				self.createCheck( hostname, metricname, mytime )	
+				update_okay = self.update( hostname, metricname, mytime )
 
 				if not update_okay:
 
@@ -458,7 +458,7 @@ class RRDHandler:
 			rrd_dir = '%s/%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster, host )
 		else:
 			rrd_dir = '%s/%s/%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster, host, timeserial )
-		if metric:
+		if metricname:
 			rrd_file = '%s/%s.rrd' %( rrd_dir, metricname )
 		else:
 			rrd_file = None
@@ -532,10 +532,12 @@ class RRDHandler:
 
 				first_time = metric['time']
 
+		return first_time
+
 	def createCheck( self, host, metricname, timeserial ):
 		"Check if an .rrd allready exists for this metric, create if not"
 
-		debug_msg( 9, 'rrdcreate: using timeserial %s for %s/%s' %( timeserial, host, metric['name'] ) )
+		debug_msg( 9, 'rrdcreate: using timeserial %s for %s/%s' %( timeserial, host, metricname ) )
 
 		rrd_dir, rrd_file = self.makeRrdPath( host, metricname, timeserial )
 
@@ -563,7 +565,7 @@ class RRDHandler:
 
 	def update( self, host, metricname, timeserial ):
 
-		debug_msg( 9, 'rrdupdate: using timeserial %s for %s/%s' %( timeserial, host, metric['name'] ) )
+		debug_msg( 9, 'rrdupdate: using timeserial %s for %s/%s' %( timeserial, host, metricname ) )
 
 		rrd_dir, rrd_file = self.makeRrdPath( host, metricname, timeserial )
 
