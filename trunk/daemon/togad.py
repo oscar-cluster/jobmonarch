@@ -22,7 +22,7 @@ from types import *
 # 8  = RRD file activity
 # 7  = daemon threading
 #
-DEBUG_LEVEL = 9
+DEBUG_LEVEL = 7
 
 # Where is the gmetad.conf located
 #
@@ -38,7 +38,7 @@ ARCHIVE_SOURCES = [ "LISA Cluster" ]
 
 # Amount of hours to store in one single archived .rrd
 #
-ARCHIVE_HOURS_PER_RRD = 1
+ARCHIVE_HOURS_PER_RRD = 12
 
 # Wether or not to run as a daemon in background
 #
@@ -347,8 +347,8 @@ class GangliaXMLProcessor:
 
 		# Store metrics somewhere between every 60 and 180 seconds
 		#
-		#STORE_INTERVAL = random.randint( 60, 180 )
-		STORE_INTERVAL = 180
+		STORE_INTERVAL = random.randint( 60, 180 )
+		#STORE_INTERVAL = 30
 
 		storethread = threading.Thread( None, self.storeThread, 'storemetricthread' )
 		storethread.start()
@@ -392,7 +392,7 @@ class GangliaXMLProcessor:
 		if parsethread.isAlive():
 
 			debug_msg( 7, self.printTime() + ' - xmlthread(): parsethread() still running, waiting to finish..' )
-			parsethread.join( 60 ) # Maximum time for XML thread to finish
+			parsethread.join( 180 ) # Maximum time for XML thread to finish
 			debug_msg( 7, self.printTime() + ' - xmlthread(): Done waiting.' )
 
 		debug_msg( 7, self.printTime() + ' - xmlthread(): finished.' )
@@ -591,8 +591,8 @@ class RRDHandler:
 			if metric:
 				if self.checkStoreMetric( host, metricname, metric ):
 					update_list.append( '%s:%s' %( metric['time'], metric['val'] ) )
-				else:
-					print 'allready wrote metric %s with timestamp %s' %( metric['name'], metric['time'] )
+				#else:
+					#print 'allready wrote metric %s with timestamp %s' %( metric['name'], metric['time'] )
 
 		return update_list
 
@@ -602,7 +602,7 @@ class RRDHandler:
 
 			if self.lastStored[ host ].has_key( metricname ):
 
-				if self.lastStored[ host ][ metricname ] <= metric['time']:
+				if metric['time'] <= self.lastStored[ host ][ metricname ]:
 
 					# Allready wrote a value with this timestamp, skip tnx
 					return 0
@@ -630,6 +630,8 @@ class RRDHandler:
 					debug_msg( 9, 'stored metric %s for %s' %( hostname, metricname ) )
 				else:
 					debug_msg( 9, 'metric update failed' )
+
+				#sys.exit(1)
 
 	def makeTimeSerial( self ):
 		"Generate a time serial. Seconds since epoch"
