@@ -306,7 +306,6 @@ class GangliaXMLProcessor:
 				# threaded call to: self.processXML()
 				#
 				xmlthread = threading.Thread( None, self.processXML, 'xmlthread' )
-				debug_msg( 8, self.printTime() + ' - mainthread() - xmlthread() started' )
 				xmlthread.start()
 
 			if not storethread.isAlive():
@@ -315,7 +314,6 @@ class GangliaXMLProcessor:
 				# threaded call to: self.storeMetrics()
 				#
 				storethread = threading.Thread( None, self.storeMetrics, 'storethread' )
-				debug_msg( 8, self.printTime() + ' - mainthread() - storethread() started' )
 				storethread.start()
 		
 			# Just sleep a sec here, to prevent daemon from going mad. We're all threads here anyway
@@ -324,56 +322,70 @@ class GangliaXMLProcessor:
 	def storeMetrics( self ):
 		"Store metrics retained in memory to disk"
 
+		debug_msg( 8, self.printTime() + ' - storethread(): started.' )
+
 		# Store metrics somewhere between every 60 and 180 seconds
 		#
 		STORE_INTERVAL = random.randint( 60, 180 )
 
-		debug_msg( 8, self.printTime() + ' - storethread() - storemetricthread() started: Storing data..' )
-
-		# threaded call to: self.myHandler.storeMetrics()
-		#
-		storethread = threading.Thread( None, self.myHandler.storeMetrics(), 'storemetricthread' )
+		storethread = threading.Thread( None, self.storeThread, 'storemetricthread' )
 		storethread.start()
 
-		debug_msg( 8, self.printTime() + ' - storethread() - Sleeping.. (%ss)' %STORE_INTERVAL )
+		debug_msg( 8, self.printTime() + ' - storethread(): Sleeping.. (%ss)' %STORE_INTERVAL )
 		time.sleep( STORE_INTERVAL )
-		debug_msg( 8, self.printTime() + ' - storethread() - Done sleeping.' )
+		debug_msg( 8, self.printTime() + ' - storethread(): Done sleeping.' )
 
 		if storethread.isAlive():
 
-			debug_msg( 8, self.printTime() + ' - storethread() - storemetricthread() still running, waiting to finish..' )
-			parsethread.join( 180 ) # Maximum time is 3 minutes for storing thread to finish - more then enough
+			debug_msg( 8, self.printTime() + ' - storethread(): storemetricthread() still running, waiting to finish..' )
+			parsethread.join( 180 ) # Maximum time is for storing thread to finish
+			debug_msg( 8, self.printTime() + ' - storethread(): Done waiting.' )
 
-		debug_msg( 8, self.printTime() + ' - storethread() - storemetricthread() finished.' )
-
-		debug_msg( 8, self.printTime() + ' - storethread() finished' )
+		debug_msg( 8, self.printTime() + ' - storethread(): finished.' )
 
 		return 0
+
+	def storeThread( self ):
+
+		debug_msg( 8, self.printTime() + ' - storemetricthread(): started.' )
+		debug_msg( 8, self.printTime() + ' - storemetricthread(): Storing data..' )
+		ret = self.myHandler.storeMetrics()
+		debug_msg( 8, self.printTime() + ' - storemetricthread(): Done storing.' )
+		debug_msg( 8, self.printTime() + ' - storemetricthread(): finished.' )
+		
+		return ret
 
 	def processXML( self ):
 		"Process XML"
 
-		debug_msg( 8, self.printTime() + ' - xmlthread() - parsethread() started: Parsing..' )
+		debug_msg( 8, self.printTime() + ' - xmlthread(): started.' )
 
-		# threaded call to: self.myParser.parse( self.myXMLGatherer.getFileObject() )
-		#
-		parsethread = threading.Thread( None, self.myParser.parse, 'parsethread', [ self.myXMLGatherer.getFileObject() ] )
+		parsethread = threading.Thread( None, self.parseThread, 'parsethread' )
 		parsethread.start()
 
-		debug_msg( 8, self.printTime() + ' - xmlthread() - Sleeping.. (%ss)' %self.config.getLowestInterval() )
+		debug_msg( 8, self.printTime() + ' - xmlthread(): Sleeping.. (%ss)' %self.config.getLowestInterval() )
 		time.sleep( float( self.config.getLowestInterval() ) )	
-		debug_msg( 8, self.printTime() + ' - xmlthread() - Done sleeping.' )
+		debug_msg( 8, self.printTime() + ' - xmlthread(): Done sleeping.' )
 
 		if parsethread.isAlive():
 
-			debug_msg( 8, self.printTime() + ' - xmlthread() - parsethread() still running, waiting to finish..' )
-			parsethread.join( 180 ) # Maximum time is 3 minutes for XML thread to finish - more then enough
+			debug_msg( 8, self.printTime() + ' - xmlthread(): parsethread() still running, waiting to finish..' )
+			parsethread.join( 60 ) # Maximum time for XML thread to finish
+			debug_msg( 8, self.printTime() + ' - xmlthread(): Done waiting.' )
 
-		debug_msg( 8, self.printTime() + ' - xmlthread() - parsethread() finished.' )
-
-		debug_msg( 8, self.printTime() + ' - xmlthread() finished.' )
+		debug_msg( 8, self.printTime() + ' - xmlthread(): finished.' )
 
 		return 0
+
+	def parseThread( self ):
+
+		debug_msg( 8, self.printTime() + ' - parsethread(): started.' )
+		debug_msg( 8, self.printTime() + ' - parsethread(): Parsing XML..' )
+		ret = self.myParser.parse( self.myXMLGatherer.getFileObject() )
+		debug_msg( 8, self.printTime() + ' - parsethread(): Done parsing.' )
+		debug_msg( 8, self.printTime() + ' - parsethread(): finished.' )
+
+		return ret
 
 class GangliaConfigParser:
 
