@@ -127,7 +127,7 @@ class GangliaXMLHandler( ContentHandler ):
 
 	def gatherClusters( self ):
 
-		archive_dir = '%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster )
+		archive_dir = check_dir(ARCHIVE_PATH)
 
 		hosts = [ ]
 
