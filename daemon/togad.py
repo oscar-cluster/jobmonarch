@@ -22,7 +22,7 @@ from types import *
 # 8  = RRD file activity
 # 7  = daemon threading
 #
-DEBUG_LEVEL = 8
+DEBUG_LEVEL = 7
 
 # Where is the gmetad.conf located
 #
@@ -123,7 +123,9 @@ class GangliaXMLHandler( ContentHandler ):
 	def __init__( self, config ):
 		self.config = config
 		self.clusters = { }
+		debug_msg( 0, printTime() + ' Gathering cluster timeserials and RRD last updates..' )
 		self.gatherClusters()
+		debug_msg( 0, printTime() + ' Done gathering timeserials and last updates.' )
 
 	def gatherClusters( self ):
 
@@ -817,6 +819,11 @@ def debug_msg( level, msg ):
 
 	if (DEBUG_LEVEL >= level):
 		sys.stderr.write( msg + '\n' )
+
+def printTime( ):
+	"Print current time in human readable format"
+
+	return time.strftime("%a %d %b %Y %H:%M:%S")
 
 # Let's go
 if __name__ == '__main__':
