@@ -29,6 +29,11 @@ ARCHIVE_PATH = '/data/toga/rrds'
 #
 ARCHIVE_SOURCES = [ "LISA Cluster" ]
 
+# Amount of hours to store in one single archived .rrd
+#
+ARCHIVE_HOURS_PER_RRD = 24
+
+
 #
 # Configuration ends
 #
@@ -267,13 +272,16 @@ class RRDHandler:
 		interval = self.gmetad_conf.getInterval( self.cluster )
 		heartbeat = 8 * int(interval)
 
-		rrd_parameters.append( '--step' )
-		rrd_parameters.append( interval )
+		param_step1 = '--step'
+		param_step2 = str( interval )
 
-		rrd_parameters.append( '--start' )
-		rrd_parameters.append( metric['time'] )
+		param_start1 = '--start'
+		param_start2 = str( int( metric['time'] ) - 1 )
 
-		print rrd_parameters
+		param_ds = 'DS:sum:GAUGE:%d:U:U' %heartbeat
+		param_rra = 'RRA:AVERAGE:0.5:1:%s' %(ARCHIVE_HOURS_PER_RRD * 240)
+
+		rrdtool.create( str(rrd_file), param_step1, param_step2, param_start1, param_start2, param_ds, param_rra )
 
 	def update( self, metric, timestamp, val ):
 
