@@ -104,8 +104,9 @@ class GangliaXMLHandler( ContentHandler ):
 
 			# Determine time here, so all use same time in this run
 			mytime = self.rrd.makeTimeSerial()
+			correct_serial = self.rrd.checkNewRrdPeriod( self.hostName, mytime )
 
-			self.storeMetrics( self.hostName, mytime )
+			self.storeMetrics( self.hostName, correct_serial )
 
 		#if name == 'METRIC':
 
@@ -281,34 +282,38 @@ class RRDHandler:
 
 		return mytime
 
-	def makeRrdPath( self, host, metric, timeserial='notime' ):
+	def makeRrdPath( self, host, metric=None, timeserial=None ):
 
-		rrd_dir = '%s/%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster, host )
-		rrd_file = '%s/%s.%s.rrd' %( rrd_dir, metric['name'], timeserial )
+		if not timeserial:	
+			rrd_dir = '%s/%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster, host )
+		else:
+			rrd_dir = '%s/%s/%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster, host, timeserial )
+		if metric:
+			rrd_file = '%s/%s.rrd' %( rrd_dir, metric['name'] )
+		else:
+			rrd_file = None
 
 		return rrd_dir, rrd_file
 
-	def getLastRrdTimeSerial( self, host, metric ):
+	def getLastRrdTimeSerial( self, host ):
 
-		rrd_dir, rrd_file = self.makeRrdPath( host, metric )
+		rrd_dir, rrd_file = self.makeRrdPath( host )
 
 		newest_timeserial = 0
 
 		if os.path.exists( rrd_dir ):
 			for root, dirs, files in os.walk( rrd_dir ):
 
-				for file in files:
+				for dir in dirs:
 
-					myre = re.match( '(\S+?).(\d+).rrd', file )
+					valid_dir = 1
 
-					if not myre:
-						continue
+					for letter in dir:
+						if letter not in string.digits:
+							valid_dir = 0
 
-					mymetric = myre.group(1)
-
-					if mymetric == metric['name']:
-
-						timeserial = myre.group(2)
+					if valid_dir:
+						timeserial = dir
 						if timeserial > newest_timeserial:
 							newest_timeserial = timeserial
 
@@ -317,10 +322,10 @@ class RRDHandler:
 		else:
 			return 0
 
-	def checkNewRrdPeriod( self, host, metric, current_timeserial ):
+	def checkNewRrdPeriod( self, host, current_timeserial ):
 
-		last_timeserial = int( self.getLastRrdTimeSerial( host, metric ) )
-		debug_msg( 8, 'last timeserial on %s of %s is %s' %( metric['name'], host, last_timeserial ) )
+		last_timeserial = int( self.getLastRrdTimeSerial( host ) )
+		debug_msg( 8, 'last timeserial of %s is %s' %( host, last_timeserial ) )
 
 		if not last_timeserial:
 			serial = current_timeserial
@@ -335,10 +340,9 @@ class RRDHandler:
 
 		return serial
 
-	def createCheck( self, host, metric, current_timeserial ):
+	def createCheck( self, host, metric, timeserial ):
 		"Check if an .rrd allready exists for this metric, create if not"
 
-		timeserial = self.checkNewRrdPeriod( host, metric, current_timeserial )
 		debug_msg( 8, 'rrdcreate: using timeserial %s for %s/%s' %( timeserial, host, metric['name'] ) )
 
 		rrd_dir, rrd_file = self.makeRrdPath( host, metric, timeserial )
@@ -365,9 +369,8 @@ class RRDHandler:
 
 			debug_msg( 9, 'created rrd %s' %( str(rrd_file) ) )
 
-	def update( self, host, metric, current_timeserial ):
+	def update( self, host, metric, timeserial ):
 
-		timeserial = self.checkNewRrdPeriod( host, metric, current_timeserial )
 		debug_msg( 8, 'rrdupdate: using timeserial %s for %s/%s' %( timeserial, host, metric['name'] ) )
 
 		rrd_dir, rrd_file = self.makeRrdPath( host, metric, timeserial )
