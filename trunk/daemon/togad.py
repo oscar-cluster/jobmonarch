@@ -1,38 +1,95 @@
 #!/usr/bin/env python
 
-import xml.sax
+from xml.sax import make_parser
+from xml.sax.handler import ContentHandler 
+import socket
+import sys
 
-class ContentGenerator( xml.sax.handler.ContentHandler ):
+class GangliaXMLHandler(ContentHandler):
+	"""
+	Parse/Handle XML
+	"""
 
-    def __init__(self, out = sys.stdout):
-        handler.ContentHandler.__init__(self)
-        self._out = out
+	def __init__ (self, searchTerm):
+		self.isHostElement, self.isxReboundsElement = 0, 0;
+   
+	def startElement(self, name, attrs):
 
-    # ContentHandler methods
-        
-    def startDocument(self):
-        self._out.write('<?xml version="1.0" encoding="iso-8859-1"?>\n')
+		if name == 'player':     
+			self.playerName = attrs.get('name',"")
+			self.playerAge = attrs.get('age',"")
+			self.playerHeight = attrs.get('height',"")
+		elif name == 'points':
+			self.isPointsElement= 1;
+			self.playerPoints = "";
+		elif name == 'rebounds':
+			self.isReboundsElement = 1;
+			self.playerRebounds = "";
+		return
 
-    def startElement(self, name, attrs):
-        self._out.write('<' + name)
-        for (name, value) in attrs.items():
-            self._out.write(' %s="%s"' % (name, saxutils.escape(value)))
-        self._out.write('>')
+	def characters (self, ch):
+		if self.isPointsElement== 1:
+			self.playerPoints += ch
+		if self.isReboundsElement == 1:
+			self.playerRebounds += ch
 
-    def endElement(self, name):
-        self._out.write('</%s>' % name)
+	def endElement(self, name):
+		if name == 'points':
+			self.isPointsElement= 0
+		if name == 'rebounds':
+			self.inPlayersContent = 0
+		if name == 'player' and self.searchTerm== self.playerName :
+			print '<h2>Statistics for player:' , self.playerName, '</h2><br>(age:', self.playerAge , 'height' , self.playerHeight , ")<br>"
+			print 'Match average:', self.playerPoints , 'points,' , self.playerRebounds, 'rebounds'
 
-    def characters(self, content):
-        self._out.write(saxutils.escape(content))
+class GangliaXMLGatherer:
+	"""
+	Connect to a gmetad and return fd
+	"""
 
-    def ignorableWhitespace(self, content):
-        self._out.write(content)
-        
-    def processingInstruction(self, target, data):
-        self._out.write('<?%s %s?>' % (target, data))
+	def __init__(self, host, port):
+		self.host = host
+		self.port = port
 
-# --- The main program
+	def getFileDescriptor(self):
+		s = None
+		for res in socket.getaddrinfo(self.host, self.port, socket.AF_UNSPEC, socket.SOCK_STREAM):
+			af, socktype, proto, canonname, sa = res
+			try:
+				s = socket.socket(af, socktype, proto)
+			except socket.error, msg:
+				s = None
+				continue
+		    	try:
+				s.connect(sa)
+		    	except socket.error, msg:
+				s.close()
+				s = None
+				continue
+		    	break
 
-parser = xml.sax.make_parser()
-parser.setContentHandler(ContentGenerator())
-parser.parse(sys.argv[1])
+		if s is None:
+			print 'could not open socket'
+			sys.exit(1)
+
+		return s.fileno()
+
+		#s.send('Hello, world')
+		#data = s.recv(1024)
+		#s.close()
+		#print 'Received', `data`
+
+def main():
+	"""
+	My Main
+	"""
+
+	myXMLGatherer = GangliaXMLGatherer( localhost, 8651 ) 
+
+	myParser = make_parser()   
+	myHandler = GangliaXMLHandler()
+	myParser.setContentHandler( myHandler )
+	myParser.parse( myXMLGatherer.getFileDescriptor() )
+
+# Let's go
+main()
