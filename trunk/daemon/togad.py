@@ -101,17 +101,21 @@ class GangliaXMLHandler( ContentHandler ):
 		#if name == 'CLUSTER':
 
 		if name == 'HOST' and self.clusterName in ARCHIVE_SOURCES:     
-			self.storeMetrics( self.hostName )
+
+			# Determine time here, so all use same time in this run
+			mytime = self.rrd.makeTimeSerial()
+
+			self.storeMetrics( self.hostName, mytime )
 
 		#if name == 'METRIC':
 
-	def storeMetrics( self, hostname ):
+	def storeMetrics( self, hostname, timeserial ):
 
 		for metric in self.metrics:
 			if metric['type'] not in UNSUPPORTED_ARCHIVE_TYPES:
 
-				self.rrd.createCheck( hostname, metric )	
-				self.rrd.update( hostname, metric )
+				self.rrd.createCheck( hostname, metric, timeserial )	
+				self.rrd.update( hostname, metric, timeserial )
 				debug_msg( 9, 'stored metric %s for %s: %s' %( hostname, metric['name'], metric['val'] ) )
 				sys.exit(1)
 	
@@ -265,7 +269,6 @@ class RRDHandler:
 
 	def __init__( self, cluster ):
 		self.cluster = cluster
-
 		self.gmetad_conf = GangliaConfigParser( GMETAD_CONF )
 
 	def makeTimeSerial( self ):
@@ -281,7 +284,7 @@ class RRDHandler:
 	def makeRrdPath( self, host, metric, timeserial='notime' ):
 
 		rrd_dir = '%s/%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster, host )
-		rrd_file = '%s/%s$%s.rrd' %( rrd_dir, metric['name'], timeserial )
+		rrd_file = '%s/%s.%s.rrd' %( rrd_dir, metric['name'], timeserial )
 
 		return rrd_dir, rrd_file
 
@@ -296,7 +299,7 @@ class RRDHandler:
 
 				for file in files:
 
-					myre = re.match( '(\S+)\$(\d+).rrd', file )
+					myre = re.match( '(\S+?).(\d+).rrd', file )
 
 					if not myre:
 						continue
@@ -310,34 +313,33 @@ class RRDHandler:
 							newest_timeserial = timeserial
 
 		if newest_timeserial:
-			return timeserial
+			return newest_timeserial
 		else:
 			return 0
 
-	def checkNewRrdPeriod( self, host, metric ):
+	def checkNewRrdPeriod( self, host, metric, current_timeserial ):
 
-		cur_timeserial = int( self.makeTimeSerial() )
 		last_timeserial = int( self.getLastRrdTimeSerial( host, metric ) )
+		debug_msg( 8, 'last timeserial on %s of %s is %s' %( metric['name'], host, last_timeserial ) )
 
 		if not last_timeserial:
-			return 0, 0
-
-		archive_secs = ARCHIVE_HOURS_PER_RRD * (60 * 60)
-
-		if (cur_timeserial - last_timeserial) >= archive_secs:
-			return 1, last_timeserial
+			serial = current_timeserial
 		else:
-			return 0, last_timeserial
 
-	def createCheck( self, host, metric ):
+			archive_secs = ARCHIVE_HOURS_PER_RRD * (60 * 60)
+
+			if (current_timeserial - last_timeserial) >= archive_secs:
+				serial = current_timeserial
+			else:
+				serial = last_timeserial
+
+		return serial
+
+	def createCheck( self, host, metric, current_timeserial ):
 		"Check if an .rrd allready exists for this metric, create if not"
 
-		need_new, last_timeserial = self.checkNewRrdPeriod( host, metric )
-
-		if need_new or not last_timeserial:
-			timeserial = self.makeTimeSerial()
-		else:
-			timeserial = last_timeserial
+		timeserial = self.checkNewRrdPeriod( host, metric, current_timeserial )
+		debug_msg( 8, 'rrdcreate: using timeserial %s for %s/%s' %( timeserial, host, metric['name'] ) )
 
 		rrd_dir, rrd_file = self.makeRrdPath( host, metric, timeserial )
 
@@ -363,10 +365,12 @@ class RRDHandler:
 
 			debug_msg( 9, 'created rrd %s' %( str(rrd_file) ) )
 
-	def update( self, host, metric ):
+	def update( self, host, metric, current_timeserial ):
 
-		rrd_dir = '%s/%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster, host )
-		rrd_file = '%s/%s.rrd' %( rrd_dir, metric['name'] )
+		timeserial = self.checkNewRrdPeriod( host, metric, current_timeserial )
+		debug_msg( 8, 'rrdupdate: using timeserial %s for %s/%s' %( timeserial, host, metric['name'] ) )
+
+		rrd_dir, rrd_file = self.makeRrdPath( host, metric, timeserial )
 
 		timestamp = metric['time']
 		val = metric['val']
