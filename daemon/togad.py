@@ -17,7 +17,7 @@ import re
 # >9  = host,cluster,grid,ganglia XML
 # >8  = RRD activity,gmetad config parsing
 #
-DEBUG_LEVEL = 8
+DEBUG_LEVEL = 7
 
 # Where is the gmetad.conf located
 #
@@ -117,7 +117,7 @@ class GangliaXMLHandler( ContentHandler ):
 				self.rrd.createCheck( hostname, metric, timeserial )	
 				self.rrd.update( hostname, metric, timeserial )
 				debug_msg( 9, 'stored metric %s for %s: %s' %( hostname, metric['name'], metric['val'] ) )
-				sys.exit(1)
+				#sys.exit(1)
 	
 
 class GangliaXMLGatherer:
@@ -292,10 +292,10 @@ class RRDHandler:
 
 		rrd_dir, rrd_file = self.makeRrdPath( host, metric )
 
+		newest_timeserial = 0
+
 		if os.path.exists( rrd_dir ):
 			for root, dirs, files in os.walk( rrd_dir ):
-
-				newest_timeserial = 0
 
 				for file in files:
 
