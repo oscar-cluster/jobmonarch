@@ -13,9 +13,10 @@ import re
 
 # Specify debugging level here;
 #
-# >10 = metric XML
-# >9  = host,cluster,grid,ganglia XML
-# >8  = RRD activity,gmetad config parsing
+# >=11 = metric XML
+# >=10 = host,cluster,grid,ganglia XML
+# >=9  = RRD activity,gmetad config parsing
+# >=7  = daemon threading
 #
 DEBUG_LEVEL = 7
 
@@ -33,11 +34,15 @@ ARCHIVE_SOURCES = [ "LISA Cluster" ]
 
 # Amount of hours to store in one single archived .rrd
 #
-ARCHIVE_HOURS_PER_RRD = 24
+ARCHIVE_HOURS_PER_RRD = 12
 
 # Interval at which to grab&store XML
 #
 GRAB_INTERVAL = 15
+
+# Wether or not to run as a daemon in background
+#
+DAEMONIZE = 0
 
 ######################
 #                    #
@@ -203,12 +208,38 @@ class GangliaXMLProcessor:
 
 		self.run()
 
+	def printTime( self ):
+
+		return time.strftime("%a, %d %b %Y %H:%M:%S")
+
 	def run( self ):
 		"Main thread"
 
 		while ( 1 ):
-			self.processXML()
-			time.sleep( GRAB_INTERVAL )
+
+			debug_msg( 7, self.printTime() + ' - mainthread() - xmlthread() started' )
+			pid = os.fork()
+
+			if pid == 0:
+				# Child - XML Thread
+				#
+				# Process XML and exit
+
+				debug_msg( 7, self.printTime() + ' - xmlthread()  - Start XML processing..' )
+				self.processXML()
+				debug_msg( 7, self.printTime() + ' - xmlthread()  - Done processing; exiting.' )
+				sys.exit(0)
+
+			elif pid > 0:
+				# Parent - Daemon Thread
+
+				debug_msg( 7, self.printTime() + ' - mainthread() - Sleep '+ str(GRAB_INTERVAL) +'s: zzzzz..' )
+				time.sleep( GRAB_INTERVAL )
+				debug_msg( 7, self.printTime() + ' - mainthread() - Awoken: waiting for XML thread..' )
+
+				r = os.wait()
+
+				debug_msg( 7, self.printTime() + ' - mainthread() - Done waiting.' )
 
 	def processXML( self ):
 		"Process XML"
@@ -390,8 +421,11 @@ def main():
 	"Program startup"
 
 	myProcessor = GangliaXMLProcessor()
-	#myProcessor.processXML()
-	myProcessor.daemon()
+
+	if DAEMONIZE:
+		myProcessor.daemon()
+	else:
+		myProcessor.run()
 
 def check_dir( directory ):
 	"Check if directory is a proper directory. I.e.: Does _not_ end with a '/'"
