@@ -212,23 +212,19 @@ class GangliaConfigParser:
 				source = { }
 				source['name'] = line.split( '"' )[1]
 
-				if line.find( 'data_source' ) and line[0] != '#':
+				if line.find( 'data_source' ) != -1 and line[0] != '#':
 
 					source_words = line.split( '"' )[2].split( ' ' )
-					print line.split( '"' )
-					print source_words 
 
 					for word in source_words:
 
-						print 'word %s' %word
 						valid_interval = 1
 
 						for letter in word:
-							print 'letter %s' %letter
 							if letter not in string.digits:
 								valid_interval = 0
 
-						if valid_interval:
+						if valid_interval and len(word) > 0:
 							source['interval'] = word
 							if (DEBUG_LEVEL>8): print 'polling interval for %s = %s' %(source['name'], source['interval'] )
 		
