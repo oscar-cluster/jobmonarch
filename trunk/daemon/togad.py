@@ -634,7 +634,7 @@ class RRDHandler:
 
 		return update_list
 
-	def checkStoreMetric( self, host, metricname, metric ):
+	def checkStoreMetric( self, host, metric ):
 
 		if self.lastStored.has_key( host ):
 
@@ -765,14 +765,14 @@ class RRDHandler:
 
 				archive_secs = ARCHIVE_HOURS_PER_RRD * (60 * 60)
 
-				if (int( metric['time'] ) - period) > archive_secs:
+				if (int( metric['time'] ) - int( period ) ) > archive_secs:
 
 					# This one should get it's own new period
 					period = metric['time']
 
 				if not metric_serial_table.has_key( period ):
 
-					metric_serial_table = [ ]
+					metric_serial_table[ period ] = [ ]
 
 				metric_serial_table[ period ].append( metric )
 
