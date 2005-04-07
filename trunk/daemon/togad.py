@@ -654,8 +654,12 @@ class RRDHandler:
 		if not self.lastStored.has_key( host ):
 			self.lastStored[ host ] = { }
 
-		if last_update_time > self.lastStored[ host ][ metric['name'] ]:
-			self.lastStored[ host ][ metric['name'] ] = last_update_time
+		if self.lastStored[ host ].has_key( metric['name'] ):
+			
+			if last_update_time <= self.lastStored[ host ][ metric['name'] ]:
+				return 1
+
+		self.lastStored[ host ][ metric['name'] ] = last_update_time
 
 	def storeMetrics( self ):
 
