@@ -54,6 +54,14 @@ DAEMONIZE = 0
 #
 UNSUPPORTED_ARCHIVE_TYPES = [ 'string' ]
 
+# Maximum time (in seconds) a parsethread may run
+#
+PARSE_TIMEOUT = 60
+
+# Maximum time (in seconds) a storethread may run
+#
+STORE_TIMEOUT = 360
+
 """
 This is TOrque-GAnglia's data Daemon
 """
@@ -381,7 +389,7 @@ class GangliaXMLProcessor:
 		if storethread.isAlive():
 
 			debug_msg( 7, self.printTime() + ' - storethread(): storemetricthread() still running, waiting to finish..' )
-			storethread.join( 180 ) # Maximum time is for storing thread to finish
+			storethread.join( STORE_TIMEOUT ) # Maximum time is for storing thread to finish
 			debug_msg( 7, self.printTime() + ' - storethread(): Done waiting.' )
 
 		debug_msg( 7, self.printTime() + ' - storethread(): finished.' )
@@ -413,7 +421,7 @@ class GangliaXMLProcessor:
 		if parsethread.isAlive():
 
 			debug_msg( 7, self.printTime() + ' - xmlthread(): parsethread() still running, waiting to finish..' )
-			parsethread.join( 180 ) # Maximum time for XML thread to finish
+			parsethread.join( PARSE_TIMEOUT ) # Maximum time for XML thread to finish
 			debug_msg( 7, self.printTime() + ' - xmlthread(): Done waiting.' )
 
 		debug_msg( 7, self.printTime() + ' - xmlthread(): finished.' )
@@ -506,6 +514,7 @@ class RRDHandler:
 
 	myMetrics = { }
 	lastStored = { }
+	timeserials = { }
 	slot = None
 
 	def __init__( self, config, cluster ):
@@ -538,6 +547,17 @@ class RRDHandler:
 				hosts.append( dir )
 
 		for host in hosts:
+
+			host_dir = cluster_dir + '/' + host
+			dirlist = os.listdir( host_dir )
+
+			for dir in dirlist:
+
+				if not self.timeserials.has_key( host ):
+
+					self.timeserials[ host ] = [ ]
+
+				self.timeserials[ host ].append( dir )
 
 			last_serial = self.getLastRrdTimeSerial( host )
 			if last_serial:
@@ -588,31 +608,29 @@ class RRDHandler:
 		self.slot.release()
 		# </atomic>
 
-	def makeUpdateList( self, host, metricname ):
+	def makeUpdateList( self, host, metriclist ):
 
 		update_list = [ ]
 		metric = None
 
-		while len( self.myMetrics[ host ][ metricname ] ) > 0:
+		while len( metriclist ) > 0:
 
 			# Kabouter pop
 			#
 			# <atomic>	
-			self.slot.acquire()
+			#self.slot.acquire()
 
 			# len might have changed since loop start
 			#
-			if len( self.myMetrics[ host ][ metricname ] ) > 0:
-				metric = self.myMetrics[ host ][ metricname ].pop( 0 )
+			if len( metriclist ) > 0:
+				metric = metriclist.pop( 0 )
 
-			self.slot.release()
+			#self.slot.release()
 			# </atomic>
 
 			if metric:
-				if self.checkStoreMetric( host, metricname, metric ):
+				if self.checkStoreMetric( host, metric ):
 					update_list.append( '%s:%s' %( metric['time'], metric['val'] ) )
-				#else:
-					#print 'allready wrote metric %s with timestamp %s' %( metric['name'], metric['time'] )
 
 		return update_list
 
@@ -620,9 +638,9 @@ class RRDHandler:
 
 		if self.lastStored.has_key( host ):
 
-			if self.lastStored[ host ].has_key( metricname ):
+			if self.lastStored[ host ].has_key( metric['name'] ):
 
-				if metric['time'] <= self.lastStored[ host ][ metricname ]:
+				if metric['time'] <= self.lastStored[ host ][ metric['name'] ]:
 
 					# Allready wrote a value with this timestamp, skip tnx
 					return 0
@@ -630,7 +648,7 @@ class RRDHandler:
 		else:
 			self.lastStored[ host ] = { }
 
-		self.lastStored[ host ][ metricname ] = metric['time']
+		self.lastStored[ host ][ metric['name'] ] = metric['time']
 
 		return 1
 
@@ -640,18 +658,32 @@ class RRDHandler:
 
 			for metricname, mymetric in mymetrics.items():
 
-				mytime = self.makeTimeSerial()
-				correct_serial = self.checkNewRrdPeriod( hostname, mytime )
-				self.createCheck( hostname, metricname, correct_serial )	
-				update_ret = self.update( hostname, metricname, correct_serial )
+				#mytime = self.makeTimeSerial()
+				#serial = mymetric['time']
+				#correct_serial = self.checkNewRrdPeriod( hostname, mytime )
 
-				if update_ret == 0:
+				self.slot.acquire() 
 
-					debug_msg( 9, 'stored metric %s for %s' %( hostname, metricname ) )
-				else:
-					debug_msg( 9, 'metric update failed' )
+				# Create a mapping table, each metric to the period where it should be stored
+				#
+				metric_serial_table = self.determineSerials( hostname, metricname, mymetric )
+				self.myMetrics[ hostname ][ metricname ] = [ ]
 
-				#sys.exit(1)
+				self.slot.release()
+
+				for period, pmetric in metric_serial_table.items():
+
+					self.createCheck( hostname, metricname, period )	
+
+					update_ret = self.update( hostname, metricname, period, pmetric )
+
+					if update_ret == 0:
+
+						debug_msg( 9, 'stored metric %s for %s' %( hostname, metricname ) )
+					else:
+						debug_msg( 9, 'metric update failed' )
+
+				sys.exit(1)
 
 	def makeTimeSerial( self ):
 		"Generate a time serial. Seconds since epoch"
@@ -685,31 +717,68 @@ class RRDHandler:
 		This is determined once every host
 		"""
 
-		rrd_dir, rrd_file = self.makeRrdPath( host )
-
 		newest_timeserial = 0
 
-		if os.path.exists( rrd_dir ):
+		for dir in self.timeserials[ host ]:
 
-			dirlist = os.listdir( rrd_dir )
+			valid_dir = 1
 
-			for dir in dirlist:
+			for letter in dir:
+				if letter not in string.digits:
+					valid_dir = 0
 
-				valid_dir = 1
-
-				for letter in dir:
-					if letter not in string.digits:
-						valid_dir = 0
-
-				if valid_dir:
-					timeserial = dir
-					if timeserial > newest_timeserial:
-						newest_timeserial = timeserial
+			if valid_dir:
+				timeserial = dir
+				if timeserial > newest_timeserial:
+					newest_timeserial = timeserial
 
 		if newest_timeserial:
 			return newest_timeserial
 		else:
 			return 0
+
+	def determinePeriod( self, host, check_serial ):
+
+		period_serial = 0
+
+		for serial in self.timeserials[ host ]:
+
+			if check_serial >= serial and period_serial < serial:
+
+				period_serial = serial
+
+		return period_serial
+
+	def determineSerials( self, host, metricname, metriclist ):
+		"""
+		Determine the correct serial and corresponding rrd to store
+		for a list of metrics
+		"""
+
+		metric_serial_table = { }
+
+		for metric in metriclist:
+
+			if metric['name'] == metricname:
+
+				period = self.determinePeriod( host, metric['time'] )	
+
+				archive_secs = ARCHIVE_HOURS_PER_RRD * (60 * 60)
+
+				if (metric['time'] - period) > archive_secs:
+
+					# This one should get it's own new period
+					period = metric['time']
+
+				if not metric_serial_table.has_key( period ):
+
+					metric_serial_table = [ ]
+
+				metric_serial_table[ period ].append( metric )
+
+		print metric_serial_table
+
+		return metric_serial_table
 
 	def checkNewRrdPeriod( self, host, current_timeserial ):
 		"""
@@ -728,7 +797,7 @@ class RRDHandler:
 
 			archive_secs = ARCHIVE_HOURS_PER_RRD * (60 * 60)
 
-			if (current_timeserial - last_timeserial) >= archive_secs:
+			if (current_timeserial - last_timeserial) > archive_secs:
 				serial = current_timeserial
 			else:
 				serial = last_timeserial
@@ -752,7 +821,7 @@ class RRDHandler:
 		"Check if an .rrd allready exists for this metric, create if not"
 
 		debug_msg( 9, 'rrdcreate: using timeserial %s for %s/%s' %( timeserial, host, metricname ) )
-
+		
 		rrd_dir, rrd_file = self.makeRrdPath( host, metricname, timeserial )
 
 		if not os.path.exists( rrd_dir ):
@@ -762,7 +831,7 @@ class RRDHandler:
 		if not os.path.exists( rrd_file ):
 
 			interval = self.config.getInterval( self.cluster )
-			heartbeat = 8 * int(interval)
+			heartbeat = 8 * int( interval )
 
 			params = [ ]
 
@@ -770,7 +839,7 @@ class RRDHandler:
 			params.append( str( interval ) )
 
 			params.append( '--start' )
-			params.append( str( int( self.getFirstTime( host, metricname ) ) - 1 ) )
+			params.append( str( int( timeserial ) - 1 ) )
 
 			params.append( 'DS:sum:GAUGE:%d:U:U' %heartbeat )
 			params.append( 'RRA:AVERAGE:0.5:1:%s' %(ARCHIVE_HOURS_PER_RRD * 240) )
@@ -779,13 +848,13 @@ class RRDHandler:
 
 			debug_msg( 9, 'created rrd %s' %( str(rrd_file) ) )
 
-	def update( self, host, metricname, timeserial ):
+	def update( self, host, metricname, timeserial, metriclist ):
 
 		debug_msg( 9, 'rrdupdate: using timeserial %s for %s/%s' %( timeserial, host, metricname ) )
 
 		rrd_dir, rrd_file = self.makeRrdPath( host, metricname, timeserial )
 
-		update_list = self.makeUpdateList( host, metricname )
+		update_list = self.makeUpdateList( host, metriclist )
 
 		if len( update_list ) > 0:
 			ret = self.rrdm.update( str(rrd_file), update_list )
