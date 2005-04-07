@@ -22,7 +22,7 @@ from types import *
 # 8  = RRD file activity
 # 7  = daemon threading
 #
-DEBUG_LEVEL = 9
+DEBUG_LEVEL = 7
 
 # Where is the gmetad.conf located
 #
@@ -377,7 +377,7 @@ class GangliaXMLProcessor:
 		# Store metrics somewhere between every 60 and 180 seconds
 		#
 		#STORE_INTERVAL = random.randint( 360, 640 )
-		STORE_INTERVAL = 16
+		STORE_INTERVAL = random.randint( 90, 120 )
 
 		storethread = threading.Thread( None, self.storeThread, 'storemetricthread' )
 		storethread.start()
@@ -525,14 +525,8 @@ class RRDHandler:
 		self.rrdm = RRDMutator()
 		self.gatherLastUpdates()
 
-	def isBlocking( self ):
-
-		return self.block
-
 	def gatherLastUpdates( self ):
 		"Populate the lastStored list, containing timestamps of all last updates"
-
-		self.block = 1
 
 		cluster_dir = '%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster )
 
@@ -642,15 +636,26 @@ class RRDHandler:
 
 				if metric['time'] <= self.lastStored[ host ][ metric['name'] ]:
 
-					# Allready wrote a value with this timestamp, skip tnx
+					# This is old
 					return 0
 
-		else:
+		return 1
+
+	def memLastUpdate( self, host, metriclist ):
+
+		last_update_time = 0
+
+		for metric in metriclist:
+
+			if metric['time'] > last_update_time:
+
+				last_update_time = metric['time']
+
+		if not self.lastStored.has_key( host ):
 			self.lastStored[ host ] = { }
 
-		self.lastStored[ host ][ metric['name'] ] = metric['time']
-
-		return 1
+		if last_update_time > self.lastStored[ host ][ metric['name'] ]:
+			self.lastStored[ host ][ metric['name'] ] = last_update_time
 
 	def storeMetrics( self ):
 
@@ -658,10 +663,8 @@ class RRDHandler:
 
 			for metricname, mymetric in mymetrics.items():
 
-				#mytime = self.makeTimeSerial()
-				#serial = mymetric['time']
-				#correct_serial = self.checkNewRrdPeriod( hostname, mytime )
-
+				# Atomic: Don't want other threads messing around now
+				#
 				self.slot.acquire() 
 
 				# Create a mapping table, each metric to the period where it should be stored
@@ -669,7 +672,9 @@ class RRDHandler:
 				metric_serial_table = self.determineSerials( hostname, metricname, mymetric )
 				self.myMetrics[ hostname ][ metricname ] = [ ]
 
-				self.slot.release()
+				self.slot.release() # Atomic end
+
+				update_rets = [ ]
 
 				for period, pmetric in metric_serial_table.items():
 
@@ -683,7 +688,11 @@ class RRDHandler:
 					else:
 						debug_msg( 9, 'metric update failed' )
 
-				sys.exit(1)
+					update_rets.append( update_ret )
+
+				if not (1) in update_rets:
+
+					self.memLastUpdate( hostname, mymetric )
 
 	def makeTimeSerial( self ):
 		"Generate a time serial. Seconds since epoch"
@@ -693,21 +702,15 @@ class RRDHandler:
 
 		return mytime
 
-	def makeRrdPath( self, host, metricname=None, timeserial=None ):
+	def makeRrdPath( self, host, metricname, timeserial ):
 		"""
 		Make a RRD location/path and filename
 		If a metric or timeserial are supplied the complete locations
 		will be made, else just the host directory
 		"""
 
-		if not timeserial:	
-			rrd_dir = '%s/%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster, host )
-		else:
-			rrd_dir = '%s/%s/%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster, host, timeserial )
-		if metricname:
-			rrd_file = '%s/%s.rrd' %( rrd_dir, metricname )
-		else:
-			rrd_file = None
+		rrd_dir = '%s/%s/%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster, host, timeserial )
+		rrd_file = '%s/%s.rrd' %( rrd_dir, metricname )
 
 		return rrd_dir, rrd_file
 
@@ -769,6 +772,7 @@ class RRDHandler:
 
 					# This one should get it's own new period
 					period = metric['time']
+					self.timeserials[ host ].append( period )
 
 				if not metric_serial_table.has_key( period ):
 
@@ -779,43 +783,6 @@ class RRDHandler:
 		print metric_serial_table
 
 		return metric_serial_table
-
-	def checkNewRrdPeriod( self, host, current_timeserial ):
-		"""
-		Check if current timeserial belongs to recent time period
-		or should become a new period (and file).
-
-		Returns the serial of the correct time period
-		"""
-
-		last_timeserial = int( self.getLastRrdTimeSerial( host ) )
-		debug_msg( 9, 'last timeserial of %s is %s' %( host, last_timeserial ) )
-
-		if not last_timeserial:
-			serial = current_timeserial
-		else:
-
-			archive_secs = ARCHIVE_HOURS_PER_RRD * (60 * 60)
-
-			if (current_timeserial - last_timeserial) > archive_secs:
-				serial = current_timeserial
-			else:
-				serial = last_timeserial
-
-		return serial
-
-	def getFirstTime( self, host, metricname ):
-		"Get the first time of a metric we know of"
-
-		first_time = 0
-
-		for metric in self.myMetrics[ host ][ metricname ]:
-
-			if not first_time or metric['time'] <= first_time:
-
-				first_time = metric['time']
-
-		return first_time
 
 	def createCheck( self, host, metricname, timeserial ):
 		"Check if an .rrd allready exists for this metric, create if not"
