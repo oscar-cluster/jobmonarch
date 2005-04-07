@@ -22,7 +22,7 @@ from types import *
 # 8  = RRD file activity
 # 7  = daemon threading
 #
-DEBUG_LEVEL = 7
+DEBUG_LEVEL = 9
 
 # Where is the gmetad.conf located
 #
@@ -131,9 +131,9 @@ class GangliaXMLHandler( ContentHandler ):
 	def __init__( self, config ):
 		self.config = config
 		self.clusters = { }
-		debug_msg( 0, printTime() + ' Gathering cluster timeserials and RRD last updates..' )
+		debug_msg( 0, printTime() + ' Checking existing toga rrd archive..' )
 		self.gatherClusters()
-		debug_msg( 0, printTime() + ' Done gathering timeserials and last updates.' )
+		debug_msg( 0, printTime() + ' Check done.' )
 
 	def gatherClusters( self ):
 
@@ -765,7 +765,7 @@ class RRDHandler:
 
 				archive_secs = ARCHIVE_HOURS_PER_RRD * (60 * 60)
 
-				if (metric['time'] - period) > archive_secs:
+				if (int( metric['time'] ) - period) > archive_secs:
 
 					# This one should get it's own new period
 					period = metric['time']
