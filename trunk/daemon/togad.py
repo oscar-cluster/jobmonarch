@@ -780,8 +780,6 @@ class RRDHandler:
 
 				metric_serial_table[ period ].append( metric )
 
-		print metric_serial_table
-
 		return metric_serial_table
 
 	def createCheck( self, host, metricname, timeserial ):
