@@ -22,7 +22,7 @@ from types import *
 # 8  = RRD file activity
 # 7  = daemon threading
 #
-DEBUG_LEVEL = 7
+DEBUG_LEVEL = 8
 
 # Where is the gmetad.conf located
 #
@@ -62,6 +62,9 @@ PARSE_TIMEOUT = 60
 #
 STORE_TIMEOUT = 360
 
+# Number of storing threads
+#
+STORE_THREADS = 1
 """
 This is TOrque-GAnglia's data Daemon
 """
@@ -115,7 +118,7 @@ class RRDMutator:
 			else:
 				arg_string = arg_string + ' ' + arg
 
-		debug_msg( 8, 'rrdm.perform(): ' + self.binary + ' ' + action + ' ' + filename + ' ' + arg_string  )
+		debug_msg( 8, self.binary + ' ' + action + ' ' + filename + ' ' + arg_string  )
 
 		for line in os.popen( self.binary + ' ' + action + ' ' + filename + ' ' + arg_string ).readlines():
 
@@ -133,9 +136,9 @@ class GangliaXMLHandler( ContentHandler ):
 	def __init__( self, config ):
 		self.config = config
 		self.clusters = { }
-		debug_msg( 0, printTime() + ' Checking existing toga rrd archive..' )
+		debug_msg( 0, printTime() + ' - Checking existing toga rrd archive..' )
 		self.gatherClusters()
-		debug_msg( 0, printTime() + ' Check done.' )
+		debug_msg( 0, printTime() + ' - Check done.' )
 
 	def gatherClusters( self ):
 
@@ -348,7 +351,12 @@ class GangliaXMLProcessor:
 		"Main thread"
 
 		xmlthread = threading.Thread( None, self.processXML, 'xmlthread' )
-		storethread = threading.Thread( None, self.storeMetrics, 'storethread' )
+
+		storethreads = [ ]
+
+		for num in range( int( STORE_THREADS ) ):
+
+			storethreads.append( threading.Thread( None, self.storeMetrics, 'storethread' ) )
 
 		while( 1 ):
 
@@ -360,13 +368,18 @@ class GangliaXMLProcessor:
 				xmlthread = threading.Thread( None, self.processXML, 'xmlthread' )
 				xmlthread.start()
 
-			if not storethread.isAlive():
-				# Store metrics every .. sec
+			for storethread in storethreads:
 
-				# threaded call to: self.storeMetrics()
-				#
-				storethread = threading.Thread( None, self.storeMetrics, 'storethread' )
-				storethread.start()
+				mythread = storethreads.index( storethread )
+
+				if not storethread.isAlive():
+
+					# Store metrics every .. sec
+
+					# threaded call to: self.storeMetrics()
+					#
+					storethreads[ mythread ] = threading.Thread( None, self.storeMetrics, 'storethread' )
+					storethreads[ mythread ].start()
 		
 			# Just sleep a sec here, to prevent daemon from going mad. We're all threads here anyway
 			time.sleep( 1 )	
@@ -378,7 +391,8 @@ class GangliaXMLProcessor:
 
 		# Store metrics somewhere between every 60 and 180 seconds
 		#
-		STORE_INTERVAL = random.randint( 360, 640 )
+		#STORE_INTERVAL = random.randint( 360, 640 )
+		STORE_INTERVAL = 60
 
 		storethread = threading.Thread( None, self.storeThread, 'storemetricthread' )
 		storethread.start()
@@ -630,25 +644,27 @@ class RRDHandler:
 
 		return 1
 
-	def memLastUpdate( self, host, metriclist ):
+	def memLastUpdate( self, host, metricname, metriclist ):
+
+		if not self.lastStored.has_key( host ):
+			self.lastStored[ host ] = { }
 
 		last_update_time = 0
 
 		for metric in metriclist:
 
-			if metric['time'] > last_update_time:
+			if metric['name'] == metricname:
 
-				last_update_time = metric['time']
+				if metric['time'] > last_update_time:
 
-		if not self.lastStored.has_key( host ):
-			self.lastStored[ host ] = { }
+					last_update_time = metric['time']
 
-		if self.lastStored[ host ].has_key( metric['name'] ):
+		if self.lastStored[ host ].has_key( metricname ):
 			
-			if last_update_time <= self.lastStored[ host ][ metric['name'] ]:
+			if last_update_time <= self.lastStored[ host ][ metricname ]:
 				return 1
 
-		self.lastStored[ host ][ metric['name'] ] = last_update_time
+		self.lastStored[ host ][ metricname ] = last_update_time
 
 	def storeMetrics( self ):
 
@@ -662,9 +678,10 @@ class RRDHandler:
 				#
 				self.slot.acquire() 
 
-				while len( mymetric ) > 0:
+				while len( self.myMetrics[ hostname ][ metricname ] ) > 0:
 
-					metrics_to_store.append( mymetric.pop( 0 ) )
+					if len( self.myMetrics[ hostname ][ metricname ] ) > 0:
+						metrics_to_store.append( self.myMetrics[ hostname ][ metricname ].pop( 0 ) )
 
 				self.slot.release()
 				#
@@ -673,7 +690,6 @@ class RRDHandler:
 				# Create a mapping table, each metric to the period where it should be stored
 				#
 				metric_serial_table = self.determineSerials( hostname, metricname, metrics_to_store )
-				self.myMetrics[ hostname ][ metricname ] = [ ]
 
 				update_rets = [ ]
 
@@ -693,7 +709,7 @@ class RRDHandler:
 
 				if not (1) in update_rets:
 
-					self.memLastUpdate( hostname, mymetric )
+					self.memLastUpdate( hostname, metricname, metrics_to_store )
 
 	def makeTimeSerial( self ):
 		"Generate a time serial. Seconds since epoch"
