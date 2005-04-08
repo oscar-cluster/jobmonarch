@@ -747,11 +747,13 @@ class RRDHandler:
 
 		period_serial = 0
 
-		for serial in self.timeserials[ host ]:
+		if self.timeserials.has_key( host ):
 
-			if check_serial >= serial and period_serial < serial:
+			for serial in self.timeserials[ host ]:
 
-				period_serial = serial
+				if check_serial >= serial and period_serial < serial:
+
+					period_serial = serial
 
 		return period_serial
 
