@@ -777,6 +777,10 @@ class RRDHandler:
 
 					# This one should get it's own new period
 					period = metric['time']
+
+					if not self.timeserials.has_key( host ):
+						self.timeserials[ host ] = [ ]
+
 					self.timeserials[ host ].append( period )
 
 				if not metric_serial_table.has_key( period ):
