@@ -86,6 +86,8 @@ class RRDMutator:
 
 		last_update = 0
 
+		debug_msg( 8, self.binary + ' info "' + filename + '"' )
+
 		for line in os.popen( self.binary + ' info "' + filename + '"' ).readlines():
 
 			if line.find( 'last_update') != -1:
@@ -376,8 +378,7 @@ class GangliaXMLProcessor:
 
 		# Store metrics somewhere between every 60 and 180 seconds
 		#
-		#STORE_INTERVAL = random.randint( 360, 640 )
-		STORE_INTERVAL = random.randint( 90, 120 )
+		STORE_INTERVAL = random.randint( 360, 640 )
 
 		storethread = threading.Thread( None, self.storeThread, 'storemetricthread' )
 		storethread.start()
@@ -592,15 +593,15 @@ class RRDHandler:
 			self.myMetrics[ host ] = { }
 			self.myMetrics[ host ][ metric['name'] ] = [ ]
 
-		# Ah, psst, push it
+		# <ATOMIC>
 		#
-		# <atomic>
 		self.slot.acquire()
 
 		self.myMetrics[ host ][ metric['name'] ].append( metric )
 
 		self.slot.release()
-		# </atomic>
+		#
+		# </ATOMIC>
 
 	def makeUpdateList( self, host, metriclist ):
 
@@ -609,22 +610,10 @@ class RRDHandler:
 
 		while len( metriclist ) > 0:
 
-			# Kabouter pop
-			#
-			# <atomic>	
-			#self.slot.acquire()
+			metric = metriclist.pop( 0 )
 
-			# len might have changed since loop start
-			#
-			if len( metriclist ) > 0:
-				metric = metriclist.pop( 0 )
-
-			#self.slot.release()
-			# </atomic>
-
-			if metric:
-				if self.checkStoreMetric( host, metric ):
-					update_list.append( '%s:%s' %( metric['time'], metric['val'] ) )
+			if self.checkStoreMetric( host, metric ):
+				update_list.append( '%s:%s' %( metric['time'], metric['val'] ) )
 
 		return update_list
 
@@ -667,16 +656,24 @@ class RRDHandler:
 
 			for metricname, mymetric in mymetrics.items():
 
-				# Atomic: Don't want other threads messing around now
+				metrics_to_store = [ ]
+
+				# <ATOMIC>
 				#
 				self.slot.acquire() 
 
+				while len( mymetric ) > 0:
+
+					metrics_to_store.append( mymetric.pop( 0 ) )
+
+				self.slot.release()
+				#
+				# </ATOMIC>
+
 				# Create a mapping table, each metric to the period where it should be stored
 				#
-				metric_serial_table = self.determineSerials( hostname, metricname, mymetric )
+				metric_serial_table = self.determineSerials( hostname, metricname, metrics_to_store )
 				self.myMetrics[ hostname ][ metricname ] = [ ]
-
-				self.slot.release() # Atomic end
 
 				update_rets = [ ]
 
