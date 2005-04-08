@@ -22,7 +22,7 @@ from types import *
 # 8  = RRD file activity
 # 7  = daemon threading
 #
-DEBUG_LEVEL = 8
+DEBUG_LEVEL = 7
 
 # Where is the gmetad.conf located
 #
@@ -62,9 +62,6 @@ PARSE_TIMEOUT = 60
 #
 STORE_TIMEOUT = 360
 
-# Number of storing threads
-#
-STORE_THREADS = 1
 """
 This is TOrque-GAnglia's data Daemon
 """
@@ -351,12 +348,7 @@ class GangliaXMLProcessor:
 		"Main thread"
 
 		xmlthread = threading.Thread( None, self.processXML, 'xmlthread' )
-
-		storethreads = [ ]
-
-		for num in range( int( STORE_THREADS ) ):
-
-			storethreads.append( threading.Thread( None, self.storeMetrics, 'storethread' ) )
+		storethread = threading.Thread( None, self.storeMetrics, 'storethread' )
 
 		while( 1 ):
 
@@ -368,18 +360,13 @@ class GangliaXMLProcessor:
 				xmlthread = threading.Thread( None, self.processXML, 'xmlthread' )
 				xmlthread.start()
 
-			for storethread in storethreads:
+			if not storethread.isAlive():
+				# Store metrics every .. sec
 
-				mythread = storethreads.index( storethread )
-
-				if not storethread.isAlive():
-
-					# Store metrics every .. sec
-
-					# threaded call to: self.storeMetrics()
-					#
-					storethreads[ mythread ] = threading.Thread( None, self.storeMetrics, 'storethread' )
-					storethreads[ mythread ].start()
+				# threaded call to: self.storeMetrics()
+				#
+				storethread = threading.Thread( None, self.storeMetrics, 'storethread' )
+				storethread.start()
 		
 			# Just sleep a sec here, to prevent daemon from going mad. We're all threads here anyway
 			time.sleep( 1 )	
@@ -391,8 +378,7 @@ class GangliaXMLProcessor:
 
 		# Store metrics somewhere between every 60 and 180 seconds
 		#
-		#STORE_INTERVAL = random.randint( 360, 640 )
-		STORE_INTERVAL = 60
+		STORE_INTERVAL = random.randint( 360, 640 )
 
 		storethread = threading.Thread( None, self.storeThread, 'storemetricthread' )
 		storethread.start()
