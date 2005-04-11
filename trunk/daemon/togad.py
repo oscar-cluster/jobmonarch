@@ -799,7 +799,22 @@ class RRDHandler:
 		rrd_dir, rrd_file = self.makeRrdPath( host, metricname, timeserial )
 
 		if not os.path.exists( rrd_dir ):
-			os.makedirs( rrd_dir )
+
+			try:
+				os.makedirs( rrd_dir )
+
+			except OSError, msg:
+
+				if msg.find( 'File exists' ) != -1:
+
+					# Ignore exists errors
+					pass
+
+				else:
+
+					print msg
+					return
+
 			debug_msg( 9, 'created dir %s' %( str(rrd_dir) ) )
 
 		if not os.path.exists( rrd_file ):
