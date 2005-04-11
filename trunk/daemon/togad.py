@@ -13,6 +13,7 @@ import threading
 import mutex
 import random
 from types import *
+import DBClass
 
 # Specify debugging level here;
 #
@@ -28,17 +29,44 @@ DEBUG_LEVEL = 7
 #
 GMETAD_CONF = '/etc/gmetad.conf'
 
+# Wether or not to maintain a archive of all ganglia node data
+# Note: This will require a significant amount of hd space
+#	depending on your cluster size
+#
+ARCHIVE = 0
+
+# Where to grab XML data from
+# Normally: local gmetad (port 8651)
+#
+ARCHIVE_SOURCE = "localhost:8651"
+
+# List of data_source names to archive for
+#
+ARCHIVE_DATASOURCES = [ "LISA Cluster" ]
+
 # Where to store the archived rrd's
 #
 ARCHIVE_PATH = '/data/toga/rrds'
 
-# List of data_source names to archive for
-#
-ARCHIVE_SOURCES = [ "LISA Cluster" ]
-
 # Amount of hours to store in one single archived .rrd
 #
 ARCHIVE_HOURS_PER_RRD = 12
+
+# Wether or not to run a seperate Toga jobinfo server
+#
+TOGA_SERVER = 1
+
+# On what interfaces to listen
+#
+TOGA_SERVER_INTERFACES = [ 'eth0' ]
+
+# On what port to listen
+#
+TOGA_SERVER_PORT = 9048
+
+# Toga's SQL dbase name to use
+#
+TOGA_SERVER_SQL_DBASE = "toga"
 
 # Wether or not to run as a daemon in background
 #
@@ -49,6 +77,11 @@ DAEMONIZE = 0
 # Configuration ends #
 #                    #
 ######################
+
+###
+# You'll only want to change anything below here unless you 
+# know what you are doing (i.e. your name is Ramon Bastiaans)
+###
 
 # What XML data types not to store
 #
@@ -65,6 +98,10 @@ STORE_TIMEOUT = 360
 """
 This is TOrque-GAnglia's data Daemon
 """
+
+#class TogaServer:
+
+#class TogaXMLHandler( ContentHandler ):
 
 class RRDMutator:
 	"A class for handling .rrd mutations"
@@ -151,7 +188,7 @@ class GangliaXMLHandler( ContentHandler ):
 
 				clustername = item
 
-				if not self.clusters.has_key( clustername ) and clustername in ARCHIVE_SOURCES:
+				if not self.clusters.has_key( clustername ) and clustername in ARCHIVE_DATASOURCES:
 
 					self.clusters[ clustername ] = RRDHandler( self.config, clustername )
 
@@ -177,13 +214,13 @@ class GangliaXMLHandler( ContentHandler ):
 			self.clusterName = attrs.get( 'NAME', "" )
 			self.time = attrs.get( 'LOCALTIME', "" )
 
-			if not self.clusters.has_key( self.clusterName ) and self.clusterName in ARCHIVE_SOURCES:
+			if not self.clusters.has_key( self.clusterName ) and self.clusterName in ARCHIVE_DATASOURCES:
 
 				self.clusters[ self.clusterName ] = RRDHandler( self.config, self.clusterName )
 
 				debug_msg( 10, ' |-Cluster found: %s' %( self.clusterName ) )
 
-		elif name == 'HOST' and self.clusterName in ARCHIVE_SOURCES:     
+		elif name == 'HOST' and self.clusterName in ARCHIVE_DATASOURCES:     
 
 			self.hostName = attrs.get( 'NAME', "" )
 			self.hostIp = attrs.get( 'IP', "" )
@@ -191,7 +228,7 @@ class GangliaXMLHandler( ContentHandler ):
 
 			debug_msg( 10, ' | |-Host found: %s - ip %s reported %s' %( self.hostName, self.hostIp, self.hostReported ) )
 
-		elif name == 'METRIC' and self.clusterName in ARCHIVE_SOURCES:
+		elif name == 'METRIC' and self.clusterName in ARCHIVE_DATASOURCES:
 
 			type = attrs.get( 'TYPE', "" )
 
@@ -294,7 +331,7 @@ class GangliaXMLProcessor:
 
 		self.config = GangliaConfigParser( GMETAD_CONF )
 
-		self.myXMLGatherer = GangliaXMLGatherer( 'localhost', 8651 ) 
+		self.myXMLGatherer = GangliaXMLGatherer( ARCHIVE_SOURCE.split( ':' )[0], ARCHIVE_SOURCE.split( ':' )[1] ) 
 		self.myParser = make_parser()   
 		self.myHandler = GangliaXMLHandler( self.config )
 		self.myParser.setContentHandler( self.myHandler )
@@ -858,12 +895,23 @@ class RRDHandler:
 def main():
 	"Program startup"
 
-	myProcessor = GangliaXMLProcessor()
+	if TOGA_SERVER:
+	
+		myServer = TogaServer()
 
-	if DAEMONIZE:
-		myProcessor.daemon()
-	else:
-		myProcessor.run()
+		if DAEMONIZE:
+			myServer.daemon()
+		else:
+			myServer.run()
+
+	if ARCHIVE:
+
+		myProcessor = GangliaXMLProcessor()
+
+		if DAEMONIZE:
+			myProcessor.daemon()
+		else:
+			myProcessor.run()
 
 def check_dir( directory ):
 	"Check if directory is a proper directory. I.e.: Does _not_ end with a '/'"
