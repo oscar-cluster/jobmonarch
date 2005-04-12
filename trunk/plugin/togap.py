@@ -4,20 +4,63 @@
 #
 DEBUG_LEVEL = 10
 
+# If set to 1, in addition to multicasting with gmetric,
+# also transmit jobinfo data to a Toga server for archival
+#
+ARCHIVE_MODE = 0
+
+# Where is the toga server at
+#
+#TOGA_SERVER = 'monitor2.irc.sara.nl:9048'
+
 # Wether or not to run as a daemon in background
 #
 DAEMONIZE = 0
+
+# Allows to specify alternate config
+#
+#GMOND_CONF = '/etc/gmondconf'
 
 from PBSQuery import PBSQuery
 import sys
 import time
 
+class DataProcessor:
+
+	binary = '/usr/bin/gmetric'
+
+	def __init__( self, binary=None ):
+
+		if binary:
+			self.binary = binary
+
+	def multicastGmetric( self, metricname, metricval, tmax ):
+
+		cmd = binary
+
+		try:
+			cmd = cmd + ' -c' + GMOND_CONF
+		except NameError:
+			debug_msg( 8, 'Assuming /etc/gmond.conf for gmetric cmd (ommitting)' )
+
+		cmd = cmd + ' -n' + metricname + ' -v' + metricval + ' -t' + tmax
+
+		print cmd
+		#os.system( cmd )
+
+	def togaSubmitJob( self, jobid, jobattrs ):
+
+		pass
+
 class PBSDataGatherer:
+
+	jobs = { }
 
 	def __init__( self ):
 
 		self.pq = PBSQuery()
 		self.jobs = { }
+		self.dp = DataProcessor()
 
 	def getAttr( self, attrs, name ):
 
@@ -48,7 +91,7 @@ class PBSDataGatherer:
 
 	def getJobData( self ):
 
-		jobs = self.jobs
+		jobs = self.jobs[:]
 
 		joblist = self.pq.getjobs()
 
@@ -59,7 +102,7 @@ class PBSDataGatherer:
 			job_id = name.split( '.' )[0]
 
 			jobs_processed.append( job_id )
-			
+
 			name = self.getAttr( attrs, 'Job_Name' )
 			queue = self.getAttr( attrs, 'queue' )
 			owner = self.getAttr( attrs, 'Job_Owner' ).split( '@' )[0]
@@ -87,8 +130,10 @@ class PBSDataGatherer:
 
 			if self.jobDataChanged( jobs, job_id, myAttrs ):
 				jobs[ job_id ] = myAttrs
+
+				self.printJob( jobs, job_id )
+
 				debug_msg( 10, printTime() + ' job %s state changed' %(job_id) )
-				self.printJob( job_id )
 
 		for id, attrs in jobs.items():
 
@@ -97,14 +142,26 @@ class PBSDataGatherer:
 
 			if id not in jobs_processed and attrs['stop_timestamp'] == '':
 
-				jobs[ id ]['status'] = 'D'
+				jobs[ id ]['status'] = 'F'
 				jobs[ id ]['stop_timestamp'] = time.time()
 				debug_msg( 10, printTime() + ' job %s finished' %(id) )
-				self.printJob( id )
+				self.printJob( jobs, id )
 
+		# Now let's spread the knowledge
+		#
+		for jobid, jobattrs in jobs.items():
+
+			if ARCHIVE_MODE:
+
+				if self.jobDataChanged( self.jobs, jobid, jobattrs ):
+
+					self.dp.togaSubmitJob( jobid, jobattrs )
+
+			self.dp.multicastGmetric( jobid, jobattrs )
+					
 		self.jobs = jobs
 
-	def printJobs( self ):
+	def printJobs( self, jobs ):
 	
 		for name, attrs in self.jobs.items():
 
@@ -114,7 +171,7 @@ class PBSDataGatherer:
 
 				print '\t%s = %s' %( name, val )
 
-	def printJob( self, job_id ):
+	def printJob( self, jobs, job_id ):
 
 		print 'job %s' %(job_id)
 
