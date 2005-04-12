@@ -58,7 +58,7 @@ TOGA_SERVER = 1
 
 # On what interfaces to listen
 #
-TOGA_SERVER_INTERFACES = [ 'eth0' ]
+TOGA_SERVER_IP = [ '127.0.0.1' ]
 
 # On what port to listen
 #
@@ -99,9 +99,71 @@ STORE_TIMEOUT = 360
 This is TOrque-GAnglia's data Daemon
 """
 
-#class TogaServer:
+class TogaServer:
 
-#class TogaXMLHandler( ContentHandler ):
+	sockets = [ ]
+
+
+
+	def __init__( self ):
+
+		s = None
+		for host in TOGA_SERVER_IP:
+
+			for res in socket.getaddrinfo( host, TOGA_SERVER_PORT, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE ):
+
+				af, socktype, proto, canonname, sa = res
+
+				try:
+
+					s = socket.socket( af, socktype, proto )
+
+				except socket.error, msg:
+
+					s = None
+					continue
+
+				try:
+					s.bind( sa )
+					s.listen( 1 )
+
+				except socket.error, msg:
+
+					s.close()
+					s = None
+					continue
+					break
+
+				if not self.s:
+
+					debug_msg( 6, 'Could not open socket' )
+					return None
+
+				else:
+
+					self.sockets.append( s )
+
+	def run( self ):
+
+		for s in self.sockets:
+
+			while( 1 ):
+
+				conn, addr = s.accept()
+				pid = os.fork()
+
+				if pid == 0:
+
+					debug_msg( 6, 'New connection to %s' %addr[0] )
+
+					leesme = conn.makefile( 'r' )
+					for line in leesme.readlines():
+						print line
+					
+					conn.close()
+					conn.shutdown( 2 )
+
+					sys.exit( 0 )
 
 class RRDMutator:
 	"A class for handling .rrd mutations"
