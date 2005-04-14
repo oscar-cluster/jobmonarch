@@ -8,9 +8,7 @@ import string
 import os
 import os.path
 import time
-import re
 import threading
-import mutex
 import random
 from types import *
 import DBClass
@@ -29,18 +27,16 @@ DEBUG_LEVEL = 7
 #
 GMETAD_CONF = '/etc/gmetad.conf'
 
-# Wether or not to maintain a archive of all ganglia node data
-# Note: This will require a significant amount of hd space
-#	depending on your cluster size
-#
-ARCHIVE = 0
-
 # Where to grab XML data from
 # Normally: local gmetad (port 8651)
 #
-ARCHIVE_SOURCE = "localhost:8651"
+# Syntax: <hostname>:<port>
+#
+ARCHIVE_XMLSOURCE = "localhost:8651"
 
 # List of data_source names to archive for
+#
+# Syntax: [ "<clustername>", "<clustername>" ]
 #
 ARCHIVE_DATASOURCES = [ "LISA Cluster" ]
 
@@ -52,21 +48,11 @@ ARCHIVE_PATH = '/data/toga/rrds'
 #
 ARCHIVE_HOURS_PER_RRD = 12
 
-# Wether or not to run a seperate Toga jobinfo server
+# Toga's SQL dbase to use
 #
-TOGA_SERVER = 1
-
-# On what interfaces to listen
+# Syntax: <hostname>/<database>
 #
-TOGA_SERVER_IP = [ '127.0.0.1' ]
-
-# On what port to listen
-#
-TOGA_SERVER_PORT = 9048
-
-# Toga's SQL dbase name to use
-#
-TOGA_SERVER_SQL_DBASE = "toga"
+TOGA_SQL_DBASE = "localhost/toga"
 
 # Wether or not to run as a daemon in background
 #
@@ -80,7 +66,7 @@ DAEMONIZE = 0
 
 ###
 # You'll only want to change anything below here unless you 
-# know what you are doing (i.e. your name is Ramon Bastiaans)
+# know what you are doing (i.e. your name is Ramon Bastiaans :D )
 ###
 
 # What XML data types not to store
@@ -99,89 +85,29 @@ STORE_TIMEOUT = 360
 This is TOrque-GAnglia's data Daemon
 """
 
-class TogaServer:
-
-	sockets = [ ]
-
-
-
-	def __init__( self ):
-
-		s = None
-		for host in TOGA_SERVER_IP:
-
-			for res in socket.getaddrinfo( host, TOGA_SERVER_PORT, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE ):
-
-				af, socktype, proto, canonname, sa = res
-
-				try:
-
-					s = socket.socket( af, socktype, proto )
-
-				except socket.error, msg:
-
-					s = None
-					continue
-
-				try:
-					s.bind( sa )
-					s.listen( 1 )
-
-				except socket.error, msg:
-
-					s.close()
-					s = None
-					continue
-					break
-
-				if not self.s:
-
-					debug_msg( 6, 'Could not open socket' )
-					return None
-
-				else:
-
-					self.sockets.append( s )
-
-	def run( self ):
-
-		for s in self.sockets:
-
-			while( 1 ):
-
-				conn, addr = s.accept()
-				pid = os.fork()
-
-				if pid == 0:
-
-					debug_msg( 6, 'New connection to %s' %addr[0] )
-
-					leesme = conn.makefile( 'r' )
-					for line in leesme.readlines():
-						print line
-					
-					conn.close()
-					conn.shutdown( 2 )
-
-					sys.exit( 0 )
-
 class RRDMutator:
-	"A class for handling .rrd mutations"
+	"""A class for performing RRD mutations"""
 
 	binary = '/usr/bin/rrdtool'
 
 	def __init__( self, binary=None ):
+		"""Set alternate binary if supplied"""
 
 		if binary:
 			self.binary = binary
 
 	def create( self, filename, args ):
+		"""Create a new rrd with args"""
+
 		return self.perform( 'create', '"' + filename + '"', args )
 
 	def update( self, filename, args ):
+		"""Update a rrd with args"""
+
 		return self.perform( 'update', '"' + filename + '"', args )
 
 	def grabLastUpdate( self, filename ):
+		"""Determine the last update time of filename rrd"""
 
 		last_update = 0
 
@@ -199,6 +125,7 @@ class RRDMutator:
 			return 0
 
 	def perform( self, action, filename, args ):
+		"""Perform action on rrd filename with args"""
 
 		arg_string = None
 
@@ -226,10 +153,49 @@ class RRDMutator:
 
 		return 0
 
+class TorqueXMLHandler( ContentHandler ):
+	"""Parse Torque's jobinfo XML from our plugin"""
+
+	def __init__( self ):
+
+		pass
+
+	def startElement( self, name, attrs ):
+		"""
+		This XML will be all gmetric XML
+		so there will be no specific start/end element
+		just one XML statement with all info
+		"""
+		
+		heartbeat = 0
+
+		if name == 'METRIC':
+
+			metricname = attrss.get( 'NAME', "" )
+
+			if metricname == 'TOGA-HEARTBEAT':
+
+				if not self.heartbeat:
+					self.heartbeat = attrs.get( 'VAL', "" )
+
+			if metricname.find( 'TOGA-JOB' ) != -1:
+
+				job_id = name.split( 'TOGA-JOB-' )[1]
+				val = attrs.get( 'VAL', "" )
+
+				valinfo = val.split( ' ' )
+
+				for myval in valinfo:
+
+					name = valinfo.split( '=' )[0]
+					value = valinfo.split( '=' )[1]
+
 class GangliaXMLHandler( ContentHandler ):
-	"Parse Ganglia's XML"
+	"""Parse Ganglia's XML"""
 
 	def __init__( self, config ):
+		"""Setup initial variables and gather info on existing rrd archive"""
+
 		self.config = config
 		self.clusters = { }
 		debug_msg( 0, printTime() + ' - Checking existing toga rrd archive..' )
@@ -237,6 +203,7 @@ class GangliaXMLHandler( ContentHandler ):
 		debug_msg( 0, printTime() + ' - Check done.' )
 
 	def gatherClusters( self ):
+		"""Find all existing clusters in archive dir"""
 
 		archive_dir = check_dir(ARCHIVE_PATH)
 
@@ -255,7 +222,7 @@ class GangliaXMLHandler( ContentHandler ):
 					self.clusters[ clustername ] = RRDHandler( self.config, clustername )
 
 	def startElement( self, name, attrs ):
-		"Store appropriate data from xml start tags"
+		"""Memorize appropriate data from xml start tags"""
 
 		if name == 'GANGLIA_XML':
 
@@ -306,6 +273,7 @@ class GangliaXMLHandler( ContentHandler ):
 				debug_msg( 11, ' | | |-metric: %s:%s' %( myMetric['name'], myMetric['val'] ) )
 
 	def storeMetrics( self ):
+		"""Store metrics of each cluster rrd handler"""
 
 		for clustername, rrdh in self.clusters.items():
 
@@ -318,19 +286,19 @@ class GangliaXMLHandler( ContentHandler ):
 		return 0
 
 class GangliaXMLGatherer:
-	"Setup a connection and file object to Ganglia's XML"
+	"""Setup a connection and file object to Ganglia's XML"""
 
 	s = None
 
 	def __init__( self, host, port ):
-		"Store host and port for connection"
+		"""Store host and port for connection"""
 
 		self.host = host
 		self.port = port
 		self.connect()
 
 	def connect( self ):
-		"Setup connection to XML source"
+		"""Setup connection to XML source"""
 
 		for res in socket.getaddrinfo( self.host, self.port, socket.AF_UNSPEC, socket.SOCK_STREAM ):
 
@@ -363,19 +331,19 @@ class GangliaXMLGatherer:
 			sys.exit( 1 )
 
 	def disconnect( self ):
-		"Close socket"
+		"""Close socket"""
 
 		if self.s:
 			self.s.close()
 			self.s = None
 
 	def __del__( self ):
-		"Kill the socket before we leave"
+		"""Kill the socket before we leave"""
 
 		self.disconnect()
 
 	def getFileObject( self ):
-		"Connect, and return a file object"
+		"""Connect, and return a file object"""
 
 		if self.s:
 			# Apearantly, only data is received when a connection is made
@@ -387,21 +355,20 @@ class GangliaXMLGatherer:
 		return self.s.makefile( 'r' )
 
 class GangliaXMLProcessor:
+	"""Main class for processing XML and acting with it"""
 
 	def __init__( self ):
-		"Setup initial XML connection and handlers"
+		"""Setup initial XML connection and handlers"""
 
 		self.config = GangliaConfigParser( GMETAD_CONF )
 
-		self.myXMLGatherer = GangliaXMLGatherer( ARCHIVE_SOURCE.split( ':' )[0], ARCHIVE_SOURCE.split( ':' )[1] ) 
+		self.myXMLGatherer = GangliaXMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
 		self.myParser = make_parser()   
 		self.myHandler = GangliaXMLHandler( self.config )
 		self.myParser.setContentHandler( self.myHandler )
 
 	def daemon( self ):
-		"Run as daemon forever"
-
-		self.DAEMON = 1
+		"""Run as daemon forever"""
 
 		# Fork the first child
 		#
@@ -439,12 +406,12 @@ class GangliaXMLProcessor:
 		self.run()
 
 	def printTime( self ):
-		"Print current time in human readable format"
+		"""Print current time in human readable format for logging"""
 
 		return time.strftime("%a %d %b %Y %H:%M:%S")
 
 	def run( self ):
-		"Main thread"
+		"""Main XML processing; start a xml and storethread"""
 
 		xmlthread = threading.Thread( None, self.processXML, 'xmlthread' )
 		storethread = threading.Thread( None, self.storeMetrics, 'storethread' )
@@ -471,11 +438,11 @@ class GangliaXMLProcessor:
 			time.sleep( 1 )	
 
 	def storeMetrics( self ):
-		"Store metrics retained in memory to disk"
+		"""Store metrics retained in memory to disk"""
 
 		debug_msg( 7, self.printTime() + ' - storethread(): started.' )
 
-		# Store metrics somewhere between every 60 and 180 seconds
+		# Store metrics somewhere between every 360 and 640 seconds
 		#
 		STORE_INTERVAL = random.randint( 360, 640 )
 
@@ -497,6 +464,7 @@ class GangliaXMLProcessor:
 		return 0
 
 	def storeThread( self ):
+		"""Actual metric storing thread"""
 
 		debug_msg( 7, self.printTime() + ' - storemetricthread(): started.' )
 		debug_msg( 7, self.printTime() + ' - storemetricthread(): Storing data..' )
@@ -507,7 +475,7 @@ class GangliaXMLProcessor:
 		return ret
 
 	def processXML( self ):
-		"Process XML"
+		"""Process XML"""
 
 		debug_msg( 7, self.printTime() + ' - xmlthread(): started.' )
 
@@ -529,6 +497,7 @@ class GangliaXMLProcessor:
 		return 0
 
 	def parseThread( self ):
+		"""Actual parsing thread"""
 
 		debug_msg( 7, self.printTime() + ' - parsethread(): started.' )
 		debug_msg( 7, self.printTime() + ' - parsethread(): Parsing XML..' )
@@ -543,12 +512,13 @@ class GangliaConfigParser:
 	sources = [ ]
 
 	def __init__( self, config ):
+		"""Parse some stuff from our gmetad's config, such as polling interval"""
 
 		self.config = config
 		self.parseValues()
 
 	def parseValues( self ):
-		"Parse certain values from gmetad.conf"
+		"""Parse certain values from gmetad.conf"""
 
 		readcfg = open( self.config, 'r' )
 
@@ -585,6 +555,7 @@ class GangliaConfigParser:
 					self.sources.append( source )
 
 	def getInterval( self, source_name ):
+		"""Return interval for source_name"""
 
 		for source in self.sources:
 
@@ -595,6 +566,7 @@ class GangliaConfigParser:
 		return None
 
 	def getLowestInterval( self ):
+		"""Return the lowest interval of all clusters"""
 
 		lowest_interval = 0
 
@@ -611,6 +583,7 @@ class GangliaConfigParser:
 			return 15
 
 class RRDHandler:
+	"""Class for handling RRD activity"""
 
 	myMetrics = { }
 	lastStored = { }
@@ -618,6 +591,7 @@ class RRDHandler:
 	slot = None
 
 	def __init__( self, config, cluster ):
+		"""Setup initial variables"""
 		self.block = 0
 		self.cluster = cluster
 		self.config = config
@@ -626,7 +600,7 @@ class RRDHandler:
 		self.gatherLastUpdates()
 
 	def gatherLastUpdates( self ):
-		"Populate the lastStored list, containing timestamps of all last updates"
+		"""Populate the lastStored list, containing timestamps of all last updates"""
 
 		cluster_dir = '%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster )
 
@@ -672,9 +646,12 @@ class RRDHandler:
 						self.lastStored[ host ][ metricname ] = self.rrdm.grabLastUpdate( metric_dir + '/' + file )
 
 	def getClusterName( self ):
+		"""Return clustername"""
+
 		return self.cluster
 
 	def memMetric( self, host, metric ):
+		"""Store metric from host in memory"""
 
 		if self.myMetrics.has_key( host ):
 
@@ -692,6 +669,9 @@ class RRDHandler:
 			self.myMetrics[ host ] = { }
 			self.myMetrics[ host ][ metric['name'] ] = [ ]
 
+		# Push new metric onto stack
+		# atomic code; only 1 thread at a time may access the stack
+
 		# <ATOMIC>
 		#
 		self.slot.acquire()
@@ -703,6 +683,10 @@ class RRDHandler:
 		# </ATOMIC>
 
 	def makeUpdateList( self, host, metriclist ):
+		"""
+		Make a list of update values for rrdupdate
+		but only those that we didn't store before
+		"""
 
 		update_list = [ ]
 		metric = None
@@ -717,6 +701,7 @@ class RRDHandler:
 		return update_list
 
 	def checkStoreMetric( self, host, metric ):
+		"""Check if supplied metric if newer than last one stored"""
 
 		if self.lastStored.has_key( host ):
 
@@ -730,6 +715,10 @@ class RRDHandler:
 		return 1
 
 	def memLastUpdate( self, host, metricname, metriclist ):
+		"""
+		Memorize the time of the latest metric from metriclist
+		but only if it wasn't allready memorized
+		"""
 
 		if not self.lastStored.has_key( host ):
 			self.lastStored[ host ] = { }
@@ -752,12 +741,19 @@ class RRDHandler:
 		self.lastStored[ host ][ metricname ] = last_update_time
 
 	def storeMetrics( self ):
+		"""
+		Store all metrics from memory to disk
+		and do it to the RRD's in appropriate timeperiod directory
+		"""
 
 		for hostname, mymetrics in self.myMetrics.items():	
 
 			for metricname, mymetric in mymetrics.items():
 
 				metrics_to_store = [ ]
+
+				# Pop metrics from stack for storing until none is left
+				# atomic code: only 1 thread at a time may access myMetrics
 
 				# <ATOMIC>
 				#
@@ -797,7 +793,7 @@ class RRDHandler:
 					self.memLastUpdate( hostname, metricname, metrics_to_store )
 
 	def makeTimeSerial( self ):
-		"Generate a time serial. Seconds since epoch"
+		"""Generate a time serial. Seconds since epoch"""
 
 		# Seconds since epoch
 		mytime = int( time.time() )
@@ -805,11 +801,7 @@ class RRDHandler:
 		return mytime
 
 	def makeRrdPath( self, host, metricname, timeserial ):
-		"""
-		Make a RRD location/path and filename
-		If a metric or timeserial are supplied the complete locations
-		will be made, else just the host directory
-		"""
+		"""Make a RRD location/path and filename"""
 
 		rrd_dir = '%s/%s/%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster, host, timeserial )
 		rrd_file = '%s/%s.rrd' %( rrd_dir, metricname )
@@ -817,10 +809,7 @@ class RRDHandler:
 		return rrd_dir, rrd_file
 
 	def getLastRrdTimeSerial( self, host ):
-		"""
-		Find the last timeserial (directory) for this host
-		This is determined once every host
-		"""
+		"""Find the last timeserial (directory) for this host"""
 
 		newest_timeserial = 0
 
@@ -843,6 +832,7 @@ class RRDHandler:
 			return 0
 
 	def determinePeriod( self, host, check_serial ):
+		"""Determine to which period (directory) this time(serial) belongs"""
 
 		period_serial = 0
 
@@ -891,7 +881,7 @@ class RRDHandler:
 		return metric_serial_table
 
 	def createCheck( self, host, metricname, timeserial ):
-		"Check if an .rrd allready exists for this metric, create if not"
+		"""Check if an rrd allready exists for this metric, create if not"""
 
 		debug_msg( 9, 'rrdcreate: using timeserial %s for %s/%s' %( timeserial, host, metricname ) )
 		
@@ -937,6 +927,10 @@ class RRDHandler:
 			debug_msg( 9, 'created rrd %s' %( str(rrd_file) ) )
 
 	def update( self, host, metricname, timeserial, metriclist ):
+		"""
+		Update rrd file for host with metricname
+		in directory timeserial with metriclist
+		"""
 
 		debug_msg( 9, 'rrdupdate: using timeserial %s for %s/%s' %( timeserial, host, metricname ) )
 
@@ -955,28 +949,17 @@ class RRDHandler:
 		return 0
 
 def main():
-	"Program startup"
+	"""Program startup"""
 
-	if TOGA_SERVER:
-	
-		myServer = TogaServer()
+	myProcessor = GangliaXMLProcessor()
 
-		if DAEMONIZE:
-			myServer.daemon()
-		else:
-			myServer.run()
-
-	if ARCHIVE:
-
-		myProcessor = GangliaXMLProcessor()
-
-		if DAEMONIZE:
-			myProcessor.daemon()
-		else:
-			myProcessor.run()
+	if DAEMONIZE:
+		myProcessor.daemon()
+	else:
+		myProcessor.run()
 
 def check_dir( directory ):
-	"Check if directory is a proper directory. I.e.: Does _not_ end with a '/'"
+	"""Check if directory is a proper directory. I.e.: Does _not_ end with a '/'"""
 
 	if directory[-1] == '/':
 		directory = directory[:-1]
@@ -984,15 +967,16 @@ def check_dir( directory ):
 	return directory
 
 def debug_msg( level, msg ):
+	"""Only print msg if it is not below our debug level"""
 
 	if (DEBUG_LEVEL >= level):
 		sys.stderr.write( msg + '\n' )
 
 def printTime( ):
-	"Print current time in human readable format"
+	"""Print current time in human readable format"""
 
 	return time.strftime("%a %d %b %Y %H:%M:%S")
 
-# Let's go
+# Ooohh, someone started me! Let's go..
 if __name__ == '__main__':
 	main()
