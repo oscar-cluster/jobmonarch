@@ -19,6 +19,7 @@ from PBSQuery import PBSQuery
 import sys
 import time
 import os
+import socket
 import string
 
 class DataProcessor:
@@ -133,6 +134,8 @@ class PBSDataGatherer:
 
 		for name, attrs in joblist.items():
 
+			print attrs
+
 			job_id = name.split( '.' )[0]
 
 			jobs_processed.append( job_id )
@@ -149,7 +152,15 @@ class PBSDataGatherer:
 				ppn = ''
 			status = self.getAttr( attrs, 'job_state' )
 			start_timestamp = self.getAttr( attrs, 'mtime' )
-			#stop_timestamp = ''
+
+			nodes = self.getAttr( attrs, 'exec_host' ).split( '+' )
+			nodeslist = [ ]
+
+			for node in nodes:
+				host = node.split( '/' )[0]
+
+				if nodeslist.count( host ) == 0:
+					nodeslist.append( node.split( '/' )[0] )
 
 			myAttrs = { }
 			myAttrs['name'] = name
@@ -160,7 +171,8 @@ class PBSDataGatherer:
 			myAttrs['ppn'] = ppn
 			myAttrs['status'] = status
 			myAttrs['start_timestamp'] = start_timestamp
-			#myAttrs['stop_timestamp'] = stop_timestamp
+			myAttrs['nodes'] = nodeslist
+			myAttrs['domain'] = string.join( socket.getfqdn().split( '.' )[1:], '.' )
 
 			if self.jobDataChanged( jobs, job_id, myAttrs ):
 				jobs[ job_id ] = myAttrs
@@ -168,18 +180,6 @@ class PBSDataGatherer:
 				self.printJob( jobs, job_id )
 
 				debug_msg( 10, printTime() + ' job %s state changed' %(job_id) )
-
-		#for id, attrs in jobs.items():
-
-		#	# This job was there in the last run, and not anymore
-		#	# it must have finished
-
-		#	if id not in jobs_processed and attrs['stop_timestamp'] == '':
-
-		#		jobs[ id ]['status'] = 'F'
-		#		jobs[ id ]['stop_timestamp'] = time.time()
-		#		debug_msg( 10, printTime() + ' job %s finished' %(id) )
-		#		self.printJob( jobs, id )
 
 		return jobs
 
@@ -199,6 +199,18 @@ class PBSDataGatherer:
 			for val in gmetric_val:
 				self.dp.multicastGmetric( 'TOGA-JOB-' + jobid, val )
 
+	def makeNodeString( self, nodelist ):
+
+		node_str = None
+
+		for node in nodelist:
+			if not node_str:
+				node_str = node
+			else:
+				node_str = node_str + ';' + node
+
+		return node_str
+
 	def compileGmetricVal( self, jobid, jobattrs ):
 		"""Create a val string for gmetric of jobinfo"""
 
@@ -210,8 +222,10 @@ class PBSDataGatherer:
 		ppn_str = 'ppn=' + jobattrs['ppn']
 		status_str = 'status=' + jobattrs['status']
 		stime_str = 'stime=' + jobattrs['start_timestamp']
+		domain_str = 'domain=' + jobattrs['domain']
+		node_str = 'nodes=' + self.makeNodeString( jobattrs['nodes'] )
 
-		appendList = [ name_str, queue_str, owner_str, rtime_str, rmem_str, ppn_str, status_str, stime_str ]
+		appendList = [ name_str, queue_str, owner_str, rtime_str, rmem_str, ppn_str, status_str, stime_str, domain_str, node_str ]
 
 		return self.makeAppendLists( appendList )
 
