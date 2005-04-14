@@ -15,6 +15,12 @@ DAEMONIZE = 0
 #
 TORQUE_POLL_INTERVAL = 10
 
+# Alternate location of gmond.conf
+#
+# Default: /etc/gmond.conf
+#
+#GMOND_CONF = '/etc/gmond.conf'
+
 from PBSQuery import PBSQuery
 import sys
 import time
@@ -23,17 +29,29 @@ import socket
 import string
 
 class DataProcessor:
+	"""Class for processing of data"""
 
 	binary = '/usr/bin/gmetric'
 
 	def __init__( self, binary=None ):
+		"""Remember alternate binary location if supplied"""
 
 		if binary:
 			self.binary = binary
 
 		self.dmax = TORQUE_POLL_INTERVAL
 
-		#incompatible = self.checkGmetricVersion
+		try:
+			gmond_file = GMOND_CONF
+
+		except NameError:
+			gmond_file = '/etc/gmond.conf'
+
+		if not os.path.exists( gmond_file ):
+			debug_msg( 0, gmond_file + ' does not exist' )
+			sys.exit( 1 )
+
+		#incompatible = self.checkGmetricVersion()
 		incompatible = 0
 
 		if incompatible:
@@ -41,6 +59,10 @@ class DataProcessor:
 			sys.exit( 1 )
 
 	def checkGmetricVersion( self ):
+		"""
+		Check version of gmetric is at least 3.0.1
+		for the syntax we use
+		"""
 
 		for line in os.popen( self.binary + ' --version' ).readlines():
 
@@ -71,6 +93,7 @@ class DataProcessor:
 		return incompatible
 
 	def multicastGmetric( self, metricname, metricval, valtype='string', tmax='15' ):
+		"""Call gmetric binary and multicast"""
 
 		cmd = self.binary
 
@@ -89,12 +112,14 @@ class PBSDataGatherer:
 	jobs = { }
 
 	def __init__( self ):
+		"""Setup appropriate variables"""
 
 		self.pq = PBSQuery()
 		self.jobs = { }
 		self.dp = DataProcessor()
 
 	def getAttr( self, attrs, name ):
+		"""Return certain attribute from dictionary, if exists"""
 
 		if attrs.has_key( name ):
 			return attrs[name]
@@ -102,6 +127,7 @@ class PBSDataGatherer:
 			return ''
 
 	def jobDataChanged( self, jobs, job_id, attrs ):
+		"""Check if job with attrs and job_id in jobs has changed"""
 
 		if jobs.has_key( job_id ):
 			oldData = jobs[ job_id ]	
@@ -122,6 +148,7 @@ class PBSDataGatherer:
 		return 0
 
 	def getJobData( self, known_jobs ):
+		"""Gather all data on current jobs in Torque"""
 
 		if len( known_jobs ) > 0:
 			jobs = known_jobs
@@ -129,6 +156,8 @@ class PBSDataGatherer:
 			jobs = { }
 
 		joblist = self.pq.getjobs()
+
+		cur_time = time.time()
 
 		jobs_processed = [ ]
 
@@ -171,6 +200,7 @@ class PBSDataGatherer:
 			myAttrs['ppn'] = ppn
 			myAttrs['status'] = status
 			myAttrs['start_timestamp'] = start_timestamp
+			myAttrs['reported_timestamp'] = str( int( cur_time ) )
 			myAttrs['nodes'] = nodeslist
 			myAttrs['domain'] = string.join( socket.getfqdn().split( '.' )[1:], '.' )
 
@@ -186,10 +216,6 @@ class PBSDataGatherer:
 	def submitJobData( self, jobs ):
 		"""Submit job info list"""
 
-		time_now = time.time()
-
-		self.dp.multicastGmetric( 'TOGA-HEARTBEAT', str( time_now ), 'float' )
-
 		# Now let's spread the knowledge
 		#
 		for jobid, jobattrs in jobs.items():
@@ -200,6 +226,7 @@ class PBSDataGatherer:
 				self.dp.multicastGmetric( 'TOGA-JOB-' + jobid, val )
 
 	def makeNodeString( self, nodelist ):
+		"""Make one big string of all hosts"""
 
 		node_str = None
 
@@ -222,14 +249,19 @@ class PBSDataGatherer:
 		ppn_str = 'ppn=' + jobattrs['ppn']
 		status_str = 'status=' + jobattrs['status']
 		stime_str = 'stime=' + jobattrs['start_timestamp']
+		reported_str = 'reported=' + jobattrs['reported_timestamp']
 		domain_str = 'domain=' + jobattrs['domain']
 		node_str = 'nodes=' + self.makeNodeString( jobattrs['nodes'] )
 
-		appendList = [ name_str, queue_str, owner_str, rtime_str, rmem_str, ppn_str, status_str, stime_str, domain_str, node_str ]
+		appendList = [ name_str, queue_str, owner_str, rtime_str, rmem_str, ppn_str, status_str, stime_str, reported_str, domain_str, node_str ]
 
 		return self.makeAppendLists( appendList )
 
 	def makeAppendLists( self, append_list ):
+		"""
+		Divide all values from append_list over strings with a maximum
+		size of 1400
+		"""
 
 		app_lists = [ ]
 
