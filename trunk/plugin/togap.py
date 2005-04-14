@@ -4,22 +4,16 @@
 #
 DEBUG_LEVEL = 10
 
-# If set to 1, in addition to multicasting with gmetric,
-# also transmit jobinfo data to a Toga server for archival
-#
-ARCHIVE_MODE = 0
-
-# Where is the toga server at
-#
-#TOGA_SERVER = 'monitor2.irc.sara.nl:9048'
-
 # Wether or not to run as a daemon in background
 #
 DAEMONIZE = 0
 
-# Allows to specify alternate config
+# How many seconds interval for polling of jobs
 #
-#GMOND_CONF = '/etc/gmondconf'
+# this will effect directly how accurate the
+# end time of a job can be determined
+#
+TORQUE_POLL_INTERVAL = 10
 
 from PBSQuery import PBSQuery
 import sys
@@ -41,16 +35,12 @@ class DataProcessor:
 		try:
 			cmd = cmd + ' -c' + GMOND_CONF
 		except NameError:
-			debug_msg( 8, 'Assuming /etc/gmond.conf for gmetric cmd (ommitting)' )
+			debug_msg( 10, 'Assuming /etc/gmond.conf for gmetric cmd (ommitting)' )
 
 		cmd = cmd + ' -n' + metricname + ' -v' + metricval + ' -t' + tmax
 
 		print cmd
 		#os.system( cmd )
-
-	def togaSubmitJob( self, jobid, jobattrs ):
-
-		pass
 
 class PBSDataGatherer:
 
@@ -221,7 +211,7 @@ class PBSDataGatherer:
                 while ( 1 ):
 		
 			self.getJobData()
-			time.sleep( 1 )	
+			time.sleep( TORQUE_POLL_INTERVAL )	
 
 def printTime( ):
 
