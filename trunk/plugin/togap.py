@@ -2,7 +2,7 @@
 
 # Specify debugging level here;
 #
-DEBUG_LEVEL = 10
+DEBUG_LEVEL = 0
 
 # Wether or not to run as a daemon in background
 #
@@ -51,8 +51,7 @@ class DataProcessor:
 			debug_msg( 0, gmond_file + ' does not exist' )
 			sys.exit( 1 )
 
-		#incompatible = self.checkGmetricVersion()
-		incompatible = 0
+		incompatible = self.checkGmetricVersion()
 
 		if incompatible:
 			debug_msg( 0, 'Gmetric version not compatible, pls upgrade to at least 3.0.1' )
@@ -68,13 +67,13 @@ class DataProcessor:
 
 			line = line.split( ' ' )
 
-			if len( line ) == 2 and line.find( 'gmetric' ) != -1:
+			if len( line ) == 2 and str(line).find( 'gmetric' ) != -1:
 			
-				gmetric_version = line[1]
+				gmetric_version = line[1].split( '\n' )[0]
 
-				version_major = int( gemtric_version.split( '.' )[0] )
-				version_minor = int( gemtric_version.split( '.' )[1] )
-				version_patch = int( gemtric_version.split( '.' )[2] )
+				version_major = int( gmetric_version.split( '.' )[0] )
+				version_minor = int( gmetric_version.split( '.' )[1] )
+				version_patch = int( gmetric_version.split( '.' )[2] )
 
 				incompatible = 0
 
@@ -105,7 +104,7 @@ class DataProcessor:
 		cmd = cmd + ' -n' + metricname + ' -v"' + metricval + '" -t' + valtype + ' -x' + tmax + ' -d' + str( self.dmax )
 
 		print cmd
-		#os.system( cmd )
+		os.system( cmd )
 
 class PBSDataGatherer:
 
@@ -157,13 +156,11 @@ class PBSDataGatherer:
 
 		joblist = self.pq.getjobs()
 
-		cur_time = time.time()
+		self.cur_time = time.time()
 
 		jobs_processed = [ ]
 
 		for name, attrs in joblist.items():
-
-			print attrs
 
 			job_id = name.split( '.' )[0]
 
@@ -200,14 +197,14 @@ class PBSDataGatherer:
 			myAttrs['ppn'] = ppn
 			myAttrs['status'] = status
 			myAttrs['start_timestamp'] = start_timestamp
-			myAttrs['reported_timestamp'] = str( int( cur_time ) )
+			myAttrs['reported_timestamp'] = str( int( self.cur_time ) )
 			myAttrs['nodes'] = nodeslist
 			myAttrs['domain'] = string.join( socket.getfqdn().split( '.' )[1:], '.' )
 
 			if self.jobDataChanged( jobs, job_id, myAttrs ):
 				jobs[ job_id ] = myAttrs
 
-				self.printJob( jobs, job_id )
+				#self.printJob( jobs, job_id )
 
 				debug_msg( 10, printTime() + ' job %s state changed' %(job_id) )
 
@@ -215,6 +212,8 @@ class PBSDataGatherer:
 
 	def submitJobData( self, jobs ):
 		"""Submit job info list"""
+
+		self.dp.multicastGmetric( 'TOGA-HEARTBEAT', str( int( self.cur_time ) ) )
 
 		# Now let's spread the knowledge
 		#
@@ -286,6 +285,9 @@ class PBSDataGatherer:
 	def checkValAppendMaxSize( self, val, text ):
 		"""Check if val + text size is not above 1400 (max msg size)"""
 
+		# Max frame size of a udp datagram is 1500 bytes
+		# removing misc header and gmetric stuff leaves about 1400 bytes
+		#
 		if len( val + text ) > 1400:
 			return 1
 		else:
