@@ -69,7 +69,7 @@ class DataProcessor:
 
 		return incompatible
 
-	def multicastGmetric( self, metricname, metricval, tmax='15' ):
+	def multicastGmetric( self, metricname, metricval, valtype='string', tmax='15' ):
 
 		cmd = self.binary
 
@@ -78,7 +78,7 @@ class DataProcessor:
 		except NameError:
 			debug_msg( 10, 'Assuming /etc/gmond.conf for gmetric cmd (ommitting)' )
 
-		cmd = cmd + ' -n' + metricname + ' -v"' + metricval + '" -t' + tmax + ' -d' + str( self.dmax )
+		cmd = cmd + ' -n' + metricname + ' -v"' + metricval + '" -t' + valtype + ' -x' + tmax + ' -d' + str( self.dmax )
 
 		print cmd
 		#os.system( cmd )
@@ -188,7 +188,7 @@ class PBSDataGatherer:
 
 		time_now = time.time()
 
-		self.dp.multicastGmetric( 'TOGA-HEARTBEAT', str( time_now ) )
+		self.dp.multicastGmetric( 'TOGA-HEARTBEAT', str( time_now ), 'float' )
 
 		# Now let's spread the knowledge
 		#
