@@ -153,6 +153,75 @@ class RRDMutator:
 
 		return 0
 
+class XMLProcessor:
+	"""Skeleton class for XML processor's"""
+
+	def daemon( self ):
+		"""Run as daemon forever"""
+
+		# Fork the first child
+		#
+		pid = os.fork()
+
+		if pid > 0:
+
+			sys.exit(0)  # end parent
+
+		# creates a session and sets the process group ID 
+		#
+		os.setsid()
+
+		# Fork the second child
+		#
+		pid = os.fork()
+
+		if pid > 0:
+
+			sys.exit(0)  # end parent
+
+		# Go to the root directory and set the umask
+		#
+		os.chdir('/')
+		os.umask(0)
+
+		sys.stdin.close()
+		sys.stdout.close()
+		#sys.stderr.close()
+
+		os.open('/dev/null', 0)
+		os.dup(0)
+		os.dup(0)
+
+		self.run()
+
+	def run( self ):
+		"""Do main processing of XML here"""
+
+		pass
+
+class TorqueXMLProcessor( XMLProcessor ):
+	"""Main class for processing XML and acting with it"""
+
+	def __init__( self ):
+		"""Setup initial XML connection and handlers"""
+
+		self.myXMLGatherer = XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
+		self.myXMLSource = self.myXMLGatherer.getFileObject()
+		self.myXMLHandler = TorqueXMLHandler()
+		self.myXMLError = XMLErrorHandler()
+
+	def run( self ):
+		"""Main XML processing"""
+
+		while( 1 ):
+
+			print 'parse'
+			self.myXMLSource = self.myXMLGatherer.getFileObject()
+			xml.sax.parse( self.myXMLSource, self.myXMLHandler, self.myXMLError )
+			print self.myXMLHandler.jobAttrs
+			print 'sleep'
+			time.sleep( 1 )
+
 class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 	"""Parse Torque's jobinfo XML from our plugin"""
 
@@ -362,7 +431,7 @@ class XMLErrorHandler( xml.sax.handler.ErrorHandler ):
 
 		debug_msg( 0, 'Warning ' + str( exception ) )
 
-class GangliaXMLGatherer:
+class XMLGatherer:
 	"""Setup a connection and file object to Ganglia's XML"""
 
 	s = None
@@ -440,10 +509,12 @@ class GangliaXMLGatherer:
 	def getFileObject( self ):
 		"""Connect, and return a file object"""
 
+		self.makeFileDescriptor()
+
 		if self.fd:
 			return self.fd
 
-class GangliaXMLProcessor:
+class GangliaXMLProcessor( XMLProcessor ):
 	"""Main class for processing XML and acting with it"""
 
 	def __init__( self ):
@@ -451,68 +522,10 @@ class GangliaXMLProcessor:
 
 		self.config = GangliaConfigParser( GMETAD_CONF )
 
-		self.myXMLGatherer = GangliaXMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
+		self.myXMLGatherer = XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
 		self.myXMLSource = self.myXMLGatherer.getFileObject()
-		self.myTXHandler = TorqueXMLHandler()
-		self.myXMLerror = XMLErrorHandler()
-
-		while( 1 ):
-
-			print 'parse'
-			self.myXMLGatherer.makeFileDescriptor()
-			self.myXMLSource = self.myXMLGatherer.getFileObject()
-			xml.sax.parse( self.myXMLSource, self.myTXHandler, self.myXMLerror )
-			print self.myTXHandler.jobAttrs
-			print 'sleep'
-			time.sleep( 1 )
-
-		#self.myGXHandler = GangliaXMLHandler( self.config )
-		#self.myHandler = GangliaXMLHandler( self.config )
-		#self.myHandler = TorqueXMLHandler( )
-		#self.myParser.setContentHandler( self.myHandler )
-
-	def daemon( self ):
-		"""Run as daemon forever"""
-
-		# Fork the first child
-		#
-		pid = os.fork()
-
-		if pid > 0:
-
-			sys.exit(0)  # end parent
-
-		# creates a session and sets the process group ID 
-		#
-		os.setsid()
-
-		# Fork the second child
-		#
-		pid = os.fork()
-
-		if pid > 0:
-
-			sys.exit(0)  # end parent
-
-		# Go to the root directory and set the umask
-		#
-		os.chdir('/')
-		os.umask(0)
-
-		sys.stdin.close()
-		sys.stdout.close()
-		#sys.stderr.close()
-
-		os.open('/dev/null', 0)
-		os.dup(0)
-		os.dup(0)
-
-		self.run()
-
-	def printTime( self ):
-		"""Print current time in human readable format for logging"""
-
-		return time.strftime("%a %d %b %Y %H:%M:%S")
+		self.myXMLHandler = GangliaXMLHandler( self.config )
+		self.myXMLError = XMLErrorHandler()
 
 	def run( self ):
 		"""Main XML processing; start a xml and storethread"""
@@ -544,7 +557,7 @@ class GangliaXMLProcessor:
 	def storeMetrics( self ):
 		"""Store metrics retained in memory to disk"""
 
-		debug_msg( 7, self.printTime() + ' - storethread(): started.' )
+		debug_msg( 7, printTime() + ' - storethread(): started.' )
 
 		# Store metrics somewhere between every 360 and 640 seconds
 		#
@@ -553,61 +566,62 @@ class GangliaXMLProcessor:
 		storethread = threading.Thread( None, self.storeThread, 'storemetricthread' )
 		storethread.start()
 
-		debug_msg( 7, self.printTime() + ' - storethread(): Sleeping.. (%ss)' %STORE_INTERVAL )
+		debug_msg( 7, printTime() + ' - storethread(): Sleeping.. (%ss)' %STORE_INTERVAL )
 		time.sleep( STORE_INTERVAL )
-		debug_msg( 7, self.printTime() + ' - storethread(): Done sleeping.' )
+		debug_msg( 7, printTime() + ' - storethread(): Done sleeping.' )
 
 		if storethread.isAlive():
 
-			debug_msg( 7, self.printTime() + ' - storethread(): storemetricthread() still running, waiting to finish..' )
+			debug_msg( 7, printTime() + ' - storethread(): storemetricthread() still running, waiting to finish..' )
 			storethread.join( STORE_TIMEOUT ) # Maximum time is for storing thread to finish
-			debug_msg( 7, self.printTime() + ' - storethread(): Done waiting.' )
+			debug_msg( 7, printTime() + ' - storethread(): Done waiting.' )
 
-		debug_msg( 7, self.printTime() + ' - storethread(): finished.' )
+		debug_msg( 7, printTime() + ' - storethread(): finished.' )
 
 		return 0
 
 	def storeThread( self ):
 		"""Actual metric storing thread"""
 
-		debug_msg( 7, self.printTime() + ' - storemetricthread(): started.' )
-		debug_msg( 7, self.printTime() + ' - storemetricthread(): Storing data..' )
-		ret = self.myHandler.storeMetrics()
-		debug_msg( 7, self.printTime() + ' - storemetricthread(): Done storing.' )
-		debug_msg( 7, self.printTime() + ' - storemetricthread(): finished.' )
+		debug_msg( 7, printTime() + ' - storemetricthread(): started.' )
+		debug_msg( 7, printTime() + ' - storemetricthread(): Storing data..' )
+		ret = self.myXMLHandler.storeMetrics()
+		debug_msg( 7, printTime() + ' - storemetricthread(): Done storing.' )
+		debug_msg( 7, printTime() + ' - storemetricthread(): finished.' )
 		
 		return ret
 
 	def processXML( self ):
 		"""Process XML"""
 
-		debug_msg( 7, self.printTime() + ' - xmlthread(): started.' )
+		debug_msg( 7, printTime() + ' - xmlthread(): started.' )
 
 		parsethread = threading.Thread( None, self.parseThread, 'parsethread' )
 		parsethread.start()
 
-		debug_msg( 7, self.printTime() + ' - xmlthread(): Sleeping.. (%ss)' %self.config.getLowestInterval() )
+		debug_msg( 7, printTime() + ' - xmlthread(): Sleeping.. (%ss)' %self.config.getLowestInterval() )
 		time.sleep( float( self.config.getLowestInterval() ) )	
-		debug_msg( 7, self.printTime() + ' - xmlthread(): Done sleeping.' )
+		debug_msg( 7, printTime() + ' - xmlthread(): Done sleeping.' )
 
 		if parsethread.isAlive():
 
-			debug_msg( 7, self.printTime() + ' - xmlthread(): parsethread() still running, waiting to finish..' )
+			debug_msg( 7, printTime() + ' - xmlthread(): parsethread() still running, waiting to finish..' )
 			parsethread.join( PARSE_TIMEOUT ) # Maximum time for XML thread to finish
-			debug_msg( 7, self.printTime() + ' - xmlthread(): Done waiting.' )
+			debug_msg( 7, printTime() + ' - xmlthread(): Done waiting.' )
 
-		debug_msg( 7, self.printTime() + ' - xmlthread(): finished.' )
+		debug_msg( 7, printTime() + ' - xmlthread(): finished.' )
 
 		return 0
 
 	def parseThread( self ):
 		"""Actual parsing thread"""
 
-		debug_msg( 7, self.printTime() + ' - parsethread(): started.' )
-		debug_msg( 7, self.printTime() + ' - parsethread(): Parsing XML..' )
-		#ret = self.myParser.parse( self.myXMLGatherer.getFileObject() )
-		debug_msg( 7, self.printTime() + ' - parsethread(): Done parsing.' )
-		debug_msg( 7, self.printTime() + ' - parsethread(): finished.' )
+		debug_msg( 7, printTime() + ' - parsethread(): started.' )
+		debug_msg( 7, printTime() + ' - parsethread(): Parsing XML..' )
+		self.myXMLSource = self.myXMLGatherer.getFileObject()
+		ret = xml.sax.parse( self.myXMLSource, self.myXMLHandler, self.myXMLError )
+		debug_msg( 7, printTime() + ' - parsethread(): Done parsing.' )
+		debug_msg( 7, printTime() + ' - parsethread(): finished.' )
 
 		return ret
 
@@ -696,6 +710,7 @@ class RRDHandler:
 
 	def __init__( self, config, cluster ):
 		"""Setup initial variables"""
+
 		self.block = 0
 		self.cluster = cluster
 		self.config = config
@@ -1055,12 +1070,18 @@ class RRDHandler:
 def main():
 	"""Program startup"""
 
-	myProcessor = GangliaXMLProcessor()
+	#myTProcessor = TorqueXMLProcessor()
+	myGProcessor = GangliaXMLProcessor()
 
 	if DAEMONIZE:
-		myProcessor.daemon()
+		#torquexmlthread = threading.Thread( None, myTProcessor.daemon, 'tprocxmlthread' )
+		gangliaxmlthread = threading.Thread( None, myGProcessor.daemon, 'gprocxmlthread' )
 	else:
-		myProcessor.run()
+		#torquexmlthread = threading.Thread( None, myTProcessor.run, 'tprocxmlthread' )
+		gangliaxmlthread = threading.Thread( None, myGProcessor.run, 'gprocxmlthread' )
+
+	#torquexmlthread.start()
+	gangliaxmlthread.start()
 
 def check_dir( directory ):
 	"""Check if directory is a proper directory. I.e.: Does _not_ end with a '/'"""
