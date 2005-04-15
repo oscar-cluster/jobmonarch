@@ -186,9 +186,6 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 				if self.jobAttrs.has_key( job_id ):
 					check_change = 1
 
-				if not jobinfo.has_key( job_id ):
-					jobinfo[ job_id ] = { }
-
 				valinfo = val.split( ' ' )
 
 				for myval in valinfo:
@@ -199,7 +196,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 					if valname == 'nodes':
 						value = value.split( ';' )
 
-					jobinfo[ job_id ][ valname ] = value
+					jobinfo[ valname ] = value
 
 				if check_change:
 					if self.jobinfoChanged( self.jobAttrs, job_id, jobinfo ):
@@ -209,7 +206,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 					self.jobAttrs[ job_id ] = jobinfo
 					debug_msg( 0, 'jobinfo for job %s has changed' %job_id )
 					
-	def endElement( self, name, attrs ):
+	def endDocument( self ):
 		"""When all metrics have gone, check if any jobs have finished"""
 
 		for jobid, jobinfo in self.jobAttrs.items():
@@ -220,7 +217,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 			if jobinfo['reported'] < self.heartbeat:
 
 				self.jobAttrs[ jobid ]['status'] = 'F'
-				self.jobAttrs[ jobid ]['stop_timestamp'] = self.heartbeat
+				self.jobAttrs[ jobid ]['stop_timestamp'] = jobinfo['reported']
 
 	def jobinfoChanged( self, jobattrs, jobid, jobinfo ):
 		"""
