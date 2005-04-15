@@ -208,6 +208,14 @@ class PBSDataGatherer:
 
 				debug_msg( 10, printTime() + ' job %s state changed' %(job_id) )
 
+		for id, attrs in jobs.items():
+
+			if id not in jobs_processed:
+
+				# This one isn't there anymore; toedeledoki!
+				#
+				del jobs[ id ]
+
 		return jobs
 
 	def submitJobData( self, jobs ):
