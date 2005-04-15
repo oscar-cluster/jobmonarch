@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from xml.sax import make_parser
+import xml.sax
 from xml.sax.handler import ContentHandler 
 import socket
 import sys
@@ -171,24 +171,25 @@ class TorqueXMLHandler( ContentHandler ):
 
 		if name == 'METRIC':
 
-			metricname = attrss.get( 'NAME', "" )
+			metricname = attrs.get( 'NAME', "" )
 
 			if metricname == 'TOGA-HEARTBEAT':
+				self.heartbeat = attrs.get( 'VAL', "" )
 
-				if not self.heartbeat:
-					self.heartbeat = attrs.get( 'VAL', "" )
-
-			if metricname.find( 'TOGA-JOB' ) != -1:
+			elif metricname.find( 'TOGA-JOB' ) != -1:
 
 				job_id = name.split( 'TOGA-JOB-' )[1]
 				val = attrs.get( 'VAL', "" )
 
 				valinfo = val.split( ' ' )
+				print valinfo
 
 				for myval in valinfo:
 
 					name = valinfo.split( '=' )[0]
 					value = valinfo.split( '=' )[1]
+
+					#if name == '
 
 class GangliaXMLHandler( ContentHandler ):
 	"""Parse Ganglia's XML"""
@@ -289,6 +290,7 @@ class GangliaXMLGatherer:
 	"""Setup a connection and file object to Ganglia's XML"""
 
 	s = None
+	fd = None
 
 	def __init__( self, host, port ):
 		"""Store host and port for connection"""
@@ -296,6 +298,7 @@ class GangliaXMLGatherer:
 		self.host = host
 		self.port = port
 		self.connect()
+		self.makeFileDescriptor()
 
 	def connect( self ):
 		"""Setup connection to XML source"""
@@ -319,8 +322,7 @@ class GangliaXMLGatherer:
 
 		    	except socket.error, msg:
 
-				self.s.close()
-				self.s = None
+				self.disconnect()
 				continue
 
 		    	break
@@ -335,6 +337,7 @@ class GangliaXMLGatherer:
 
 		if self.s:
 			self.s.close()
+			self.s.shutdown( 2 )
 			self.s = None
 
 	def __del__( self ):
@@ -342,17 +345,27 @@ class GangliaXMLGatherer:
 
 		self.disconnect()
 
+	def reconnect( self ):
+		"""Reconnect"""
+
+		if self.s:
+			self.disconnect()
+
+		self.connect()
+
+	def makeFileDescriptor( self ):
+		"""Make file descriptor that points to our socket connection"""
+
+		self.reconnect()
+
+		if self.s:
+			self.fd = self.s.makefile( 'r' )
+
 	def getFileObject( self ):
 		"""Connect, and return a file object"""
 
-		if self.s:
-			# Apearantly, only data is received when a connection is made
-			# therefor, disconnect and connect
-			#
-			self.disconnect()
-			self.connect()
-
-		return self.s.makefile( 'r' )
+		if self.fd:
+			return self.fd
 
 class GangliaXMLProcessor:
 	"""Main class for processing XML and acting with it"""
@@ -363,9 +376,16 @@ class GangliaXMLProcessor:
 		self.config = GangliaConfigParser( GMETAD_CONF )
 
 		self.myXMLGatherer = GangliaXMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
-		self.myParser = make_parser()   
-		self.myHandler = GangliaXMLHandler( self.config )
-		self.myParser.setContentHandler( self.myHandler )
+		self.myXMLSource = self.myXMLGatherer.getFileObject()
+		#self.myParser = make_parser()   
+		while( 1 ):
+			print 'parse'
+			xml.sax.parse( self.getFileObject(), TorqueXMLHandler() )
+			print 'sleep'
+			time.sleep( 1 )
+		#self.myHandler = GangliaXMLHandler( self.config )
+		#self.myHandler = TorqueXMLHandler( )
+		#self.myParser.setContentHandler( self.myHandler )
 
 	def daemon( self ):
 		"""Run as daemon forever"""
@@ -501,7 +521,7 @@ class GangliaXMLProcessor:
 
 		debug_msg( 7, self.printTime() + ' - parsethread(): started.' )
 		debug_msg( 7, self.printTime() + ' - parsethread(): Parsing XML..' )
-		ret = self.myParser.parse( self.myXMLGatherer.getFileObject() )
+		#ret = self.myParser.parse( self.myXMLGatherer.getFileObject() )
 		debug_msg( 7, self.printTime() + ' - parsethread(): Done parsing.' )
 		debug_msg( 7, self.printTime() + ' - parsethread(): finished.' )
 
