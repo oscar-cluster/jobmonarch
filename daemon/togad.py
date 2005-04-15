@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import xml.sax
-from xml.sax.handler import ContentHandler 
+import xml.sax.handler
 import socket
 import sys
 import string
@@ -153,7 +153,7 @@ class RRDMutator:
 
 		return 0
 
-class TorqueXMLHandler( ContentHandler ):
+class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 	"""Parse Torque's jobinfo XML from our plugin"""
 
 	def __init__( self ):
@@ -191,7 +191,7 @@ class TorqueXMLHandler( ContentHandler ):
 
 					#if name == '
 
-class GangliaXMLHandler( ContentHandler ):
+class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 	"""Parse Ganglia's XML"""
 
 	def __init__( self, config ):
@@ -286,6 +286,31 @@ class GangliaXMLHandler( ContentHandler ):
 
 		return 0
 
+class XMLErrorHandler( xml.sax.handler.ErrorHandler ):
+
+	def error( self, exception ):
+		"""Recoverable error"""
+
+		debug_msg( 0, 'Recoverable error ' + str( exception ) )
+
+	def fatalError( self, exception ):
+		"""Non-recoverable error"""
+
+		exception_str = str( exception )
+
+		# Ignore 'no element found' errors
+		if exception_str.find( 'no element found' ) != -1:
+			debug_msg( 1, 'No XML data found: probably socket not (re)connected.' )
+			return 0
+
+		debug_msg( 0, 'Non-recoverable error ' + str( exception ) )
+		sys.exit( 1 )
+
+	def warning( self, exception ):
+		"""Warning"""
+
+		debug_msg( 0, 'Warning ' + str( exception ) )
+
 class GangliaXMLGatherer:
 	"""Setup a connection and file object to Ganglia's XML"""
 
@@ -336,8 +361,8 @@ class GangliaXMLGatherer:
 		"""Close socket"""
 
 		if self.s:
-			self.s.close()
 			self.s.shutdown( 2 )
+			self.s.close()
 			self.s = None
 
 	def __del__( self ):
@@ -377,10 +402,11 @@ class GangliaXMLProcessor:
 
 		self.myXMLGatherer = GangliaXMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
 		self.myXMLSource = self.myXMLGatherer.getFileObject()
-		#self.myParser = make_parser()   
 		while( 1 ):
 			print 'parse'
-			xml.sax.parse( self.getFileObject(), TorqueXMLHandler() )
+			self.myXMLGatherer.makeFileDescriptor()
+			self.myXMLSource = self.myXMLGatherer.getFileObject()
+			xml.sax.parse( self.myXMLSource, TorqueXMLHandler(), XMLErrorHandler() )
 			print 'sleep'
 			time.sleep( 1 )
 		#self.myHandler = GangliaXMLHandler( self.config )
