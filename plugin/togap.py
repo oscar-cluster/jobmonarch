@@ -39,7 +39,7 @@ class DataProcessor:
 		if binary:
 			self.binary = binary
 
-		self.dmax = TORQUE_POLL_INTERVAL
+		self.tmax = str( TORQUE_POLL_INTERVAL )
 
 		try:
 			gmond_file = GMOND_CONF
@@ -91,7 +91,7 @@ class DataProcessor:
 
 		return incompatible
 
-	def multicastGmetric( self, metricname, metricval, valtype='string', tmax='15' ):
+	def multicastGmetric( self, metricname, metricval, valtype='string' ):
 		"""Call gmetric binary and multicast"""
 
 		cmd = self.binary
@@ -101,7 +101,7 @@ class DataProcessor:
 		except NameError:
 			debug_msg( 10, 'Assuming /etc/gmond.conf for gmetric cmd (ommitting)' )
 
-		cmd = cmd + ' -n' + metricname + ' -v"' + metricval + '" -t' + valtype + ' -x' + tmax + ' -d' + str( self.dmax )
+		cmd = cmd + ' -n' + str( metricname )+ ' -v"' + str( metricval )+ '" -t' + str( valtype ) + ' -x' + str( self.tmax )
 
 		print cmd
 		os.system( cmd )
@@ -197,7 +197,7 @@ class PBSDataGatherer:
 			myAttrs['ppn'] = ppn
 			myAttrs['status'] = status
 			myAttrs['start_timestamp'] = start_timestamp
-			myAttrs['reported_timestamp'] = str( int( self.cur_time ) )
+			myAttrs['reported'] = str( int( self.cur_time ) )
 			myAttrs['nodes'] = nodeslist
 			myAttrs['domain'] = string.join( socket.getfqdn().split( '.' )[1:], '.' )
 
@@ -243,12 +243,12 @@ class PBSDataGatherer:
 		name_str = 'name=' + jobattrs['name']
 		queue_str = 'queue=' + jobattrs['queue']
 		owner_str = 'owner=' + jobattrs['owner']
-		rtime_str = 'rtime=' + jobattrs['requested_time']
-		rmem_str = 'rmem=' + jobattrs['requested_memory']
+		rtime_str = 'requested_time=' + jobattrs['requested_time']
+		rmem_str = 'requested_memory=' + jobattrs['requested_memory']
 		ppn_str = 'ppn=' + jobattrs['ppn']
 		status_str = 'status=' + jobattrs['status']
-		stime_str = 'stime=' + jobattrs['start_timestamp']
-		reported_str = 'reported=' + jobattrs['reported_timestamp']
+		stime_str = 'start_timestamp=' + jobattrs['start_timestamp']
+		reported_str = 'reported=' + jobattrs['reported']
 		domain_str = 'domain=' + jobattrs['domain']
 		node_str = 'nodes=' + self.makeNodeString( jobattrs['nodes'] )
 
