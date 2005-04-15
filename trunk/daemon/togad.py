@@ -170,6 +170,8 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 		"""
 		
 		heartbeat = 0
+		
+		jobinfo = { }
 
 		if name == 'METRIC':
 
@@ -183,8 +185,15 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 				job_id = metricname.split( 'TOGA-JOB-' )[1]
 				val = attrs.get( 'VAL', "" )
 
+				check_change = 0
+
+				if self.jobAttrs.has_key( job_id ):
+					check_change = 1
+
+				if not jobinfo.has_key( job_id ):
+					jobinfo[ job_id ] = { }
+
 				valinfo = val.split( ' ' )
-				print valinfo
 
 				for myval in valinfo:
 
@@ -194,12 +203,33 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 					if valname == 'nodes':
 						value = value.split( ';' )
 
-					if not self.jobAttrs.has_key( job_id ):
-						self.jobAttrs[ job_id ] = { }
+					jobinfo[ job_id ][ valname ] = value
 
-					self.jobAttrs[ job_id ][ valname ] = value
+				if check_change:
+					if self.jobinfoChanged( self.jobAttrs, job_id, jobinfo ):
+						self.jobAttrs[ job_id ] = jobinfo
+						debug_msg( 0, 'jobinfo for job %s has changed' %job_id )
+				else:
+					self.jobAttrs[ job_id ] = jobinfo
+					debug_msg( 0, 'jobinfo for job %s has changed' %job_id )
+					
 
-		print self.jobAttrs
+	def jobinfoChanged( self, jobattrs, jobid, jobinfo ):
+
+		if jobattrs.has_key( jobid ):
+
+			for valname, value in jobinfo.items():
+
+				if jobattrs[ jobid ].has_key( valname ):
+
+					if value != jobattrs[ jobid ][ valname ]:
+
+						return 1
+
+				else:
+					return 1
+
+		return 0
 
 class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 	"""Parse Ganglia's XML"""
@@ -412,13 +442,20 @@ class GangliaXMLProcessor:
 
 		self.myXMLGatherer = GangliaXMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
 		self.myXMLSource = self.myXMLGatherer.getFileObject()
+		self.myTXHandler = TorqueXMLHandler()
+		self.myXMLerror = XMLErrorHandler()
+
 		while( 1 ):
+
 			print 'parse'
 			self.myXMLGatherer.makeFileDescriptor()
 			self.myXMLSource = self.myXMLGatherer.getFileObject()
-			xml.sax.parse( self.myXMLSource, TorqueXMLHandler(), XMLErrorHandler() )
+			xml.sax.parse( self.myXMLSource, self.myTXHandler, self.myXMLerror )
+			print self.myTXHandler.jobAttrs
 			print 'sleep'
 			time.sleep( 1 )
+
+		#self.myGXHandler = GangliaXMLHandler( self.config )
 		#self.myHandler = GangliaXMLHandler( self.config )
 		#self.myHandler = TorqueXMLHandler( )
 		#self.myParser.setContentHandler( self.myHandler )
