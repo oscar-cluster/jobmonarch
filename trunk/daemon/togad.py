@@ -156,6 +156,8 @@ class RRDMutator:
 class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 	"""Parse Torque's jobinfo XML from our plugin"""
 
+	jobAttrs = { }
+
 	def __init__( self ):
 
 		pass
@@ -178,7 +180,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 			elif metricname.find( 'TOGA-JOB' ) != -1:
 
-				job_id = name.split( 'TOGA-JOB-' )[1]
+				job_id = metricname.split( 'TOGA-JOB-' )[1]
 				val = attrs.get( 'VAL', "" )
 
 				valinfo = val.split( ' ' )
@@ -186,10 +188,18 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 				for myval in valinfo:
 
-					name = valinfo.split( '=' )[0]
-					value = valinfo.split( '=' )[1]
+					valname = myval.split( '=' )[0]
+					value = myval.split( '=' )[1]
 
-					#if name == '
+					if valname == 'nodes':
+						value = value.split( ';' )
+
+					if not self.jobAttrs.has_key( job_id ):
+						self.jobAttrs[ job_id ] = { }
+
+					self.jobAttrs[ job_id ][ valname ] = value
+
+		print self.jobAttrs
 
 class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 	"""Parse Ganglia's XML"""
