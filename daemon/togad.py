@@ -158,10 +158,6 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 	jobAttrs = { }
 
-	def __init__( self ):
-
-		pass
-
 	def startElement( self, name, attrs ):
 		"""
 		This XML will be all gmetric XML
@@ -213,8 +209,25 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 					self.jobAttrs[ job_id ] = jobinfo
 					debug_msg( 0, 'jobinfo for job %s has changed' %job_id )
 					
+	def endElement( self, name, attrs ):
+		"""When all metrics have gone, check if any jobs have finished"""
+
+		for jobid, jobinfo in self.jobAttrs.items():
+
+			# This is an old job, not in current jobinfo list anymore
+			# it must have finished, since we _did_ get a new heartbeat
+			#
+			if jobinfo['reported'] < self.heartbeat:
+
+				self.jobAttrs[ jobid ]['status'] = 'F'
+				self.jobAttrs[ jobid ]['stop_timestamp'] = self.heartbeat
 
 	def jobinfoChanged( self, jobattrs, jobid, jobinfo ):
+		"""
+		Check if jobinfo has changed from jobattrs[jobid]
+		if it's report time is bigger than previous one
+		and it is report time is recent (equal to heartbeat)
+		"""
 
 		if jobattrs.has_key( jobid ):
 
@@ -224,7 +237,8 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 					if value != jobattrs[ jobid ][ valname ]:
 
-						return 1
+						if jobinfo['reported'] > jobattrs[ jobid ][ 'reported' ] and jobinfo['reported'] == self.heartbeat:
+							return 1
 
 				else:
 					return 1
