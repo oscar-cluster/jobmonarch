@@ -266,7 +266,7 @@ class PBSDataGatherer:
 		appendList.append( 'status=' + jobattrs['status'] )
 		appendList.append( 'start_timestamp=' + jobattrs['start_timestamp'] )
 		appendList.append( 'reported=' + jobattrs['reported'] )
-		appendList.append( 'poll_interval=' + jobattrs['poll_interval'] )
+		appendList.append( 'poll_interval=' + str( jobattrs['poll_interval'] ) )
 		appendList.append( 'domain=' + jobattrs['domain'] )
 		appendList.append( 'nodes=' + self.makeNodeString( jobattrs['nodes'] ) )
 
