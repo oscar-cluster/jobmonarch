@@ -159,8 +159,6 @@ class DataSQLStore:
 
 		id = self.getDatabase( "SELECT job_id FROM jobs WHERE job_id = '%s'" %jobid )
 
-		print id
-
 		if id:
 
 			return id
@@ -184,11 +182,8 @@ class DataSQLStore:
 		update_str = None
 
 		debug_msg( 6, 'mutateJob(): %s %s' %(action,job_id))
-		print jobattrs
 
 		for valname, value in jobattrs.items():
-
-			print valname, value
 
 			if valname in job_values and value:
 
@@ -216,14 +211,14 @@ class DataSQLStore:
 			elif valname == 'nodes':
 
 				self.addNodes( value )
-				#ids = self.getNodeIds( value )
-
-				#for id in ids:
-				#	self.addJobNode( job_id, id )
+				node_list = value
 
 		if action == 'insert':
 
 			self.setDatabase( "INSERT INTO jobs ( %s ) VALUES ( %s )" %( insert_col_str, insert_val_str ) )
+			ids = self.getNodeIds( node_list )
+
+			self.addJobNodes( self. job_id, ids )
 		elif action == 'update':
 
 			self.setDatabase( "UPDATE jobs SET %s" %(update_str) )
@@ -236,6 +231,11 @@ class DataSQLStore:
 	
 			if not id:
 				self.setDatabase( "INSERT INTO nodes ( node_hostname ) VALUES ( '%s' )" %node )
+
+	def addJobNodes( self, jobid, nodes ):
+
+		for node in nodes:
+			self.addJobNode( jobid, node )
 
 	def addJobNode( self, jobid, nodeid ):
 
@@ -378,7 +378,6 @@ class TorqueXMLProcessor( XMLProcessor ):
 			print 'parse'
 			self.myXMLSource = self.myXMLGatherer.getFileObject()
 			xml.sax.parse( self.myXMLSource, self.myXMLHandler, self.myXMLError )
-			print self.myXMLHandler.jobAttrs
 			print 'sleep'
 			time.sleep( 1 )
 
@@ -431,7 +430,6 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 						if valname == 'nodes':
 							value = value.split( ';' )
-							self.ds.addNodes( value )
 
 						jobinfo[ valname ] = value
 
