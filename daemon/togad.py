@@ -20,6 +20,7 @@ import DBClass
 # 9  = RRD activity, gmetad config parsing
 # 8  = RRD file activity
 # 7  = daemon threading
+# 6  = SQL
 #
 DEBUG_LEVEL = 7
 
@@ -84,6 +85,165 @@ STORE_TIMEOUT = 360
 """
 This is TOrque-GAnglia's data Daemon
 """
+
+class DataSQLStore:
+
+	db_vars = None
+	dbc = None
+
+	def __init__( self, hostname, database ):
+
+		self.db_vars = DBClass.InitVars(DataBaseName=database,
+				User='root',
+				Host=hostname,
+				Password='',
+				Dictionary='true')
+
+		try:
+			self.dbc     = DBClass.DB(self.db_vars)
+		except DBClass.DBError, details:
+			print 'Error in connection to db: %s' %details
+			sys.exit(1)
+
+	def setDatabase(self, statement):
+		ret = self.doDatabase('set', statement)
+		return ret
+		
+	def getDatabase(self, statement):
+		ret = self.doDatabase('get', statement)
+		return ret
+
+	def doDatabase(self, type, statement):
+
+		debug_msg( 6, 'doDatabase(): %s: %s' %(type, statement) )
+		try:
+			if type == 'set':
+				result = self.dbc.Set( statement )
+				self.dbc.Commit()
+			elif type == 'get':
+				result = self.dbc.Get( statement )
+				
+		except DBClass.DBError, detail:
+			operation = statement.split(' ')[0]
+			print "%s operation on database failed while performing\n'%s'\n%s"\
+				%(operation, statement, detail)
+			sys.exit(1)
+
+		debug_msg( 6, 'doDatabase(): result: %s' %(result) )
+		return result
+
+	def getNodeId( self, hostname ):
+
+		id = self.getDatabase( "SELECT node_id FROM nodes WHERE node_hostname = '%s'" %hostname )[0][0]
+
+		if id:
+
+			return id
+		else:
+			return None
+
+	def getNodeIds( self, hostnames ):
+
+		ids = [ ]
+
+		for node in hostnames:
+
+			id = self.getNodeId( node )
+
+			if id:
+				ids.append( id )
+
+		return ids
+
+	def getJobId( self, jobid ):
+
+		id = self.getDatabase( "SELECT job_id FROM jobs WHERE job_id = '%s'" %jobid )
+
+		print id
+
+		if id:
+
+			return id
+		else:
+			return None
+
+	def addJob( self, job_id, jobattrs ):
+
+		if not self.getJobId( job_id ):
+
+			self.mutateJob( 'insert', job_id, jobattrs ) 
+		else:
+			self.mutateJob( 'update', job_id, jobattrs )
+
+	def mutateJob( self, action, job_id, jobattrs ):
+
+		job_values = [ 'name', 'queue', 'owner', 'requested_time', 'requested_memory', 'ppn', 'status', 'start_timestamp', 'stop_timestamp' ]
+
+		insert_col_str = 'job_id'
+		insert_val_str = "'%s'" %job_id
+		update_str = None
+
+		debug_msg( 6, 'mutateJob(): %s %s' %(action,job_id))
+		print jobattrs
+
+		for valname, value in jobattrs.items():
+
+			print valname, value
+
+			if valname in job_values and value:
+
+				column_name = 'job_' + valname
+
+				if action == 'insert':
+
+					if not insert_col_str:
+						insert_col_str = column_name
+					else:
+						insert_col_str = insert_col_str + ',' + column_name
+
+					if not insert_val_str:
+						insert_val_str = value
+					else:
+						insert_val_str = insert_val_str + ",'%s'" %value
+
+				elif action == 'update':
+					
+					if not update_str:
+						update_str = "%s='%s'" %(column_name, value)
+					else:
+						update_str = update_str + ",%s='%s'" %(column_name, value)
+
+			elif valname == 'nodes':
+
+				self.addNodes( value )
+				#ids = self.getNodeIds( value )
+
+				#for id in ids:
+				#	self.addJobNode( job_id, id )
+
+		if action == 'insert':
+
+			self.setDatabase( "INSERT INTO jobs ( %s ) VALUES ( %s )" %( insert_col_str, insert_val_str ) )
+		elif action == 'update':
+
+			self.setDatabase( "UPDATE jobs SET %s" %(update_str) )
+
+	def addNodes( self, hostnames ):
+
+		for node in hostnames:
+
+			id = self.getNodeId( node )
+	
+			if not id:
+				self.setDatabase( "INSERT INTO nodes ( node_hostname ) VALUES ( '%s' )" %node )
+
+	def addJobNode( self, jobid, nodeid ):
+
+		self.setDatabase( "INSERT INTO job_nodes (job_id,node_id) VALUES ( %s,%s )" %(jobid, nodeid) )
+
+	def storeJobInfo( self, jobid, jobattrs ):
+
+		self.addJob( jobid, jobattrs )
 
 class RRDMutator:
 	"""A class for performing RRD mutations"""
@@ -226,6 +386,11 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 	"""Parse Torque's jobinfo XML from our plugin"""
 
 	jobAttrs = { }
+	jobs_to_store = [ ]
+
+	def __init__( self ):
+
+		self.ds = DataSQLStore( TOGA_SQL_DBASE.split( '/' )[0], TOGA_SQL_DBASE.split( '/' )[1] )
 
 	def startElement( self, name, attrs ):
 		"""
@@ -259,20 +424,30 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 				for myval in valinfo:
 
-					valname = myval.split( '=' )[0]
-					value = myval.split( '=' )[1]
+					if len( myval.split( '=' ) ) > 1:
 
-					if valname == 'nodes':
-						value = value.split( ';' )
+						valname = myval.split( '=' )[0]
+						value = myval.split( '=' )[1]
 
-					jobinfo[ valname ] = value
+						if valname == 'nodes':
+							value = value.split( ';' )
+							self.ds.addNodes( value )
+
+						jobinfo[ valname ] = value
 
 				if check_change:
 					if self.jobinfoChanged( self.jobAttrs, job_id, jobinfo ):
 						self.jobAttrs[ job_id ] = self.setJobAttrs( self.jobAttrs[ job_id ], jobinfo )
+						if not job_id in self.jobs_to_store:
+							self.jobs_to_store.append( job_id )
+
 						debug_msg( 0, 'jobinfo for job %s has changed' %job_id )
 				else:
 					self.jobAttrs[ job_id ] = jobinfo
+
+					if not job_id in self.jobs_to_store:
+						self.jobs_to_store.append( job_id )
+
 					debug_msg( 0, 'jobinfo for job %s has changed' %job_id )
 					
 	def endDocument( self ):
@@ -287,6 +462,13 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 				self.jobAttrs[ jobid ]['status'] = 'F'
 				self.jobAttrs[ jobid ]['stop_timestamp'] = str( int( jobinfo['reported'] ) + int( jobinfo['poll_interval'] ) )
+				if not jobid in self.jobs_to_store:
+					self.jobs_to_store.append( jobid )
+
+		for jobid in self.jobs_to_store:
+			self.ds.storeJobInfo( jobid, self.jobAttrs[ jobid ] )	
+
+		self.jobs_to_store = [ ]
 
 	def setJobAttrs( self, old, new ):
 		"""
