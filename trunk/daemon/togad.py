@@ -19,8 +19,8 @@ import DBClass
 # 10 = XML: host, cluster, grid, ganglia
 # 9  = RRD activity, gmetad config parsing
 # 8  = RRD file activity
-# 7  = daemon threading
 # 6  = SQL
+# 1  = daemon threading
 #
 DEBUG_LEVEL = 7
 
@@ -218,7 +218,7 @@ class DataSQLStore:
 			self.setDatabase( "INSERT INTO jobs ( %s ) VALUES ( %s )" %( insert_col_str, insert_val_str ) )
 			ids = self.getNodeIds( node_list )
 
-			self.addJobNodes( self. job_id, ids )
+			self.addJobNodes( job_id, ids )
 		elif action == 'update':
 
 			self.setDatabase( "UPDATE jobs SET %s" %(update_str) )
@@ -369,17 +369,21 @@ class TorqueXMLProcessor( XMLProcessor ):
 		self.myXMLSource = self.myXMLGatherer.getFileObject()
 		self.myXMLHandler = TorqueXMLHandler()
 		self.myXMLError = XMLErrorHandler()
+		self.config = GangliaConfigParser( GMETAD_CONF )
 
 	def run( self ):
 		"""Main XML processing"""
 
+		debug_msg( 5, printTime() + ' - torquexmlthread(): started.' )
+
 		while( 1 ):
 
-			print 'parse'
 			self.myXMLSource = self.myXMLGatherer.getFileObject()
+			debug_msg( 1, printTime() + ' - torquexmlthread(): Parsing..' )
 			xml.sax.parse( self.myXMLSource, self.myXMLHandler, self.myXMLError )
-			print 'sleep'
-			time.sleep( 1 )
+			debug_msg( 1, printTime() + ' - torquexmlthread(): Done parsing.' )
+			debug_msg( 1, printTime() + ' - torquexmlthread(): Sleeping.. (%ss)' %(str( self.config.getLowestInterval() ) ) )
+			time.sleep( self.config.getLowestInterval() )
 
 class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 	"""Parse Torque's jobinfo XML from our plugin"""
@@ -456,15 +460,19 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 			# This is an old job, not in current jobinfo list anymore
 			# it must have finished, since we _did_ get a new heartbeat
 			#
-			if jobinfo['reported'] < self.heartbeat:
+			if jobinfo['reported'] < self.heartbeat and jobinfo['status'] == 'R' and jobid not in self.jobs_to_store:
 
 				self.jobAttrs[ jobid ]['status'] = 'F'
 				self.jobAttrs[ jobid ]['stop_timestamp'] = str( int( jobinfo['reported'] ) + int( jobinfo['poll_interval'] ) )
 				if not jobid in self.jobs_to_store:
 					self.jobs_to_store.append( jobid )
 
+		debug_msg( 1, printTime() + ' - torquexmlthread(): Storing..' )
+
 		for jobid in self.jobs_to_store:
 			self.ds.storeJobInfo( jobid, self.jobAttrs[ jobid ] )	
+
+		debug_msg( 1, printTime() + ' - torquexmlthread(): Done storing.' )
 
 		self.jobs_to_store = [ ]
 
@@ -487,19 +495,23 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 		and it is report time is recent (equal to heartbeat)
 		"""
 
+		ignore_changes = [ 'reported' ]
+
 		if jobattrs.has_key( jobid ):
 
 			for valname, value in jobinfo.items():
 
-				if jobattrs[ jobid ].has_key( valname ):
+				if valname not in ignore_changes:
 
-					if value != jobattrs[ jobid ][ valname ]:
+					if jobattrs[ jobid ].has_key( valname ):
 
-						if jobinfo['reported'] > jobattrs[ jobid ][ 'reported' ] and jobinfo['reported'] == self.heartbeat:
-							return 1
+						if value != jobattrs[ jobid ][ valname ]:
 
-				else:
-					return 1
+							if jobinfo['reported'] > jobattrs[ jobid ][ 'reported' ] and jobinfo['reported'] == self.heartbeat:
+								return 1
+
+					else:
+						return 1
 
 		return 0
 
@@ -775,45 +787,45 @@ class GangliaXMLProcessor( XMLProcessor ):
 	def storeThread( self ):
 		"""Actual metric storing thread"""
 
-		debug_msg( 7, printTime() + ' - storemetricthread(): started.' )
-		debug_msg( 7, printTime() + ' - storemetricthread(): Storing data..' )
+		debug_msg( 1, printTime() + ' - storemetricthread(): started.' )
+		debug_msg( 1, printTime() + ' - storemetricthread(): Storing data..' )
 		ret = self.myXMLHandler.storeMetrics()
-		debug_msg( 7, printTime() + ' - storemetricthread(): Done storing.' )
-		debug_msg( 7, printTime() + ' - storemetricthread(): finished.' )
+		debug_msg( 1, printTime() + ' - storemetricthread(): Done storing.' )
+		debug_msg( 1, printTime() + ' - storemetricthread(): finished.' )
 		
 		return ret
 
 	def processXML( self ):
 		"""Process XML"""
 
-		debug_msg( 7, printTime() + ' - xmlthread(): started.' )
+		debug_msg( 1, printTime() + ' - xmlthread(): started.' )
 
 		parsethread = threading.Thread( None, self.parseThread, 'parsethread' )
 		parsethread.start()
 
-		debug_msg( 7, printTime() + ' - xmlthread(): Sleeping.. (%ss)' %self.config.getLowestInterval() )
+		debug_msg( 1, printTime() + ' - xmlthread(): Sleeping.. (%ss)' %self.config.getLowestInterval() )
 		time.sleep( float( self.config.getLowestInterval() ) )	
-		debug_msg( 7, printTime() + ' - xmlthread(): Done sleeping.' )
+		debug_msg( 1, printTime() + ' - xmlthread(): Done sleeping.' )
 
 		if parsethread.isAlive():
 
-			debug_msg( 7, printTime() + ' - xmlthread(): parsethread() still running, waiting to finish..' )
+			debug_msg( 1, printTime() + ' - xmlthread(): parsethread() still running, waiting to finish..' )
 			parsethread.join( PARSE_TIMEOUT ) # Maximum time for XML thread to finish
 			debug_msg( 7, printTime() + ' - xmlthread(): Done waiting.' )
 
-		debug_msg( 7, printTime() + ' - xmlthread(): finished.' )
+		debug_msg( 1, printTime() + ' - xmlthread(): finished.' )
 
 		return 0
 
 	def parseThread( self ):
 		"""Actual parsing thread"""
 
-		debug_msg( 7, printTime() + ' - parsethread(): started.' )
-		debug_msg( 7, printTime() + ' - parsethread(): Parsing XML..' )
+		debug_msg( 1, printTime() + ' - parsethread(): started.' )
+		debug_msg( 1, printTime() + ' - parsethread(): Parsing XML..' )
 		self.myXMLSource = self.myXMLGatherer.getFileObject()
 		ret = xml.sax.parse( self.myXMLSource, self.myXMLHandler, self.myXMLError )
-		debug_msg( 7, printTime() + ' - parsethread(): Done parsing.' )
-		debug_msg( 7, printTime() + ' - parsethread(): finished.' )
+		debug_msg( 1, printTime() + ' - parsethread(): Done parsing.' )
+		debug_msg( 1, printTime() + ' - parsethread(): finished.' )
 
 		return ret
 
@@ -1263,10 +1275,6 @@ def main():
 	"""Program startup"""
 
 	myTProcessor = TorqueXMLProcessor()
-	myTProcessor.run()
-
-	sys.exit( 1 )
-
 	myGProcessor = GangliaXMLProcessor()
 
 	if DAEMONIZE:
@@ -1277,7 +1285,7 @@ def main():
 		gangliaxmlthread = threading.Thread( None, myGProcessor.run, 'gprocxmlthread' )
 
 	torquexmlthread.start()
-	#gangliaxmlthread.start()
+	gangliaxmlthread.start()
 
 # Global functions
 
