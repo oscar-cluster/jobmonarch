@@ -269,7 +269,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 				if check_change:
 					if self.jobinfoChanged( self.jobAttrs, job_id, jobinfo ):
-						self.jobAttrs[ job_id ] = jobinfo
+						self.jobAttrs[ job_id ] = self.setJobAttrs( self.jobAttrs[ job_id ], jobinfo )
 						debug_msg( 0, 'jobinfo for job %s has changed' %job_id )
 				else:
 					self.jobAttrs[ job_id ] = jobinfo
@@ -287,6 +287,18 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 				self.jobAttrs[ jobid ]['status'] = 'F'
 				self.jobAttrs[ jobid ]['stop_timestamp'] = str( int( jobinfo['reported'] ) + int( jobinfo['poll_interval'] ) )
+
+	def setJobAttrs( self, old, new ):
+		"""
+		Set new job attributes in old, but not lose existing fields
+		if old attributes doesn't have those
+		"""
+
+		for valname, value in new.items():
+			old[ valname ] = value
+
+		return old
+		
 
 	def jobinfoChanged( self, jobattrs, jobid, jobinfo ):
 		"""
