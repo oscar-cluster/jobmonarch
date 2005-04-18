@@ -186,7 +186,7 @@ class XMLProcessor:
 
 		sys.stdin.close()
 		sys.stdout.close()
-		#sys.stderr.close()
+		sys.stderr.close()
 
 		os.open('/dev/null', 0)
 		os.dup(0)
@@ -286,7 +286,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 			if jobinfo['reported'] < self.heartbeat:
 
 				self.jobAttrs[ jobid ]['status'] = 'F'
-				self.jobAttrs[ jobid ]['stop_timestamp'] = jobinfo['reported']
+				self.jobAttrs[ jobid ]['stop_timestamp'] = str( int( jobinfo['reported'] ) + int( jobinfo['poll_interval'] ) )
 
 	def jobinfoChanged( self, jobattrs, jobid, jobinfo ):
 		"""
@@ -1070,18 +1070,24 @@ class RRDHandler:
 def main():
 	"""Program startup"""
 
-	#myTProcessor = TorqueXMLProcessor()
+	myTProcessor = TorqueXMLProcessor()
+	myTProcessor.run()
+
+	sys.exit( 1 )
+
 	myGProcessor = GangliaXMLProcessor()
 
 	if DAEMONIZE:
-		#torquexmlthread = threading.Thread( None, myTProcessor.daemon, 'tprocxmlthread' )
+		torquexmlthread = threading.Thread( None, myTProcessor.daemon, 'tprocxmlthread' )
 		gangliaxmlthread = threading.Thread( None, myGProcessor.daemon, 'gprocxmlthread' )
 	else:
-		#torquexmlthread = threading.Thread( None, myTProcessor.run, 'tprocxmlthread' )
+		torquexmlthread = threading.Thread( None, myTProcessor.run, 'tprocxmlthread' )
 		gangliaxmlthread = threading.Thread( None, myGProcessor.run, 'gprocxmlthread' )
 
-	#torquexmlthread.start()
-	gangliaxmlthread.start()
+	torquexmlthread.start()
+	#gangliaxmlthread.start()
+
+# Global functions
 
 def check_dir( directory ):
 	"""Check if directory is a proper directory. I.e.: Does _not_ end with a '/'"""
