@@ -39,7 +39,14 @@ class DataProcessor:
 		if binary:
 			self.binary = binary
 
-		self.tmax = str( TORQUE_POLL_INTERVAL )
+		# Timeout for XML
+		#
+		# From ganglia's documentation:
+		#
+		# 'A metric will be deleted DMAX seconds after it is received, and
+	        # DMAX=0 means eternal life.'
+
+		self.dmax = str( int( TORQUE_POLL_INTERVAL ) - 1 )
 
 		try:
 			gmond_file = GMOND_CONF
@@ -101,7 +108,7 @@ class DataProcessor:
 		except NameError:
 			debug_msg( 10, 'Assuming /etc/gmond.conf for gmetric cmd (ommitting)' )
 
-		cmd = cmd + ' -n' + str( metricname )+ ' -v"' + str( metricval )+ '" -t' + str( valtype ) + ' -x' + str( self.tmax )
+		cmd = cmd + ' -n' + str( metricname )+ ' -v"' + str( metricval )+ '" -t' + str( valtype ) + ' -d' + str( self.dmax )
 
 		print cmd
 		os.system( cmd )
@@ -200,6 +207,7 @@ class PBSDataGatherer:
 			myAttrs['reported'] = str( int( self.cur_time ) )
 			myAttrs['nodes'] = nodeslist
 			myAttrs['domain'] = string.join( socket.getfqdn().split( '.' )[1:], '.' )
+			myAttrs['poll_interval'] = TORQUE_POLL_INTERVAL
 
 			if self.jobDataChanged( jobs, job_id, myAttrs ):
 				jobs[ job_id ] = myAttrs
@@ -248,19 +256,19 @@ class PBSDataGatherer:
 	def compileGmetricVal( self, jobid, jobattrs ):
 		"""Create a val string for gmetric of jobinfo"""
 
-		name_str = 'name=' + jobattrs['name']
-		queue_str = 'queue=' + jobattrs['queue']
-		owner_str = 'owner=' + jobattrs['owner']
-		rtime_str = 'requested_time=' + jobattrs['requested_time']
-		rmem_str = 'requested_memory=' + jobattrs['requested_memory']
-		ppn_str = 'ppn=' + jobattrs['ppn']
-		status_str = 'status=' + jobattrs['status']
-		stime_str = 'start_timestamp=' + jobattrs['start_timestamp']
-		reported_str = 'reported=' + jobattrs['reported']
-		domain_str = 'domain=' + jobattrs['domain']
-		node_str = 'nodes=' + self.makeNodeString( jobattrs['nodes'] )
-
-		appendList = [ name_str, queue_str, owner_str, rtime_str, rmem_str, ppn_str, status_str, stime_str, reported_str, domain_str, node_str ]
+		appendList = [ ]
+		appendList.append( 'name=' + jobattrs['name'] )
+		appendList.append( 'queue=' + jobattrs['queue'] )
+		appendList.append( 'owner=' + jobattrs['owner'] )
+		appendList.append( 'requested_time=' + jobattrs['requested_time'] )
+		appendList.append( 'requested_memory=' + jobattrs['requested_memory'] )
+		appendList.append( 'ppn=' + jobattrs['ppn'] )
+		appendList.append( 'status=' + jobattrs['status'] )
+		appendList.append( 'start_timestamp=' + jobattrs['start_timestamp'] )
+		appendList.append( 'reported=' + jobattrs['reported'] )
+		appendList.append( 'poll_interval=' + jobattrs['poll_interval'] )
+		appendList.append( 'domain=' + jobattrs['domain'] )
+		appendList.append( 'nodes=' + self.makeNodeString( jobattrs['nodes'] ) )
 
 		return self.makeAppendLists( appendList )
 
