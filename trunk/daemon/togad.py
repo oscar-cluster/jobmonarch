@@ -211,7 +211,7 @@ class DataSQLStore:
 					else:
 						update_str = update_str + ",%s='%s'" %(column_name, value)
 
-			elif valname == 'nodes':
+			elif valname == 'nodes' and value:
 
 				self.addNodes( value )
 				node_list = value
@@ -219,9 +219,9 @@ class DataSQLStore:
 		if action == 'insert':
 
 			self.setDatabase( "INSERT INTO jobs ( %s ) VALUES ( %s )" %( insert_col_str, insert_val_str ) )
-			ids = self.getNodeIds( node_list )
+			#ids = self.getNodeIds( node_list )
 
-			self.addJobNodes( job_id, ids )
+			#self.addJobNodes( job_id, ids )
 		elif action == 'update':
 
 			self.setDatabase( "UPDATE jobs SET %s WHERE job_id=%s" %(update_str, job_id) )
