@@ -134,9 +134,11 @@ class DataSQLStore:
 
 	def getNodeId( self, hostname ):
 
-		id = self.getDatabase( "SELECT node_id FROM nodes WHERE node_hostname = '%s'" %hostname )[0][0]
+		id = self.getDatabase( "SELECT node_id FROM nodes WHERE node_hostname = '%s'" %hostname )
 
-		if id:
+		if len( id ) > 0:
+
+			id = id[0][0]
 
 			return id
 		else:
@@ -160,6 +162,7 @@ class DataSQLStore:
 		id = self.getDatabase( "SELECT job_id FROM jobs WHERE job_id = '%s'" %jobid )
 
 		if id:
+			id = id[0][0]
 
 			return id
 		else:
@@ -221,7 +224,7 @@ class DataSQLStore:
 			self.addJobNodes( job_id, ids )
 		elif action == 'update':
 
-			self.setDatabase( "UPDATE jobs SET %s" %(update_str) )
+			self.setDatabase( "UPDATE jobs SET %s WHERE job_id=%s" %(update_str, job_id) )
 
 	def addNodes( self, hostnames ):
 
