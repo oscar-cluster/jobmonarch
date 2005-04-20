@@ -167,7 +167,6 @@ class PBSDataGatherer:
 			jobs = { }
 
 		self.initPbsQuery()
-		time.sleep( 1 )
 		
 		joblist = self.pq.getjobs()
 
