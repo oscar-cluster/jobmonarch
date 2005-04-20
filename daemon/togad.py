@@ -470,7 +470,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 			mytime = int( jobinfo['reported'] ) + int( jobinfo['poll_interval'] )
 			if mytime < self.heartbeat and jobid not in self.jobs_processed and jobinfo['status'] == 'R':
 
-				if not job_id in self.jobs_processed:
+				if not jobid in self.jobs_processed:
 					self.jobs_processed.append( jobid )
 
 				self.jobAttrs[ jobid ]['status'] = 'F'
