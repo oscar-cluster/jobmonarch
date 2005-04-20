@@ -94,7 +94,7 @@ class DataProcessor:
 
 						if version_patch < 1:
 						
-							incompatbiel = 1
+							incompatible = 1
 
 		return incompatible
 
@@ -120,9 +120,14 @@ class PBSDataGatherer:
 	def __init__( self ):
 		"""Setup appropriate variables"""
 
-		self.pq = PBSQuery()
 		self.jobs = { }
 		self.dp = DataProcessor()
+		self.initPbsQuery()
+
+	def initPbsQuery( self ):
+
+		self.pq = None
+		self.pq = PBSQuery()
 
 	def getAttr( self, attrs, name ):
 		"""Return certain attribute from dictionary, if exists"""
@@ -161,6 +166,9 @@ class PBSDataGatherer:
 		else:
 			jobs = { }
 
+		self.initPbsQuery()
+		time.sleep( 1 )
+		
 		joblist = self.pq.getjobs()
 
 		self.cur_time = time.time()
@@ -235,10 +243,12 @@ class PBSDataGatherer:
 		#
 		for jobid, jobattrs in jobs.items():
 
-			gmetric_val = self.compileGmetricVal( jobid, jobattrs )
+			if jobattrs['status'] in [ 'Q', 'R' ]:
 
-			for val in gmetric_val:
-				self.dp.multicastGmetric( 'TOGA-JOB-' + jobid, val )
+				gmetric_val = self.compileGmetricVal( jobid, jobattrs )
+
+				for val in gmetric_val:
+					self.dp.multicastGmetric( 'TOGA-JOB-' + jobid, val )
 
 	def makeNodeString( self, nodelist ):
 		"""Make one big string of all hosts"""
