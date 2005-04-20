@@ -213,20 +213,21 @@ class DataSQLStore:
 
 			elif valname == 'nodes' and value:
 
-				self.addNodes( value )
+				ids = self.addNodes( value )
 				node_list = value
 
 		if action == 'insert':
 
 			self.setDatabase( "INSERT INTO jobs ( %s ) VALUES ( %s )" %( insert_col_str, insert_val_str ) )
-			#ids = self.getNodeIds( node_list )
+			self.addJobNodes( job_id, ids )
 
-			#self.addJobNodes( job_id, ids )
 		elif action == 'update':
 
 			self.setDatabase( "UPDATE jobs SET %s WHERE job_id=%s" %(update_str, job_id) )
 
 	def addNodes( self, hostnames ):
+
+		ids = [ ]
 
 		for node in hostnames:
 
@@ -234,6 +235,11 @@ class DataSQLStore:
 	
 			if not id:
 				self.setDatabase( "INSERT INTO nodes ( node_hostname ) VALUES ( '%s' )" %node )
+				id = self.getNodeId( node )
+
+			ids.append( id )
+
+		return ids
 
 	def addJobNodes( self, jobid, nodes ):
 
@@ -392,11 +398,12 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 	"""Parse Torque's jobinfo XML from our plugin"""
 
 	jobAttrs = { }
-	jobs_to_store = [ ]
 
 	def __init__( self ):
 
 		self.ds = DataSQLStore( TOGA_SQL_DBASE.split( '/' )[0], TOGA_SQL_DBASE.split( '/' )[1] )
+		self.jobs_processed = [ ]
+		self.jobs_to_store = [ ]
 
 	def startElement( self, name, attrs ):
 		"""
@@ -408,7 +415,6 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 		heartbeat = 0
 		
 		jobinfo = { }
-		self.jobs_processed = [ ]
 
 		if name == 'METRIC':
 
