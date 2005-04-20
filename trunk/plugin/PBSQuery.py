@@ -185,6 +185,9 @@ class _PBSobject:
         
     	return(self.attribs[key])
 
+    def has_key(self, key):
+        return self.attribs.has_key(key)
+
     def get_value(self, key):
         if self.attribs.has_key(key):
 	   return self.attribs[key]
