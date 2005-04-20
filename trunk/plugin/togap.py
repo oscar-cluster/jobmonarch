@@ -2,7 +2,8 @@
 
 # Specify debugging level here;
 #
-DEBUG_LEVEL = 0
+# 10 = gemtric cmd's
+DEBUG_LEVEL = 10
 
 # Wether or not to run as a daemon in background
 #
@@ -110,7 +111,7 @@ class DataProcessor:
 
 		cmd = cmd + ' -n' + str( metricname )+ ' -v"' + str( metricval )+ '" -t' + str( valtype ) + ' -d' + str( self.dmax )
 
-		print cmd
+		debug_msg( 10, printTime() + ' ' + cmd )
 		os.system( cmd )
 
 class PBSDataGatherer:
@@ -166,7 +167,7 @@ class PBSDataGatherer:
 		else:
 			jobs = { }
 
-		self.initPbsQuery()
+		#self.initPbsQuery()
 		
 		joblist = self.pq.getjobs()
 
@@ -227,7 +228,7 @@ class PBSDataGatherer:
 			if self.jobDataChanged( jobs, job_id, myAttrs ):
 				jobs[ job_id ] = myAttrs
 
-				debug_msg( 10, printTime() + ' job %s state changed' %(job_id) )
+				#debug_msg( 10, printTime() + ' job %s state changed' %(job_id) )
 
 		for id, attrs in jobs.items():
 
