@@ -185,15 +185,23 @@ class PBSDataGatherer:
 			owner = self.getAttr( attrs, 'Job_Owner' ).split( '@' )[0]
 			requested_time = self.getAttr( attrs, 'Resource_List.walltime' )
 			requested_memory = self.getAttr( attrs, 'Resource_List.mem' )
+
 			mynoderequest = self.getAttr( attrs, 'Resource_List.nodes' )
+
 			if mynoderequest.find( ':' ) != -1 and mynoderequest.find( 'ppn' ) != -1:
 				ppn = mynoderequest.split( ':' )[1].split( 'ppn=' )[1]
 			else:
 				ppn = ''
-			status = self.getAttr( attrs, 'job_state' )
-			start_timestamp = self.getAttr( attrs, 'mtime' )
 
-			nodes = self.getAttr( attrs, 'exec_host' ).split( '+' )
+			status = self.getAttr( attrs, 'job_state' )
+
+			if status == 'R':
+				start_timestamp = self.getAttr( attrs, 'mtime' )
+				nodes = self.getAttr( attrs, 'exec_host' ).split( '+' )
+			else:
+				start_timestamp = ''
+				nodes = [ ]
+
 			nodeslist = [ ]
 
 			for node in nodes:
@@ -219,8 +227,6 @@ class PBSDataGatherer:
 			if self.jobDataChanged( jobs, job_id, myAttrs ):
 				jobs[ job_id ] = myAttrs
 
-				#self.printJob( jobs, job_id )
-
 				debug_msg( 10, printTime() + ' job %s state changed' %(job_id) )
 
 		for id, attrs in jobs.items():
@@ -242,12 +248,10 @@ class PBSDataGatherer:
 		#
 		for jobid, jobattrs in jobs.items():
 
-			if jobattrs['status'] in [ 'Q', 'R' ]:
+			gmetric_val = self.compileGmetricVal( jobid, jobattrs )
 
-				gmetric_val = self.compileGmetricVal( jobid, jobattrs )
-
-				for val in gmetric_val:
-					self.dp.multicastGmetric( 'TOGA-JOB-' + jobid, val )
+			for val in gmetric_val:
+				self.dp.multicastGmetric( 'TOGA-JOB-' + jobid, val )
 
 	def makeNodeString( self, nodelist ):
 		"""Make one big string of all hosts"""
@@ -270,14 +274,24 @@ class PBSDataGatherer:
 		appendList.append( 'queue=' + jobattrs['queue'] )
 		appendList.append( 'owner=' + jobattrs['owner'] )
 		appendList.append( 'requested_time=' + jobattrs['requested_time'] )
-		appendList.append( 'requested_memory=' + jobattrs['requested_memory'] )
-		appendList.append( 'ppn=' + jobattrs['ppn'] )
+
+		if jobattrs['requested_memory'] != '':
+			appendList.append( 'requested_memory=' + jobattrs['requested_memory'] )
+
+		if jobattrs['ppn'] != '':
+			appendList.append( 'ppn=' + jobattrs['ppn'] )
+
 		appendList.append( 'status=' + jobattrs['status'] )
-		appendList.append( 'start_timestamp=' + jobattrs['start_timestamp'] )
+
+		if jobattrs['start_timestamp'] != '':
+			appendList.append( 'start_timestamp=' + jobattrs['start_timestamp'] )
+
 		appendList.append( 'reported=' + jobattrs['reported'] )
 		appendList.append( 'poll_interval=' + str( jobattrs['poll_interval'] ) )
 		appendList.append( 'domain=' + jobattrs['domain'] )
-		appendList.append( 'nodes=' + self.makeNodeString( jobattrs['nodes'] ) )
+
+		if len( jobattrs['nodes'] ) > 0:
+			appendList.append( 'nodes=' + self.makeNodeString( jobattrs['nodes'] ) )
 
 		return self.makeAppendLists( appendList )
 
