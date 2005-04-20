@@ -188,7 +188,7 @@ class DataSQLStore:
 
 		for valname, value in jobattrs.items():
 
-			if valname in job_values and value:
+			if valname in job_values and value != '':
 
 				column_name = 'job_' + valname
 
@@ -408,6 +408,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 		heartbeat = 0
 		
 		jobinfo = { }
+		self.jobs_processed = [ ]
 
 		if name == 'METRIC':
 
@@ -420,6 +421,9 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 				job_id = metricname.split( 'TOGA-JOB-' )[1]
 				val = attrs.get( 'VAL', "" )
+
+				if not job_id in self.jobs_processed:
+					self.jobs_processed.append( job_id )
 
 				check_change = 0
 
@@ -463,10 +467,15 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 			# This is an old job, not in current jobinfo list anymore
 			# it must have finished, since we _did_ get a new heartbeat
 			#
-			if jobinfo['reported'] < self.heartbeat and jobinfo['status'] == 'R' and jobid not in self.jobs_to_store:
+			mytime = int( jobinfo['reported'] ) + int( jobinfo['poll_interval'] )
+			if mytime < self.heartbeat and jobid not in self.jobs_processed and jobinfo['status'] == 'R':
+
+				if not job_id in self.jobs_processed:
+					self.jobs_processed.append( jobid )
 
 				self.jobAttrs[ jobid ]['status'] = 'F'
 				self.jobAttrs[ jobid ]['stop_timestamp'] = str( int( jobinfo['reported'] ) + int( jobinfo['poll_interval'] ) )
+
 				if not jobid in self.jobs_to_store:
 					self.jobs_to_store.append( jobid )
 
@@ -477,6 +486,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 		debug_msg( 1, printTime() + ' - torquexmlthread(): Done storing.' )
 
+		self.jobs_processed = [ ]
 		self.jobs_to_store = [ ]
 
 	def setJobAttrs( self, old, new ):

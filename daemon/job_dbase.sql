@@ -22,7 +22,7 @@ CREATE TABLE nodes (
 
 CREATE TABLE job_nodes (
 	job_id			INT NOT NULL REFERENCES jobs ON DELETE CASCADE,
-	node_id			INT NOT NULL REFERENCES nodes ON DELETE CASCADE,
+	node_id			INT NOT NULL REFERENCES nodes ON DELETE RESTRICT,
 	PRIMARY KEY ( job_id, node_id )
 );
 
