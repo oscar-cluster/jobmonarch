@@ -455,7 +455,8 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 						jobinfo[ valname ] = value
 
 				if check_change:
-					if self.jobinfoChanged( self.jobAttrs, job_id, jobinfo ):
+					if self.jobinfoChanged( self.jobAttrs, job_id, jobinfo ) and self.jobAttrs[ job_id ]['status'] != 'E':
+						self.jobAttrs[ job_id ]['stop_timestamp'] = ''
 						self.jobAttrs[ job_id ] = self.setJobAttrs( self.jobAttrs[ job_id ], jobinfo )
 						if not job_id in self.jobs_to_store:
 							self.jobs_to_store.append( job_id )
