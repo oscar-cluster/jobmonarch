@@ -186,6 +186,8 @@ class DataSQLStore:
 
 		debug_msg( 6, 'mutateJob(): %s %s' %(action,job_id))
 
+		ids = [ ]
+
 		for valname, value in jobattrs.items():
 
 			if valname in job_values and value != '':
@@ -219,7 +221,9 @@ class DataSQLStore:
 		if action == 'insert':
 
 			self.setDatabase( "INSERT INTO jobs ( %s ) VALUES ( %s )" %( insert_col_str, insert_val_str ) )
-			self.addJobNodes( job_id, ids )
+
+			if len( ids ) > 0:
+				self.addJobNodes( job_id, ids )
 
 		elif action == 'update':
 
