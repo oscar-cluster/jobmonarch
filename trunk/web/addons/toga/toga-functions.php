@@ -65,12 +65,13 @@ class DataSource {
 
 class DataGatherer {
 
-	var $xmlhandler, $data;
+	var $xmlhandler, $data, $httpvars;
 
 	function DataGatherer() {
 
 		$this->parser = xml_parser_create();
 		$this->source = new DataSource();
+		$this->httpvars = new HTTPVariables();
 		$this->xmlhandler = new TorqueXMLHandler();
 		xml_set_element_handler( $this->parser, array( &$this->xmlhandler, 'startElement' ), array( &$this->xmlhandler, 'stopElement' ) );
 	}
@@ -86,18 +87,52 @@ class DataGatherer {
 		}
 	}
 
+	function printInfo() {
+		$handler = $this->xmlhandler;
+		$handler->printInfo();
+	}
+
 }
 
 class TorqueXMLHandler {
 
-	var $clusters, $heartbeat;
+	var $clusters, $heartbeat, $nodes, $jobs;
 
 	function TorqueXMLHandler() {
+		$jobs = array();
 		$clusters = array();
+		$nodes = array();
 		$heartbeat = array();
 	}
 
+	function gotNode( $hostname, $jobid = null, $location = 'unspecified' ) {
+
+		$nodes = &$this->nodes;
+
+		if( !isset( $nodes[$hostname] ) ) {
+
+			$nodes[$hostname] = new Node( $hostname );
+		}
+
+		if( $location != 'unspecified' ) {
+
+			$nodes[$hostname]->setLocation( $location );
+		//} else {
+
+			// Return pointer to this node if location was not set
+			// Which means that this is for a jobinfo
+			//$mynode = &$nodes[$hostname];
+			//return $mynode;
+		}
+
+		if( $jobid ) {
+			$nodes[$hostname]->addJob( $jobid );
+		}
+	}
+
 	function startElement( $parser, $name, $attrs ) {
+
+		$jobs = &$this->jobs;
 
 		if ( $attrs[TN] ) {
 
@@ -106,11 +141,9 @@ class TorqueXMLHandler {
 				return;
 		}
 
-		$jobs = array();
 		$jobid = null;
 
 		// printf( '%s=%s', $attrs[NAME], $attrs[VAL] );
-
 
 		if( $name == 'CLUSTER' ) {
 
@@ -118,6 +151,13 @@ class TorqueXMLHandler {
 
 			if( !isset( $clusters[$clustername] ) )
 				$clusters[$clustername] = array();
+
+		} else if( $name == 'HOST' ) {
+
+			$hostname = $attrs[NAME];
+			$location = $attrs[LOCATION];
+
+			$this->gotNode( $hostname, null,$location );
 
 		} else if( $name == 'METRIC' and strstr( $attrs[NAME], 'TOGA' ) ) {
 
@@ -143,24 +183,30 @@ class TorqueXMLHandler {
 					$toganame = $togavalues[0];
 					$togavalue = $togavalues[1];
 
-					printf( "toganame %s, togavalue %s\n", $toganame, $togavalue );
+					printf( "\t%s\t= %s\n", $toganame, $togavalue );
 
 					if( $toganame == 'nodes' ) {
 
 						if( !isset( $jobs[$toganame] ) )
-							$jobs[$toganame] = array();
+							$jobs[$jobid][$toganame] = array();
 
 						$nodes = explode( ';', $togavalue );
 
 						foreach( $nodes as $node ) {
 
-							printf( "node %s\n", $node );
-							$jobs[$toganame][] = new Node( $node );
+							// printf( "node %s\n", $node );
+
+							$hostname = $node.'.'.$jobs[$jobid][domain];
+							$jobs[$jobid][$toganame][] = $hostname;
+							$this->gotNode( $hostname, $jobid );
+
+							//$jobs[$jobid][$toganame][$hostname] = $this->gotNode( $hostname );
+							// $jobs[$toganame][$node] = new Node( $node );
 						}
 
 					} else {
 
-						$jobs[$toganame] = $togavalue;
+						$jobs[$jobid][$toganame] = $togavalue;
 
 					}
 				}
@@ -170,24 +216,88 @@ class TorqueXMLHandler {
 
 	function stopElement( $parser, $name ) {
 	}
+
+	function printInfo() {
+
+		$jobs = &$this->jobs;
+
+		printf( "---jobs---\n" );
+
+		foreach( $jobs as $jobid => $job ) {
+
+			printf( "job %s\n", $jobid );
+
+			if( isset( $job[nodes] ) ) {
+
+				foreach( $job[nodes] as $node ) {
+
+					$mynode = $this->nodes[$node];
+					$hostname = $mynode->getHostname();
+					$location = $mynode->getLocation();
+
+					printf( "\t- node %s\tlocation %s\n", $hostname, $location );
+					//$this->nodes[$hostname]->setLocation( "hier draait job ".$jobid );
+				}
+			}
+		}
+
+		printf( "---nodes---\n" );
+
+		$nodes = &$this->nodes;
+
+		foreach( $nodes as $node ) {
+
+			$hostname = $node->getHostname();
+			$location = $node->getLocation();
+			$jobs = implode( ' ', $node->getJobs() );
+			printf( "* node %s\tlocation %s\tjobs %s\n", $hostname, $location, $jobs );
+		}
+	}
 }
 
 class Node {
 
-	var $img, $hostname, $location;
+	var $img, $hostname, $location, $jobs;
 
 	function Node( $hostname ) {
 
 		$this->hostname = $hostname;
 		$this->img = new NodeImg();
+		$this->jobs = array();
+	}
+
+	function addJob( $jobid ) {
+		$jobs = &$this->jobs;
+
+		$jobs[] = $jobid;
 	}
 
 	function setLocation( $location ) {
 		$this->location = $location;
 	}
 
+	function setHostname( $hostname ) {
+		$this->hostname = $hostname;
+	}
+
 	function setCpus( $cpus ) {
 		$this->cpus = $cpus;
+	}
+
+	function getHostname() {
+		return $this->hostname;
+	}
+
+	function getLocation() {
+		return $this->location;
+	}
+
+	function getCpus() {
+		return $this->cpus;
+	}
+
+	function getJobs() {
+		return $this->jobs;
 	}
 }
 
@@ -246,5 +356,7 @@ class NodeImg {
 
 $my_data = new DataGatherer();
 $my_data->parseXML();
+$my_data->printInfo();
+$my_data->printInfo();
 ?>
 </PRE>
