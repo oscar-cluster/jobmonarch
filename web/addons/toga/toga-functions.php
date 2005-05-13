@@ -1,3 +1,4 @@
+<PRE>
 <?php
 $GANGLIA_PATH = "/var/www/ganglia";
 
@@ -89,7 +90,11 @@ class DataGatherer {
 
 class TorqueXMLHandler {
 
+	var $clusters, $heartbeat;
+
 	function TorqueXMLHandler() {
+		$clusters = array();
+		$heartbeat = array();
 	}
 
 	function startElement( $parser, $name, $attrs ) {
@@ -104,38 +109,62 @@ class TorqueXMLHandler {
 		$jobs = array();
 		$jobid = null;
 
-		printf( '%s=%s', $attrs[NAME], $attrs[VAL] );
+		// printf( '%s=%s', $attrs[NAME], $attrs[VAL] );
 
-		sscanf( $attrs[NAME], 'TOGA-JOB-%d', $jobid );
 
-		if( $jobid ) {
+		if( $name == 'CLUSTER' ) {
 
-			if( !isset( $jobs[$jobid] ) )
-				$jobs[$jobid] = array();
+			$clustername = $attrs[VAL];
 
-			$fields = explode( ' ', $attrs[VAL] );
+			if( !isset( $clusters[$clustername] ) )
+				$clusters[$clustername] = array();
 
-			foreach( $fields as $f ) {
-				$togavalues = explode( '=', $f );
+		} else if( $name == 'METRIC' and strstr( $attrs[NAME], 'TOGA' ) ) {
 
-				foreach( $togavalues as $toganame => $togavalue ) {
+			if( strstr( $attrs[NAME], 'TOGA-HEARTBEAT' ) ) {
+
+				$heartbeat['time'] = $attrs[VAL];
+				printf( "heartbeat %s\n", $heartbeat['time'] );
+
+			} else if( strstr( $attrs[NAME], 'TOGA-JOB' ) ) {
+
+				sscanf( $attrs[NAME], 'TOGA-JOB-%d', $jobid );
+
+				printf( "jobid %s\n", $jobid );
+
+				if( !isset( $jobs[$jobid] ) )
+					$jobs[$jobid] = array();
+
+				$fields = explode( ' ', $attrs[VAL] );
+
+				foreach( $fields as $f ) {
+					$togavalues = explode( '=', $f );
+
+					$toganame = $togavalues[0];
+					$togavalue = $togavalues[1];
+
+					printf( "toganame %s, togavalue %s\n", $toganame, $togavalue );
 
 					if( $toganame == 'nodes' ) {
+
+						if( !isset( $jobs[$toganame] ) )
+							$jobs[$toganame] = array();
 
 						$nodes = explode( ';', $togavalue );
 
 						foreach( $nodes as $node ) {
 
-							// Doe iets koels met $node
+							printf( "node %s\n", $node );
+							$jobs[$toganame][] = new Node( $node );
 						}
 
+					} else {
+
+						$jobs[$toganame] = $togavalue;
+
 					}
-
-					$jobs[$toganame] = $togavalue;
-
 				}
 			}
-
 		}
 	}
 
@@ -145,11 +174,20 @@ class TorqueXMLHandler {
 
 class Node {
 
-	var $img;
+	var $img, $hostname, $location;
 
-	function Node() {
+	function Node( $hostname ) {
 
+		$this->hostname = $hostname;
 		$this->img = new NodeImg();
+	}
+
+	function setLocation( $location ) {
+		$this->location = $location;
+	}
+
+	function setCpus( $cpus ) {
+		$this->cpus = $cpus;
 	}
 }
 
@@ -209,3 +247,4 @@ class NodeImg {
 $my_data = new DataGatherer();
 $my_data->parseXML();
 ?>
+</PRE>
