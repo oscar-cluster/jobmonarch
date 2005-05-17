@@ -1,4 +1,3 @@
-<PRE>
 <?php
 $GANGLIA_PATH = "/var/www/ganglia";
 
@@ -47,7 +46,7 @@ class DataSource {
 
 		$fp = fsockopen( $this->ip, $this->port, &$errno, &$errstr, $timeout );
 
-		if( ! $fp ) {
+		if( !$fp ) {
 			echo 'Unable to connect to '.$this->ip.':'.$this->port; // printf( 'Unable to connect to [%s:%.0f]', $this->ip, $this->port );
 			return;
 		}
@@ -92,6 +91,16 @@ class DataGatherer {
 		$handler->printInfo();
 	}
 
+	function getNodes() {
+		$handler = $this->xmlhandler;
+		return $handler->getNodes();
+	}
+
+	function getJobs() {
+		$handler = $this->xmlhandler;
+		return $handler->getJobs();
+	}
+
 }
 
 class TorqueXMLHandler {
@@ -105,7 +114,7 @@ class TorqueXMLHandler {
 		$heartbeat = array();
 	}
 
-	function gotNode( $hostname, $jobid = null, $location = 'unspecified' ) {
+	function gotNode( $hostname, $location = 'unspecified', $jobid = null ) {
 
 		$nodes = &$this->nodes;
 
@@ -114,15 +123,9 @@ class TorqueXMLHandler {
 			$nodes[$hostname] = new Node( $hostname );
 		}
 
-		if( $location != 'unspecified' ) {
+		if( $location ) {
 
 			$nodes[$hostname]->setLocation( $location );
-		//} else {
-
-			// Return pointer to this node if location was not set
-			// Which means that this is for a jobinfo
-			//$mynode = &$nodes[$hostname];
-			//return $mynode;
 		}
 
 		if( $jobid ) {
@@ -157,20 +160,20 @@ class TorqueXMLHandler {
 			$hostname = $attrs[NAME];
 			$location = $attrs[LOCATION];
 
-			$this->gotNode( $hostname, null,$location );
+			$this->gotNode( $hostname, $location, null );
 
 		} else if( $name == 'METRIC' and strstr( $attrs[NAME], 'TOGA' ) ) {
 
 			if( strstr( $attrs[NAME], 'TOGA-HEARTBEAT' ) ) {
 
 				$heartbeat['time'] = $attrs[VAL];
-				printf( "heartbeat %s\n", $heartbeat['time'] );
+				//printf( "heartbeat %s\n", $heartbeat['time'] );
 
 			} else if( strstr( $attrs[NAME], 'TOGA-JOB' ) ) {
 
 				sscanf( $attrs[NAME], 'TOGA-JOB-%d', $jobid );
 
-				printf( "jobid %s\n", $jobid );
+				//printf( "jobid %s\n", $jobid );
 
 				if( !isset( $jobs[$jobid] ) )
 					$jobs[$jobid] = array();
@@ -183,31 +186,25 @@ class TorqueXMLHandler {
 					$toganame = $togavalues[0];
 					$togavalue = $togavalues[1];
 
-					printf( "\t%s\t= %s\n", $toganame, $togavalue );
+					//printf( "\t%s\t= %s\n", $toganame, $togavalue );
 
 					if( $toganame == 'nodes' ) {
 
-						if( !isset( $jobs[$toganame] ) )
+						if( !isset( $jobs[$jobid][$toganame] ) )
 							$jobs[$jobid][$toganame] = array();
 
 						$nodes = explode( ';', $togavalue );
 
 						foreach( $nodes as $node ) {
 
-							// printf( "node %s\n", $node );
-
 							$hostname = $node.'.'.$jobs[$jobid][domain];
 							$jobs[$jobid][$toganame][] = $hostname;
-							$this->gotNode( $hostname, $jobid );
-
-							//$jobs[$jobid][$toganame][$hostname] = $this->gotNode( $hostname );
-							// $jobs[$toganame][$node] = new Node( $node );
+							$this->gotNode( $hostname, null, $jobid );
 						}
 
 					} else {
 
 						$jobs[$jobid][$toganame] = $togavalue;
-
 					}
 				}
 			}
@@ -253,11 +250,20 @@ class TorqueXMLHandler {
 			printf( "* node %s\tlocation %s\tjobs %s\n", $hostname, $location, $jobs );
 		}
 	}
+
+	function getNodes() {
+		return $this->nodes;
+	}
+
+	function getJobs() {
+		return $this->jobs;
+	}
 }
 
 class Node {
 
 	var $img, $hostname, $location, $jobs;
+	var $x, $y;
 
 	function Node( $hostname ) {
 
@@ -299,11 +305,33 @@ class Node {
 	function getJobs() {
 		return $this->jobs;
 	}
+
+	function setCoords( $x, $y ) {
+		$myimg = $this->img;
+		$myimg->setCoords( $x, $y );
+	}
+
+	function setImage( $image ) {
+		$myimg = $this->img;
+		$myimg->setImage( &$image );
+	}
+
+	function draw() {
+		$myimg = $this->img;
+
+		$cpus = $metrics[$this->hostname]["cpu_num"][VAL];
+		if (!$cpus) $cpus=1;
+		$load_one = $metrics[$this->hostname]["load_one"][VAL];
+		$load = ((float) $load_one)/$cpus;
+
+		$myimg->setLoad( $load );
+		$myimg->draw();
+	}
 }
 
 class NodeImg {
 
-	var $image;
+	var $image, $x, $y;
 
 	function NodeImg( $image = null ) {
 
@@ -320,6 +348,13 @@ class NodeImg {
 		$background_color = imageColorAllocate( $this->image, 255, 255, 255 );
 		$black_color = imageColorAllocate( $this->image, 0, 0, 0 );
 		imageRectangle( $this->image, 0, 0, $imageWidth-1, $imageHeight-1, $black_color );
+		$this->x = null;
+		$this->y = null;
+	}
+
+	function setCoords( $x, $y ) {
+		$this->x = $x;
+		$this->y = $y;
 	}
 
 	function colorHex( $color ) {
@@ -329,34 +364,110 @@ class NodeImg {
 		return $my_color;
 	}
 
-	function drawNode( $x, $y, &$queuecolor, $load, &$jobcolor ) {
+	function setImage( $image ) {
+		$this->image = $image;
+	}
+
+	function setLoad( $load ) {
+		$this->load = $load;
+	}
+
+	function drawNode( &$queuecolor, $load, &$jobcolor ) {
+
+		if( !$this->x or !$this->y or !$this->load ) {
+			return;
+		}
+
 
 		// Convert Ganglias Hexadecimal load color to a Decimal one
 		$my_loadcolor = $this->colorHex( load_color($load) );
 
-		imageFilledRectangle( $this->image, $x, $y, $x+12, $y+12, $queuecolor );
-		imageFilledRectangle( $this->image, $x+2, $y+2, $x+10, $y+10, $my_loadcolor );
-		//imageFilledEllipse( $this->image, ($x+9)/2, ($y+9)/2, 6, 6, $jobcolor );
+		imageFilledRectangle( $this->image, $this->x, $this->y, $this->x+12, $this->y+12, $queuecolor );
+		imageFilledRectangle( $this->image, $this->x+2, $this->y+2, $this->x+10, $this->y+10, $my_loadcolor );
+		// Een job markering?
+		//imageFilledEllipse( $this->image, ($this->x+9)/2, ($this->y+9)/2, 6, 6, $jobcolor );
 	}
 
-	function drawImage() {
+	function draw() {
 
 		$queue_color = imageColorAllocate( $this->image, 0, 102, 304 );
 		$job_color = imageColorAllocate( $this->image, 204, 204, 0 );
 
-		$this->drawNode( 1, 1, $queue_color, 0.1, $job_color );
+		$this->drawNode( $queue_color, 0.1, $job_color );
+	}
+}
+
+class ImageCreator {
+
+	var $dataget, $image;
+
+	function ImageCreator() {
+		$this->dataget = new DataGatherer();
+	}
+
+	function draw() {
+		$mydatag = &$this->dataget;
+		$mydatag->parseXML();
+
+		$max_width = 150;
+		$node_width = 12;
+
+		$nodes = $mydatag->getNodes();
+
+		$nodes_nr = count( $nodes );
+		$node_keys = array_keys( $nodes );
+
+		$nodes_size = $nodes_nr*$node_width;
+		$node_rows = 0;
+
+		if( $nodes_size > $max_width ) {
+			$nodes_per_row = (int) $max_width/$node_width;
+		} else {
+			$nodes_per_row = $nodes_size;
+			$node_rows = 1;
+		}
+
+		if( $nodes_per_row < $nodes_nr ) {
+			$node_rows = (int) $nodes_nr/$nodes_per_row;
+			if( ((int) fmod( $node_nr, ($nodes_nr*$nodes_per_row) )) > 0 ) {
+				$node_rows++;
+			}
+		}
+
+		$image = imageCreate( ($nodes_per_row*$node_width), ($node_rows*$node_width) );
+
+		$cur_node = 0;
+
+		for( $n = 0; $n < $node_rows; $n++ ) {
+			
+			for( $m = 0; $m < $nodes_per_row; $m++ ) {
+				
+				$x = ($m*$node_width);
+				$y = ($m*$node_width)+($n*$node_width);
+				$host = $node_keys[$cur_node];
+				//printf( "cur_node %d, host %s\n", $cur_node, $host );
+				if( isset( $nodes[$host] ) and ($cur_node < $nodes_nr) ) {
+					$nodes[$host]->setCoords( $x, $y );
+					$nodes[$host]->setImage( &$image );
+					$nodes[$host]->draw();
+					$cur_node++;
+				}
+			}
+		}
+		
 		header( 'Content-type: image/png' );
-		imagePNG( $this->image );
-		imageDestroy( $this->image );
+		imagePNG( $image );
+		imageDestroy( $image );
 	}
 }
 
 //$my_node = new NodeImg();
 //$my_node->drawImage();
 
-$my_data = new DataGatherer();
-$my_data->parseXML();
-$my_data->printInfo();
-$my_data->printInfo();
+//$my_data = new DataGatherer();
+//$my_data->parseXML();
+//$my_data->printInfo();
+
+$ic = new ImageCreator();
+$ic->draw();
 ?>
-</PRE>
