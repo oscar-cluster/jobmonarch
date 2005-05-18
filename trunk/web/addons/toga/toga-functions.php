@@ -268,7 +268,7 @@ class Node {
 	function Node( $hostname ) {
 
 		$this->hostname = $hostname;
-		$this->img = new NodeImg();
+		//$this->img = new NodeImg();
 		$this->jobs = array();
 	}
 
@@ -329,30 +329,19 @@ class Node {
 	}
 }
 
-class NodeImg {
+class NodeImage {
 
 	var $image, $x, $y;
 
-	function NodeImg( $image = null ) {
+	function NodeImage( $image, $x, $y ) {
 
-		$imageWidth = 100;
-		$imageHeight = 100;
-
-		if( !$image ) {
-			$this->image = imageCreate( $imageWidth, $imageHeight );
-				// or die( 'Cannot initialize new image stream: is GD installed?' );
-		} else {
-			$this->image = $image;
-		}
-
-		$background_color = imageColorAllocate( $this->image, 255, 255, 255 );
-		$black_color = imageColorAllocate( $this->image, 0, 0, 0 );
-		imageRectangle( $this->image, 0, 0, $imageWidth-1, $imageHeight-1, $black_color );
-		$this->x = null;
-		$this->y = null;
+		$this->image = $image;
+		$this->x = $x;
+		$this->y = $y;
 	}
 
 	function setCoords( $x, $y ) {
+
 		$this->x = $x;
 		$this->y = $y;
 	}
@@ -372,41 +361,48 @@ class NodeImg {
 		$this->load = $load;
 	}
 
-	function drawNode( &$queuecolor, $load, &$jobcolor ) {
+	function drawNode( $load ) {
 
-		if( !$this->x or !$this->y or !$this->load ) {
+		if( !isset( $this->x ) or !isset( $this->y ) or !isset( $load ) ) {
+			printf( "aborting\n" );
+			printf( "x %d y %d load %f\n", $this->x, $this->y, $load );
 			return;
 		}
 
+		$queue_color = imageColorAllocate( &$this->image, 0, 102, 304 );
+		$job_color = imageColorAllocate( &$this->image, 204, 204, 0 );
 
 		// Convert Ganglias Hexadecimal load color to a Decimal one
 		$my_loadcolor = $this->colorHex( load_color($load) );
 
 		imageFilledRectangle( $this->image, $this->x, $this->y, $this->x+12, $this->y+12, $queuecolor );
 		imageFilledRectangle( $this->image, $this->x+2, $this->y+2, $this->x+10, $this->y+10, $my_loadcolor );
+
 		// Een job markering?
 		//imageFilledEllipse( $this->image, ($this->x+9)/2, ($this->y+9)/2, 6, 6, $jobcolor );
 	}
 
 	function draw() {
 
-		$queue_color = imageColorAllocate( $this->image, 0, 102, 304 );
-		$job_color = imageColorAllocate( $this->image, 204, 204, 0 );
+		$cpus = $metrics[$this->hostname]["cpu_num"][VAL];
+		if (!$cpus) $cpus=1;
+		$load_one = $metrics[$this->hostname]["load_one"][VAL];
+		$load = ((float) $load_one)/$cpus;
 
-		$this->drawNode( $queue_color, 0.1, $job_color );
+		$this->drawNode( $load );
 	}
 }
 
-class ImageCreator {
+class ClusterImage {
 
 	var $dataget, $image;
 
-	function ImageCreator() {
+	function ClusterImage() {
 		$this->dataget = new DataGatherer();
 	}
 
 	function draw() {
-		$mydatag = &$this->dataget;
+		$mydatag = $this->dataget;
 		$mydatag->parseXML();
 
 		$max_width = 150;
@@ -421,36 +417,44 @@ class ImageCreator {
 		$node_rows = 0;
 
 		if( $nodes_size > $max_width ) {
-			$nodes_per_row = (int) $max_width/$node_width;
+			$nodes_per_row = ( (int) ($max_width/$node_width) );
 		} else {
 			$nodes_per_row = $nodes_size;
 			$node_rows = 1;
 		}
 
 		if( $nodes_per_row < $nodes_nr ) {
-			$node_rows = (int) $nodes_nr/$nodes_per_row;
-			if( ((int) fmod( $node_nr, ($nodes_nr*$nodes_per_row) )) > 0 ) {
+			$node_rows = ( (int) ($nodes_nr/$nodes_per_row) );
+			$node_rest = fmod( $nodes_nr, $nodes_per_row );
+			//printf( "nodesnr %d noderest %f\n", $nodes_nr, $node_rest );
+			if( $node_rest > 0 ) {
 				$node_rows++;
+				//printf( "noderows %d\n", $node_rows );
 			}
 		}
 
-		$image = imageCreate( ($nodes_per_row*$node_width), ($node_rows*$node_width) );
-
-		$cur_node = 0;
+		//printf( "imagecreate: %dx%d", ($nodes_per_row*$node_width), ($node_rows*$node_width) );
+		$image = imageCreateTrueColor( ($nodes_per_row*$node_width), ($node_rows*$node_width) );
+		$colorwhite = imageColorAllocate( $image, 255, 255, 255 );
+		imageFill( $image, 0, 0, $colorwhite );
 
 		for( $n = 0; $n < $node_rows; $n++ ) {
 			
 			for( $m = 0; $m < $nodes_per_row; $m++ ) {
-				
-				$x = ($m*$node_width);
-				$y = ($m*$node_width)+($n*$node_width);
+			
+				$x = ($m * $node_width);
+				$y = ($n * $node_width);
+
+				$cur_node = ($n * $nodes_per_row) + ($m + 1);
 				$host = $node_keys[$cur_node];
-				//printf( "cur_node %d, host %s\n", $cur_node, $host );
-				if( isset( $nodes[$host] ) and ($cur_node < $nodes_nr) ) {
-					$nodes[$host]->setCoords( $x, $y );
-					$nodes[$host]->setImage( &$image );
-					$nodes[$host]->draw();
-					$cur_node++;
+
+				if( isset( $nodes[$host] ) and ($cur_node <= $nodes_nr) ) {
+					$node = new NodeImage( $image, $x, $y );
+					$node->draw();
+					//$nodes[$host]->setCoords( $x, $y );
+					//$nodes[$host]->setImage( &$image );
+					//$nodes[$host]->draw();
+					//$cur_node++;
 				}
 			}
 		}
@@ -461,13 +465,10 @@ class ImageCreator {
 	}
 }
 
-//$my_node = new NodeImg();
-//$my_node->drawImage();
-
 //$my_data = new DataGatherer();
 //$my_data->parseXML();
 //$my_data->printInfo();
 
-$ic = new ImageCreator();
+$ic = new ClusterImage();
 $ic->draw();
 ?>
