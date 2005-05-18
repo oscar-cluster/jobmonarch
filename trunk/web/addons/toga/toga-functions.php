@@ -3,10 +3,20 @@ $GANGLIA_PATH = "/var/www/ganglia";
 
 include_once "$GANGLIA_PATH/conf.php";
 include_once "$GANGLIA_PATH/functions.php";
+include_once "$GANGLIA_PATH/ganglia.php";
+
+global $context;
+$context = 'cluster';
+
+include_once "$GANGLIA_PATH/get_ganglia.php";
 
 if ( !empty( $_GET ) ) {
         extract( $_GET );
 }
+
+global $metrics;
+
+//print_r($metrics);
 
 class HTTPVariables {
 
@@ -317,6 +327,8 @@ class Node {
 	}
 
 	function draw() {
+		global $metrics;
+	
 		$myimg = $this->img;
 
 		$cpus = $metrics[$this->hostname]["cpu_num"][VAL];
@@ -331,7 +343,7 @@ class Node {
 
 class NodeImage {
 
-	var $image, $x, $y;
+	var $image, $x, $y, $hostname;
 
 	function NodeImage( $image, $x, $y ) {
 
@@ -361,6 +373,10 @@ class NodeImage {
 		$this->load = $load;
 	}
 
+	function setHostname( $hostname ) {
+		$this->hostname = $hostname;
+	}
+
 	function drawNode( $load ) {
 
 		if( !isset( $this->x ) or !isset( $this->y ) or !isset( $load ) ) {
@@ -384,9 +400,11 @@ class NodeImage {
 
 	function draw() {
 
-		$cpus = $metrics[$this->hostname]["cpu_num"][VAL];
+		global $metrics;
+
+		$cpus = $metrics[$this->hostname][cpu_num][VAL];
 		if (!$cpus) $cpus=1;
-		$load_one = $metrics[$this->hostname]["load_one"][VAL];
+		$load_one = $metrics[$this->hostname][load_one][VAL];
 		$load = ((float) $load_one)/$cpus;
 
 		$this->drawNode( $load );
@@ -405,7 +423,7 @@ class ClusterImage {
 		$mydatag = $this->dataget;
 		$mydatag->parseXML();
 
-		$max_width = 150;
+		$max_width = 250;
 		$node_width = 12;
 
 		$nodes = $mydatag->getNodes();
@@ -450,6 +468,7 @@ class ClusterImage {
 
 				if( isset( $nodes[$host] ) and ($cur_node <= $nodes_nr) ) {
 					$node = new NodeImage( $image, $x, $y );
+					$node->setHostname( $host );
 					$node->draw();
 					//$nodes[$host]->setCoords( $x, $y );
 					//$nodes[$host]->setImage( &$image );
