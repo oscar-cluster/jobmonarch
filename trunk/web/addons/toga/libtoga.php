@@ -1,5 +1,13 @@
 <?php
-$GANGLIA_PATH = "/var/www/ganglia";
+//$GANGLIA_PATH = "/var/www/ganglia";
+
+// Toga's conf
+//
+include_once "./conf.php";
+
+global $GANGLIA_PATH, $SMALL_CLUSTERIMAGE_MAXWIDTH, $SMALL_CLUSTERIMAGE_NODEWIDTH, $DATA_SOURCE;
+
+//printf("gpath %s clmaxw %s ndmaxw %s ds %s",$GANGLIA_PATH, $SMALL_CLUSTERIMAGE_MAXWIDTH, $SMALL_CLUSTERIMAGE_NODEWIDTH, $DATA_SOURCE); 
 
 include_once "$GANGLIA_PATH/conf.php";
 include_once "$GANGLIA_PATH/functions.php";
@@ -28,13 +36,23 @@ global $metrics;
 class HTTPVariables {
 
 	var $clustername, $metricname;
+	var $restvars;
 
 	function HTTPVariables() {
+
+		$this->restvars = array();
 
 		global $HTTP_GET_VARS;
 
 		$this->clustername = $HTTP_GET_VARS["c"] ? $HTTP_GET_VARS["c"] : null;
 		$this->metricname = $HTTP_GET_VARS["m"] ? $HTTP_GET_VARS["m"] : null;
+
+		foreach( $HTTP_GET_VARS as $httpvar => $httpval ) {
+			
+			if( $httpval ) {
+				$this->restvars[$httpvar] = $httpval;
+			}
+		}
 	}
 
 	function getClusterName() {
@@ -43,6 +61,13 @@ class HTTPVariables {
 
 	function getMetricName() {
 		return $this->metricname;
+	}
+
+	function getHttpVar( $var ) {
+		if( isset( $this->restvars[$var] ) )
+			return $retval;
+		else
+			return null;
 	}
 }
 
@@ -85,8 +110,15 @@ class DataGatherer {
 
 	function DataGatherer() {
 
+		global $DATA_SOURCE;
+		
+		$ds_fields = explode( ':', $DATA_SOURCE );
+		$ds_ip = $ds_fields[0];
+		$ds_port = $ds_fields[1];
+
+		$this->source = new DataSource( $ds_ip, $ds_port );
+
 		$this->parser = xml_parser_create();
-		$this->source = new DataSource();
 		$this->httpvars = new HTTPVariables();
 		$this->xmlhandler = new TorqueXMLHandler();
 		xml_set_element_handler( $this->parser, array( &$this->xmlhandler, 'startElement' ), array( &$this->xmlhandler, 'stopElement' ) );
@@ -131,7 +163,7 @@ class TorqueXMLHandler {
 		$heartbeat = array();
 	}
 
-	function gotNode( $hostname, $location = 'unspecified', $jobid = null ) {
+	function gotNode( $hostname, $location = 'unspecified', $jobid ) {
 
 		$nodes = &$this->nodes;
 
@@ -147,6 +179,7 @@ class TorqueXMLHandler {
 
 		if( $jobid ) {
 			$nodes[$hostname]->addJob( $jobid );
+			//printf("add job %s to node %s", $jobid, $hostname );
 		}
 	}
 
@@ -217,6 +250,7 @@ class TorqueXMLHandler {
 							$hostname = $node.'.'.$jobs[$jobid][domain];
 							$jobs[$jobid][$toganame][] = $hostname;
 							$this->gotNode( $hostname, null, $jobid );
+							//printf( "got job %s on node %s", $jobid, $hostname );
 						}
 
 					} else {
@@ -293,6 +327,8 @@ class Node {
 		$jobs = &$this->jobs;
 
 		$jobs[] = $jobid;
+		//print_r( $jobs );
+		$this->jobs = $jobs;
 	}
 
 	function setLocation( $location ) {
@@ -320,6 +356,7 @@ class Node {
 	}
 
 	function getJobs() {
+		//print_r( $this->jobs );
 		return $this->jobs;
 	}
 
@@ -350,13 +387,15 @@ class Node {
 
 class NodeImage {
 
-	var $image, $x, $y, $hostname;
+	var $image, $x, $y, $hostname, $jobs;
 
-	function NodeImage( $image, $x, $y ) {
+	function NodeImage( $image, $x, $y, $hostname, $multiproc_job ) {
 
 		$this->image = $image;
 		$this->x = $x;
 		$this->y = $y;
+		$this->hostname = $hostname;
+		$this->multiproc_job = $multiproc_job;
 	}
 
 	function setCoords( $x, $y ) {
@@ -386,20 +425,27 @@ class NodeImage {
 
 	function drawNode( $load ) {
 
+		global $SMALL_CLUSTERIMAGE_NODEWIDTH;
+
 		if( !isset( $this->x ) or !isset( $this->y ) or !isset( $load ) ) {
 			printf( "aborting\n" );
 			printf( "x %d y %d load %f\n", $this->x, $this->y, $load );
 			return;
 		}
 
-		$queue_color = imageColorAllocate( &$this->image, 0, 102, 304 );
-		$job_color = imageColorAllocate( &$this->image, 204, 204, 0 );
+		$black_color = imageColorAllocate( &$this->image, 0, 0, 0 );
 
 		// Convert Ganglias Hexadecimal load color to a Decimal one
 		$my_loadcolor = $this->colorHex( load_color($load) );
 
-		imageFilledRectangle( $this->image, $this->x, $this->y, $this->x+11, $this->y+11, $queuecolor );
-		imageFilledRectangle( $this->image, $this->x+1, $this->y+1, $this->x+10, $this->y+10, $my_loadcolor );
+		$size = $SMALL_CLUSTERIMAGE_NODEWIDTH;
+
+		imageFilledRectangle( $this->image, $this->x, $this->y, $this->x+($size), $this->y+($size), $black_color );
+		imageFilledRectangle( $this->image, $this->x+1, $this->y+1, $this->x+($size-1), $this->y+($size-1), $my_loadcolor );
+		if( $this->multiproc_job == 2 )
+			imageString( $this->image, 1, $this->x+(($size/2)-2), $this->y+(($size/2)-3), "J", $black_color );
+		else if( $this->multiproc_job == 1 )
+			imageString( $this->image, 1, $this->x+(($size/2)-2), $this->y+(($size/2)-3), "j", $black_color );
 
 		// Een job markering?
 		//imageFilledEllipse( $this->image, ($this->x+9)/2, ($this->y+9)/2, 6, 6, $jobcolor );
@@ -428,11 +474,19 @@ class ClusterImage {
 	}
 
 	function draw() {
+
+		global $SMALL_CLUSTERIMAGE_MAXWIDTH, $SMALL_CLUSTERIMAGE_NODEWIDTH;
+	
 		$mydatag = $this->dataget;
 		$mydatag->parseXML();
 
-		$max_width = 250;
-		$node_width = 11;
+		//$max_width = 250;
+		//$node_width = 11;
+
+		$max_width = $SMALL_CLUSTERIMAGE_MAXWIDTH;
+		$node_width = $SMALL_CLUSTERIMAGE_NODEWIDTH;
+
+		//printf( "cmaxw %s nmaxw %s", $SMALL_CLUSTERIMAGE_MAXWIDTH, $SMALL_CLUSTERIMAGE_NODEWIDTH );
 
 		$nodes = $mydatag->getNodes();
 
@@ -478,8 +532,24 @@ class ClusterImage {
 
 				if( isset( $nodes[$host] ) and ($cur_node < $nodes_nr) ) {
 					//printf( "image %s\n", $host );
-					$node = new NodeImage( $image, $x, $y );
-					$node->setHostname( $host );
+					$nodejobs = $nodes[$host]->getJobs();
+					$jobs = $mydatag->getJobs();
+
+					$multiproc_job = 0;
+
+					if( count( $nodejobs ) > 0 ) {
+						$multiproc_job = 1;
+
+						foreach( $nodejobs as $myjob ){
+							if( isset($jobs[$myjob]['ppn']) and $jobs[$myjob]['ppn'] > 1 )
+								$multiproc_job = 2;
+								break;
+						}
+					}
+
+					//printf( "jobs %s node %s", $nrjobs, $host );
+					$node = new NodeImage( $image, $x, $y, $host, $multiproc_job );
+					//$node->setHostname( $host );
 					$node->draw();
 					//$nodes[$host]->setCoords( $x, $y );
 					//$nodes[$host]->setImage( &$image );
