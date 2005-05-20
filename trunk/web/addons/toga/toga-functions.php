@@ -5,15 +5,22 @@ include_once "$GANGLIA_PATH/conf.php";
 include_once "$GANGLIA_PATH/functions.php";
 include_once "$GANGLIA_PATH/ganglia.php";
 
+// Set cluster context so that Ganglia will
+// provide us with the correct metrics array
+//
 global $context;
 $context = 'cluster';
 
 include_once "$GANGLIA_PATH/get_ganglia.php";
 
+// If php is compiled without globals
+//
 if ( !empty( $_GET ) ) {
         extract( $_GET );
 }
 
+// Ganglia's array of host metrics
+//
 global $metrics;
 
 //print_r($metrics);
@@ -360,7 +367,7 @@ class NodeImage {
 
 	function colorHex( $color ) {
 	
-		$my_color = imageColorAllocate( $this->image, hexdec( substr( $color, 0, 2 )), hexdec( substr( $color, 2, 4 )), hexdec( substr( $color, 4, 6 )) );
+		$my_color = imageColorAllocate( $this->image, hexdec( substr( $color, 0, 2 )), hexdec( substr( $color, 2, 2 )), hexdec( substr( $color, 4, 2 )) );
 
 		return $my_color;
 	}
@@ -391,8 +398,8 @@ class NodeImage {
 		// Convert Ganglias Hexadecimal load color to a Decimal one
 		$my_loadcolor = $this->colorHex( load_color($load) );
 
-		imageFilledRectangle( $this->image, $this->x, $this->y, $this->x+12, $this->y+12, $queuecolor );
-		imageFilledRectangle( $this->image, $this->x+2, $this->y+2, $this->x+10, $this->y+10, $my_loadcolor );
+		imageFilledRectangle( $this->image, $this->x, $this->y, $this->x+11, $this->y+11, $queuecolor );
+		imageFilledRectangle( $this->image, $this->x+1, $this->y+1, $this->x+10, $this->y+10, $my_loadcolor );
 
 		// Een job markering?
 		//imageFilledEllipse( $this->image, ($this->x+9)/2, ($this->y+9)/2, 6, 6, $jobcolor );
@@ -406,6 +413,7 @@ class NodeImage {
 		if (!$cpus) $cpus=1;
 		$load_one = $metrics[$this->hostname][load_one][VAL];
 		$load = ((float) $load_one)/$cpus;
+		//printf( "hostname %s cpus %s load_one %s load %f\n", $this->hostname, $cpus, $load_one, $load );
 
 		$this->drawNode( $load );
 	}
@@ -424,7 +432,7 @@ class ClusterImage {
 		$mydatag->parseXML();
 
 		$max_width = 250;
-		$node_width = 12;
+		$node_width = 11;
 
 		$nodes = $mydatag->getNodes();
 
@@ -452,7 +460,7 @@ class ClusterImage {
 		}
 
 		//printf( "imagecreate: %dx%d", ($nodes_per_row*$node_width), ($node_rows*$node_width) );
-		$image = imageCreateTrueColor( ($nodes_per_row*$node_width), ($node_rows*$node_width) );
+		$image = imageCreateTrueColor( ($nodes_per_row*$node_width)+1, ($node_rows*$node_width)+1 );
 		$colorwhite = imageColorAllocate( $image, 255, 255, 255 );
 		imageFill( $image, 0, 0, $colorwhite );
 
@@ -463,10 +471,13 @@ class ClusterImage {
 				$x = ($m * $node_width);
 				$y = ($n * $node_width);
 
-				$cur_node = ($n * $nodes_per_row) + ($m + 1);
+				$cur_node = ($n * $nodes_per_row) + ($m);
 				$host = $node_keys[$cur_node];
 
-				if( isset( $nodes[$host] ) and ($cur_node <= $nodes_nr) ) {
+				//printf( "host %s curnode %s ", $host, $cur_node );
+
+				if( isset( $nodes[$host] ) and ($cur_node < $nodes_nr) ) {
+					//printf( "image %s\n", $host );
 					$node = new NodeImage( $image, $x, $y );
 					$node->setHostname( $host );
 					$node->draw();
