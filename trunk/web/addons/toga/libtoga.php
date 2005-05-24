@@ -186,6 +186,7 @@ class TorqueXMLHandler {
 	function startElement( $parser, $name, $attrs ) {
 
 		$jobs = &$this->jobs;
+		$nodes = &$this->nodes;
 
 		if ( $attrs[TN] ) {
 
@@ -210,7 +211,10 @@ class TorqueXMLHandler {
 			$hostname = $attrs[NAME];
 			$location = $attrs[LOCATION];
 
-			$this->gotNode( $hostname, $location, null );
+			if( !isset( $this->nodes[$hostname] ) )
+				$this->nodes[$hostname] = new NodeImage( $hostname );
+
+			//$this->gotNode( $hostname, $location, null );
 
 		} else if( $name == 'METRIC' and strstr( $attrs[NAME], 'TOGA' ) ) {
 
@@ -243,20 +247,51 @@ class TorqueXMLHandler {
 						if( !isset( $jobs[$jobid][$toganame] ) )
 							$jobs[$jobid][$toganame] = array();
 
-						$nodes = explode( ';', $togavalue );
+						$mynodes = explode( ';', $togavalue );
 
-						foreach( $nodes as $node ) {
+						foreach( $mynodes as $node ) {
 
-							$hostname = $node.'.'.$jobs[$jobid][domain];
-							$jobs[$jobid][$toganame][] = $hostname;
-							$this->gotNode( $hostname, null, $jobid );
-							//printf( "got job %s on node %s", $jobid, $hostname );
+							//$hostname = $node.'.'.$jobs[$jobid][domain];
+							$jobs[$jobid][$toganame][] = $node;
+
+							//if( !isset( $this->nodes[$hostname] ) )
+								//$mynode = new NodeImage( $hostname );
+
+							//$the_node = $this->nodes[$hostname];
+							//$the_node->addJob( $jobid, 
+							//$this->gotNode( $hostname, null, $jobid );
+							//printf( "got node %s\n", $node );
 						}
 
 					} else {
 
 						$jobs[$jobid][$toganame] = $togavalue;
 					}
+				}
+
+				if( isset( $jobs[$jobid][domain] ) and isset( $jobs[$jobid][nodes] ) ) {
+				
+					foreach( $jobs[$jobid][nodes] as $node ) {
+
+						$host = $node.'.'.$jobs[$jobid][domain];
+				
+						if( !isset( $this->nodes[$host] ) )
+							$my_node = new NodeImage( $host );
+						else
+							$my_node = $this->nodes[$host];
+
+						if( !$my_node->hasJob( $jobid ) )
+
+							if( isset( $jobs[$jobid][ppn] ) )
+								$my_node->addJob( $jobid, ((int) $jobs[$jobid][ppn]) );
+							else
+								$my_node->addJob( $jobid, 1 );
+
+						$this->nodes[$host] = $my_node;
+					}
+				} else {
+
+					printf( "no domain or nodes set for %s\n", $jobid );
 				}
 			}
 		}
@@ -331,6 +366,7 @@ class Node {
 		$this->jobs = $jobs;
 	}
 
+
 	function setLocation( $location ) {
 		$this->location = $location;
 	}
@@ -360,10 +396,10 @@ class Node {
 		return $this->jobs;
 	}
 
-	function setCoords( $x, $y ) {
-		$myimg = $this->img;
-		$myimg->setCoords( $x, $y );
-	}
+	//function setCoords( $x, $y ) {
+		//$myimg = $this->img;
+		//$myimg->setCoords( $x, $y );
+	//}
 
 	function setImage( $image ) {
 		$myimg = $this->img;
@@ -387,15 +423,49 @@ class Node {
 
 class NodeImage {
 
-	var $image, $x, $y, $hostname, $jobs;
+	var $image, $x, $y, $hostname, $jobs, $tasks;
 
-	function NodeImage( $image, $x, $y, $hostname, $multiproc_job ) {
+	function NodeImage( $hostname ) {
+
+		$this->jobs = array();
+		//$this->image = $image;
+		//$this->x = $x;
+		//$this->y = $y;
+		$this->tasks = 0;
+		$this->hostname = $hostname;
+		$this->cpus = $this->determineCpus();
+	}
+
+	function addJob( $jobid, $cpus ) {
+		$jobs = &$this->jobs;
+
+		$jobs[] = $jobid;
+		$this->jobs = $jobs;
+
+		$this->addTask( $cpus );
+	}
+
+	function hasJob( $jobid ) {
+
+		$jobfound = 0;
+
+		if( count( $this->jobs ) > 0 )
+			foreach( $this->jobs as $job )
+
+				if( $job == $jobid )
+					$jobfound = 1;
+
+		return $jobfound;
+	}
+
+	function addTask( $cpus ) {
+
+		$this->tasks = $this->tasks + $cpus;
+	}
+
+	function setImage( $image ) {
 
 		$this->image = $image;
-		$this->x = $x;
-		$this->y = $y;
-		$this->hostname = $hostname;
-		$this->multiproc_job = $multiproc_job;
 	}
 
 	function setCoords( $x, $y ) {
@@ -411,10 +481,6 @@ class NodeImage {
 		return $my_color;
 	}
 
-	function setImage( $image ) {
-		$this->image = $image;
-	}
-
 	function setLoad( $load ) {
 		$this->load = $load;
 	}
@@ -423,54 +489,74 @@ class NodeImage {
 		$this->hostname = $hostname;
 	}
 
-	function drawNode( $load ) {
+	function draw() {
 
-		global $SMALL_CLUSTERIMAGE_NODEWIDTH;
+		global $SMALL_CLUSTERIMAGE_NODEWIDTH, $JOB_NODE_MARKING_ALLCPUS, $JOB_NODE_MARKING_SINGLECPU;
 
-		if( !isset( $this->x ) or !isset( $this->y ) or !isset( $load ) ) {
+		$this->load = $this->determineLoad();
+
+		if( !isset( $this->x ) or !isset( $this->y ) or !isset( $this->load ) ) {
 			printf( "aborting\n" );
 			printf( "x %d y %d load %f\n", $this->x, $this->y, $load );
 			return;
 		}
 
-		$black_color = imageColorAllocate( &$this->image, 0, 0, 0 );
+		$black_color = imageColorAllocate( $this->image, 0, 0, 0 );
 
 		// Convert Ganglias Hexadecimal load color to a Decimal one
+		//
+		$load = $this->determineLoad();	
 		$my_loadcolor = $this->colorHex( load_color($load) );
 
 		$size = $SMALL_CLUSTERIMAGE_NODEWIDTH;
 
 		imageFilledRectangle( $this->image, $this->x, $this->y, $this->x+($size), $this->y+($size), $black_color );
 		imageFilledRectangle( $this->image, $this->x+1, $this->y+1, $this->x+($size-1), $this->y+($size-1), $my_loadcolor );
-		if( $this->multiproc_job == 2 )
-			imageString( $this->image, 1, $this->x+(($size/2)-2), $this->y+(($size/2)-3), "J", $black_color );
-		else if( $this->multiproc_job == 1 )
-			imageString( $this->image, 1, $this->x+(($size/2)-2), $this->y+(($size/2)-3), "j", $black_color );
 
-		// Een job markering?
-		//imageFilledEllipse( $this->image, ($this->x+9)/2, ($this->y+9)/2, 6, 6, $jobcolor );
+		$nr_jobs = count( $this->jobs );
+
+		$node_mark = null;
+
+		if( count( $this->jobs ) > 0 )
+
+			if( $this->tasks < $this->cpus )
+				$node_mark = $JOB_NODE_MARKING_SINGLECPU;
+
+			else if( $this->tasks == $this->cpus )
+				$node_mark = $JOB_NODE_MARKING_ALLCPUS;
+
+		if( $node_mark )
+			imageString( $this->image, 1, $this->x+(($size/2)-2), $this->y+(($size/2)-3), $node_mark, $black_color );
 	}
 
-	function draw() {
+	function determineCpus() {
 
 		global $metrics;
 
 		$cpus = $metrics[$this->hostname][cpu_num][VAL];
 		if (!$cpus) $cpus=1;
-		$load_one = $metrics[$this->hostname][load_one][VAL];
-		$load = ((float) $load_one)/$cpus;
-		//printf( "hostname %s cpus %s load_one %s load %f\n", $this->hostname, $cpus, $load_one, $load );
 
-		$this->drawNode( $load );
+		return $cpus;
+	}
+
+	function determineLoad() {
+
+		global $metrics;
+
+		$load_one = $metrics[$this->hostname][load_one][VAL];
+		$load = ((float) $load_one)/$this->cpus;
+
+		return $load;
 	}
 }
 
 class ClusterImage {
 
-	var $dataget, $image;
+	var $dataget, $image, $clustername;
 
-	function ClusterImage() {
+	function ClusterImage( $clustername ) {
 		$this->dataget = new DataGatherer();
+		$this->clustername = $clustername;
 	}
 
 	function draw() {
@@ -489,9 +575,10 @@ class ClusterImage {
 		//printf( "cmaxw %s nmaxw %s", $SMALL_CLUSTERIMAGE_MAXWIDTH, $SMALL_CLUSTERIMAGE_NODEWIDTH );
 
 		$nodes = $mydatag->getNodes();
+		$nodes_hosts = array_keys( $nodes );
 
 		$nodes_nr = count( $nodes );
-		$node_keys = array_keys( $nodes );
+		//printf( "%d nodes\n", $nodes_nr );
 
 		$nodes_size = $nodes_nr*$node_width;
 		$node_rows = 0;
@@ -526,36 +613,44 @@ class ClusterImage {
 				$y = ($n * $node_width);
 
 				$cur_node = ($n * $nodes_per_row) + ($m);
-				$host = $node_keys[$cur_node];
+				$host = $nodes_hosts[$cur_node];
+
+				if( isset( $nodes[$host] ) ) {
+
+					$nodes[$host]->setCoords( $x, $y );
+					$nodes[$host]->setImage( $image );
+					$nodes[$host]->draw();
+				}
+				
 
 				//printf( "host %s curnode %s ", $host, $cur_node );
 
-				if( isset( $nodes[$host] ) and ($cur_node < $nodes_nr) ) {
-					//printf( "image %s\n", $host );
-					$nodejobs = $nodes[$host]->getJobs();
-					$jobs = $mydatag->getJobs();
+			//	if( isset( $nodes[$host] ) and ($cur_node < $nodes_nr) ) {
+			//		//printf( "image %s\n", $host );
+			//		$nodejobs = $nodes[$host]->getJobs();
+			//		$jobs = $mydatag->getJobs();
 
-					$multiproc_job = 0;
+			//		$multiproc_job = 0;
 
-					if( count( $nodejobs ) > 0 ) {
-						$multiproc_job = 1;
+			//		if( count( $nodejobs ) > 0 ) {
+			//			$multiproc_job = 1;
 
-						foreach( $nodejobs as $myjob ){
-							if( isset($jobs[$myjob]['ppn']) and $jobs[$myjob]['ppn'] > 1 )
-								$multiproc_job = 2;
-								break;
-						}
-					}
+			//			foreach( $nodejobs as $myjob ){
+			//				if( isset($jobs[$myjob]['ppn']) and $jobs[$myjob]['ppn'] > 1 )
+			//					$multiproc_job = 2;
+			//					break;
+			//			}
+			//		}
 
 					//printf( "jobs %s node %s", $nrjobs, $host );
-					$node = new NodeImage( $image, $x, $y, $host, $multiproc_job );
+			//		$node = new NodeImage( $image, $x, $y, $host, $multiproc_job );
 					//$node->setHostname( $host );
-					$node->draw();
+			//		$node->draw();
 					//$nodes[$host]->setCoords( $x, $y );
 					//$nodes[$host]->setImage( &$image );
 					//$nodes[$host]->draw();
 					//$cur_node++;
-				}
+			//	}
 			}
 		}
 		
@@ -569,6 +664,6 @@ class ClusterImage {
 //$my_data->parseXML();
 //$my_data->printInfo();
 
-$ic = new ClusterImage();
+$ic = new ClusterImage( "LISA Cluster" );
 $ic->draw();
 ?>

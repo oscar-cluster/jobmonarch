@@ -13,6 +13,13 @@ $SMALL_CLUSTERIMAGE_MAXWIDTH = 250;
 //
 $SMALL_CLUSTERIMAGE_NODEWIDTH = 11;
 
+// How to mark nodes with a job in clusterimage
+// allcpus when all cpu's are in use
+// singlecpu when less than all cpus are in use
+//
+$JOB_NODE_MARKING_ALLCPUS = "J";
+$JOB_NODE_MARKING_SINGLECPU = "j";
+
 // XML Datasource for Toga
 // by default localhost's gmetad
 //

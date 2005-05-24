@@ -5,10 +5,11 @@ include_once "./libtoga.php";
 $httpvars = new HTTPVariables();
 
 $view = $httpvars->getHttpVar( "view" );
+$clustername = $httpvars->getClusterName();
 
 function drawSmallClusterImage() {
 
-	$ic = new ClusterImage();
+	$ic = new ClusterImage( $clustername );
 	$ic->draw();
 }
 
