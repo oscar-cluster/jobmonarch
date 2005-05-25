@@ -1,9 +1,7 @@
 <?php
-
 include_once "./libtoga.php";
 
-$httpvars = new HTTPVariables();
-
+$httpvars = new HTTPVariables( $HTTP_GET_VARS );
 $view = $httpvars->getHttpVar( "view" );
 $clustername = $httpvars->getClusterName();
 
