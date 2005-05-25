@@ -1,53 +1,17 @@
 <?php
-//$GANGLIA_PATH = "/var/www/ganglia";
-
-// Toga's conf
-//
-include_once "./conf.php";
-
-global $GANGLIA_PATH, $SMALL_CLUSTERIMAGE_MAXWIDTH, $SMALL_CLUSTERIMAGE_NODEWIDTH, $DATA_SOURCE;
-
-//printf("gpath %s clmaxw %s ndmaxw %s ds %s",$GANGLIA_PATH, $SMALL_CLUSTERIMAGE_MAXWIDTH, $SMALL_CLUSTERIMAGE_NODEWIDTH, $DATA_SOURCE); 
-
-include_once "$GANGLIA_PATH/conf.php";
-include_once "$GANGLIA_PATH/functions.php";
-include_once "$GANGLIA_PATH/ganglia.php";
-
-// Set cluster context so that Ganglia will
-// provide us with the correct metrics array
-//
-global $context;
-$context = 'cluster';
-
-include_once "$GANGLIA_PATH/get_ganglia.php";
-
-// If php is compiled without globals
-//
-if ( !empty( $_GET ) ) {
-        extract( $_GET );
-}
-
-// Ganglia's array of host metrics
-//
-global $metrics;
-
-//print_r($metrics);
-
 class HTTPVariables {
 
 	var $clustername, $metricname;
-	var $restvars;
+	var $restvars, $httpvars;
 
-	function HTTPVariables() {
+	function HTTPVariables( $vars ) {
 
 		$this->restvars = array();
 
-		global $HTTP_GET_VARS;
+		$this->clustername = $vars["c"] ? $vars["c"] : null;
+		$this->metricname = $vars["m"] ? $vars["m"] : null;
 
-		$this->clustername = $HTTP_GET_VARS["c"] ? $HTTP_GET_VARS["c"] : null;
-		$this->metricname = $HTTP_GET_VARS["m"] ? $HTTP_GET_VARS["m"] : null;
-
-		foreach( $HTTP_GET_VARS as $httpvar => $httpval ) {
+		foreach( $vars as $httpvar => $httpval ) {
 			
 			if( $httpval ) {
 				$this->restvars[$httpvar] = $httpval;
@@ -65,10 +29,42 @@ class HTTPVariables {
 
 	function getHttpVar( $var ) {
 		if( isset( $this->restvars[$var] ) )
-			return $retval;
+			return $this->restvars[$var];
 		else
 			return null;
 	}
+}
+
+// Toga's conf
+//
+include_once "./conf.php";
+
+global $GANGLIA_PATH, $SMALL_CLUSTERIMAGE_MAXWIDTH, $SMALL_CLUSTERIMAGE_NODEWIDTH, $DATA_SOURCE;
+
+include_once "$GANGLIA_PATH/conf.php";
+include_once "$GANGLIA_PATH/functions.php";
+include_once "$GANGLIA_PATH/ganglia.php";
+
+global $HTTP_GET_VARS;
+$httpvars = new HTTPVariables( $HTTP_GET_VARS );
+
+// Set cluster context so that Ganglia will
+// provide us with the correct metrics array
+//
+global $context, $clustername;
+$clustername = $httpvars->getClusterName();
+$context = 'cluster';
+
+include_once "$GANGLIA_PATH/get_ganglia.php";
+
+// Ganglia's array of host metrics
+//
+global $metrics;
+
+// If php is compiled without globals
+//
+if ( !empty( $_GET ) ) {
+        extract( $_GET );
 }
 
 class DataSource {
@@ -119,7 +115,7 @@ class DataGatherer {
 		$this->source = new DataSource( $ds_ip, $ds_port );
 
 		$this->parser = xml_parser_create();
-		$this->httpvars = new HTTPVariables();
+		$this->httpvars = $httpvars;
 		$this->xmlhandler = new TorqueXMLHandler();
 		xml_set_element_handler( $this->parser, array( &$this->xmlhandler, 'startElement' ), array( &$this->xmlhandler, 'stopElement' ) );
 	}
@@ -129,10 +125,8 @@ class DataGatherer {
 		$src = &$this->source;
 		$this->data = $src->getData();
 
-		if ( !xml_parse( &$this->parser, $this->data ) ) {
+		if ( !xml_parse( &$this->parser, $this->data ) )
 			$error = sprintf( 'XML error: %s at %d', xml_error_string( xml_get_error_code( &$this->parser ) ), xml_get_current_line_number( &$this->parser ) );
-			// die( $error );
-		}
 	}
 
 	function printInfo() {
@@ -161,26 +155,6 @@ class TorqueXMLHandler {
 		$clusters = array();
 		$nodes = array();
 		$heartbeat = array();
-	}
-
-	function gotNode( $hostname, $location = 'unspecified', $jobid ) {
-
-		$nodes = &$this->nodes;
-
-		if( !isset( $nodes[$hostname] ) ) {
-
-			$nodes[$hostname] = new Node( $hostname );
-		}
-
-		if( $location ) {
-
-			$nodes[$hostname]->setLocation( $location );
-		}
-
-		if( $jobid ) {
-			$nodes[$hostname]->addJob( $jobid );
-			//printf("add job %s to node %s", $jobid, $hostname );
-		}
 	}
 
 	function startElement( $parser, $name, $attrs ) {
@@ -213,8 +187,6 @@ class TorqueXMLHandler {
 
 			if( !isset( $this->nodes[$hostname] ) )
 				$this->nodes[$hostname] = new NodeImage( $hostname );
-
-			//$this->gotNode( $hostname, $location, null );
 
 		} else if( $name == 'METRIC' and strstr( $attrs[NAME], 'TOGA' ) ) {
 
@@ -249,20 +221,9 @@ class TorqueXMLHandler {
 
 						$mynodes = explode( ';', $togavalue );
 
-						foreach( $mynodes as $node ) {
+						foreach( $mynodes as $node )
 
-							//$hostname = $node.'.'.$jobs[$jobid][domain];
 							$jobs[$jobid][$toganame][] = $node;
-
-							//if( !isset( $this->nodes[$hostname] ) )
-								//$mynode = new NodeImage( $hostname );
-
-							//$the_node = $this->nodes[$hostname];
-							//$the_node->addJob( $jobid, 
-							//$this->gotNode( $hostname, null, $jobid );
-							//printf( "got node %s\n", $node );
-						}
-
 					} else {
 
 						$jobs[$jobid][$toganame] = $togavalue;
@@ -270,7 +231,9 @@ class TorqueXMLHandler {
 				}
 
 				if( isset( $jobs[$jobid][domain] ) and isset( $jobs[$jobid][nodes] ) ) {
-				
+			
+					$nr_nodes = count( $jobs[$jobid][nodes] );
+			
 					foreach( $jobs[$jobid][nodes] as $node ) {
 
 						$host = $node.'.'.$jobs[$jobid][domain];
@@ -289,9 +252,6 @@ class TorqueXMLHandler {
 
 						$this->nodes[$host] = $my_node;
 					}
-				} else {
-
-					printf( "no domain or nodes set for %s\n", $jobid );
 				}
 			}
 		}
@@ -343,81 +303,6 @@ class TorqueXMLHandler {
 
 	function getJobs() {
 		return $this->jobs;
-	}
-}
-
-class Node {
-
-	var $img, $hostname, $location, $jobs;
-	var $x, $y;
-
-	function Node( $hostname ) {
-
-		$this->hostname = $hostname;
-		//$this->img = new NodeImg();
-		$this->jobs = array();
-	}
-
-	function addJob( $jobid ) {
-		$jobs = &$this->jobs;
-
-		$jobs[] = $jobid;
-		//print_r( $jobs );
-		$this->jobs = $jobs;
-	}
-
-
-	function setLocation( $location ) {
-		$this->location = $location;
-	}
-
-	function setHostname( $hostname ) {
-		$this->hostname = $hostname;
-	}
-
-	function setCpus( $cpus ) {
-		$this->cpus = $cpus;
-	}
-
-	function getHostname() {
-		return $this->hostname;
-	}
-
-	function getLocation() {
-		return $this->location;
-	}
-
-	function getCpus() {
-		return $this->cpus;
-	}
-
-	function getJobs() {
-		//print_r( $this->jobs );
-		return $this->jobs;
-	}
-
-	//function setCoords( $x, $y ) {
-		//$myimg = $this->img;
-		//$myimg->setCoords( $x, $y );
-	//}
-
-	function setImage( $image ) {
-		$myimg = $this->img;
-		$myimg->setImage( &$image );
-	}
-
-	function draw() {
-		global $metrics;
-	
-		$myimg = $this->img;
-
-		$cpus = $metrics[$this->hostname]["cpu_num"][VAL];
-		if (!$cpus) $cpus=1;
-		$load_one = $metrics[$this->hostname]["load_one"][VAL];
-		$load = ((float) $load_one)/$cpus;
-
-		$myimg->setLoad( $load );
-		$myimg->draw();
 	}
 }
 
@@ -495,7 +380,7 @@ class NodeImage {
 
 		$this->load = $this->determineLoad();
 
-		if( !isset( $this->x ) or !isset( $this->y ) or !isset( $this->load ) ) {
+		if( !isset( $this->image ) or !isset( $this->x ) or !isset( $this->y ) ) {
 			printf( "aborting\n" );
 			printf( "x %d y %d load %f\n", $this->x, $this->y, $load );
 			return;
@@ -578,7 +463,6 @@ class ClusterImage {
 		$nodes_hosts = array_keys( $nodes );
 
 		$nodes_nr = count( $nodes );
-		//printf( "%d nodes\n", $nodes_nr );
 
 		$nodes_size = $nodes_nr*$node_width;
 		$node_rows = 0;
@@ -621,36 +505,6 @@ class ClusterImage {
 					$nodes[$host]->setImage( $image );
 					$nodes[$host]->draw();
 				}
-				
-
-				//printf( "host %s curnode %s ", $host, $cur_node );
-
-			//	if( isset( $nodes[$host] ) and ($cur_node < $nodes_nr) ) {
-			//		//printf( "image %s\n", $host );
-			//		$nodejobs = $nodes[$host]->getJobs();
-			//		$jobs = $mydatag->getJobs();
-
-			//		$multiproc_job = 0;
-
-			//		if( count( $nodejobs ) > 0 ) {
-			//			$multiproc_job = 1;
-
-			//			foreach( $nodejobs as $myjob ){
-			//				if( isset($jobs[$myjob]['ppn']) and $jobs[$myjob]['ppn'] > 1 )
-			//					$multiproc_job = 2;
-			//					break;
-			//			}
-			//		}
-
-					//printf( "jobs %s node %s", $nrjobs, $host );
-			//		$node = new NodeImage( $image, $x, $y, $host, $multiproc_job );
-					//$node->setHostname( $host );
-			//		$node->draw();
-					//$nodes[$host]->setCoords( $x, $y );
-					//$nodes[$host]->setImage( &$image );
-					//$nodes[$host]->draw();
-					//$cur_node++;
-			//	}
 			}
 		}
 		
@@ -664,6 +518,6 @@ class ClusterImage {
 //$my_data->parseXML();
 //$my_data->printInfo();
 
-$ic = new ClusterImage( "LISA Cluster" );
-$ic->draw();
+//$ic = new ClusterImage( "LISA Cluster" );
+//$ic->draw();
 ?>
