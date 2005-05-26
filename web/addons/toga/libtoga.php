@@ -144,6 +144,10 @@ class DataGatherer {
 		return $handler->getJobs();
 	}
 
+	function getHeartbeat() {
+		$handler = $this->xmlhandler;
+		return $handler->getHeartbeat();
+	}
 }
 
 class TorqueXMLHandler {
@@ -192,7 +196,7 @@ class TorqueXMLHandler {
 
 			if( strstr( $attrs[NAME], 'TOGA-HEARTBEAT' ) ) {
 
-				$heartbeat['time'] = $attrs[VAL];
+				$this->heartbeat['time'] = $attrs[VAL];
 				//printf( "heartbeat %s\n", $heartbeat['time'] );
 
 			} else if( strstr( $attrs[NAME], 'TOGA-JOB' ) ) {
@@ -255,6 +259,7 @@ class TorqueXMLHandler {
 				}
 			}
 		}
+		$this->jobs = $jobs;
 	}
 
 	function stopElement( $parser, $name ) {
@@ -303,6 +308,10 @@ class TorqueXMLHandler {
 
 	function getJobs() {
 		return $this->jobs;
+	}
+
+	function getHeartbeat() {
+		return $this->heartbeat['time'];
 	}
 }
 
@@ -374,6 +383,10 @@ class NodeImage {
 		$this->hostname = $hostname;
 	}
 
+	function getJobs() {
+		return $this->jobs;
+	}
+
 	function draw() {
 
 		global $SMALL_CLUSTERIMAGE_NODEWIDTH, $JOB_NODE_MARKING_ALLCPUS, $JOB_NODE_MARKING_SINGLECPU;
@@ -439,8 +452,13 @@ class ClusterImage {
 
 	var $dataget, $image, $clustername;
 
-	function ClusterImage( $clustername ) {
-		$this->dataget = new DataGatherer();
+	function ClusterImage( $clustername, $data_gather ) {
+
+		if( !isset( $data_gather ) )
+			$this->dataget = new DataGatherer();
+		else
+			$this->dataget = $data_gather;
+
 		$this->clustername = $clustername;
 	}
 
