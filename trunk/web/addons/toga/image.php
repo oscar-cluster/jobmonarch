@@ -7,13 +7,14 @@ $clustername = $httpvars->getClusterName();
 
 function drawSmallClusterImage() {
 
-	$ic = new ClusterImage( $clustername );
+	$ic = new ClusterImage( $clustername, null );
 	$ic->draw();
 }
 
 function drawBigClusterImage() {
 
-	// iets
+	$ic = new ClusterImage( $clustername, null );
+	$ic->draw();
 }
 
 switch( $view ) {
