@@ -32,27 +32,50 @@ $tpl->assign("pie", $pie );
 function makeTime( $time ) {
 
 	$days = intval( $time / 86400 );
+	$time = $days ? $time % ($days * 86400) : $time;
+
 	if( $days > 0 ) {
-		$time = $time % ($days * 86400);
 		if( $days > 1 )
 			$date_str .= $days . 'days - ';
 		else
 			$date_str .= $days . 'day - ';
 	}
+
 	$hours = intval( $time / 3600 );
+	$time = $hours ? $time % ($hours * 3600) : $time;
+
 	if( $hours > 0 ) {
-		$time = $time % ($hours * 3600);
 		$date_str .= $hours . ':';
 		$date_unit = ' hours';
 	}
+		
 	$minutes = intval( $time / 60 );
+	$seconds = $minutes ? $time % ($minutes * 60) : $time;
+
 	if( $minutes > 0 ) {
-		$seconds = $time % ($minutes * 60);
-		$date_str .= $minutes . ':';
+
+		if( $minutes >= 10 )
+			$date_str .= $minutes . ':';
+		else
+			$date_str .= '0' . $minutes . ':';
+
+		$date_unit = (!isset($date_unit)) ? 'minutes' : $date_unit;
+	} else if( $days > 0 or $hours > 0 ) {
+		$date_str .= '00:';
 		$date_unit = (!isset($date_unit)) ? 'minutes' : $date_unit;
 	}
+
 	$date_unit = (!isset($date_unit)) ? 'seconds' : $date_unit;
-	$date_str .= $seconds . ' ' . $date_unit;
+
+	if( $seconds > 0 ) {
+
+		if( $seconds >= 10 )
+			$date_str .= $seconds . ' ' . $date_unit;
+		else
+			$date_str .= '0' . $seconds . ' ' . $date_unit;
+			
+	} else if ( $days > 0 or $hours > 0 or $minutes > 0 )
+		$date_str .= '00 ' . $date_unit;
 
 	return $date_str;
 }
