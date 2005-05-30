@@ -390,6 +390,7 @@ class NodeImage {
 	function draw() {
 
 		global $SMALL_CLUSTERIMAGE_NODEWIDTH, $JOB_NODE_MARKING_ALLCPUS, $JOB_NODE_MARKING_SINGLECPU;
+		global $JOB_NODE_MARKING;
 
 		$this->load = $this->determineLoad();
 
@@ -416,12 +417,13 @@ class NodeImage {
 		$node_mark = null;
 
 		if( count( $this->jobs ) > 0 )
+			$node_mark = $JOB_NODE_MARKING;
 
-			if( $this->tasks < $this->cpus )
-				$node_mark = $JOB_NODE_MARKING_SINGLECPU;
+		//	if( $this->tasks < $this->cpus )
+		//		$node_mark = $JOB_NODE_MARKING_SINGLECPU;
 
-			else if( $this->tasks == $this->cpus )
-				$node_mark = $JOB_NODE_MARKING_ALLCPUS;
+		//	else if( $this->tasks == $this->cpus )
+		//		$node_mark = $JOB_NODE_MARKING_ALLCPUS;
 
 		if( $node_mark )
 			imageString( $this->image, 1, $this->x+(($size/2)-2), $this->y+(($size/2)-3), $node_mark, $black_color );
