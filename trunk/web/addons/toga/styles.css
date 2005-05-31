@@ -165,6 +165,31 @@ th
    border: thin solid rgb(47,47,47);
 }
 
+tr.even
+{
+   background: rgb(255,255,255);
+}
+
+tr.odd
+{
+   background: rgb(240,240,240);
+}
+
+tr.inactive
+{
+   color: rgb(210,210,210);
+}
+
+tr.toga th
+{
+   font: bold 12pt/14pt helvetica, sans-serif;
+   color: rgb(10,10,10);
+   background: rgb(240,240,240);
+   border: thin solid rgb(47,47,47);
+   padding: 2mm;
+   margin: 1mm;
+}
+
 td em
 {
    font: 8pt/10pt helvetica, sans-serif;

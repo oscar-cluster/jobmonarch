@@ -289,8 +289,9 @@ function makeOverview() {
 	$tpl->assign("sortorder", $sortorder );
 	$tpl->assign("sortby", $sortby );
 
-
 	$sorted_jobs = sortJobs( $jobs, $sortby, $sortorder );
+
+	$even = 1;
 
 	foreach( $sorted_jobs as $jobid => $sortdec ) {
 
@@ -313,6 +314,16 @@ function makeOverview() {
 			$tpl->assign("nodes", $nodes );
 			$tpl->assign("cpus", $cpus );
 			$start_time = (int) $jobs[$jobid][start_timestamp];
+
+			if( $even ) {
+
+				$tpl->assign("nodeclass", "even");
+				$even = 0;
+			} else {
+
+				$tpl->assign("nodeclass", "odd");
+				$even = 1;
+			}
 
 			if( $start_time ) {
 
