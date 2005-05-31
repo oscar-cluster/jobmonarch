@@ -21,7 +21,7 @@
 		if( sortbyval != document.toga_form.sortby.value ) {
 
 			document.toga_form.sortby.value = sortbyval;
-			document.toga_form.sortorder.value = "desc";
+			document.toga_form.sortorder.value = "asc";
 
 		} else {
 
@@ -44,22 +44,22 @@
 
 </FORM>
 
-<TABLE WIDTH="80%" CELLPADDING="8" CELLSPACING="0" BORDER=1>
-<TR>
-<TD><B><A HREF="#" onClick="setSort( 'id' )">Id</A></B></TD>
-<TD><B><A HREF="#" onClick="setSort( 'state' )">State</A></B></TD>
-<TD><B><A HREF="#" onClick="setSort( 'user' )">User</A></B></TD>
-<TD><B><A HREF="#" onClick="setSort( 'queue' )">Queue</A></B></TD>
-<TD><B><A HREF="#" onClick="setSort( 'name' )">Name</A></B></TD>
-<TD><B><A HREF="#" onClick="setSort( 'req_cpu' )">Requested CPU time</A></B></TD>
-<TD><B><A HREF="#" onClick="setSort( 'req_mem' )">Requested Memory</A></B></TD>
-<TD><B>Current <A HREF="#" onClick="setSort( 'nodes' )">Nodes</A>/<A HREF="#" onClick="setSort( 'cpus' )">Cpus</A></B></TD>
-<TD><B><A HREF="#" onClick="setSort( 'start' )">Started</A></B></TD>
-<TD><B><A HREF="#" onClick="setSort( 'runningtime' )">Runningtime</A></B></TD>
+<TABLE WIDTH="90%" CELLPADDING="8" CELLSPACING="3" BORDER=0>
+<TR CLASS="toga">
+<TH><B><A HREF="#" onClick="setSort( 'id' )">Id</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'state' )">State</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'user' )">User</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'queue' )">Queue</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'name' )">Name</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'req_cpu' )">Requested CPU time</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'req_mem' )">Requested Memory</A></B></TH>
+<TH><B>Current <A HREF="#" onClick="setSort( 'nodes' )">Nodes</A>/<A HREF="#" onClick="setSort( 'cpus' )">Cpus</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'start' )">Started</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'runningtime' )">Runningtime</A></B></TH>
 </TR>
 
 <!-- START BLOCK : node -->
-  <TR>
+  <TR CLASS="{nodeclass}">
     <TD><A HREF="">{id}</A></TD>
     <TD><A HREF="">{state}</A></TD>
     <TD><A HREF="{togasorted}&user={user}">{user}</A></TD>
