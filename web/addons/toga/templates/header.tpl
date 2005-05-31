@@ -44,6 +44,7 @@
   </TD>
 </TR>
 </TABLE> 
+</FORM>
 
 <FONT SIZE="+1">
 {node_menu}

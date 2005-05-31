@@ -1,20 +1,33 @@
 <?php
+// If php is compiled without globals
+//
+if ( !empty( $_GET ) ) {
+        extract( $_GET );
+}
+
 class HTTPVariables {
 
 	var $clustername, $metricname;
 	var $restvars, $httpvars;
 
-	function HTTPVariables( $vars ) {
+	function HTTPVariables( $httpvars, $getvars ) {
 
 		$this->restvars = array();
 
-		$this->clustername = $vars["c"] ? $vars["c"] : null;
-		$this->metricname = $vars["m"] ? $vars["m"] : null;
+		$this->clustername = $httpvars["c"] ? $httpvars["c"] : null;
+		$this->metricname = $httpvars["m"] ? $httpvars["m"] : null;
 
-		foreach( $vars as $httpvar => $httpval ) {
+		foreach( $httpvars as $httpvar => $httpval ) {
 			
 			if( $httpval ) {
 				$this->restvars[$httpvar] = $httpval;
+			}
+		}
+
+		foreach( $getvars as $getvar => $getval ) {
+
+			if( $getval ) {
+				$this->restvars[$getvar] = $getval;
 			}
 		}
 	}
@@ -39,33 +52,36 @@ class HTTPVariables {
 //
 include_once "./conf.php";
 
-global $GANGLIA_PATH, $SMALL_CLUSTERIMAGE_MAXWIDTH, $SMALL_CLUSTERIMAGE_NODEWIDTH, $DATA_SOURCE;
+global $GANGLIA_PATH;
 
-include_once "$GANGLIA_PATH/conf.php";
-include_once "$GANGLIA_PATH/functions.php";
-include_once "$GANGLIA_PATH/ganglia.php";
+$my_dir = getcwd();
 
-global $HTTP_GET_VARS;
-$httpvars = new HTTPVariables( $HTTP_GET_VARS );
+// Load Ganglia's PHP
+chdir( $GANGLIA_PATH );
+
+include_once "./conf.php";
+include_once "./functions.php";
+include_once "./ganglia.php";
+include_once "./get_context.php";
+include_once "./get_ganglia.php";
+
+// Back to our PHP
+chdir( $my_dir );
+
+global $SMALL_CLUSTERIMAGE_MAXWIDTH, $SMALL_CLUSTERIMAGE_NODEWIDTH, $DATA_SOURCE, $HTTP_GET_VARS, $_GET;
+$httpvars = new HTTPVariables( $HTTP_GET_VARS, $_GET );
 
 // Set cluster context so that Ganglia will
 // provide us with the correct metrics array
 //
 global $context, $clustername;
-$clustername = $httpvars->getClusterName();
-$context = 'cluster';
-
-include_once "$GANGLIA_PATH/get_ganglia.php";
+//$clustername = $httpvars->getClusterName();
+//$context = 'cluster';
 
 // Ganglia's array of host metrics
 //
 global $metrics;
 
-// If php is compiled without globals
-//
-if ( !empty( $_GET ) ) {
-        extract( $_GET );
-}
 
 class DataSource {
 
