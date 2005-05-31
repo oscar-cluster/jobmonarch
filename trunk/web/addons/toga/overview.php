@@ -1,31 +1,14 @@
 <?php
-
-$my_dir = getcwd();
-
-include_once "./libtoga.php";
-
-global $GANGLIA_PATH;
-chdir( $GANGLIA_PATH );
-include_once "./class.TemplatePower.inc.php";
-chdir( $my_dir );
-
-$httpvars = new HTTPVariables( $HTTP_GET_VARS );
-$clustername = $httpvars->getClusterName();
-printf( "clustername = %s\n", $clustername );
-$queue_select = $httpvars->getHttpVar( "queue" );
-printf( "queue = %s\n", $queue );
+global $GANGLIA_PATH, $clustername, $tpl;
 
 $data_gatherer = new DataGatherer();
 
-$tpl = new TemplatePower("templates/overview.tpl");
-$tpl->prepare();
-
-$tpl->assign( "self", "./index.php" );
+//$tpl->assign( "self", "./index.php" );
 $tpl->assign( "clustername", $clustername );
-
 $tpl->assign( "clusterimage", "./image.php?c=".rawurlencode($clustername)."&view=big-clusterimage" );
 
 $data_gatherer->parseXML();
+
 $heartbeat = $data_gatherer->getHeartbeat();
 $jobs = $data_gatherer->getJobs();
 $nodes = $data_gatherer->getNodes();
@@ -213,37 +196,131 @@ function drawPie() {
 	return $pie;
 }
 
-foreach( $jobs as $jobid => $jobattrs ) {
 
-	$report_time = $jobattrs[reported];
+function sortJobs( $jobs, $sortby, $sortorder ) {
 
-	if( $report_time == $heartbeat ) {
+	$sorted = array();
 
-		$tpl->newBlock("node");
-		$tpl->assign( "clustername", $clustername );
-		$tpl->assign("id", $jobid );
-		$tpl->assign("state", $jobattrs[status] );
-		$tpl->assign("user", $jobattrs[owner] );
-		$tpl->assign("queue", $jobattrs[queue] );
-		$tpl->assign("name", $jobattrs[name] );
-		$tpl->assign("req_cpu", $jobattrs[requested_time] );
-		$tpl->assign("req_memory", $jobattrs[requested_memory] );
-		$nodes = count( $jobattrs[nodes] );
-		$ppn = (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
-		$cpus = $nodes * $ppn;
-		$tpl->assign("nodes", $nodes );
-		$tpl->assign("cpus", $cpus );
-		$start_time = (int) $jobattrs[start_timestamp];
+	$cmp = create_function( '$a, $b', 
+		"global \$sortby, \$sortorder;".
 
-		if( $start_time ) {
+		"if( \$a == \$b ) return 0;".
 
-			$runningtime = makeTime( $report_time - $start_time );
-			$tpl->assign("started", makeDate( $start_time ) );
-			$tpl->assign("runningtime", $runningtime );
+		"if (\$sortorder==\"desc\")".
+			"return ( \$a < \$b ) ? 1 : -1;".
+		"else if (\$sortorder==\"asc\")".
+			"return ( \$a > \$b ) ? 1 : -1;" );
+
+        foreach( $jobs as $jobid => $jobattrs ) {
+
+                        $state = $jobattrs[status];
+                        $user = $jobattrs[owner];
+                        $queue = $jobattrs[queue];
+                        $name = $jobattrs[name];
+                        $req_cpu = $jobattrs[requested_time];
+                        $req_memory = $jobattrs[requested_memory];
+                        $nodes = count( $jobattrs[nodes] );
+                        $ppn = (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
+                        $cpus = $nodes * $ppn;
+                        $start_time = (int) $jobattrs[start_timestamp];
+			$runningtime = $report_time - $start_time;
+
+			switch( $sortby ) {
+				case "id":
+					$sorted[$jobid] = $jobid;
+					break;
+
+				case "state":
+					$sorted[$jobid] = $state;
+					break;
+
+				case "user":
+					$sorted[$jobid] = $user;
+					break;
+
+				case "queue":
+					$sorted[$jobid] = $queue;
+					break;
+
+				case "name":
+					$sorted[$jobid] = $name;
+					break;
+
+				case "req_cpu":
+					$sorted[$jobid] = $req_cpu;
+					break;
+
+				case "req_mem":
+					$sorted[$jobid] = $req_memory;
+					break;
+
+				case "nodes":
+					$sorted[$jobid] = $nodes;
+					break;
+
+				case "cpus":
+					$sorted[$jobid] = $cpus;
+					break;
+
+				case "start":
+					$sorted[$jobid] = $start_time;
+					break;
+
+				case "runningtime":
+					$sorted[$jobid] = $runningtime;
+					break;
+
+				default:
+					break;
+
+			}
+        }
+
+	uasort( $sorted, $cmp );
+
+	return $sorted;
+}
+
+function makeOverview() {
+
+	global $jobs, $nodes, $heartbeat, $clustername, $tpl;
+	global $sortorder, $sortby;
+
+	$tpl->assign("sortorder", $sortorder );
+	$tpl->assign("sortby", $sortby );
+
+
+	$sorted_jobs = sortJobs( $jobs, $sortby, $sortorder );
+
+	foreach( $sorted_jobs as $jobid => $sortdec ) {
+
+		$report_time = $jobs[$jobid][reported];
+
+		if( $report_time == $heartbeat ) {
+
+			$tpl->newBlock("node");
+			$tpl->assign( "clustername", $clustername );
+			$tpl->assign("id", $jobid );
+			$tpl->assign("state", $jobs[$jobid][status] );
+			$tpl->assign("user", $jobs[$jobid][owner] );
+			$tpl->assign("queue", $jobs[$jobid][queue] );
+			$tpl->assign("name", $jobs[$jobid][name] );
+			$tpl->assign("req_cpu", $jobs[$jobid][requested_time] );
+			$tpl->assign("req_memory", $jobs[$jobid][requested_memory] );
+			$nodes = count( $jobs[$jobid][nodes] );
+			$ppn = (int) $jobs[$jobid][ppn] ? $jobs[$jobid][ppn] : 1;
+			$cpus = $nodes * $ppn;
+			$tpl->assign("nodes", $nodes );
+			$tpl->assign("cpus", $cpus );
+			$start_time = (int) $jobs[$jobid][start_timestamp];
+
+			if( $start_time ) {
+
+				$runningtime = makeTime( $report_time - $start_time );
+				$tpl->assign("started", makeDate( $start_time ) );
+				$tpl->assign("runningtime", $runningtime );
+			}
 		}
 	}
 }
-
-$tpl->printToScreen();
-
 ?>
