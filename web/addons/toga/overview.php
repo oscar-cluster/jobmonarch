@@ -11,13 +11,19 @@ chdir( $my_dir );
 
 $httpvars = new HTTPVariables( $HTTP_GET_VARS );
 $clustername = $httpvars->getClusterName();
+printf( "clustername = %s\n", $clustername );
+$queue_select = $httpvars->getHttpVar( "queue" );
+printf( "queue = %s\n", $queue );
 
 $data_gatherer = new DataGatherer();
 
 $tpl = new TemplatePower("templates/overview.tpl");
 $tpl->prepare();
 
-$tpl->assign( "clusterimage", "./image.php?c=".$clustername."&view=big-clusterimage" );
+$tpl->assign( "self", "./index.php" );
+$tpl->assign( "clustername", $clustername );
+
+$tpl->assign( "clusterimage", "./image.php?c=".rawurlencode($clustername)."&view=big-clusterimage" );
 
 $data_gatherer->parseXML();
 $heartbeat = $data_gatherer->getHeartbeat();
@@ -36,9 +42,9 @@ function makeTime( $time ) {
 
 	if( $days > 0 ) {
 		if( $days > 1 )
-			$date_str .= $days . 'days - ';
+			$date_str .= $days . ' days - ';
 		else
-			$date_str .= $days . 'day - ';
+			$date_str .= $days . ' day - ';
 	}
 
 	$hours = intval( $time / 3600 );
@@ -214,22 +220,27 @@ foreach( $jobs as $jobid => $jobattrs ) {
 	if( $report_time == $heartbeat ) {
 
 		$tpl->newBlock("node");
+		$tpl->assign( "clustername", $clustername );
 		$tpl->assign("id", $jobid );
 		$tpl->assign("state", $jobattrs[status] );
 		$tpl->assign("user", $jobattrs[owner] );
 		$tpl->assign("queue", $jobattrs[queue] );
 		$tpl->assign("name", $jobattrs[name] );
+		$tpl->assign("req_cpu", $jobattrs[requested_time] );
+		$tpl->assign("req_memory", $jobattrs[requested_memory] );
 		$nodes = count( $jobattrs[nodes] );
 		$ppn = (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
 		$cpus = $nodes * $ppn;
-		$tpl->assign("cpus", $cpus );
-		$tpl->assign("req_cpu", $jobattrs[requested_time] );
-		$tpl->assign("req_memory", $jobattrs[requested_memory] );
 		$tpl->assign("nodes", $nodes );
+		$tpl->assign("cpus", $cpus );
 		$start_time = (int) $jobattrs[start_timestamp];
-		$runningtime = makeTime( $report_time - $start_time );
-		$tpl->assign("started", makeDate( $start_time ) );
-		$tpl->assign("runningtime", $runningtime );
+
+		if( $start_time ) {
+
+			$runningtime = makeTime( $report_time - $start_time );
+			$tpl->assign("started", makeDate( $start_time ) );
+			$tpl->assign("runningtime", $runningtime );
+		}
 	}
 }
 
