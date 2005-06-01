@@ -3,11 +3,11 @@
 <CENTER>
 <TABLE>
 <TR>
-  <TD>
+  <TD ALIGN="CENTER">
     <IMG SRC="{clusterimage}"><BR>
     reported: {heartbeat}
   </TD>
-  <TD>
+  <TD ALIGN="CENTER">
     <IMG SRC="{pie}">
   </TD>
 </TR>
