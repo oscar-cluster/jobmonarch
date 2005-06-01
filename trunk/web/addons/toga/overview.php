@@ -1,5 +1,5 @@
 <?php
-global $GANGLIA_PATH, $clustername, $tpl;
+global $GANGLIA_PATH, $clustername, $tpl, $filter;
 
 $data_gatherer = new DataGatherer();
 
@@ -12,6 +12,10 @@ $data_gatherer->parseXML();
 $heartbeat = $data_gatherer->getHeartbeat();
 $jobs = $data_gatherer->getJobs();
 $nodes = $data_gatherer->getNodes();
+
+foreach( $filter as $filtername => $filtervalue ) {
+	$tpl->assign( "f_".$filtername, $filtervalue );
+}
 
 $tpl->assign("heartbeat", makeDate( $heartbeat ) );
 
@@ -284,7 +288,7 @@ function sortJobs( $jobs, $sortby, $sortorder ) {
 function makeOverview() {
 
 	global $jobs, $nodes, $heartbeat, $clustername, $tpl;
-	global $sortorder, $sortby;
+	global $sortorder, $sortby, $filter;
 
 	$tpl->assign("sortorder", $sortorder );
 	$tpl->assign("sortby", $sortby );
@@ -299,37 +303,57 @@ function makeOverview() {
 
 		if( $report_time == $heartbeat ) {
 
-			$tpl->newBlock("node");
-			$tpl->assign( "clustername", $clustername );
-			$tpl->assign("id", $jobid );
-			$tpl->assign("state", $jobs[$jobid][status] );
-			$tpl->assign("user", $jobs[$jobid][owner] );
-			$tpl->assign("queue", $jobs[$jobid][queue] );
-			$tpl->assign("name", $jobs[$jobid][name] );
-			$tpl->assign("req_cpu", $jobs[$jobid][requested_time] );
-			$tpl->assign("req_memory", $jobs[$jobid][requested_memory] );
-			$nodes = count( $jobs[$jobid][nodes] );
-			$ppn = (int) $jobs[$jobid][ppn] ? $jobs[$jobid][ppn] : 1;
-			$cpus = $nodes * $ppn;
-			$tpl->assign("nodes", $nodes );
-			$tpl->assign("cpus", $cpus );
-			$start_time = (int) $jobs[$jobid][start_timestamp];
+			if( count( $filter ) == 0 )
+				$display_job = 1;
+			else
+				$display_job = 0;
 
-			if( $even ) {
+			foreach( $filter as $filtername=>$filtervalue ) {
 
-				$tpl->assign("nodeclass", "even");
-				$even = 0;
-			} else {
-
-				$tpl->assign("nodeclass", "odd");
-				$even = 1;
+				if( $filtername == 'id' && $jobid == $filtervalue )
+					$display_job = 1;
+				else if( $filtername == 'state' && $jobs[$jobid][status] == $filtervalue )
+					$display_job = 1;
+				else if( $filtername == 'queue' && $jobs[$jobid][queue] == $filtervalue )
+					$display_job = 1;
+				else if( $filtername == 'user' && $jobs[$jobid][owner] == $filtervalue )
+					$display_job = 1;
 			}
 
-			if( $start_time ) {
+			if( $display_job ) {
 
-				$runningtime = makeTime( $report_time - $start_time );
-				$tpl->assign("started", makeDate( $start_time ) );
-				$tpl->assign("runningtime", $runningtime );
+				$tpl->newBlock("node");
+				$tpl->assign( "clustername", $clustername );
+				$tpl->assign("id", $jobid );
+				$tpl->assign("state", $jobs[$jobid][status] );
+				$tpl->assign("user", $jobs[$jobid][owner] );
+				$tpl->assign("queue", $jobs[$jobid][queue] );
+				$tpl->assign("name", $jobs[$jobid][name] );
+				$tpl->assign("req_cpu", $jobs[$jobid][requested_time] );
+				$tpl->assign("req_memory", $jobs[$jobid][requested_memory] );
+				$nodes = count( $jobs[$jobid][nodes] );
+				$ppn = (int) $jobs[$jobid][ppn] ? $jobs[$jobid][ppn] : 1;
+				$cpus = $nodes * $ppn;
+				$tpl->assign("nodes", $nodes );
+				$tpl->assign("cpus", $cpus );
+				$start_time = (int) $jobs[$jobid][start_timestamp];
+
+				if( $even ) {
+
+					$tpl->assign("nodeclass", "even");
+					$even = 0;
+				} else {
+
+					$tpl->assign("nodeclass", "odd");
+					$even = 1;
+				}
+
+				if( $start_time ) {
+
+					$runningtime = makeTime( $report_time - $start_time );
+					$tpl->assign("started", makeDate( $start_time ) );
+					$tpl->assign("runningtime", $runningtime );
+				}
 			}
 		}
 	}
