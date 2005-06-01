@@ -22,6 +22,21 @@ $tpl->assign("heartbeat", makeDate( $heartbeat ) );
 $pie = drawPie();
 $tpl->assign("pie", $pie );
 
+function timeToEpoch( $time ) {
+
+	$time_fields = explode( ':', $time );
+
+	if( count($time_fields) == 3 ) {
+
+		$hours = $time_fields[0];
+		$minutes = $time_fields[1];
+		$seconds = $time_fields[2];
+
+		$myepoch = intval( $seconds + (intval( $minutes * 60 )) + (intval( $hours * 3600 )) );
+		return $myepoch;
+	}
+}
+
 function makeTime( $time ) {
 
 	$days = intval( $time / 86400 );
@@ -329,7 +344,7 @@ function makeOverview() {
 				$tpl->assign("user", $jobs[$jobid][owner] );
 				$tpl->assign("queue", $jobs[$jobid][queue] );
 				$tpl->assign("name", $jobs[$jobid][name] );
-				$tpl->assign("req_cpu", $jobs[$jobid][requested_time] );
+				$tpl->assign("req_cpu", makeTime( timeToEpoch( $jobs[$jobid][requested_time] ) ) );
 				$tpl->assign("req_memory", $jobs[$jobid][requested_memory] );
 				$nodes = count( $jobs[$jobid][nodes] );
 				$ppn = (int) $jobs[$jobid][ppn] ? $jobs[$jobid][ppn] : 1;
