@@ -34,7 +34,7 @@ function makeHeader() {
 	global $jobrange, $jobstart, $title;
 	global $page, $gridwalk, $clustername;
 	global $parentgrid, $physical, $hostname;
-	global $self, $filter;
+	global $self, $filter, $cluster_url, $get_metric_string;
 
 	if ( $context == "control" && $controlroom < 0 )
 		$header = "header-nobanner";
@@ -128,10 +128,12 @@ function makeHeader() {
 
 	if ( $clustername ) {
 		$url = rawurlencode($clustername);
-		$node_menu .= "<B><A HREF=\"./?c=".rawurlencode($clustername)."\">$clustername</A></B> ";
-		//$node_menu .= "<B>&gt;</B>\n";
+		$node_menu .= "<B><A HREF=\"../../?c=".rawurlencode($clustername)."\">$clustername</A></B> ";
+		$node_menu .= "<B>&gt;</B>\n";
 		$node_menu .= hiddenvar("c", $clustername);
 	}
+
+	$node_menu .= "<B><A HREF=\"./?c=".rawurlencode($clustername)."\">Joblist</A></B> ";
 
 	if( count( $filter ) > 0 ) {
 

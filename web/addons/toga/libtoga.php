@@ -333,7 +333,7 @@ class TorqueXMLHandler {
 
 class NodeImage {
 
-	var $image, $x, $y, $hostname, $jobs, $tasks;
+	var $image, $x, $y, $hostname, $jobs, $tasks, $showinfo;
 
 	function NodeImage( $hostname ) {
 
@@ -344,6 +344,7 @@ class NodeImage {
 		$this->tasks = 0;
 		$this->hostname = $hostname;
 		$this->cpus = $this->determineCpus();
+		$this->showinfo = 1;
 	}
 
 	function addJob( $jobid, $cpus ) {
@@ -399,50 +400,64 @@ class NodeImage {
 		$this->hostname = $hostname;
 	}
 
+	function getHostname() {
+		return $this->hostname;
+	}
+
 	function getJobs() {
 		return $this->jobs;
 	}
 
+	function setShowinfo( $showinfo ) {
+		$this->showinfo = $showinfo;
+	}
+
 	function draw() {
 
-		global $SMALL_CLUSTERIMAGE_NODEWIDTH, $JOB_NODE_MARKING_ALLCPUS, $JOB_NODE_MARKING_SINGLECPU;
+		$this->drawSmall();
+	}
+
+	function drawBig() {
+
+	}
+
+	function drawSmall() {
+
+		global $SMALL_CLUSTERIMAGE_NODEWIDTH;
 		global $JOB_NODE_MARKING;
 
-		$this->load = $this->determineLoad();
-
-		if( !isset( $this->image ) or !isset( $this->x ) or !isset( $this->y ) ) {
-			printf( "aborting\n" );
-			printf( "x %d y %d load %f\n", $this->x, $this->y, $load );
-			return;
-		}
-
 		$black_color = imageColorAllocate( $this->image, 0, 0, 0 );
-
-		// Convert Ganglias Hexadecimal load color to a Decimal one
-		//
-		$load = $this->determineLoad();	
-		$my_loadcolor = $this->colorHex( load_color($load) );
-
 		$size = $SMALL_CLUSTERIMAGE_NODEWIDTH;
 
 		imageFilledRectangle( $this->image, $this->x, $this->y, $this->x+($size), $this->y+($size), $black_color );
-		imageFilledRectangle( $this->image, $this->x+1, $this->y+1, $this->x+($size-1), $this->y+($size-1), $my_loadcolor );
 
-		$nr_jobs = count( $this->jobs );
+		if( $this->showinfo) {
+		
+			$this->load = $this->determineLoad();
 
-		$node_mark = null;
+			if( !isset( $this->image ) or !isset( $this->x ) or !isset( $this->y ) ) {
+				printf( "aborting\n" );
+				printf( "x %d y %d load %f\n", $this->x, $this->y, $load );
+				return;
+			}
 
-		if( count( $this->jobs ) > 0 )
-			$node_mark = $JOB_NODE_MARKING;
 
-		//	if( $this->tasks < $this->cpus )
-		//		$node_mark = $JOB_NODE_MARKING_SINGLECPU;
+			// Convert Ganglias Hexadecimal load color to a Decimal one
+			//
+			$load = $this->determineLoad();	
+			$usecolor = $this->colorHex( load_color($load) );
+			imageFilledRectangle( $this->image, $this->x+1, $this->y+1, $this->x+($size-1), $this->y+($size-1), $usecolor );
+			if( count( $this->jobs ) > 0 )
+				imageString( $this->image, 1, $this->x+(($size/2)-2), $this->y+(($size/2)-3), $JOB_NODE_MARKING, $black_color );
 
-		//	else if( $this->tasks == $this->cpus )
-		//		$node_mark = $JOB_NODE_MARKING_ALLCPUS;
+		} else {
 
-		if( $node_mark )
-			imageString( $this->image, 1, $this->x+(($size/2)-2), $this->y+(($size/2)-3), $node_mark, $black_color );
+			// White
+			$usecolor = imageColorAllocate( $this->image, 255, 255, 255 );
+			imageFilledRectangle( $this->image, $this->x+1, $this->y+1, $this->x+($size-1), $this->y+($size-1), $usecolor );
+		}
+
+
 	}
 
 	function determineCpus() {
@@ -469,15 +484,44 @@ class NodeImage {
 class ClusterImage {
 
 	var $dataget, $image, $clustername;
+	var $filtername, $filtervalue;
 
-	function ClusterImage( $clustername, $data_gather ) {
+	function ClusterImage( $clustername ) {
 
-		if( !isset( $data_gather ) )
-			$this->dataget = new DataGatherer();
-		else
-			$this->dataget = $data_gather;
-
+		$this->dataget = new DataGatherer();
 		$this->clustername = $clustername;
+		$this->filtername = null;
+		$this->filtervalue = null;
+	}
+
+	function setFilter( $filtername, $filtervalue ) {
+
+		//printf( "filter set to %s = %s\n", $filtername, $filtervalue );
+		$this->filtername = $filtername;
+		$this->filtervalue = $filtervalue;
+	}
+
+	function filterNodes( $jobs, $nodes ) {
+
+		$filtered_nodes = array();
+
+		foreach( $nodes as $node ) {
+
+			$mynjobs = $node->getJobs();
+			$hostname = $node->getHostname();
+
+			if( $this->filtername ) {
+				foreach( $mynjobs as $myjob )
+
+					if( $this->filtername == 'jobid' && $node->hasJob( $this->filtervalue) )
+						$filtered_nodes[] = $hostname;
+					else if( $jobs[$myjob][$this->filtername] == $this->filtervalue  && !in_array( $hostname, $filtered_nodes  ) )
+						$filtered_nodes[] = $hostname;
+			} else
+				$filtered_nodes[] = $hostname;
+		}
+
+		return $filtered_nodes;
 	}
 
 	function draw() {
@@ -525,6 +569,12 @@ class ClusterImage {
 		$colorwhite = imageColorAllocate( $image, 255, 255, 255 );
 		imageFill( $image, 0, 0, $colorwhite );
 
+		$jobs = $mydatag->getJobs();
+		//printf("filtername = %s\n", $filtername );
+		$filtered_nodes = $this->filterNodes( $jobs, $nodes );
+
+		//print_r($filtered_nodes);
+
 		for( $n = 0; $n < $node_rows; $n++ ) {
 			
 			for( $m = 0; $m < $nodes_per_row; $m++ ) {
@@ -535,10 +585,15 @@ class ClusterImage {
 				$cur_node = ($n * $nodes_per_row) + ($m);
 				$host = $nodes_hosts[$cur_node];
 
+
 				if( isset( $nodes[$host] ) ) {
 
 					$nodes[$host]->setCoords( $x, $y );
 					$nodes[$host]->setImage( $image );
+
+					if( !in_array( $host, $filtered_nodes ) )
+						$nodes[$host]->setShowinfo( 0 );
+
 					$nodes[$host]->draw();
 				}
 			}

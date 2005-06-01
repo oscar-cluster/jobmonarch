@@ -1,11 +1,10 @@
 <?php
-global $GANGLIA_PATH, $clustername, $tpl, $filter;
+global $GANGLIA_PATH, $clustername, $tpl, $filter, $cluster, $get_metric_string, $cluster_url;
 
 $data_gatherer = new DataGatherer();
 
 //$tpl->assign( "self", "./index.php" );
 $tpl->assign( "clustername", $clustername );
-$tpl->assign( "clusterimage", "./image.php?c=".rawurlencode($clustername)."&view=big-clusterimage" );
 
 $data_gatherer->parseXML();
 
@@ -13,14 +12,26 @@ $heartbeat = $data_gatherer->getHeartbeat();
 $jobs = $data_gatherer->getJobs();
 $nodes = $data_gatherer->getNodes();
 
+$filter_image_url = "";
+
 foreach( $filter as $filtername => $filtervalue ) {
 	$tpl->assign( "f_".$filtername, $filtervalue );
+	$filter_image_url .= "&$filtername=$filtervalue";
 }
+
+$tpl->assign( "clusterimage", "./image.php?c=".rawurlencode($clustername)."&view=big-clusterimage".$filter_image_url );
 
 $tpl->assign("heartbeat", makeDate( $heartbeat ) );
 
 $pie = drawPie();
 $tpl->assign("pie", $pie );
+
+//if( !array_key_exists( 'id', $filter ) ) {
+
+//	$graph_args = "c=$cluster_url&$get_metric_string&st=$cluster[LOCALTIME]";
+//	$tpl->newBlock( "average_graphs" );
+//	$tpl->assign( "graph_args", $graph_args );
+//}
 
 function timeToEpoch( $time ) {
 
