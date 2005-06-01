@@ -68,9 +68,9 @@
 <TH><B><A HREF="#" onClick="setSort( 'user' )">User</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'queue' )">Queue</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'name' )">Name</A></B></TH>
-<TH><B><A HREF="#" onClick="setSort( 'req_cpu' )">Requested CPU time</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'req_cpu' )">Requested CPU</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'req_mem' )">Requested Memory</A></B></TH>
-<TH><B>Current <A HREF="#" onClick="setSort( 'nodes' )">Nodes</A>/<A HREF="#" onClick="setSort( 'cpus' )">Cpus</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'nodes' )">Nodes</A>/<A HREF="#" onClick="setSort( 'cpus' )">Cpus</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'start' )">Started</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'runningtime' )">Runningtime</A></B></TH>
 </TR>
