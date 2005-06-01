@@ -33,6 +33,20 @@
 
 		document.forms['toga_form'].submit();
 	}
+
+	function setFilter( filtername, filterval ) {
+
+		document.toga_form.id.value = '';
+		document.toga_form.queue.value = '';
+		document.toga_form.state.value = '';
+		document.toga_form.user.value = '';
+
+		if( document.toga_form.elements[filtername] ) {
+			document.toga_form.elements[filtername].value = filterval;
+		}
+
+		document.forms['toga_form'].submit();
+	}
 </SCRIPT>
 
 <FORM NAME="toga_form" ACTION="./" METHOD="GET">
@@ -40,7 +54,10 @@
 <INPUT TYPE="HIDDEN" NAME="sortby" VALUE="{sortby}">
 <INPUT TYPE="HIDDEN" NAME="sortorder" VALUE="{sortorder}">
 <INPUT TYPE="HIDDEN" NAME="c" VALUE="{clustername}">
-<INPUT TYPE="HIDDEN" NAME="jobid" VALUE="{jobid}">
+<INPUT TYPE="HIDDEN" NAME="id" VALUE="{f_id}">
+<INPUT TYPE="HIDDEN" NAME="queue" VALUE="{f_queue}">
+<INPUT TYPE="HIDDEN" NAME="state" VALUE="{f_state}">
+<INPUT TYPE="HIDDEN" NAME="user" VALUE="{f_user}">
 
 </FORM>
 
@@ -60,10 +77,10 @@
 
 <!-- START BLOCK : node -->
   <TR CLASS="{nodeclass}">
-    <TD><A HREF="">{id}</A></TD>
-    <TD><A HREF="">{state}</A></TD>
-    <TD><A HREF="{togasorted}&user={user}">{user}</A></TD>
-    <TD><A HREF="{togasorted}&queue={queue}">{queue}</A></TD>
+    <TD><A HREF="#" onClick="setFilter( 'id', '{id}' )">{id}</A></TD>
+    <TD><A HREF="#" onClick="setFilter( 'state', '{state}' )">{state}</A></TD>
+    <TD><A HREF="#" onClick="setFilter( 'user', '{user}' )">{user}</A></TD>
+    <TD><A HREF="#" onClick="setFilter( 'queue', '{queue}' )">{queue}</A></TD>
     <TD>{name}</TD>
     <TD>{req_cpu}</TD>
     <TD>{req_memory}</TD>

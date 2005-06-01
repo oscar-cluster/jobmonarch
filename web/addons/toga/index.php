@@ -18,9 +18,15 @@ $httpvars = new HTTPVariables( $HTTP_GET_VARS, $_GET );
 $clustername = $httpvars->getClusterName();
 $view = $httpvars->getHttpVar( "view" );
 
+$filter = array();
+
 if( !isset($view) ) $view = "overview";
 if( !isset($sortorder) ) $sortorder = "asc";
 if( !isset($sortby) ) $sortby = "id";
+if( isset($id) && ($id!='')) $filter[id]=$id;
+if( isset($state) && ($state!='')) $filter[state]=$state;
+if( isset($user) && ($user!='')) $filter[user]=$user;
+if( isset($queue) && ($queue!='')) $filter[queue]=$queue;
 
 function makeHeader() {
 
@@ -28,7 +34,7 @@ function makeHeader() {
 	global $jobrange, $jobstart, $title;
 	global $page, $gridwalk, $clustername;
 	global $parentgrid, $physical, $hostname;
-	global $self;
+	global $self, $filter;
 
 	if ( $context == "control" && $controlroom < 0 )
 		$header = "header-nobanner";
@@ -114,7 +120,7 @@ function makeHeader() {
 
 	# Show grid.
 	$mygrid =  ($self == "unspecified") ? "" : $self;
-	$node_menu .= "<B>$mygrid $meta_designator</A> ";
+	$node_menu .= "<B>$mygrid $meta_designator</B> ";
 	$node_menu .= "<B>&gt;</B>\n";
 
 	if ($physical)
@@ -122,9 +128,18 @@ function makeHeader() {
 
 	if ( $clustername ) {
 		$url = rawurlencode($clustername);
-		$node_menu .= "<B>$clustername</B> ";
+		$node_menu .= "<B><A HREF=\"./?c=".rawurlencode($clustername)."\">$clustername</A></B> ";
 		//$node_menu .= "<B>&gt;</B>\n";
 		$node_menu .= hiddenvar("c", $clustername);
+	}
+
+	if( count( $filter ) > 0 ) {
+
+		foreach( $filter as $filtername => $filterval ) {
+
+			$node_menu .= "<B>&gt;</B>\n";
+			$node_menu .= "<B>'$filtername': $filterval</B> ";
+		}
 	}
 
 	$tpl->assign("node_menu", $node_menu);
@@ -170,42 +185,6 @@ function includeOverview() {
 function makeJobview() {
 
 }
-
-//function makeOverview() {
-//
-//	global $jobs, $nodes, $heartbeat, $clustername;
-
-//	foreach( $jobs as $jobid => $jobattrs ) {
-//
-//		$report_time = $jobattrs[reported];
-
-//		if( $report_time == $heartbeat ) {
-
-//			$tpl->newBlock("node");
-//			$tpl->assign( "clustername", $clustername );
-//			$tpl->assign("id", $jobid );
-//			$tpl->assign("state", $jobattrs[status] );
-//			$tpl->assign("user", $jobattrs[owner] );
-//			$tpl->assign("queue", $jobattrs[queue] );
-//			$tpl->assign("name", $jobattrs[name] );
-//			$tpl->assign("req_cpu", $jobattrs[requested_time] );
-//			$tpl->assign("req_memory", $jobattrs[requested_memory] );
-//			$nodes = count( $jobattrs[nodes] );
-//			$ppn = (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
-//			$cpus = $nodes * $ppn;
-//			$tpl->assign("nodes", $nodes );
-//			$tpl->assign("cpus", $cpus );
-//			$start_time = (int) $jobattrs[start_timestamp];
-
-//			if( $start_time ) {
-
-//				$runningtime = makeTime( $report_time - $start_time );
-//				$tpl->assign("started", makeDate( $start_time ) );
-//				$tpl->assign("runningtime", $runningtime );
-//			}
-//		}
-//	}
-//}
 
 $tpl = new TemplatePower( "templates/index.tpl" );
 
