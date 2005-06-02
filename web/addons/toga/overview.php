@@ -182,15 +182,16 @@ function drawPie() {
 
 	$emptynodes = 0;
 
+	$job_weight = array();
+
 	foreach( $nodes as $node ) {
 
 		$myjobs = $node->getJobs();
 
 		if( count( $myjobs ) == 0 )
 			$emptynodes++;
-		else
-			$nodes_jobs = $nodes_jobs + count( $myjobs );
 	}
+	$used_nodes = $nr_nodes - $emptynodes;
 
 	$empty_percentage = ($emptynodes / $nr_nodes) * 100;
 	$job_percentage = 100 - $empty_percentage; 
@@ -199,24 +200,32 @@ function drawPie() {
 	$qcolors[] = $color;
 	$pie_args .= "&free=$empty_percentage,$color";
 
-	foreach( $jobs as $jobid => $jobattrs ) {
+	foreach( $nodes as $node ) {
 
-		$qname = $jobattrs[queue];
+		$node_jobs = $node->getJobs();
+		$nr_node_jobs = count( $node_jobs );
+		$myhost = $node->getHostname();
 
-		if( !array_search( $qname, $queues ) ) {
+		foreach( $node_jobs as $myjob ) {
+
+			// Determine the weight of this job on the node it is running
+			// - what percentage of the node is in use by this job
+			//
+			$job_weight[$myjob] = ( 100 / count( $node_jobs ) ) / 100;
+			$qname = $jobs[$myjob][queue];
 
 			if( !isset( $queues[$qname] ) )
-				$queues[$qname] = array();
-
-			$queues[$qname][] = $jobid;
+				$queues[$qname] = $job_weight[$myjob];
+			else
+				$queues[$qname] = $queues[$qname] + $job_weight[$myjob];
 		}
 	}
 
 	$qcolors = array();
-	foreach( $queues as $queue => $myjobs ) {
+	foreach( $queues as $queue => $totalweight) {
 
-		$qjobs = count ( $myjobs );
-		$percentage = ( $qjobs / $nr_jobs ) * $job_percentage;
+		$percentage = ( $totalweight / $used_nodes ) * $job_percentage;
+		
 		$color = randomColor( $qcolors );
 		$qcolors[] = $color;
 		$pie_args .= "&$queue=$percentage,$color";
