@@ -11,6 +11,7 @@ $data_gatherer->parseXML();
 $heartbeat = $data_gatherer->getHeartbeat();
 $jobs = $data_gatherer->getJobs();
 $nodes = $data_gatherer->getNodes();
+$cpus = $data_gatherer->getCpus();
 
 $filter_image_url = "";
 
@@ -21,9 +22,8 @@ foreach( $filter as $filtername => $filtervalue ) {
 
 $tpl->assign( "clusterimage", "./image.php?c=".rawurlencode($clustername)."&view=big-clusterimage".$filter_image_url );
 
-$tpl->assign("heartbeat", makeDate( $heartbeat ) );
 
-$pie = drawPie();
+$pie = drawClusterPie();
 $tpl->assign("pie", $pie );
 
 //if( !array_key_exists( 'id', $filter ) ) {
@@ -169,11 +169,13 @@ function randomColor( $known_colors ) {
 	return dechex( $new );
 }
 
-function drawPie() {
+
+
+function drawClusterPie() {
 
 	global $jobs, $nodes;
 
-	$pie_args = "title=" . rawurlencode("Cluster Jobload");
+	$pie_args = "title=" . rawurlencode("Cluster queue usage");
 	$pie_args .= "&size=250x150";
 
 	$queues = array();
@@ -332,30 +334,41 @@ function makeOverview() {
 
 	$even = 1;
 
+	$overview_jobs = count( $sorted_jobs );
+	$overview_nodes = count( $nodes );
+	$overview_cpus = 0;
+
+	$f_cpus = 0;
+	$f_jobs = 0;
+
 	foreach( $sorted_jobs as $jobid => $sortdec ) {
 
 		$report_time = $jobs[$jobid][reported];
 
+		$nodes = count( $jobs[$jobid][nodes] );
+		$ppn = (int) $jobs[$jobid][ppn] ? $jobs[$jobid][ppn] : 1;
+		$cpus = $nodes * $ppn;
+
+		$overview_cpus = $overview_cpus + $cpus;
+
 		if( $report_time == $heartbeat ) {
 
-			if( count( $filter ) == 0 )
-				$display_job = 1;
-			else
-				$display_job = 0;
+			$display_job = 1;
 
 			foreach( $filter as $filtername=>$filtervalue ) {
 
-				if( $filtername == 'id' && $jobid == $filtervalue )
-					$display_job = 1;
-				else if( $filtername == 'state' && $jobs[$jobid][status] == $filtervalue )
-					$display_job = 1;
-				else if( $filtername == 'queue' && $jobs[$jobid][queue] == $filtervalue )
-					$display_job = 1;
-				else if( $filtername == 'user' && $jobs[$jobid][owner] == $filtervalue )
-					$display_job = 1;
+				if( $filtername == 'id' && $jobid != $filtervalue )
+					$display_job = 0;
+				else if( $filtername == 'state' && $jobs[$jobid][status] != $filtervalue )
+					$display_job = 0;
+				else if( $filtername == 'queue' && $jobs[$jobid][queue] != $filtervalue )
+					$display_job = 0;
+				else if( $filtername == 'user' && $jobs[$jobid][owner] != $filtervalue )
+					$display_job = 0;
 			}
 
 			if( $display_job ) {
+
 
 				$tpl->newBlock("node");
 				$tpl->assign( "clustername", $clustername );
@@ -372,6 +385,9 @@ function makeOverview() {
 				$tpl->assign("nodes", $nodes );
 				$tpl->assign("cpus", $cpus );
 				$start_time = (int) $jobs[$jobid][start_timestamp];
+
+				$f_cpus = $f_cpus + $cpus;
+				$f_jobs++;
 
 				if( $even ) {
 
@@ -392,5 +408,13 @@ function makeOverview() {
 			}
 		}
 	}
+
+	$tpl->assignGlobal("cpus_nr", $overview_cpus );
+	$tpl->assignGlobal("jobs_nr", $overview_jobs );
+	$tpl->assignGlobal("nodes_nr", $overview_nodes );
+	$tpl->assignGlobal("report_time", makeDate( $heartbeat));
+	
+	$tpl->assignGlobal("f_cpus_nr", $f_cpus );
+	$tpl->assignGlobal("f_jobs_nr", $f_jobs );
 }
 ?>

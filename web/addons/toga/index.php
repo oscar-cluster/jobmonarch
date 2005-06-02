@@ -23,10 +23,10 @@ $filter = array();
 if( !isset($view) ) $view = "overview";
 if( !isset($sortorder) ) $sortorder = "asc";
 if( !isset($sortby) ) $sortby = "id";
-if( isset($id) && ($id!='')) $filter[id]=$id;
+if( isset($queue) && ($queue!='')) $filter[queue]=$queue;
 if( isset($state) && ($state!='')) $filter[state]=$state;
 if( isset($user) && ($user!='')) $filter[user]=$user;
-if( isset($queue) && ($queue!='')) $filter[queue]=$queue;
+if( isset($id) && ($id!='')) $filter[id]=$id;
 
 function makeHeader() {
 
