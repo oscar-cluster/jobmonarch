@@ -5,7 +5,8 @@
 <TR>
   <TD ALIGN="CENTER">
     <IMG SRC="{clusterimage}"><BR>
-    reported: {heartbeat}
+    {nodes_nr} nodes total: {jobs_nr} jobs with {cpus_nr} CPU's (at {report_time}).<BR>
+    current view: {f_jobs_nr} jobs with {f_cpus_nr} CPU's{lag_msg}.
   </TD>
   <TD ALIGN="CENTER">
     <IMG SRC="{pie}">
@@ -36,10 +37,10 @@
 
 	function setFilter( filtername, filterval ) {
 
-		document.toga_form.id.value = '';
-		document.toga_form.queue.value = '';
-		document.toga_form.state.value = '';
-		document.toga_form.user.value = '';
+		//document.toga_form.id.value = '';
+		//document.toga_form.queue.value = '';
+		//document.toga_form.state.value = '';
+		//document.toga_form.user.value = '';
 
 		if( document.toga_form.elements[filtername] ) {
 			document.toga_form.elements[filtername].value = filterval;
@@ -54,10 +55,10 @@
 <INPUT TYPE="HIDDEN" NAME="sortby" VALUE="{sortby}">
 <INPUT TYPE="HIDDEN" NAME="sortorder" VALUE="{sortorder}">
 <INPUT TYPE="HIDDEN" NAME="c" VALUE="{clustername}">
-<INPUT TYPE="HIDDEN" NAME="id" VALUE="{f_id}">
 <INPUT TYPE="HIDDEN" NAME="queue" VALUE="{f_queue}">
 <INPUT TYPE="HIDDEN" NAME="state" VALUE="{f_state}">
 <INPUT TYPE="HIDDEN" NAME="user" VALUE="{f_user}">
+<INPUT TYPE="HIDDEN" NAME="id" VALUE="{f_id}">
 
 </FORM>
 
@@ -68,8 +69,8 @@
 <TH><B><A HREF="#" onClick="setSort( 'user' )">User</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'queue' )">Queue</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'name' )">Name</A></B></TH>
-<TH><B><A HREF="#" onClick="setSort( 'req_cpu' )">Requested CPU</A></B></TH>
-<TH><B><A HREF="#" onClick="setSort( 'req_mem' )">Requested Memory</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'req_cpu' )">Req. CPU time</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'req_mem' )">Req. Memory</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'nodes' )">Nodes</A>/<A HREF="#" onClick="setSort( 'cpus' )">Cpus</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'start' )">Started</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'runningtime' )">Runningtime</A></B></TH>

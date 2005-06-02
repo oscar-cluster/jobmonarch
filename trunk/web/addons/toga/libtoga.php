@@ -155,6 +155,11 @@ class DataGatherer {
 		return $handler->getNodes();
 	}
 
+	function getCpus() {
+		$handler = $this->xmlhandler;
+		return $handler->getCpus();
+	}
+
 	function getJobs() {
 		$handler = $this->xmlhandler;
 		return $handler->getJobs();
@@ -175,6 +180,20 @@ class TorqueXMLHandler {
 		$clusters = array();
 		$nodes = array();
 		$heartbeat = array();
+	}
+
+	function getCpus() {
+
+		$cpus = 0;
+
+		foreach( $this->jobs as $jobid=>$jobattrs ) {
+
+			$nodes = count( $jobattrs[nodes] );
+			$ppn = (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
+			$mycpus = $nodes * $ppn;
+
+			$cpus = $cpus + $mycpus;
+		}
 	}
 
 	function startElement( $parser, $name, $attrs ) {
@@ -484,21 +503,21 @@ class NodeImage {
 class ClusterImage {
 
 	var $dataget, $image, $clustername;
-	var $filtername, $filtervalue;
+	var $filtername, $filters;
 
 	function ClusterImage( $clustername ) {
 
 		$this->dataget = new DataGatherer();
 		$this->clustername = $clustername;
-		$this->filtername = null;
-		$this->filtervalue = null;
+		$this->filters = array();
 	}
 
 	function setFilter( $filtername, $filtervalue ) {
 
+		//printf("filter %s = %s\n", $filtername, $filtervalue );
 		//printf( "filter set to %s = %s\n", $filtername, $filtervalue );
-		$this->filtername = $filtername;
-		$this->filtervalue = $filtervalue;
+		$this->filters[$filtername] = $filtervalue;
+		//print_r($this->filters);
 	}
 
 	function filterNodes( $jobs, $nodes ) {
@@ -507,17 +526,42 @@ class ClusterImage {
 
 		foreach( $nodes as $node ) {
 
-			$mynjobs = $node->getJobs();
 			$hostname = $node->getHostname();
 
-			if( $this->filtername ) {
-				foreach( $mynjobs as $myjob )
+			$addhost = 1;
 
-					if( $this->filtername == 'jobid' && $node->hasJob( $this->filtervalue) )
-						$filtered_nodes[] = $hostname;
-					else if( $jobs[$myjob][$this->filtername] == $this->filtervalue  && !in_array( $hostname, $filtered_nodes  ) )
-						$filtered_nodes[] = $hostname;
-			} else
+			if( count( $this->filters ) > 0 ) {
+
+				$mynjobs = $node->getJobs();
+
+				if( count( $mynjobs ) > 0 ) {
+
+					foreach( $mynjobs as $myjob ) {
+
+						foreach( $this->filters as $filtername => $filtervalue ) {
+
+							//printf("filter bla %s = %s\n", $filtername,$filtervalue );
+
+							if( $filtername!=null && $filtername!='' ) {
+
+								if( $filtername == 'jobid' && !$node->hasJob( $filtervalue) ) {
+									$addhost = 0;
+									//printf("host %s has no job %s\n", $hostname, $filtervalue);
+								} else if( $filtername != 'jobid' ) {
+									//printf("myjob is %s\n", $myjob );
+									if( $jobs[$myjob][$filtername] != $filtervalue ) {
+										//printf("host %s has no job with %s=%s\n", $hostname, $filtername, $filtervalue);
+										$addhost = 0;
+									}
+								}
+							}
+						}
+					}
+				} else
+					$addhost = 0;
+			}
+
+			if( $addhost )
 				$filtered_nodes[] = $hostname;
 		}
 
@@ -525,6 +569,9 @@ class ClusterImage {
 	}
 
 	function draw() {
+
+		//printf("stopt met uitvoer");
+		//return;
 
 		global $SMALL_CLUSTERIMAGE_MAXWIDTH, $SMALL_CLUSTERIMAGE_NODEWIDTH;
 	
