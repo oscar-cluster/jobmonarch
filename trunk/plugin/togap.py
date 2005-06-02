@@ -3,11 +3,11 @@
 # Specify debugging level here;
 #
 # 10 = gemtric cmd's
-DEBUG_LEVEL = 10
+DEBUG_LEVEL = 0
 
 # Wether or not to run as a daemon in background
 #
-DAEMONIZE = 0
+DAEMONIZE = 1
 
 # How many seconds interval for polling of jobs
 #
@@ -128,7 +128,7 @@ class PBSDataGatherer:
 	def initPbsQuery( self ):
 
 		self.pq = None
-		self.pq = PBSQuery()
+		self.pq = PBSQuery( 'login.irc.sara.nl' )
 
 	def getAttr( self, attrs, name ):
 		"""Return certain attribute from dictionary, if exists"""
@@ -168,12 +168,16 @@ class PBSDataGatherer:
 			jobs = { }
 
 		#self.initPbsQuery()
-		
+	
+		#print self.pq.getnodes()
+	
 		joblist = self.pq.getjobs()
 
 		self.cur_time = time.time()
 
 		jobs_processed = [ ]
+
+		#self.printJobs( joblist )
 
 		for name, attrs in joblist.items():
 
