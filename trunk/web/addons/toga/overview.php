@@ -24,14 +24,13 @@ foreach( $filter as $filtername => $filtervalue ) {
 $tpl->assign( "clusterimage", "./image.php?c=".rawurlencode($clustername)."&view=big-clusterimage".$filter_image_url );
 
 if( array_key_exists( "id", $filter ) )
-	$pie = drawJobPie();
+	$piefilter = 'id';
 else if( array_key_exists( "user", $filter ) )
-	$pie = drawUserPie();
+	$piefilter = 'user';
 else if( array_key_exists( "queue", $filter ) )
-	$pie = drawQueuePie();
-else
-	$pie = drawClusterPie();
+	$piefilter = 'queue';
 
+$pie = drawPie();
 $tpl->assign("pie", $pie );
 
 //if( !array_key_exists( 'id', $filter ) ) {
@@ -189,13 +188,17 @@ function drawQueuePie() {
 }
 
 
-function drawClusterPie() {
+function drawPie() {
 
-	global $jobs, $gnodes;
+	global $jobs, $gnodes, $piefilter, $filter;
 
 	$nodes = $gnodes;
-	
-	$pie_args = "title=" . rawurlencode("Cluster queue usage");
+
+	if( isset($piefilter) )	
+		$pie_args = "title=" . rawurlencode("Cluster ".$piefilter." usage");
+	else
+		$pie_args = "title=" . rawurlencode("Cluster queue usage");
+		
 	$pie_args .= "&size=250x150";
 
 	$queues = array();
@@ -218,9 +221,13 @@ function drawClusterPie() {
 	$empty_percentage = ($emptynodes / $nr_nodes) * 100;
 	$job_percentage = 100 - $empty_percentage; 
 
+	$qcolors = array();
 	$color = randomColor( $qcolors );
 	$qcolors[] = $color;
 	$pie_args .= "&free=$empty_percentage,$color";
+
+	if( isset( $piefilter ) )
+		$filterpie = array();
 
 	foreach( $nodes as $node ) {
 
@@ -236,21 +243,56 @@ function drawClusterPie() {
 			$job_weight[$myjob] = ( 100 / count( $node_jobs ) ) / 100;
 			$qname = $jobs[$myjob][queue];
 
-			if( !isset( $queues[$qname] ) )
-				$queues[$qname] = $job_weight[$myjob];
-			else
-				$queues[$qname] = $queues[$qname] + $job_weight[$myjob];
+			if( isset($piefilter) ) {
+				$countjob = 1;
+				if( $piefilter == 'id' ) {
+					if( $myjob != $filter[$piefilter] )
+						$countjob = 0;
+				} else if( $piefilter == 'user' ) {
+					if( $jobs[$myjob][owner] != $filter[$piefilter] )
+						$countjob = 0;
+				} else {
+					if( $jobs[$myjob][$piefilter] != $filter[$piefilter] )
+						$countjob = 0;
+				}
+
+				if( $countjob ) {
+
+					if( !isset( $filterpie[$filter[$piefilter]] ) )
+						$filterpie[$filter[$piefilter]] = $job_weight[$myjob];
+					else
+						$filterpie[$filter[$piefilter]] = $filterpie[$filter[$piefilter]] + $job_weight[$myjob];
+				} else {
+					if( !isset( $filterpie["other"] ) )
+						$filterpie["other"] = $job_weight[$myjob];
+					else
+						$filterpie["other"] = $filterpie["other"] + $job_weight[$myjob];
+
+				}
+				
+			} else {
+
+				if( !isset( $queues[$qname] ) )
+					$queues[$qname] = $job_weight[$myjob];
+				else
+					$queues[$qname] = $queues[$qname] + $job_weight[$myjob];
+			}
 		}
 	}
 
-	$qcolors = array();
-	foreach( $queues as $queue => $totalweight) {
+	//$qcolors = array();
+	if( isset( $piefilter ) )
+		$graphvals = $filterpie;
+	else
+		$graphvals = $queues;
+
+	foreach( $graphvals as $name => $totalweight) {
 
 		$percentage = ( $totalweight / $used_nodes ) * $job_percentage;
 		
 		$color = randomColor( $qcolors );
 		$qcolors[] = $color;
-		$pie_args .= "&$queue=$percentage,$color";
+		$pie_args .= "&$name=$percentage,$color";
 	}
 	$pie = "../../pie.php?$pie_args";
 
@@ -347,7 +389,7 @@ function makeOverview() {
 	global $jobs, $nodes, $heartbeat, $clustername, $tpl;
 	global $sortorder, $sortby, $filter, $sh, $hc, $m;
 	global $cluster_url, $get_metric_string, $host_url, $metrics;
-	global $start, $end, $reports;
+	global $start, $end, $reports, $gnodes;
 
 	$metricname = $m;
 
@@ -462,7 +504,7 @@ function makeOverview() {
 
 		//$tpl->assign("cluster", $clustername);
 		$tpl->assign("metric","$metricname $units");
-		$tpl->assign("id", $id);
+		$tpl->assign("id", $filter[id]);
 		# Host columns menu defined in header.php
 		$tpl->assign("cols_menu", $cols_menu);
 
