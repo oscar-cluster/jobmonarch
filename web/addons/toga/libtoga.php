@@ -74,13 +74,16 @@ $httpvars = new HTTPVariables( $HTTP_GET_VARS, $_GET );
 // Set cluster context so that Ganglia will
 // provide us with the correct metrics array
 //
-global $context, $clustername;
+global $context, $clustername, $reports;
 //$clustername = $httpvars->getClusterName();
 //$context = 'cluster';
 
+
+global $default_metric;
+
 // Ganglia's array of host metrics
 //
-global $metrics;
+global $metrics, $hosts_up;
 
 
 class DataSource {

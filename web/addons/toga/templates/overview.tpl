@@ -16,6 +16,7 @@
 
 <BR><BR>
 
+<SCRIPT TYPE="text/javascript" SRC="ts_picker.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript">
 	function setSort( sortbyval ) {
 
@@ -50,8 +51,6 @@
 	}
 </SCRIPT>
 
-<FORM NAME="toga_form" ACTION="./" METHOD="GET">
-
 <INPUT TYPE="HIDDEN" NAME="sortby" VALUE="{sortby}">
 <INPUT TYPE="HIDDEN" NAME="sortorder" VALUE="{sortorder}">
 <INPUT TYPE="HIDDEN" NAME="c" VALUE="{clustername}">
@@ -59,8 +58,6 @@
 <INPUT TYPE="HIDDEN" NAME="state" VALUE="{f_state}">
 <INPUT TYPE="HIDDEN" NAME="user" VALUE="{f_user}">
 <INPUT TYPE="HIDDEN" NAME="id" VALUE="{f_id}">
-
-</FORM>
 
 <TABLE WIDTH="90%" CELLPADDING="8" CELLSPACING="3" BORDER=0>
 <TR CLASS="toga">
@@ -92,3 +89,42 @@
 <!-- END BLOCK : node -->
 </TABLE>
 </CENTER>
+
+<!-- START BLOCK : showhosts -->
+<TABLE BORDER="0" WIDTH="100%">
+<TR>
+  <TD CLASS=title COLSPAN="2">
+  <FONT SIZE="-1">
+  Show Hosts:
+  yes<INPUT type=radio name="sh" value="1" OnClick="toga_form.submit();" {checked1}>
+  no<INPUT type=radio name="sh" value="0" OnClick="toga_form.submit();" {checked0}>
+  </FONT>
+  |
+  job <strong>{id}</strong> metric <strong>{metric}</strong>
+  |
+   <FONT SIZE="-1">
+   Columns&nbsp;&nbsp;{cols_menu}
+   </FONT><!-- <BR>
+   <FONT SIZE="-1">
+    Set graph timeperiod from <INPUT TYPE="text" NAME="start" VALUE="{start}" SIZE=12 ALT="Start time"><a href="javascript:show_calendar('document.toga_form.start', document.toga_form.start.value);"><img src="cal.gif" width="16" height="16" border="0"></a> to <INPUT TYPE="text" NAME="stop" VALUE="{stop}" SIZE=12 ALT="Stop time"><a href="javascript:show_calendar('document.toga_form.stop', document.toga_form.stop.value);"><img src="cal.gif" width="16" height="16" border="0"></a><INPUT TYPE="submit" VALUE="Refresh graphs">
+   </FONT> -->
+  </TD>
+</TR>
+   
+</TABLE>
+
+<CENTER>
+<TABLE>
+<TR>
+<!-- START BLOCK : sorted_list -->
+{metric_image}{br}
+<!-- END BLOCK : sorted_list -->
+</TR>
+</TABLE>
+
+<p>
+(Nodes colored by 1-minute load) | <A HREF="../../node_legend.html" ALT="Node Image egend">Legend</A>
+
+</CENTER>
+
+<!-- END BLOCK : showhosts -->

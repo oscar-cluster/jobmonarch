@@ -8,7 +8,7 @@
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
-<FORM ACTION="{page}" METHOD="GET" NAME="ganglia_form">
+<FORM ACTION="./" METHOD="GET" NAME="toga_form">
 <TABLE WIDTH="100%">
 <TR>
   <TD ROWSPAN="2" WIDTH="150">
@@ -44,7 +44,6 @@
   </TD>
 </TR>
 </TABLE> 
-</FORM>
 
 <FONT SIZE="+1">
 {node_menu}

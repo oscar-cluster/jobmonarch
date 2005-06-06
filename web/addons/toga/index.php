@@ -35,7 +35,18 @@ function makeHeader() {
 	global $page, $gridwalk, $clustername;
 	global $parentgrid, $physical, $hostname;
 	global $self, $filter, $cluster_url, $get_metric_string;
+	global $metrics, $reports, $m, $default_metric;
 
+	if( isset($default_metric) and !isset($m) )
+		$metricname = $default_metric;
+	else
+		if( isset( $m ) )
+			$metricname = $m;
+		else
+			$metricname = "load_one";
+
+	//$metricname = ($m) ? $m : $default_metric;
+	//printf( "m = %s, metricname = %s, default_metric = %s\n", $m, $metricname, $default_metric );
 	if ( $context == "control" && $controlroom < 0 )
 		$header = "header-nobanner";
 	else
@@ -133,6 +144,16 @@ function makeHeader() {
 		$node_menu .= hiddenvar("c", $clustername);
 	}
 
+	if (!count($metrics)) {
+		echo "<h4>Cannot find any metrics for selected cluster \"$clustername\", exiting.</h4>\n";       echo "Check ganglia XML tree (telnet $ganglia_ip $ganglia_port)\n";
+		exit;
+	}
+	$firsthost = key($metrics);
+	foreach ($metrics[$firsthost] as $m => $foo)
+		$context_metrics[] = $m;
+	foreach ($reports as $r => $foo)
+		$context_metrics[] = $r;
+
 	$node_menu .= "<B><A HREF=\"./?c=".rawurlencode($clustername)."\">Joblist</A></B> ";
 
 	if( count( $filter ) > 0 ) {
@@ -140,11 +161,54 @@ function makeHeader() {
 		foreach( $filter as $filtername => $filterval ) {
 
 			$node_menu .= "<B>&gt;</B>\n";
-			$node_menu .= "<B>'$filtername': $filterval</B> ";
+			$node_menu .= "<B>$filtername- $filterval</B> ";
 		}
 	}
 
 	$tpl->assign("node_menu", $node_menu);
+
+	if( array_key_exists( "id", $filter ) ) {
+		//$context_ranges[]="hour";
+		//$context_ranges[]="day";
+		//$context_ranges[]="week";
+		//$context_ranges[]="month";
+		//$context_ranges[]="year";
+		//if ($jobrange)
+		//	$context_ranges[]="job";
+
+		//$range_menu = "<B>Last</B>&nbsp;&nbsp;"
+		//	."<SELECT NAME=\"r\" OnChange=\"toga_form.submit();\">\n";
+		//foreach ($context_ranges as $v) {
+		//	$url=rawurlencode($v);
+	//		$range_menu .= "<OPTION VALUE=\"$url\" ";
+	//		if ($v == $range)
+	//			 $range_menu .= "SELECTED";
+	//		$range_menu .= ">$v\n";
+	//	}
+	//	$range_menu .= "</SELECT>\n";
+
+	//	$tpl->assign("range_menu", $range_menu);
+
+		//$metricname = $m;
+
+		if (is_array($context_metrics) ) {
+			$metric_menu = "<B>Metric</B>&nbsp;&nbsp;"
+				."<SELECT NAME=\"m\" OnChange=\"toga_form.submit();\">\n";
+
+			sort($context_metrics);
+			foreach( $context_metrics as $k ) {
+				$url = rawurlencode($k);
+				$metric_menu .= "<OPTION VALUE=\"$url\" ";
+				if ($k == $metricname )
+					$metric_menu .= "SELECTED";
+				$metric_menu .= ">$k\n";
+			}
+			$metric_menu .= "</SELECT>\n";
+
+			$tpl->assign("metric_menu", $metric_menu );
+		}
+	}
+	$m = $metricname;
 
 	# Make sure that no data is cached..
 	header ("Expires: Mon, 26 Jul 1997 05:00:00 GMT");    # Date in the past
@@ -199,10 +263,10 @@ switch( $view ) {
 		includeOverview();
 		break;
 
-	case "jobview":
+	//case "jobview":
 
-		includeJobview();
-		break;
+	//	includeJobview();
+	//	break;
 
 	default:
 
@@ -224,10 +288,10 @@ switch( $view ) {
 		makeOverview();
 		break;
 
-	case "jobview":
+	//case "jobview":
 
-		makeJobview();
-		break;
+	//	makeJobview();
+	//	break;
 
 	default:
 
