@@ -50,29 +50,49 @@ function timeToEpoch( $time ) {
 		$minutes = $time_fields[1];
 		$seconds = $time_fields[2];
 
-		$myepoch = intval( $seconds + (intval( $minutes * 60 )) + (intval( $hours * 3600 )) );
-		return $myepoch;
+	} else if( count($time_fields) == 2 ) {
+
+		$hours = 0;
+		$minutes = $time_fields[0];
+		$seconds = $time_fields[1];
+
+	} else if( count($time_fields) == 1 ) {
+
+		$hours = 0;
+		$minutes = 0;
+		$seconds = $time_fields[0];
 	}
+
+	$myepoch = intval( $seconds + (intval( $minutes * 60 )) + (intval( $hours * 3600 )) );
+
+	return $myepoch;
 }
 
 function makeTime( $time ) {
 
 	$days = intval( $time / 86400 );
-	$time = $days ? $time % ($days * 86400) : $time;
+	$time = ($days>0) ? $time % ($days * 86400) : $time;
+
+	//printf( "time = %s, days = %s\n", $time, $days );
+
+	$date_str = '';
+	$day_str = '';
 
 	if( $days > 0 ) {
 		if( $days > 1 )
-			$date_str .= $days . ' days - ';
+			$day_str .= $days . ' days';
 		else
-			$date_str .= $days . ' day - ';
+			$day_str .= $days . ' day';
 	}
 
 	$hours = intval( $time / 3600 );
 	$time = $hours ? $time % ($hours * 3600) : $time;
 
+	//printf( "time = %s, days = %s, hours = %s\n", $time, $days, $hours );
+
 	if( $hours > 0 ) {
 		$date_str .= $hours . ':';
-		$date_unit = ' hours';
+		$date_unit = 'hours';
 	}
 		
 	$minutes = intval( $time / 60 );
@@ -86,10 +106,13 @@ function makeTime( $time ) {
 			$date_str .= '0' . $minutes . ':';
 
 		$date_unit = (!isset($date_unit)) ? 'minutes' : $date_unit;
-	} else if( $days > 0 or $hours > 0 ) {
-		$date_str .= '00:';
-		$date_unit = (!isset($date_unit)) ? 'minutes' : $date_unit;
+	} else {
+		if($hours > 0 ) {
+			$date_str .= '00:';
+			$date_unit = (!isset($date_unit)) ? 'minutes' : $date_unit;
+		}
 	}
+
 
 	$date_unit = (!isset($date_unit)) ? 'seconds' : $date_unit;
 
@@ -100,8 +123,17 @@ function makeTime( $time ) {
 		else
 			$date_str .= '0' . $seconds . ' ' . $date_unit;
 			
-	} else if ( $days > 0 or $hours > 0 or $minutes > 0 )
+	} else if ( $hours > 0 or $minutes > 0 )
+
 		$date_str .= '00 ' . $date_unit;
+
+	if( $days > 0) {
+
+		if( $hours > 0 or $minutes > 0 or $seconds > 0 )
+			$date_str = $day_str . ' - ' . $date_str;
+		else
+			$date_str = $day_str;
+	}
 
 	return $date_str;
 }
@@ -350,7 +382,7 @@ function sortJobs( $jobs, $sortby, $sortorder ) {
 					break;
 
 				case "req_cpu":
-					$sorted[$jobid] = $req_cpu;
+					$sorted[$jobid] = timeToEpoch( $req_cpu );
 					break;
 
 				case "req_mem":
@@ -379,7 +411,11 @@ function sortJobs( $jobs, $sortby, $sortorder ) {
 			}
         }
 
-	uasort( $sorted, $cmp );
+	//uasort( $sorted, $cmp );
+	if( $sortorder == "asc" )
+		arsort( $sorted );
+	else if( $sortorder == "desc" )
+		asort( $sorted );
 
 	return $sorted;
 }
