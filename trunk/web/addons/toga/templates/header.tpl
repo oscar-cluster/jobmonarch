@@ -28,9 +28,10 @@
      <TD BGCOLOR="#DDDDDD" ALIGN="RIGHT">
      <INPUT TYPE="SUBMIT" VALUE="Get Fresh Data">
      </TD>
+     <TD></TD>
   </TR>
   <TR>
-     <TD COLSPAN="1">
+     <TD COLSPAN=1>
      {metric_menu} &nbsp;&nbsp;
      {range_menu}&nbsp;&nbsp;
      {sort_menu}
@@ -38,6 +39,7 @@
      <TD>
       <B>{alt_view}</B>
      </TD>
+<!-- INCLUDE BLOCK : archive -->
   </TR>
   </TABLE>
 

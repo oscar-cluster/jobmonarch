@@ -36,6 +36,7 @@ function makeHeader() {
 	global $parentgrid, $physical, $hostname;
 	global $self, $filter, $cluster_url, $get_metric_string;
 	global $metrics, $reports, $m, $default_metric;
+	global $default_refresh;
 
 	if( isset($default_metric) and !isset($m) )
 		$metricname = $default_metric;
@@ -45,20 +46,15 @@ function makeHeader() {
 		else
 			$metricname = "load_one";
 
-	//$metricname = ($m) ? $m : $default_metric;
-	//printf( "m = %s, metricname = %s, default_metric = %s\n", $m, $metricname, $default_metric );
-	if ( $context == "control" && $controlroom < 0 )
-		$header = "header-nobanner";
-	else
-		$header = "header";
+	$header = "header";
 
 	# Maintain our path through the grid tree.
 	$me = $self . "@" . $grid[$self][AUTHORITY];
 
-	if ($initgrid) {
-		$gridstack = array();
-		$gridstack[] = $me;
-	} else if ($gridwalk=="fwd") {
+	$gridstack = array();
+	$gridstack[] = $me;
+
+	if ($gridwalk=="fwd") {
 		# push our info on gridstack, format is "name@url>name2@url".
 		if (end($gridstack) != $me) {
 			$gridstack[] = $me;
@@ -98,10 +94,7 @@ function makeHeader() {
 	$tpl->assign( "page_title", $title );
 
 	# The page to go to when "Get Fresh Data" is pressed.
-	if (isset($page))
-		$tpl->assign("page",$page);
-	else
-		$tpl->assign("page","./");
+	$tpl->assign("page","./");
 
 	# Templated Logo image
 	$tpl->assign("images","./templates/$template_name/images");
@@ -168,28 +161,6 @@ function makeHeader() {
 	$tpl->assign("node_menu", $node_menu);
 
 	if( array_key_exists( "id", $filter ) ) {
-		//$context_ranges[]="hour";
-		//$context_ranges[]="day";
-		//$context_ranges[]="week";
-		//$context_ranges[]="month";
-		//$context_ranges[]="year";
-		//if ($jobrange)
-		//	$context_ranges[]="job";
-
-		//$range_menu = "<B>Last</B>&nbsp;&nbsp;"
-		//	."<SELECT NAME=\"r\" OnChange=\"toga_form.submit();\">\n";
-		//foreach ($context_ranges as $v) {
-		//	$url=rawurlencode($v);
-	//		$range_menu .= "<OPTION VALUE=\"$url\" ";
-	//		if ($v == $range)
-	//			 $range_menu .= "SELECTED";
-	//		$range_menu .= ">$v\n";
-	//	}
-	//	$range_menu .= "</SELECT>\n";
-
-	//	$tpl->assign("range_menu", $range_menu);
-
-		//$metricname = $m;
 
 		if (is_array($context_metrics) ) {
 			$metric_menu = "<B>Metric</B>&nbsp;&nbsp;"
@@ -236,20 +207,24 @@ function makeFooter() {
 	$tpl->assign("parsetime", sprintf("%.4f", $parsetime) . "s");
 }
 
-function includeJobview() {
+function includeSearchpage() {
 	global $tpl;
 
-	$tpl->assignInclude( "main", "templates/jobview.tpl" );
+	$tpl->assignInclude( "main", "templates/search.tpl" );
+
+}
+
+function includeSearchThumb() {
+	global $tpl;
+
+	$tpl->assignInclude( "archive", "templates/inc_search.tpl" );
+
 }
 
 function includeOverview() {
 	global $tpl;
 
 	$tpl->assignInclude( "main", "templates/overview.tpl" );
-}
-
-function makeJobview() {
-
 }
 
 $tpl = new TemplatePower( "templates/index.tpl" );
@@ -261,12 +236,14 @@ switch( $view ) {
 	case "overview":
 
 		includeOverview();
+		if( $TARCHD )
+			includeSearchThumb();
 		break;
 
-	//case "jobview":
+	case "search":
 
-	//	includeJobview();
-	//	break;
+		includeSearchPage();
+		break;
 
 	default:
 
@@ -279,6 +256,8 @@ $tpl->prepare();
 
 $title = "Torque Report";
 makeHeader();
+$tpl->assign("cluster_url", rawurlencode($clustername) );
+$tpl->assign("cluster", $clustername );
 
 switch( $view ) {
 
@@ -288,10 +267,11 @@ switch( $view ) {
 		makeOverview();
 		break;
 
-	//case "jobview":
+	case "search":
 
-	//	makeJobview();
-	//	break;
+		include "./search.php";
+		makeSearchPage();
+		break;
 
 	default:
 
