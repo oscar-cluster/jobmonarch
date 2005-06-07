@@ -2,7 +2,7 @@
 <table>
 <tr>
  <td valign=center>
-  <a href="./addons/toga/?c={cluster}"><b>Torque Job's</b></a>
+  <a href="./addons/toga/?c={cluster}"><b>Joblist</b></a>
  </td>
 </tr>
 <tr>

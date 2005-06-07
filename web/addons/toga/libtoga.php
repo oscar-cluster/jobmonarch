@@ -59,10 +59,12 @@ $my_dir = getcwd();
 // Load Ganglia's PHP
 chdir( $GANGLIA_PATH );
 
+$context = 'cluster';
+
 include_once "./conf.php";
 include_once "./functions.php";
 include_once "./ganglia.php";
-include_once "./get_context.php";
+//include_once "./get_context.php";
 include_once "./get_ganglia.php";
 
 // Back to our PHP
@@ -75,9 +77,8 @@ $httpvars = new HTTPVariables( $HTTP_GET_VARS, $_GET );
 // provide us with the correct metrics array
 //
 global $context, $clustername, $reports;
-//$clustername = $httpvars->getClusterName();
-//$context = 'cluster';
 
+//$clustername = $httpvars->getClusterName();
 
 global $default_metric;
 

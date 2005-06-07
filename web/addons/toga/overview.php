@@ -7,6 +7,9 @@ $data_gatherer = new DataGatherer();
 //$tpl->assign( "self", "./index.php" );
 $tpl->assign( "clustername", $clustername );
 
+if( $TARCHD )
+	$tpl->assign( "cluster_url", rawurlencode($clustername) );
+
 $data_gatherer->parseXML();
 
 $heartbeat = $data_gatherer->getHeartbeat();
@@ -425,7 +428,7 @@ function makeOverview() {
 	global $jobs, $nodes, $heartbeat, $clustername, $tpl;
 	global $sortorder, $sortby, $filter, $sh, $hc, $m;
 	global $cluster_url, $get_metric_string, $host_url, $metrics;
-	global $start, $end, $reports, $gnodes;
+	global $start, $end, $reports, $gnodes, $default_showhosts;
 
 	$metricname = $m;
 
@@ -522,7 +525,7 @@ function makeOverview() {
 	$tpl->assignGlobal("f_cpus_nr", $f_cpus );
 	$tpl->assignGlobal("f_jobs_nr", $f_jobs );
 
-	if( array_key_exists( "id", $filter ) ) {
+	if( array_key_exists( "id", $filter ) and $start_time ) {
 		$tpl->newBlock( "showhosts" );
 
 		# Present a width list
@@ -544,8 +547,8 @@ function makeOverview() {
 		# Host columns menu defined in header.php
 		$tpl->assign("cols_menu", $cols_menu);
 
-		if( $sh) $showhosts = $sh;
-		if( !$showhosts) $showhosts = 0;
+		$showhosts = isset($sh) ? $sh : $default_showhosts;
+		//if( !$showhosts) $showhosts = $default_showhosts;
 		$tpl->assign("checked$showhosts", "checked");
 
 		if( $showhosts ) {

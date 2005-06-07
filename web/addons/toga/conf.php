@@ -1,4 +1,7 @@
 <?php
+// Show hosts in a jobview by default?
+//
+$default_showhosts = 1;
 
 // Path to Ganglia's web frontend root
 //
@@ -14,16 +17,16 @@ $SMALL_CLUSTERIMAGE_MAXWIDTH = 250;
 $SMALL_CLUSTERIMAGE_NODEWIDTH = 11;
 
 // How to mark nodes with a job in clusterimage
-// allcpus when all cpu's are in use
-// singlecpu when less than all cpus are in use
 //
-//$JOB_NODE_MARKING_ALLCPUS = "J";
-//$JOB_NODE_MARKING_SINGLECPU = "j";
 $JOB_NODE_MARKING = "J";
 
 // XML Datasource for Toga
 // by default localhost's gmetad
 //
 $DATA_SOURCE = '127.0.0.1:8649';
+
+// Is there a jobarchive?
+//
+$TARCHD = 1;
 
 ?>
