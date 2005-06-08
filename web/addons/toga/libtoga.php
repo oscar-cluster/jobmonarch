@@ -87,6 +87,267 @@ global $default_metric;
 global $metrics, $hosts_up;
 
 
+class TarchDbase {
+
+	var $ip, $dbase;
+
+	function TarchDbase( $ip = null, $dbase = 'toga' ) {
+		$this->ip = $ip;
+		$this->dbase = $dbase;
+	}
+
+	function connect() {
+
+		if( $this->ip == null and $this->dbase == 'toga' )
+			$this->conn = pg_connect( "dbase=".$this->dbase );
+		else
+			$this->conn = pg_connect( "host=".$this->ip." dbase=".$this->dbase );
+	}
+}
+
+class TarchRrd {
+	var $rrdbin, $rrdvalues, $clustername, $hostname, $tempdir, $tarchdir, $metrics;
+
+	function TarchRrd( $rrdbin = '/usr/bin/rrdtool', $tarchdir = '/data/toga/rrds' ) {
+		$this->rrdbin = $rrdbin;
+		$this->rrdvalues = array();
+		$this->tarchdir = $tarchdir;
+		$this->tempdir = '/tmp/toga-web-temp';
+		$this->metrics = array();
+	}
+
+	function doCmd( $command ) {
+
+		printf( "command = %s\n", $command );
+		$pipe = popen( $command . ' 2>&1', 'r' );
+
+		if (!$pipe) {
+			print "pipe failed.";
+			return "";
+		}
+
+		$output = '';
+		while(!feof($pipe))
+			$output .= fread($pipe, 1024);
+
+		pclose($pipe);
+
+		$output = explode( "\n", $output );
+		print_r( $output );
+		return $output;
+	}
+
+	function dirList( $dir ) {
+
+		$dirlist = array();
+
+		if ($handle = opendir( $dir )) {
+			while (false !== ($file = readdir($handle))) {
+				if ($file != "." && $file != "..") {
+					$dirlist[] = $file;
+				}
+			}
+			closedir($handle);
+		}
+
+		return $dirlist;
+	}
+
+	function getTimePeriods( $start, $end ) {
+
+		$times = array();
+		$dirlist = $this->dirList( $this->tarchdir . '/' . $this->clustername . '/' . $this->hostname );
+		//print_r( $dirlist );
+
+		$first = 0;
+		$last = 9999999999999;
+
+		foreach( $dirlist as $dir ) {
+
+			//printf("dir = %s\n", $dir );
+
+			if( $dir > $first and $dir <= $start )
+				$first = $dir;
+			if( $dir < $last and $dir >= $end )
+				$last = $dir;
+		}
+
+		//if( $first != 0 and !array_key_exists( $first, $times ) )
+		//	$times[] = $first;
+
+		foreach( $dirlist as $dir ) {
+
+			if( $dir >= $first and $dir <= $last and !array_key_exists( $dir, $times ) )
+				$times[] = $dir;
+		}
+
+		//if( $last != 9999999999 and !array_key_exists( $last, $times ) )
+		//	$times[] = $last;
+
+		sort( $times );
+
+		//print_r( $times );
+
+		return $times;
+	}
+
+	function getIntervalStep( $file ) {
+
+		$ret = $this->doCmd( $this->rrdbin .' info '. $file );
+
+		foreach( $ret as $r ) {
+
+			$fields = explode( ' = ', $r );
+
+			if( $fields[0] == 'step' )
+				return $fields[1];
+		}
+
+		return null;
+	}
+
+	function makeJobRrds( $clustername, $hostname, $descr, $start, $end) {
+		$this->clustername = $clustername;
+		$this->hostname = $hostname;
+
+		$myvalues = array();
+
+		$times = $this->getTimePeriods( $start, $end );
+
+		if( count( $times ) > 0 ) {
+
+			$time_size = count( $times );
+			$curtime = 1;
+			$this->metrics = $this->dirList( $this->tarchdir . '/' . $this->clustername . '/' . $this->hostname .'/'. $times[0] );
+			//print_r( $this->metrics );
+
+			$intv = $this->getIntervalStep( '"'.$this->tarchdir . '/' . $this->clustername . '/' . $this->hostname .'/'. $times[0]. '/'.$this->metrics[0].'"' );
+			foreach( $this->metrics as $metric ) {	
+				$newfile = $this->tempdir .'/toga.temp-'. $descr .'-'.$metric;
+
+				foreach( $times as $timep ) {
+
+					$r_start = null;
+					$r_end = null;
+
+					if( $curtime == 1 )
+						$r_start = $start;
+
+					if( $curtime == $time_size )
+						$r_end = $end;
+
+					$file = $this->tarchdir . '/' . $this->clustername . '/' . $this->hostname .'/'. $timep .'/'. $metric;
+
+					$r_values = $this->getValues( $file, $r_start, $r_end );
+					//print_r($r_values);
+
+					$myvalues = $myvalues + $r_values;
+				
+					$curtime++;	
+				}
+				//printf( "----myvalues----\n" );
+				//print_r($myvalues);
+				//printf( "----myvalues----\n" );
+
+				$heartbeat = intval( 8 * $intv );
+				$ret = $this->doCmd( $this->rrdbin .' create "'.$newfile.'" --step '. $intv .' --start '. $start .' DS:sum:GAUGE:'.$heartbeat.':U:U RRA:AVERAGE:0.5:1:'. count( $myvalues ) );
+
+				$update_args = array();
+				$arglist_nr = 0;
+
+				ksort( $myvalues );
+
+				foreach( $myvalues as $mytime=>$myvalue ) {
+					$myupdateval = ' '.trim($mytime).':'.trim($myvalue);
+
+					if( !isset($update_args[$arglist_nr]) )
+						$update_args[$arglist_nr] = '';
+
+					if( intval( strlen($update_args[$arglist_nr]) + strlen($myupdateval) ) > 50000 )
+						$arglist_nr++;
+
+					$update_args[$arglist_nr] .= $myupdateval;
+				}
+
+				//printf( "grootte args = %s\n", strlen( $update_args ) );
+
+				$ret = $this->doCmd( $this->rrdbin .' update "'. $newfile . '" blaaa' );
+				foreach( $update_args as $update_arg )
+					$ret = $this->doCmd( $this->rrdbin .' update "'. $newfile . '"'.$update_arg );
+
+				return;
+			}
+		}
+	}
+
+	function getValues( $file, $start = null, $end = null ) {
+
+		$rrdargs = 'AVERAGE -r 15';
+
+		if( $start )
+			$rrdargs .= ' -s '. $start;
+		if( $end )
+			$rrdargs .= ' -e '. $end;
+
+		$values = $this->doCmd( $this->rrdbin .' fetch "'.$file.'" '. $rrdargs );
+
+		//print_r( $values );
+		$arvalues = array();
+
+		foreach( $values as $value ) {
+			//printf( "value = %s\n", $value );
+
+			$fields = explode( ':', $value );
+
+			if( count( $fields ) == 2 ) {
+
+				$timestamp = trim($fields[0]);
+				$keepval = 1;
+
+				if( $start ) {
+
+					if( intval($timestamp) >= intval($start) )
+						$keepval = 1;
+					else
+						$keepval = 0;
+				} else if( $stop ) {
+
+					if( intval($timestamp) <= intval($stop) )
+						$keepval = 1;
+					else
+						$keepval = 0;
+				}
+
+				$value = $fields[1];
+				//printf("timestamp = %s, value = %s\n", $timestamp, $value );
+
+				if( $keepval )
+					$arvalues[$timestamp] = $value;
+			}
+		}
+		//printf( "----arvalues----\n" );
+		//print_r( $arvalues);
+		//printf( "----arvalues----\n" );
+
+		ksort( $arvalues );
+		//printf( "----arsortvalues----\n" );
+		//print_r( $arvalues);
+		//printf( "----arsortvalues----\n" );
+
+		return $arvalues;
+	}
+
+	function graph( $descr ) {
+		//$command = $this->rrdbin . " graph - --start $start --end $end ".
+			"--width $width --height $height $upper_limit $lower_limit ".
+			"--title '$title' $vertical_label $extras $background ". $series;
+
+		//$graph = $this->doCmd( $command );
+
+		//return $graph;
+	}
+}
+
 class DataSource {
 
 	var $data, $ip, $port;
