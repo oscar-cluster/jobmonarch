@@ -203,17 +203,36 @@ class PBSDataGatherer:
 			if status == 'R':
 				start_timestamp = self.getAttr( attrs, 'mtime' )
 				nodes = self.getAttr( attrs, 'exec_host' ).split( '+' )
-			else:
+
+				nodeslist = [ ]
+
+				for node in nodes:
+					host = node.split( '/' )[0]
+
+					if nodeslist.count( host ) == 0:
+						nodeslist.append( host )
+
+			elif status == 'Q':
 				start_timestamp = ''
-				nodes = [ ]
+				count_mynodes = 0
+				numeric_node = 1
 
-			nodeslist = [ ]
+				for node in mynoderequest.split( '+' ):
 
-			for node in nodes:
-				host = node.split( '/' )[0]
+					nodepart = node.split( ':' )[0]
 
-				if nodeslist.count( host ) == 0:
-					nodeslist.append( node.split( '/' )[0] )
+					for letter in nodepart:
+
+						if letter not in string.digits:
+
+							numeric_node = 0
+
+					if not numeric_node:
+						count_mynodes = count_mynodes + 1
+					else:
+						count_mynodes = count_mynodes + int( nodepart )
+						
+				nodeslist = [ count_mynodes ]
 
 			myAttrs = { }
 			myAttrs['name'] = name
