@@ -802,7 +802,7 @@ class GangliaXMLProcessor( XMLProcessor ):
 		if store_metric_thread.isAlive():
 
 			debug_msg( 1, printTime() + ' - ganglia_store_thread(): storemetricthread() still running, waiting to finish..' )
-			store_thread.join( STORE_TIMEOUT ) # Maximum time is for storing thread to finish
+			store_metric_thread.join( STORE_TIMEOUT ) # Maximum time is for storing thread to finish
 			debug_msg( 1, printTime() + ' - ganglia_store_thread(): Done waiting.' )
 
 		debug_msg( 1, printTime() + ' - ganglia_store_thread(): finished.' )
