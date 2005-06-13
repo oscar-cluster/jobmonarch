@@ -5,8 +5,20 @@
 <TR>
   <TD ALIGN="CENTER">
     <IMG SRC="{clusterimage}"><BR>
-    {nodes_nr} nodes total: {jobs_nr} jobs with {cpus_nr} CPU's (at {report_time}).<BR>
-    current view: {f_jobs_nr} jobs with {f_cpus_nr} CPU's{lag_msg}.
+
+<TABLE ALIGN=CENTER>
+<TR>
+<TD><FONT SIZE="-1" class=footer>Last updated:</FONT></TD><TD><FONT SIZE="-1" class=footer>{report_time}</TD>
+</TR><TR>
+<TD><FONT SIZE="-1" class=footer>Available:</FONT></TD><TD><FONT SIZE="-1" class=footer>{avail_nodes} nodes / {avail_cpus} cpu's</FONT></TD>
+</TR><TR>
+<TD><FONT SIZE="-1" class=footer>Usage:</FONT></TD><TD><FONT SIZE="-1" class=footer>{used_jobs} jobs - {used_nodes} nodes / {used_cpus} cpu's</FONT></TD>
+</TR><TR>
+<TD><FONT SIZE="-1" class=footer>View:</FONT></TD><TD><FONT SIZE="-1" class=footer>{view_jobs} jobs - {view_nodes} nodes / {view_cpus} cpu's</FONT></TD>
+</TR>
+</TABLE>
+</FONT>
+
   </TD>
   <TD ALIGN="CENTER">
     <IMG SRC="{pie}">
@@ -14,7 +26,7 @@
 </TR>
 </TABLE>
 
-<BR><BR>
+<BR>
 
 <SCRIPT TYPE="text/javascript" SRC="ts_picker.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript">

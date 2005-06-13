@@ -133,7 +133,7 @@ class TarchRrd {
 		pclose($pipe);
 
 		$output = explode( "\n", $output );
-		print_r( $output );
+		//print_r( $output );
 		return $output;
 	}
 
@@ -206,7 +206,7 @@ class TarchRrd {
 		return null;
 	}
 
-	function makeJobRrds( $clustername, $hostname, $descr, $start, $end) {
+	function makeJobRrd( $clustername, $hostname, $metric, $descr, $start, $end) {
 		$this->clustername = $clustername;
 		$this->hostname = $hostname;
 
@@ -218,66 +218,86 @@ class TarchRrd {
 
 			$time_size = count( $times );
 			$curtime = 1;
-			$this->metrics = $this->dirList( $this->tarchdir . '/' . $this->clustername . '/' . $this->hostname .'/'. $times[0] );
 			//print_r( $this->metrics );
 
-			$intv = $this->getIntervalStep( '"'.$this->tarchdir . '/' . $this->clustername . '/' . $this->hostname .'/'. $times[0]. '/'.$this->metrics[0].'"' );
-			foreach( $this->metrics as $metric ) {	
-				$newfile = $this->tempdir .'/toga.temp-'. $descr .'-'.$metric;
+			$firstold = $this->tarchdir . '/' . $this->clustername . '/' . $this->hostname .'/'. $times[0]. '/'.$metric;
 
-				foreach( $times as $timep ) {
+			if( !file_exists( $firstold ) )
+				return 0;
 
-					$r_start = null;
-					$r_end = null;
+			$hostdir = $this->tempdir .'/'. $hostname;		
+			$newdir = $hostdir .'/'.$descr;
+			$newfile = $newdir .'/'.$metric;
 
-					if( $curtime == 1 )
-						$r_start = $start;
+			//if( file_exists( $newfile ) )
+			//	return 0;
 
-					if( $curtime == $time_size )
-						$r_end = $end;
+			if( !file_exists( $hostdir ) )
+				mkdir( $hostdir );
 
-					$file = $this->tarchdir . '/' . $this->clustername . '/' . $this->hostname .'/'. $timep .'/'. $metric;
+			if( !file_exists( $newdir ) )
+				mkdir( $newdir );
 
-					$r_values = $this->getValues( $file, $r_start, $r_end );
-					//print_r($r_values);
+			//$this->metrics = $this->dirList( $this->tarchdir . '/' . $this->clustername . '/' . $this->hostname .'/'. $times[0] );
+			$intv = $this->getIntervalStep( '"'.$firstold.'"' );
 
-					$myvalues = $myvalues + $r_values;
+			foreach( $times as $timep ) {
+
+				$r_start = null;
+				$r_end = null;
+
+				if( $curtime == 1 )
+					$r_start = $start;
+
+				if( $curtime == $time_size )
+					$r_end = $end;
+
+				$file = $this->tarchdir . '/' . $this->clustername . '/' . $this->hostname .'/'. $timep .'/'. $metric;
+
+				$r_values = $this->getValues( $file, $r_start, $r_end );
+				//print_r($r_values);
+
+				$myvalues = $myvalues + $r_values;
 				
-					$curtime++;	
-				}
-				//printf( "----myvalues----\n" );
-				//print_r($myvalues);
-				//printf( "----myvalues----\n" );
-
-				$heartbeat = intval( 8 * $intv );
-				$ret = $this->doCmd( $this->rrdbin .' create "'.$newfile.'" --step '. $intv .' --start '. $start .' DS:sum:GAUGE:'.$heartbeat.':U:U RRA:AVERAGE:0.5:1:'. count( $myvalues ) );
-
-				$update_args = array();
-				$arglist_nr = 0;
-
-				ksort( $myvalues );
-
-				foreach( $myvalues as $mytime=>$myvalue ) {
-					$myupdateval = ' '.trim($mytime).':'.trim($myvalue);
-
-					if( !isset($update_args[$arglist_nr]) )
-						$update_args[$arglist_nr] = '';
-
-					if( intval( strlen($update_args[$arglist_nr]) + strlen($myupdateval) ) > 50000 )
-						$arglist_nr++;
-
-					$update_args[$arglist_nr] .= $myupdateval;
-				}
-
-				//printf( "grootte args = %s\n", strlen( $update_args ) );
-
-				$ret = $this->doCmd( $this->rrdbin .' update "'. $newfile . '" blaaa' );
-				foreach( $update_args as $update_arg )
-					$ret = $this->doCmd( $this->rrdbin .' update "'. $newfile . '"'.$update_arg );
-
-				return;
+				$curtime++;	
 			}
-		}
+			//printf( "----myvalues----\n" );
+			//print_r($myvalues);
+			//printf( "----myvalues----\n" );
+
+			$heartbeat = intval( 8 * $intv );
+			$ret = $this->doCmd( $this->rrdbin .' create "'.$newfile.'" --step '. $intv .' --start '. $start .' DS:sum:GAUGE:'.$heartbeat.':U:U RRA:AVERAGE:0.5:1:'. count( $myvalues ) );
+
+			$update_args = array();
+			$arglist_nr = 0;
+
+			ksort( $myvalues );
+			reset( $myvalues );
+			$myvalues = array_unique( $myvalues );
+			reset( $myvalues );
+
+			foreach( $myvalues as $mytime=>$myvalue ) {
+				$myupdateval = ' '.trim($mytime).':'.trim($myvalue);
+
+				if( !isset($update_args[$arglist_nr]) )
+					$update_args[$arglist_nr] = '';
+
+				// Max_Args for Linux kernel is normally about 130k
+				//
+				if( intval( strlen($update_args[$arglist_nr]) + strlen($myupdateval) ) > 100000 )
+					$arglist_nr++;
+
+				$update_args[$arglist_nr] .= $myupdateval;
+			}
+
+			//printf( "grootte args = %s\n", strlen( $update_args ) );
+
+			foreach( $update_args as $update_arg )
+				$ret = $this->doCmd( $this->rrdbin .' update "'. $newfile . '"'.$update_arg );
+
+			printf( "generated %s\n", $newfile );
+		} else
+			return 0;
 	}
 
 	function getValues( $file, $start = null, $end = null ) {
@@ -310,9 +330,9 @@ class TarchRrd {
 						$keepval = 1;
 					else
 						$keepval = 0;
-				} else if( $stop ) {
+				} else if( $end ) {
 
-					if( intval($timestamp) <= intval($stop) )
+					if( intval($timestamp) <= intval($end) )
 						$keepval = 1;
 					else
 						$keepval = 0;
@@ -321,7 +341,7 @@ class TarchRrd {
 				$value = $fields[1];
 				//printf("timestamp = %s, value = %s\n", $timestamp, $value );
 
-				if( $keepval )
+				if( $keepval and !isset($arvalues[$timestamp] ) )
 					$arvalues[$timestamp] = $value;
 			}
 		}
@@ -329,7 +349,7 @@ class TarchRrd {
 		//print_r( $arvalues);
 		//printf( "----arvalues----\n" );
 
-		ksort( $arvalues );
+		//ksort( $arvalues );
 		//printf( "----arsortvalues----\n" );
 		//print_r( $arvalues);
 		//printf( "----arsortvalues----\n" );
@@ -520,14 +540,22 @@ class TorqueXMLHandler {
 
 					if( $toganame == 'nodes' ) {
 
-						if( !isset( $jobs[$jobid][$toganame] ) )
-							$jobs[$jobid][$toganame] = array();
+						if( $jobs[$jobid][status] == 'R' ) {
+						
+							if( !isset( $jobs[$jobid][$toganame] ) )
+								$jobs[$jobid][$toganame] = array();
 
-						$mynodes = explode( ';', $togavalue );
+							$mynodes = explode( ';', $togavalue );
 
-						foreach( $mynodes as $node )
+							foreach( $mynodes as $node )
 
-							$jobs[$jobid][$toganame][] = $node;
+								$jobs[$jobid][$toganame][] = $node;
+
+						} else if( $jobs[$jobid][status] == 'Q' ) {
+
+							$jobs[$jobid][$toganame] = $togavalue;
+						}
+						
 					} else {
 
 						$jobs[$jobid][$toganame] = $togavalue;

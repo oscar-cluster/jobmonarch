@@ -357,7 +357,12 @@ function sortJobs( $jobs, $sortby, $sortorder ) {
                         $name = $jobattrs[name];
                         $req_cpu = $jobattrs[requested_time];
                         $req_memory = $jobattrs[requested_memory];
-                        $nodes = count( $jobattrs[nodes] );
+
+			if( $state == 'R' )
+				$nodes = count( $jobattrs[nodes] );
+			else
+				$nodes = $jobattrs[nodes];
+
                         $ppn = (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
                         $cpus = $nodes * $ppn;
                         $start_time = (int) $jobattrs[start_timestamp];
@@ -439,12 +444,20 @@ function makeOverview() {
 
 	$even = 1;
 
-	$overview_jobs = count( $sorted_jobs );
-	$overview_nodes = count( $gnodes );
-	$overview_cpus = 0;
+	$used_jobs = 0;
+	$used_cpus = 0;
+	$used_nodes = 0;
 
-	$f_cpus = 0;
-	$f_jobs = 0;
+	$all_used_nodes = array();
+
+	$avail_nodes = count( $gnodes );
+	$avail_cpus = cluster_sum("cpu_num", $metrics);
+
+	$view_cpus = 0;
+	$view_jobs = 0;
+	$view_nodes = 0;
+
+	$view_used_nodes = array();
 
 	foreach( $sorted_jobs as $jobid => $sortdec ) {
 
@@ -454,7 +467,13 @@ function makeOverview() {
 		$ppn = (int) $jobs[$jobid][ppn] ? $jobs[$jobid][ppn] : 1;
 		$cpus = $nodes * $ppn;
 
-		$overview_cpus = $overview_cpus + $cpus;
+		foreach( $jobs[$jobid][nodes] as $tempnode )
+			$all_used_nodes[] = $tempnode;
+
+		if( $jobs[$jobid][status] == 'R' ) {
+			$used_cpus += $cpus;
+			$used_jobs++;
+		}
 
 		if( $report_time == $heartbeat ) {
 
@@ -474,7 +493,6 @@ function makeOverview() {
 
 			if( $display_job ) {
 
-
 				$tpl->newBlock("node");
 				$tpl->assign( "clustername", $clustername );
 				$tpl->assign("id", $jobid );
@@ -485,7 +503,12 @@ function makeOverview() {
 				$domain = $jobs[$jobid][domain];
 				$tpl->assign("req_cpu", makeTime( timeToEpoch( $jobs[$jobid][requested_time] ) ) );
 				$tpl->assign("req_memory", $jobs[$jobid][requested_memory] );
-				$nodes = count( $jobs[$jobid][nodes] );
+
+				if( $jobs[$jobid][status] == 'R' )
+					$nodes = count( $jobs[$jobid][nodes] );
+				else if( $jobs[$jobid][status] == 'Q' )
+					$nodes = $jobs[$jobid][nodes];
+
 				$ppn = (int) $jobs[$jobid][ppn] ? $jobs[$jobid][ppn] : 1;
 				$cpus = $nodes * $ppn;
 				$tpl->assign("nodes", $nodes );
@@ -493,8 +516,14 @@ function makeOverview() {
 				$start_time = (int) $jobs[$jobid][start_timestamp];
 				$job_start = $start_time;
 
-				$f_cpus = $f_cpus + $cpus;
-				$f_jobs++;
+				$view_cpus += $cpus;
+				$view_jobs++;
+
+				if( $jobs[$jobid][status] == 'R' )
+					foreach( $jobs[$jobid][nodes] as $tempnode )
+						$view_used_nodes[] = $tempnode;
+				else if( $jobs[$jobid][status] == 'Q' )
+					$view_nodes += $jobs[$jobid][nodes];
 
 				if( $even ) {
 
@@ -516,14 +545,29 @@ function makeOverview() {
 			}
 		}
 	}
+	array_unique( $all_used_nodes );
+	array_unique( $view_used_nodes );
+	$used_nodes = count( $all_used_nodes );
+	$view_nodes += count( $view_used_nodes );
 
-	$tpl->assignGlobal("cpus_nr", $overview_cpus );
-	$tpl->assignGlobal("jobs_nr", $overview_jobs );
-	$tpl->assignGlobal("nodes_nr", $overview_nodes );
+	//$tpl->assignGlobal("cpus_nr", $overview_cpus );
+	//$tpl->assignGlobal("jobs_nr", $overview_jobs );
+
+	$tpl->assignGlobal("avail_nodes", $avail_nodes );
+	$tpl->assignGlobal("avail_cpus", $avail_cpus );
+
+	$tpl->assignGlobal("used_nodes", $used_nodes );
+	$tpl->assignGlobal("used_jobs", $used_jobs );
+	$tpl->assignGlobal("used_cpus", $used_cpus );
+
+	$tpl->assignGlobal("view_nodes", $view_nodes );
+	$tpl->assignGlobal("view_jobs", $view_jobs );
+	$tpl->assignGlobal("view_cpus", $view_cpus );
+
 	$tpl->assignGlobal("report_time", makeDate( $heartbeat));
 	
-	$tpl->assignGlobal("f_cpus_nr", $f_cpus );
-	$tpl->assignGlobal("f_jobs_nr", $f_jobs );
+	//$tpl->assignGlobal("f_cpus_nr", $f_cpus );
+	//$tpl->assignGlobal("f_jobs_nr", $f_jobs );
 
 	if( array_key_exists( "id", $filter ) and $start_time ) {
 		$tpl->newBlock( "showhosts" );
