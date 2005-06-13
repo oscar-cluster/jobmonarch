@@ -232,7 +232,7 @@ class PBSDataGatherer:
 					else:
 						count_mynodes = count_mynodes + int( nodepart )
 						
-				nodeslist = [ count_mynodes ]
+				nodeslist = count_mynodes
 
 			myAttrs = { }
 			myAttrs['name'] = name
@@ -314,8 +314,11 @@ class PBSDataGatherer:
 		appendList.append( 'poll_interval=' + str( jobattrs['poll_interval'] ) )
 		appendList.append( 'domain=' + jobattrs['domain'] )
 
-		if len( jobattrs['nodes'] ) > 0:
-			appendList.append( 'nodes=' + self.makeNodeString( jobattrs['nodes'] ) )
+		if jobattrs['status'] == 'R':
+			if len( jobattrs['nodes'] ) > 0:
+				appendList.append( 'nodes=' + self.makeNodeString( jobattrs['nodes'] ) )
+		elif jobattrs['status'] == 'Q':
+			appendList.append( 'nodes=' + str(jobattrs['nodes']) )
 
 		return self.makeAppendLists( appendList )
 
