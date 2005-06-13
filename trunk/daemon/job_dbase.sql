@@ -17,7 +17,8 @@ CREATE TABLE jobs (
 
 CREATE TABLE nodes (
 	node_id			SERIAL NOT NULL UNIQUE PRIMARY KEY,
-	node_hostname		VARCHAR(100)
+	node_hostname		VARCHAR(100),
+	node_location		VARCHAR(10)
 );
 
 CREATE TABLE job_nodes (
