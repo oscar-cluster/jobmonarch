@@ -1,6 +1,6 @@
 <?php
 global $GANGLIA_PATH, $clustername, $tpl, $filter, $cluster, $get_metric_string, $cluster_url, $sh;
-global $hosts_up, $m, $start, $end;
+global $hosts_up, $m, $start, $end, $filterorder;
 
 $data_gatherer = new DataGatherer();
 
@@ -25,6 +25,7 @@ foreach( $filter as $filtername => $filtervalue ) {
 }
 
 $tpl->assign( "clusterimage", "./image.php?c=".rawurlencode($clustername)."&view=big-clusterimage".$filter_image_url );
+$tpl->assign( "f_order", $filterorder );
 
 if( array_key_exists( "id", $filter ) )
 	$piefilter = 'id';
