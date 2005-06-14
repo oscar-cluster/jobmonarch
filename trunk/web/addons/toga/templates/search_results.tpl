@@ -1,30 +1,6 @@
 <BR><BR>
 
 <CENTER>
-<TABLE>
-<TR>
-  <TD ALIGN="CENTER">
-    <IMG SRC="{clusterimage}"><BR>
-
-<TABLE ALIGN=CENTER>
-<TR>
-<TD><FONT SIZE="-1" class=footer>Last updated:</FONT></TD><TD><FONT SIZE="-1" class=footer>{report_time}</TD>
-</TR><TR>
-<TD><FONT SIZE="-1" class=footer>Available:</FONT></TD><TD><FONT SIZE="-1" class=footer>{avail_nodes} nodes / {avail_cpus} cpu's</FONT></TD>
-</TR><TR>
-<TD><FONT SIZE="-1" class=footer>Usage:</FONT></TD><TD><FONT SIZE="-1" class=footer>{used_jobs} jobs - {used_nodes} nodes / {used_cpus} cpu's</FONT></TD>
-</TR><TR>
-<TD><FONT SIZE="-1" class=footer>View:</FONT></TD><TD><FONT SIZE="-1" class=footer>{view_jobs} jobs - {view_nodes} nodes / {view_cpus} cpu's</FONT></TD>
-</TR>
-</TABLE>
-</FONT>
-
-  </TD>
-  <TD ALIGN="CENTER">
-    <IMG SRC="{pie}">
-  </TD>
-</TR>
-</TABLE>
 
 <BR>
 
@@ -71,39 +47,6 @@
 		document.forms['toga_form'].submit();
 	}
 
-	//function removeFilters( filters ) {
-
-		//var myfilter_fields = filters.split( " " );
-		//for( var i=0; i<myfilter_fields.length; i++ ) {
-			//removeFilter( myfilter_fields[i] );
-			//setTimeout( "removeFilter( "+myfilter_fields[i]+" );", 50 );
-		//}
-		// delay 100 ms before submit or fields might not be set
-		//document.forms['toga_form'].submit();", 100 );
-
-		//setTimeout( "document.forms['toga_form'].submit();", 1000 );
-	//}
-
-	//function removeFilter( filtername ) {
-
-	//	var filterorder_fields = document.toga_form.elements['filterorder'].value.split( "," );
-	//	var myfilterorder = '';
-
-	//	for( var i=0; i<filterorder_fields.length; i++ ) {
-	//		if( filterorder_fields[i] != filtername ) {
-	//			if( myfilterorder != '') {
-	//				myfilterorder = myfilterorder + "," + filterorder_fields[i];
-	//				//alert('myfilterorder = '+myfilterorder);
-	//			} else {
-	//				myfilterorder = filterorder_fields[i];
-	//				//alert('emyfilterorder = '+myfilterorder);
-	//			}
-	//		}
-	//	}
-	//	document.toga_form.elements[filtername].value = '';
-	//	document.toga_form.elements['filterorder'].value = myfilterorder;
-	//}
-
 </SCRIPT>
 
 <INPUT TYPE="HIDDEN" NAME="sortby" VALUE="{sortby}">
@@ -126,6 +69,7 @@
 <TH><B><A HREF="#" onClick="setSort( 'req_mem' )">Req. Memory</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'nodes' )">Nodes</A>/<A HREF="#" onClick="setSort( 'cpus' )">Cpus</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'start' )">Started</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'finished' )">Finished</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'runningtime' )">Runningtime</A></B></TH>
 </TR>
 
@@ -140,6 +84,7 @@
     <TD>{req_memory}</TD>
     <TD>{nodes}/{cpus}</TD>
     <TD>{started}</TD>
+    <TD>{finished}</TD>
     <TD>{runningtime}</TD>
   </TR>
 <!-- END BLOCK : node -->

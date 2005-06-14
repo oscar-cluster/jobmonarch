@@ -86,34 +86,141 @@ global $default_metric;
 //
 global $metrics, $hosts_up;
 
-
 class TarchDbase {
 
-	var $ip, $dbase;
+	var $ip, $dbase, $conn;
 
 	function TarchDbase( $ip = null, $dbase = 'toga' ) {
 		$this->ip = $ip;
 		$this->dbase = $dbase;
+		$this->conn = null;
 	}
 
 	function connect() {
 
 		if( $this->ip == null and $this->dbase == 'toga' )
-			$this->conn = pg_connect( "dbase=".$this->dbase );
+			$this->conn = pg_connect( "dbname=".$this->dbase );
 		else
 			$this->conn = pg_connect( "host=".$this->ip." dbase=".$this->dbase );
 	}
+
+	function searchDbase( $id = null, $queue = null, $user = null, $name = null, $start_from_time = null, $start_to_time = null, $end_from_time = null, $end_to_time = null ) {
+
+		if( $id ) 
+			$query = "SELECT job_id FROM jobs WHERE job_id = '$id'";
+		else {
+			$query_args = array();
+			
+			if( $queue )
+				$query_args[] = "job_queue ='$queue'";
+			if( $user )
+				$query_args[] = "job_owner ='$user'";
+			if( $name )
+				$query_args[] = "job_name = '$name'";
+			if( $start_from_time )
+				$query_args[] = "job_start_timestamp >= $start_from_time";
+			if( $start_end_time )
+				$query_args[] = "job_start_timestamp <= $start_to_time";
+			if( $end_from_time )
+				$query_args[] = "job_stop_timestamp >= $end_from_time";
+			if( $end_to_time )
+				$query_args[] = "job_stop_timestamp <= $end_to_time";
+
+			$query = "SELECT job_id FROM jobs WHERE ";
+			$extra_query_args = '';
+
+			foreach( $query_args as $myquery ) {
+
+				if( $extra_query_args == '' )
+					$extra_query_args = $myquery;
+				else
+					$extra_query_args .= " AND ".$myquery;
+			}
+			$query .= $extra_query_args;
+		}
+
+		$ids = $this->queryDbase( $query );
+		print_r($ids);
+	}
+
+	function getNodesForJob( $jobid ) {
+
+		$result = $this->queryDbase( "SELECT node_id FROM job_nodes WHERE job_id = '$jobid'" );
+
+		$nodes = array();
+
+		foreach( $result as $result_row ) 
+
+			$nodes[] = $this->getNodeArray( $result_row['id'] );
+
+		return $nodes;
+	}
+
+	function getJobsForNode( $nodeid ) {
+
+		$result = $this->queryDbase( "SELECT job_id FROM job_nodes WHERE node_id = '$nodeid'" );
+
+		$jobs = array();
+
+		foreach( $result as $result_row )
+
+			$jobs[] = $this->getJobArray( $result_row['id'] );
+
+		return $jobs;
+	}
+
+	function getJobArray( $id ) {
+		$result = $this->queryDbase( "SELECT * FROM jobs WHERE job_id = '$id'" );
+
+		return ( $this->makeArray( $result[0] ) );
+	}
+
+	function getNodeArray( $id ) {
+
+		$result = $this->queryDbase( "SELECT * FROM nodes WHERE node_id = '$id'" );
+
+		return ( $this->makeArray( $result[0] ) );
+	}
+
+	function makeArray( $result_row ) {
+
+		$myar = array();
+
+		foreach( $result_row as $mykey => $myval ) {
+
+			$map_key = explode( '_', $mykey );
+
+			$newkey = $map_key[1];
+			
+			$myar[$newkey] = $result_row[$mykey];
+		}
+
+		return $myar;
+	}
+
+	function queryDbase( $query ) {
+
+		$result_rows = array();
+	
+		if( !$this->conn )
+			$this->connect();
+
+		$result = pg_query( $this->conn, $query );
+
+		while ($row = pg_fetch_assoc($result))
+			$result_rows[] = $row;
+
+		return $result_rows;
+	}
 }
 
-class TarchRrd {
+class TarchRrdGraph {
 	var $rrdbin, $rrdvalues, $clustername, $hostname, $tempdir, $tarchdir, $metrics;
 
-	function TarchRrd( $rrdbin = '/usr/bin/rrdtool', $tarchdir = '/data/toga/rrds' ) {
+	function TarchRrd( $clustername, $rrdbin = '/usr/bin/rrdtool', $tarchdir = '/data/toga/rrds' ) {
 		$this->rrdbin = $rrdbin;
 		$this->rrdvalues = array();
 		$this->tarchdir = $tarchdir;
-		$this->tempdir = '/tmp/toga-web-temp';
-		$this->metrics = array();
 	}
 
 	function doCmd( $command ) {
@@ -157,14 +264,10 @@ class TarchRrd {
 
 		$times = array();
 		$dirlist = $this->dirList( $this->tarchdir . '/' . $this->clustername . '/' . $this->hostname );
-		//print_r( $dirlist );
-
 		$first = 0;
 		$last = 9999999999999;
 
 		foreach( $dirlist as $dir ) {
-
-			//printf("dir = %s\n", $dir );
 
 			if( $dir > $first and $dir <= $start )
 				$first = $dir;
@@ -172,189 +275,15 @@ class TarchRrd {
 				$last = $dir;
 		}
 
-		//if( $first != 0 and !array_key_exists( $first, $times ) )
-		//	$times[] = $first;
-
 		foreach( $dirlist as $dir ) {
 
 			if( $dir >= $first and $dir <= $last and !array_key_exists( $dir, $times ) )
 				$times[] = $dir;
 		}
 
-		//if( $last != 9999999999 and !array_key_exists( $last, $times ) )
-		//	$times[] = $last;
-
 		sort( $times );
 
-		//print_r( $times );
-
 		return $times;
-	}
-
-	function getIntervalStep( $file ) {
-
-		$ret = $this->doCmd( $this->rrdbin .' info '. $file );
-
-		foreach( $ret as $r ) {
-
-			$fields = explode( ' = ', $r );
-
-			if( $fields[0] == 'step' )
-				return $fields[1];
-		}
-
-		return null;
-	}
-
-	function makeJobRrd( $clustername, $hostname, $metric, $descr, $start, $end) {
-		$this->clustername = $clustername;
-		$this->hostname = $hostname;
-
-		$myvalues = array();
-
-		$times = $this->getTimePeriods( $start, $end );
-
-		if( count( $times ) > 0 ) {
-
-			$time_size = count( $times );
-			$curtime = 1;
-			//print_r( $this->metrics );
-
-			$firstold = $this->tarchdir . '/' . $this->clustername . '/' . $this->hostname .'/'. $times[0]. '/'.$metric;
-
-			if( !file_exists( $firstold ) )
-				return 0;
-
-			$hostdir = $this->tempdir .'/'. $hostname;		
-			$newdir = $hostdir .'/'.$descr;
-			$newfile = $newdir .'/'.$metric;
-
-			//if( file_exists( $newfile ) )
-			//	return 0;
-
-			if( !file_exists( $hostdir ) )
-				mkdir( $hostdir );
-
-			if( !file_exists( $newdir ) )
-				mkdir( $newdir );
-
-			//$this->metrics = $this->dirList( $this->tarchdir . '/' . $this->clustername . '/' . $this->hostname .'/'. $times[0] );
-			$intv = $this->getIntervalStep( '"'.$firstold.'"' );
-
-			foreach( $times as $timep ) {
-
-				$r_start = null;
-				$r_end = null;
-
-				if( $curtime == 1 )
-					$r_start = $start;
-
-				if( $curtime == $time_size )
-					$r_end = $end;
-
-				$file = $this->tarchdir . '/' . $this->clustername . '/' . $this->hostname .'/'. $timep .'/'. $metric;
-
-				$r_values = $this->getValues( $file, $r_start, $r_end );
-				//print_r($r_values);
-
-				$myvalues = $myvalues + $r_values;
-				
-				$curtime++;	
-			}
-			//printf( "----myvalues----\n" );
-			//print_r($myvalues);
-			//printf( "----myvalues----\n" );
-
-			$heartbeat = intval( 8 * $intv );
-			$ret = $this->doCmd( $this->rrdbin .' create "'.$newfile.'" --step '. $intv .' --start '. $start .' DS:sum:GAUGE:'.$heartbeat.':U:U RRA:AVERAGE:0.5:1:'. count( $myvalues ) );
-
-			$update_args = array();
-			$arglist_nr = 0;
-
-			ksort( $myvalues );
-			reset( $myvalues );
-			$myvalues = array_unique( $myvalues );
-			reset( $myvalues );
-
-			foreach( $myvalues as $mytime=>$myvalue ) {
-				$myupdateval = ' '.trim($mytime).':'.trim($myvalue);
-
-				if( !isset($update_args[$arglist_nr]) )
-					$update_args[$arglist_nr] = '';
-
-				// Max_Args for Linux kernel is normally about 130k
-				//
-				if( intval( strlen($update_args[$arglist_nr]) + strlen($myupdateval) ) > 100000 )
-					$arglist_nr++;
-
-				$update_args[$arglist_nr] .= $myupdateval;
-			}
-
-			//printf( "grootte args = %s\n", strlen( $update_args ) );
-
-			foreach( $update_args as $update_arg )
-				$ret = $this->doCmd( $this->rrdbin .' update "'. $newfile . '"'.$update_arg );
-
-			printf( "generated %s\n", $newfile );
-		} else
-			return 0;
-	}
-
-	function getValues( $file, $start = null, $end = null ) {
-
-		$rrdargs = 'AVERAGE -r 15';
-
-		if( $start )
-			$rrdargs .= ' -s '. $start;
-		if( $end )
-			$rrdargs .= ' -e '. $end;
-
-		$values = $this->doCmd( $this->rrdbin .' fetch "'.$file.'" '. $rrdargs );
-
-		//print_r( $values );
-		$arvalues = array();
-
-		foreach( $values as $value ) {
-			//printf( "value = %s\n", $value );
-
-			$fields = explode( ':', $value );
-
-			if( count( $fields ) == 2 ) {
-
-				$timestamp = trim($fields[0]);
-				$keepval = 1;
-
-				if( $start ) {
-
-					if( intval($timestamp) >= intval($start) )
-						$keepval = 1;
-					else
-						$keepval = 0;
-				} else if( $end ) {
-
-					if( intval($timestamp) <= intval($end) )
-						$keepval = 1;
-					else
-						$keepval = 0;
-				}
-
-				$value = $fields[1];
-				//printf("timestamp = %s, value = %s\n", $timestamp, $value );
-
-				if( $keepval and !isset($arvalues[$timestamp] ) )
-					$arvalues[$timestamp] = $value;
-			}
-		}
-		//printf( "----arvalues----\n" );
-		//print_r( $arvalues);
-		//printf( "----arvalues----\n" );
-
-		//ksort( $arvalues );
-		//printf( "----arsortvalues----\n" );
-		//print_r( $arvalues);
-		//printf( "----arsortvalues----\n" );
-
-		return $arvalues;
 	}
 
 	function graph( $descr ) {

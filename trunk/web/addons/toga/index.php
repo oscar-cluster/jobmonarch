@@ -36,7 +36,7 @@ function makeHeader() {
 	global $parentgrid, $physical, $hostname;
 	global $self, $filter, $cluster_url, $get_metric_string;
 	global $metrics, $reports, $m, $default_metric;
-	global $default_refresh;
+	global $default_refresh, $filterorder, $view;
 
 	if( isset($default_metric) and !isset($m) )
 		$metricname = $default_metric;
@@ -149,13 +149,40 @@ function makeHeader() {
 
 	$node_menu .= "<B><A HREF=\"./?c=".rawurlencode($clustername)."\">Joblist</A></B> ";
 
-	if( count( $filter ) > 0 ) {
+	if( count( $filter ) > 0 && $view != "search" ) {
 
-		foreach( $filter as $filtername => $filterval ) {
+		$filter_fields = explode( ",", $filterorder );
+		$onclick_href = array();
 
-			$node_menu .= "<B>&gt;</B>\n";
-			$node_menu .= "<B>$filtername- $filterval</B> ";
+		if( count( $filter_fields ) > 1 ) {
+			//for( $i = (count( $filter_fields )-2); $i >= 0; $i-- ) {
+				
+			//	for( $l = intval($i+1); $l <=(count($filter_fields)-1); $l++ ) {
+					//$onclick_href[$filter_fields[$i]] = $onclick_href[$filter_fields[$i]] . "removeFilter( '" . $filter_fields[$l] . "' );";
+			//		if( !isset( $onclick_href[$filter_fields[$i]] ) )
+			//			$onclick_href[$filter_fields[$i]] = "removeFilters( '".$filter_fields[$l];
+			//		else
+			//			$onclick_href[$filter_fields[$i]] = $onclick_href[$filter_fields[$i]] . " ". $filter_fields[$l];
+						
+			//	}
+			//	$onclick_href[$filter_fields[$i]] = $onclick_href[$filter_fields[$i]] . "' )";
+			//}
+			foreach( $filter_fields as $filtername ) {
+
+				$node_menu .= "<B>&gt;</B>\n";
+				if( isset( $onclick_href[$filtername] ) )
+					$node_menu .= "<B><A HREF =\"#\" onClick=\"".$onclick_href[$filtername]."\">$filtername: $filter[$filtername]</A></B> ";
+				else
+					$node_menu .= "<B>$filtername: $filter[$filtername]</B> ";
+			}
+		} else {
+
+			foreach( $filter as $filtername=>$filterval ) {
+				$node_menu .= "<B>&gt;</B>\n";
+				$node_menu .= "<B>$filtername: $filterval</B> ";
+			}
 		}
+
 	}
 
 	$tpl->assign("node_menu", $node_menu);
