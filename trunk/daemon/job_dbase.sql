@@ -29,6 +29,7 @@ CREATE TABLE job_nodes (
 
 CREATE USER root;
 CREATE USER ramon;
+CREATE USER "www-data";
 
-GRANT ALL ON jobs,nodes,job_nodes TO root,ramon;
-GRANT ALL ON nodes_node_id_seq TO root,ramon;
+GRANT ALL ON jobs,nodes,job_nodes TO root,ramon,"www-data";
+GRANT ALL ON nodes_node_id_seq TO root,ramon,"www-data";
