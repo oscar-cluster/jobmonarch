@@ -31,7 +31,7 @@ function validateFormInput() {
 
 function makeSearchPage() {
 	global $clustername, $tpl, $id, $user, $name, $start_from_time, $start_to_time, $queue;
-	global $end_from_time, $end_to_time;
+	global $end_from_time, $end_to_time, $filter;
 
 	$tpl->assign( "cluster", $clustername );
 	$tpl->assign( "id_value", $id );
@@ -45,9 +45,21 @@ function makeSearchPage() {
 
 	if( validateFormInput() ) {
 
+		$tpl->newBlock( "search_results" );
 		$tdb = new TarchDbase();
-		$tdb->searchDbase( $id, $queue, $user, $name, $start_from_time, $start_to_time, $end_from_time, $end_to_time );
-		$tpl->assign( "search_results", "templates/search_results.tpl" );
+		$search_ids = $tdb->searchDbase( $id, $queue, $user, $name, $start_from_time, $start_to_time, $end_from_time, $end_to_time );
+
+		foreach( $search_ids as $foundid ) {
+
+			printf("found job %s\n", $foundid );
+			//output jobzooi
+
+		}
+		
+		if( count( $search_ids ) == 1 ) {
+
+			$tpl->newBlock( "showhosts" );
+		}
 
 		// show search results
 

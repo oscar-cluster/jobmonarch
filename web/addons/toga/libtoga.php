@@ -140,7 +140,13 @@ class TarchDbase {
 		}
 
 		$ids = $this->queryDbase( $query );
-		print_r($ids);
+
+		$ret = array();
+
+		foreach( $ids as $crow)
+			$ret[] = $crow[job_id];
+
+		return $ret;
 	}
 
 	function getNodesForJob( $jobid ) {

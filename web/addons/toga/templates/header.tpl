@@ -39,7 +39,15 @@
      <TD>
       <B>{alt_view}</B>
      </TD>
-<!-- INCLUDE BLOCK : archive -->
+
+<!-- START BLOCK : search -->
+     <TD><CENTER>
+       <A HREF="./?c={cluster_url}&view=search">
+       Jobarchive<BR>
+       <IMG SRC="./bricks.jpg" HEIGHT=50 WIDTH=50 ALT="Search the archive for {cluster}" TITLE="Search the archive for {cluster}" BORDER=0></A></CENTER>
+     </TD>
+<!-- END BLOCK : search -->
+
   </TR>
   </TABLE>
 
