@@ -37,6 +37,7 @@ function makeHeader() {
 	global $self, $filter, $cluster_url, $get_metric_string;
 	global $metrics, $reports, $m, $default_metric;
 	global $default_refresh, $filterorder, $view;
+	global $TARCHD;
 
 	if( isset($default_metric) and !isset($m) )
 		$metricname = $default_metric;
@@ -208,6 +209,13 @@ function makeHeader() {
 	}
 	$m = $metricname;
 
+	if( $TARCHD ) {
+		$tpl->newBlock( "search" );
+		$tpl->assignGlobal( "cluster_url", rawurlencode($clustername) );
+		$tpl->assignGlobal( "cluster", $clustername );
+		$tpl->gotoBlock( "_ROOT" );
+	}
+
 	# Make sure that no data is cached..
 	header ("Expires: Mon, 26 Jul 1997 05:00:00 GMT");    # Date in the past
 	header ("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT"); # always modified
@@ -241,13 +249,6 @@ function includeSearchpage() {
 
 }
 
-function includeSearchThumb() {
-	global $tpl;
-
-	$tpl->assignInclude( "archive", "templates/inc_search.tpl" );
-
-}
-
 function includeOverview() {
 	global $tpl;
 
@@ -263,8 +264,6 @@ switch( $view ) {
 	case "overview":
 
 		includeOverview();
-		if( $TARCHD )
-			includeSearchThumb();
 		break;
 
 	case "search":

@@ -2,6 +2,8 @@
 global $GANGLIA_PATH, $clustername, $tpl, $filter, $cluster, $get_metric_string, $cluster_url, $sh;
 global $hosts_up, $m, $start, $end, $filterorder;
 
+//$tpl->assign("_ROOT.summary", "" );
+
 $data_gatherer = new DataGatherer();
 
 //$tpl->assign( "self", "./index.php" );

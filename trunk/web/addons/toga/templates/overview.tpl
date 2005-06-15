@@ -28,83 +28,7 @@
 
 <BR>
 
-<SCRIPT TYPE="text/javascript" SRC="ts_picker.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript">
-	function setSort( sortbyval ) {
-
-		if( sortbyval != document.toga_form.sortby.value ) {
-
-			document.toga_form.sortby.value = sortbyval;
-			document.toga_form.sortorder.value = "asc";
-
-		} else {
-
-			if( document.toga_form.sortorder.value == "desc" )
-				document.toga_form.sortorder.value = "asc";
-			else if( document.toga_form.sortorder.value == "asc" )
-				document.toga_form.sortorder.value = "desc";
-		}
-
-		document.forms['toga_form'].submit();
-	}
-
-	function setFilter( filtername, filterval ) {
-
-		//document.toga_form.id.value = '';
-		//document.toga_form.queue.value = '';
-		//document.toga_form.state.value = '';
-		//document.toga_form.user.value = '';
-		var myfilterorder = document.toga_form.elements['filterorder'].value;
-
-		if( document.toga_form.elements[filtername] ) {
-			document.toga_form.elements[filtername].value = filterval;
-			if( myfilterorder != '')
-				myfilterorder = myfilterorder + "," + filtername;
-			else
-				myfilterorder = filtername;
-				
-		}
-		document.toga_form.elements['filterorder'].value = myfilterorder;
-
-		//setTimeout( "document.forms['toga_form'].submit();", 1000 );
-
-		document.forms['toga_form'].submit();
-	}
-
-	//function removeFilters( filters ) {
-
-		//var myfilter_fields = filters.split( " " );
-		//for( var i=0; i<myfilter_fields.length; i++ ) {
-			//removeFilter( myfilter_fields[i] );
-			//setTimeout( "removeFilter( "+myfilter_fields[i]+" );", 50 );
-		//}
-		// delay 100 ms before submit or fields might not be set
-		//document.forms['toga_form'].submit();", 100 );
-
-		//setTimeout( "document.forms['toga_form'].submit();", 1000 );
-	//}
-
-	//function removeFilter( filtername ) {
-
-	//	var filterorder_fields = document.toga_form.elements['filterorder'].value.split( "," );
-	//	var myfilterorder = '';
-
-	//	for( var i=0; i<filterorder_fields.length; i++ ) {
-	//		if( filterorder_fields[i] != filtername ) {
-	//			if( myfilterorder != '') {
-	//				myfilterorder = myfilterorder + "," + filterorder_fields[i];
-	//				//alert('myfilterorder = '+myfilterorder);
-	//			} else {
-	//				myfilterorder = filterorder_fields[i];
-	//				//alert('emyfilterorder = '+myfilterorder);
-	//			}
-	//		}
-	//	}
-	//	document.toga_form.elements[filtername].value = '';
-	//	document.toga_form.elements['filterorder'].value = myfilterorder;
-	//}
-
-</SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="libtoga.js"></SCRIPT>
 
 <INPUT TYPE="HIDDEN" NAME="sortby" VALUE="{sortby}">
 <INPUT TYPE="HIDDEN" NAME="sortorder" VALUE="{sortorder}">
@@ -160,10 +84,7 @@
   |
    <FONT SIZE="-1">
    Columns&nbsp;&nbsp;{cols_menu}
-   </FONT><!-- <BR>
-   <FONT SIZE="-1">
-    Set graph timeperiod from <INPUT TYPE="text" NAME="start" VALUE="{start}" SIZE=12 ALT="Start time"><a href="javascript:show_calendar('document.toga_form.start', document.toga_form.start.value);"><img src="cal.gif" width="16" height="16" border="0"></a> to <INPUT TYPE="text" NAME="stop" VALUE="{stop}" SIZE=12 ALT="Stop time"><a href="javascript:show_calendar('document.toga_form.stop', document.toga_form.stop.value);"><img src="cal.gif" width="16" height="16" border="0"></a><INPUT TYPE="submit" VALUE="Refresh graphs">
-   </FONT> -->
+   </FONT>
   </TD>
 </TR>
    
