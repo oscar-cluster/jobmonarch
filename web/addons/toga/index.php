@@ -190,9 +190,11 @@ function makeHeader() {
 		$node_menu .= "<B>&gt;</B>\n";
 		$node_menu .= "<B>Jobarchive</B> ";
 		$tpl->assign("view", "search" );
-		$tpl->assign("form_name", "archive_search_form" );
+		$form_name = "archive_search_form";
+		$tpl->assign("form_name", $form_name );
 	} else {
-		$tpl->assign("form_name", "toga_form" );
+		$form_name = "toga_form";
+		$tpl->assign("form_name", $form_name );
 		$tpl->assign("view", "overview" );
 	}
 
@@ -202,7 +204,7 @@ function makeHeader() {
 
 		if (is_array($context_metrics) ) {
 			$metric_menu = "<B>Metric</B>&nbsp;&nbsp;"
-				."<SELECT NAME=\"m\" OnChange=\"toga_form.submit();\">\n";
+				."<SELECT NAME=\"m\" OnChange=\"".$form_name.".submit();\">\n";
 
 			sort($context_metrics);
 			foreach( $context_metrics as $k ) {
