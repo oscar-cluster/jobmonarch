@@ -103,6 +103,33 @@ function makeDate( $time ) {
         return strftime( "%a %d %b %Y %H:%M:%S", $time );
 }
 
+function datetimeToEpoch( $datetime ) {
+
+	$datetime_fields = explode( ' ', $datetime );
+
+	$date = $datetime_fields[0];
+	$time = $datetime_fields[1];
+
+	$date_fields = explode( '-', $date );
+
+	$days = $date_fields[0];
+	$months = $date_fields[1];
+	$years = $date_fields[2];
+
+	$time_fields = explode( ':', $time );
+	reset( $time_fields );
+
+	print_r( $time_fields );
+
+	$hours = $time_fields[0];
+	$minutes = $time_fields[1];
+	$seconds = $time_fields[2];
+
+	$timestamp = mktime( $hours, $minutes, $seconds, $months, $days, $years );
+
+	return $timestamp;
+}
+
 function timeToEpoch( $time ) {
 
         $time_fields = explode( ':', $time );
@@ -149,6 +176,10 @@ function makeSearchPage() {
 
 		$tpl->newBlock( "search_results" );
 		$tdb = new TarchDbase();
+		if( $start_from_time ) $start_from_time = datetimeToEpoch( $start_from_time );
+		if( $start_to_time ) $start_to_time = datetimeToEpoch( $start_to_time );
+		if( $end_from_time ) $end_from_time = datetimeToEpoch( $end_from_time );
+		if( $end_to_time ) $end_to_time = datetimeToEpoch( $end_to_time );
 		$search_ids = $tdb->searchDbase( $id, $queue, $user, $name, $start_from_time, $start_to_time, $end_from_time, $end_to_time );
 
 		foreach( $search_ids as $foundid ) {
