@@ -119,7 +119,7 @@ class TarchDbase {
 				$query_args[] = "job_name = '$name'";
 			if( $start_from_time )
 				$query_args[] = "job_start_timestamp >= $start_from_time";
-			if( $start_end_time )
+			if( $start_to_time )
 				$query_args[] = "job_start_timestamp <= $start_to_time";
 			if( $end_from_time )
 				$query_args[] = "job_stop_timestamp >= $end_from_time";
