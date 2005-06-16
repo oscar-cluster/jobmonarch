@@ -157,7 +157,7 @@ class TarchDbase {
 
 		foreach( $result as $result_row ) 
 
-			$nodes[] = $this->getNodeArray( $result_row['id'] );
+			$nodes[] = $this->getNodeArray( $result_row[node_id] );
 
 		return $nodes;
 	}
@@ -170,7 +170,7 @@ class TarchDbase {
 
 		foreach( $result as $result_row )
 
-			$jobs[] = $this->getJobArray( $result_row['id'] );
+			$jobs[] = $this->getJobArray( $result_row[job_id] );
 
 		return $jobs;
 	}
@@ -196,7 +196,11 @@ class TarchDbase {
 
 			$map_key = explode( '_', $mykey );
 
-			$newkey = $map_key[1];
+			$rmap_key = array_reverse( $map_key );
+			array_pop( $rmap_key );
+			$map_key = array_reverse( $rmap_key );
+			
+			$newkey = implode( '_', $map_key );
 			
 			$myar[$newkey] = $result_row[$mykey];
 		}
@@ -211,6 +215,7 @@ class TarchDbase {
 		if( !$this->conn )
 			$this->connect();
 
+		printf( "query = [%s]\n", $query );
 		$result = pg_query( $this->conn, $query );
 
 		while ($row = pg_fetch_assoc($result))
@@ -293,6 +298,9 @@ class TarchRrdGraph {
 	}
 
 	function graph( $descr ) {
+//	monitor2:/data/toga/rrds/LISA Cluster/gb-r15n11.irc.sara.nl# rrdtool graph /var/www/ganglia/test1.png --start 1118683231 --end 1118750431 --width 300 --height 400 DEF:'1'='./1118647515/load_one.rrd':'sum':AVERAGE DEF:'2'='./1118690723/load_one.rrd':'sum':AVERAGE DEF:'3'='./1118733925/load_one.rrd':'sum':AVERAGE AREA:1#555555:"load_one" AREA:2#555555 AREA:3#555555
+//	380x461
+//	monitor2:/data/toga/rrds/LISA Cluster/gb-r15n11.irc.sara.nl#
 		//$command = $this->rrdbin . " graph - --start $start --end $end ".
 			"--width $width --height $height $upper_limit $lower_limit ".
 			"--title '$title' $vertical_label $extras $background ". $series;

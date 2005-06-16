@@ -1,7 +1,8 @@
 <CENTER>
 </FORM>
+
 <SCRIPT LANGUAGE="javascript" SRC="ts_picker.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="libtoga.js"></SCRIPT>
+<SCRIPT LANGUAGE="javascript" SRC="libtoga.js"></SCRIPT>
 <SCRIPT LANGUAGE="javascript">
 
 	function setSearchTimestamps() {
@@ -150,18 +151,11 @@
 </TR>
 
 </TABLE>
-</FORM>
 <BR><BR>
 <!-- START BLOCK : search_results -->
-<SCRIPT TYPE="text/javascript" SRC="libtoga.js"></SCRIPT>
 
 <INPUT TYPE="HIDDEN" NAME="sortby" VALUE="{sortby}">
 <INPUT TYPE="HIDDEN" NAME="sortorder" VALUE="{sortorder}">
-<INPUT TYPE="HIDDEN" NAME="c" VALUE="{clustername}">
-<INPUT TYPE="HIDDEN" NAME="queue" VALUE="{f_queue}">
-<INPUT TYPE="HIDDEN" NAME="state" VALUE="{f_state}">
-<INPUT TYPE="HIDDEN" NAME="user" VALUE="{f_user}">
-<INPUT TYPE="HIDDEN" NAME="id" VALUE="{f_id}">
 <INPUT TYPE="HIDDEN" NAME="filterorder" VALUE="{f_order}">
 
 <TABLE WIDTH="90%" CELLPADDING="8" CELLSPACING="3" BORDER=0>
@@ -216,7 +210,12 @@ B></TH>
    <FONT SIZE="-1">
     <INPUT TYPE="HIDDEN" NAME="start" VALUE="{start}">
     <INPUT TYPE="HIDDEN" NAME="stop" VALUE="{stop}">
-    Set graph timeperiod from <INPUT TYPE="text" NAME="period_start_pick" VALUE="{start}" SIZE=12 ALT="Start time"><a href="javascript:show_calendar('document.search_form.period_start_pick', document.search_form.period_start_pick.value);"><img src="cal.gif" width="16" height="16" border="0"></a> to <INPUT TYPE="text" NAME="period_stop_pick" VALUE="{stop}" SIZE=12 ALT="Stop time"><a href="javascript:show_calendar('document.toga_form.period_stop_pick', document.search_form.period_stop_pick.value);"><img src="cal.gif" width="16" height="16" border="0"></a><INPUT TYPE="submit" onClick="setPeriodTimestamps();" VALUE="Refresh graphs">
+    Set graph timeperiod from 
+    <INPUT TYPE="text" NAME="period_start_pick" VALUE="{start}" SIZE=12 ALT="Start time" DISABLED="TRUE">
+    <a href="javascript:show_calendar('document.archive_search_form.period_start_pick', document.archive_search_form.period_start_pick.value);"><img src="cal.gif" width="16" height="16" border="0"></a>
+    to <INPUT TYPE="text" NAME="period_stop_pick" VALUE="{stop}" SIZE=12 ALT="Stop time" DISABLED="TRUE">
+    <a href="javascript:show_calendar('document.archive_search_form.period_stop_pick', document.archive_search_form.period_stop_pick.value);"><img src="cal.gif" width="16" height="16" border="0"></a>
+    <INPUT TYPE="submit" onClick="setPeriodTimestamps();" VALUE="Refresh graphs">
    </FONT>
   </TD>
 </TR>
