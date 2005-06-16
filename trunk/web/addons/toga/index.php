@@ -186,6 +186,16 @@ function makeHeader() {
 
 	}
 
+	if( $view == "search" ) {
+		$node_menu .= "<B>&gt;</B>\n";
+		$node_menu .= "<B>Jobarchive</B> ";
+		$tpl->assign("view", "search" );
+		$tpl->assign("form_name", "archive_search_form" );
+	} else {
+		$tpl->assign("form_name", "toga_form" );
+		$tpl->assign("view", "overview" );
+	}
+
 	$tpl->assign("node_menu", $node_menu);
 
 	if( array_key_exists( "id", $filter ) ) {

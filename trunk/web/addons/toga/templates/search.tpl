@@ -2,7 +2,44 @@
 </FORM>
 
 <SCRIPT LANGUAGE="javascript" SRC="ts_picker.js"></SCRIPT>
-<SCRIPT LANGUAGE="javascript" SRC="libtoga.js"></SCRIPT>
+<SCRIPT LANGUAGE="javascript">
+function setSort( sortbyval ) {
+
+        if( sortbyval != document.archive_search_form.sortby.value ) {
+
+                document.archive_search_form.sortby.value = sortbyval;
+                document.archive_search_form.sortorder.value = "asc";
+
+        } else {
+
+                if( document.archive_search_form.sortorder.value == "desc" )
+                        document.archive_search_form.sortorder.value = "asc";
+                else if( document.archive_search_form.sortorder.value == "asc" )
+                        document.archive_search_form.sortorder.value = "desc";
+        }
+
+        document.forms['archive_search_form'].submit();
+}
+
+function setFilter( filtername, filterval ) {
+
+        var myfilterorder = document.archive_search_form.elements['filterorder'].value;
+
+        if( document.archive_search_form.elements[filtername] ) {
+                document.archive_search_form.elements[filtername].value = filterval;
+                if( myfilterorder != '')
+                        myfilterorder = myfilterorder + "," + filtername;
+                else
+                        myfilterorder = filtername;
+
+        }
+        document.archive_search_form.elements['filterorder'].value = myfilterorder;
+
+        //setTimeout( "document.forms['archive_search_form'].submit();", 1000 );
+
+        document.forms['archive_search_form'].submit();
+}
+</SCRIPT>
 <SCRIPT LANGUAGE="javascript">
 
 	function setSearchTimestamps() {
@@ -91,7 +128,7 @@
 
   <TD></TD>
   <TD>
-  Job <B>start</B> between
+  Job <B>start</B>
   </TD>
 
   <TD>
@@ -99,7 +136,10 @@
   </TD>
   <TD>
   <INPUT TYPE="HIDDEN" NAME="start_from_time" VALUE="{start_from_value}">
-  <INPUT TYPE="TEXT" NAME="start_from_pick" VALUE="{start_from_value}" DISABLED="TRUE"> <A HREF="javascript:show_calendar('document.archive_search_form.start_from_pick', document.archive_search_form.start_from_pick.value );"><IMG SRC="cal.gif" width="16" height="16" border="0" alt="Click Here to Pick up the timestamp"></a>
+  <INPUT TYPE="TEXT" NAME="start_from_pick" VALUE="{start_from_value}" DISABLED="TRUE"> 
+  <A HREF="javascript:show_calendar('document.archive_search_form.start_from_pick', document.archive_search_form.start_from_pick.value );">
+  <IMG SRC="cal.gif" width="16" height="16" border="0" title="Click to select a date/time" alt="Click to select a date/time"></a> 
+  <a href="#" onClick="document.archive_search_form.start_from_pick.value=''" alt="Click here to clear field" title="Click here to clear field"><IMG SRC="redcross.jpg" BORDER=0></A>
   </TD>
   
   <TD>
@@ -107,7 +147,11 @@
   </TD>
   <TD>
   <INPUT TYPE="HIDDEN" NAME="start_to_time" VALUE="{start_to_value}">
-  <INPUT TYPE="TEXT" NAME="start_to_pick" VALUE="{start_to_value}" DISABLED="TRUE"><a href="javascript:show_calendar('document.archive_search_form.start_to_pick', document.archive_search_form.start_to_pick.value );"> <img src="cal.gif" width="16" height="16" border="0" alt="Click Here to Pick up the timestamp"></a>
+  <INPUT TYPE="TEXT" NAME="start_to_pick" VALUE="{start_to_value}" DISABLED="TRUE">
+  <a href="javascript:show_calendar('document.archive_search_form.start_to_pick', document.archive_search_form.start_to_pick.value );"> 
+  <img src="cal.gif" width="16" height="16" border="0" title="Click to select a date/time" alt="Click to select a date/time"></a> 
+  <a href="#" onClick="document.archive_search_form.start_to_pick.value=''" alt="Click here to clear field" title="Click here to clear field">
+  <IMG SRC="redcross.jpg" BORDER=0></A>
   </TD>
   
 </TR>
@@ -116,7 +160,7 @@
 
   <TD></TD>
   <TD>
-  Job <B>end</B> between
+  Job <B>finish</B>
   </TD>
 
   <TD>
@@ -124,7 +168,11 @@
   </TD>
   <TD>
   <INPUT TYPE="HIDDEN" NAME="end_from_time" VALUE="{end_from_value}">
-  <INPUT TYPE="TEXT" NAME="end_from_pick" VALUE="{end_from_value}" DISABLED="TRUE"> <A HREF="javascript:show_calendar('document.archive_search_form.end_from_pick', document.archive_search_form.end_from_pick.value );"><IMG SRC="cal.gif" width="16" height="16" border="0" alt="Click Here to Pick up the timestamp"></a>
+  <INPUT TYPE="TEXT" NAME="end_from_pick" VALUE="{end_from_value}" DISABLED="TRUE"> 
+  <A HREF="javascript:show_calendar('document.archive_search_form.end_from_pick', document.archive_search_form.end_from_pick.value );">
+  <IMG SRC="cal.gif" width="16" height="16" border="0" title="Click to select a date/time" alt="Click to select a date/time"></a> 
+  <a href="#" onClick="document.archive_search_form.end_from_pick.value=''" alt="Click here to clear field" title="Click here to clear field">
+  <IMG SRC="redcross.jpg" BORDER=0></A>
   </TD>
   
   <TD>
@@ -132,7 +180,11 @@
   </TD>
   <TD>
   <INPUT TYPE="HIDDEN" NAME="end_to_time" VALUE="{end_to_value}">
-  <INPUT TYPE="TEXT" NAME="end_to_pick" VALUE="{end_to_value}" DISABLED="TRUE"><a href="javascript:show_calendar('document.archive_search_form.end_to_pick', document.archive_search_form.end_to_pick.value );"> <img src="cal.gif" width="16" height="16" border="0" alt="Click Here to Pick up the timestamp"></a>
+  <INPUT TYPE="TEXT" NAME="end_to_pick" VALUE="{end_to_value}" DISABLED="TRUE">
+  <a href="javascript:show_calendar('document.archive_search_form.end_to_pick', document.archive_search_form.end_to_pick.value );"> 
+  <img src="cal.gif" width="16" height="16" border="0" title="Click to select a date/time" alt="Click to select a date/time"></a> 
+  <a href="#" onClick="document.archive_search_form.end_to_pick.value=''" alt="Click here to clear field" title="Click here to clear field">
+  <IMG SRC="redcross.jpg" BORDER=0></A>
   </TD>
   
 </TR>
@@ -198,8 +250,8 @@ B></TH>
   <TD CLASS=title COLSPAN="2">
   <FONT SIZE="-1">
   Show Hosts:
-  yes<INPUT type=radio name="sh" value="1" OnClick="toga_form.submit();" {checked1}>
-  no<INPUT type=radio name="sh" value="0" OnClick="toga_form.submit();" {checked0}>
+  yes<INPUT type=radio name="sh" value="1" OnClick="archive_search_form.submit();" {checked1}>
+  no<INPUT type=radio name="sh" value="0" OnClick="archive_search_form.submit();" {checked0}>
   </FONT>
   |
   job <strong>{id}</strong> metric <strong>{metric}</strong>
@@ -211,10 +263,16 @@ B></TH>
     <INPUT TYPE="HIDDEN" NAME="start" VALUE="{start}">
     <INPUT TYPE="HIDDEN" NAME="stop" VALUE="{stop}">
     Set graph timeperiod from 
-    <INPUT TYPE="text" NAME="period_start_pick" VALUE="{start}" SIZE=12 ALT="Start time" DISABLED="TRUE">
-    <a href="javascript:show_calendar('document.archive_search_form.period_start_pick', document.archive_search_form.period_start_pick.value);"><img src="cal.gif" width="16" height="16" border="0"></a>
+    <INPUT TYPE="text" NAME="period_start_pick" VALUE="{start}" ALT="Start time" DISABLED="TRUE">
+    <a href="javascript:show_calendar('document.archive_search_form.period_start_pick', document.archive_search_form.period_start_pick.value);" alt="Click to select a date/time" title="Click to select a date/time">
+    <img src="cal.gif" width="16" height="16" border="0"></a> 
+    <a href="#" onClick="javascript: document.archive_search_form.period_start_pick.value=''" alt="Click here to clear field" title="Click here to clear field">
+    <IMG SRC="redcross.jpg" BORDER=0></A>
     to <INPUT TYPE="text" NAME="period_stop_pick" VALUE="{stop}" SIZE=12 ALT="Stop time" DISABLED="TRUE">
-    <a href="javascript:show_calendar('document.archive_search_form.period_stop_pick', document.archive_search_form.period_stop_pick.value);"><img src="cal.gif" width="16" height="16" border="0"></a>
+    <a href="javascript:show_calendar('document.archive_search_form.period_stop_pick', document.archive_search_form.period_stop_pick.value);" alt="Click to select a date/time" title="Click to select a date/time">
+    <img src="cal.gif" width="16" height="16" border="0"></a> 
+    <a href="#" onClick="javascript: document.archive_search_form.period_to_pick.value=''" alt="Click here to clear field" title="Click here to clear field">
+    <IMG SRC="redcross.jpg" BORDER=0></A>
     <INPUT TYPE="submit" onClick="setPeriodTimestamps();" VALUE="Refresh graphs">
    </FONT>
   </TD>

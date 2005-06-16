@@ -8,7 +8,7 @@
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
-<FORM ACTION="./" METHOD="GET" NAME="toga_form">
+<FORM ACTION="./?c={cluster}&view={view}" METHOD="GET" NAME="{form_name}">
 <TABLE WIDTH="100%">
 <TR>
   <TD ROWSPAN="2" WIDTH="150">
