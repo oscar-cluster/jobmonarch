@@ -215,7 +215,7 @@ class TarchDbase {
 		if( !$this->conn )
 			$this->connect();
 
-		printf( "query = [%s]\n", $query );
+		//printf( "query = [%s]\n", $query );
 		$result = pg_query( $this->conn, $query );
 
 		while ($row = pg_fetch_assoc($result))

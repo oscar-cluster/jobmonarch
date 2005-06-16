@@ -117,9 +117,6 @@ function datetimeToEpoch( $datetime ) {
 	$years = $date_fields[2];
 
 	$time_fields = explode( ':', $time );
-	reset( $time_fields );
-
-	print_r( $time_fields );
 
 	$hours = $time_fields[0];
 	$minutes = $time_fields[1];
@@ -160,7 +157,9 @@ function timeToEpoch( $time ) {
 
 function makeSearchPage() {
 	global $clustername, $tpl, $id, $user, $name, $start_from_time, $start_to_time, $queue;
-	global $end_from_time, $end_to_time, $filter;
+	global $end_from_time, $end_to_time, $filter, $default_showhosts, $m, $hosts_up;
+
+	$metricname = $m;
 
 	$tpl->assign( "cluster", $clustername );
 	$tpl->assign( "id_value", $id );
@@ -209,18 +208,129 @@ function makeSearchPage() {
 			$tpl->assign( "finished", makeDate( $job[stop_timestamp] ) );
 			$tpl->assign( "runningtime", makeTime( $runningtime ) );
 			
-			print_r( $job );
-			print_r( $nodes );
-			//output jobzooi
-
+			//print_r( $job );
+			//print_r( $nodes );
 		}
+
 		
 		if( count( $search_ids ) == 1 ) {
 
 			$tpl->newBlock( "showhosts" );
-		}
 
-		// show search results
+			$showhosts = isset($sh) ? $sh : $default_showhosts;
+			//if( !$showhosts) $showhosts = $default_showhosts;
+			$tpl->assign("checked$showhosts", "checked");
+
+			# Present a width list
+			$cols_menu = "<SELECT NAME=\"hc\" OnChange=\"toga_form.submit();\">\n";
+
+			$hostcols = ($hc) ? $hc : 4;
+
+			foreach(range(1,25) as $cols) {
+				$cols_menu .= "<OPTION VALUE=$cols ";
+				if ($cols == $hostcols)
+					$cols_menu .= "SELECTED";
+				$cols_menu .= ">$cols\n";
+			}
+			$cols_menu .= "</SELECT>\n";
+
+			$tpl->assign("metric","$metricname $units");
+			$tpl->assign("id", $id);
+			# Host columns menu defined in header.php
+			$tpl->assign("cols_menu", $cols_menu);
+
+			if( $showhosts ) {
+				//bla
+
+				if( !isset($start) ) $start="jobstart";
+				if( !isset($stop) ) $stop="now";
+				//$tpl->assign("start", $start);
+				//$tpl->assign("stop", $stop);
+
+				$sorted_hosts = array();
+				$hosts_up = $jobs[$filter[id]][nodes];
+
+				$r = intval($job_runningtime * 1.25);
+
+				$jobrange = ($job_runningtime < 3600) ? -3600 : -$r ;
+				$jobstart = $report_time - $job_runningtime;
+
+				if ($reports[$metricname])
+					$metricval = "g";
+				else
+					$metricval = "m";
+
+				foreach ($hosts_up as $host ) {
+					$host = $host. '.'.$domain;
+					$cpus = $metrics[$host]["cpu_num"][VAL];
+					if (!$cpus) $cpus=1;
+					$load_one  = $metrics[$host]["load_one"][VAL];
+					$load = ((float) $load_one)/$cpus;
+					$host_load[$host] = $load;
+					$percent_hosts[load_color($load)] += 1;
+					if ($metricname=="load_one")
+						$sorted_hosts[$host] = $load;
+					else
+						$sorted_hosts[$host] = $metrics[$host][$metricname][VAL];
+				}
+				switch ($sort) {
+					case "descending":
+						arsort($sorted_hosts);
+						break;
+					case "by hostname":
+						ksort($sorted_hosts);
+						break;
+					default:
+					case "ascending":
+						asort($sorted_hosts);
+						break;
+				}
+
+				//$sorted_hosts = array_merge($down_hosts, $sorted_hosts);
+
+				# First pass to find the max value in all graphs for this
+				# metric. The $start,$end variables comes from get_context.php,
+				# included in index.php.
+				list($min, $max) = find_limits($sorted_hosts, $metricname);
+
+				# Second pass to output the graphs or metrics.
+				$i = 1;
+				foreach ( $sorted_hosts as $host=>$value  ) {
+					$tpl->newBlock ("sorted_list");
+					//$host = $host. '.'.$domain;
+					$host_url = rawurlencode($host);
+					$cluster_url = rawurlencode($clustername);
+
+					$textval = "";
+					//printf("host = %s, value = %s", $host, $value);
+					//echo "$host: $value, ";
+					$val = $metrics[$host][$metricname];
+					$class = "metric";
+					$host_link="\"?c=$cluster_url&h=$host_url&r=job&jr=$jobrange&js=$jobstart\"";
+
+					if ($val[TYPE]=="timestamp" or $always_timestamp[$metricname]) {
+						$textval = date("r", $val[VAL]);
+					} elseif ($val[TYPE]=="string" or $val[SLOPE]=="zero" or $always_constant[$metricname] or ($max_graphs > 0 and $i > $max_graphs )) {
+						$textval = "$val[VAL] $val[UNITS]";
+					} else {
+						$load_color = load_color($host_load[$host]);
+						$graphargs = ($reports[$metricname]) ? "g=$metricname&" : "m=$metricname&";
+						$graphargs .= "z=small&c=$cluster_url&h=$host_url&l=$load_color" ."&v=$val[VAL]&x=$max&n=$min&r=job&jr=$jobrange&js=$jobstart";
+					}
+					if ($textval) {
+						$cell="<td class=$class>".  "<b><a href=$host_link>$host</a></b><br>".  "<i>$metricname:</i> <b>$textval</b></td>";
+					} else {
+						$cell="<td><a href=$host_link>".  "<img src=\"../../graph.php?$graphargs\" ".  "alt=\"$host\" height=112 width=225 border=0></a></td>";
+					}
+
+					$tpl->assign("metric_image", $cell);
+					if (! ($i++ % $hostcols) )
+						 $tpl->assign ("br", "</tr><tr>");
+				}
+
+				//einde bla
+			}
+		}
 
 	}
 }
