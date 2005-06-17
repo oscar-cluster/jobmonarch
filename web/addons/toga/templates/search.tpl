@@ -59,7 +59,6 @@ function setFilter( filtername, filterval ) {
 
 <FORM NAME="archive_search_form" ACTION="./">
 
-<INPUT TYPE="hidden" NAME="c" VALUE="{cluster}">
 <INPUT TYPE="hidden" NAME="view" VALUE="search">
 
 <BR><BR>
@@ -259,18 +258,18 @@ B></TH>
    Columns&nbsp;&nbsp;{cols_menu}
    </FONT><BR>
    <FONT SIZE="-1">
-    <INPUT TYPE="HIDDEN" NAME="start" VALUE="{start}">
-    <INPUT TYPE="HIDDEN" NAME="stop" VALUE="{stop}">
-    Set graph timeperiod from 
-    <INPUT TYPE="text" NAME="period_start_pick" VALUE="{start}" ALT="Start time" DISABLED="TRUE">
+    <INPUT TYPE="HIDDEN" NAME="start" VALUE="{j_start}">
+    <INPUT TYPE="HIDDEN" NAME="stop" VALUE="{j_stop}">
+    Graph timeperiod from 
+    <INPUT TYPE="text" NAME="period_start_pick" VALUE="{j_start}" ALT="Start time" DISABLED="TRUE">
     <a href="javascript:show_calendar('document.archive_search_form.period_start_pick', document.archive_search_form.period_start_pick.value);" alt="Click to select a date/time" title="Click to select a date/time">
     <img src="cal.gif" width="16" height="16" border="0"></a> 
     <a href="#" onClick="javascript: document.archive_search_form.period_start_pick.value=''" alt="Click here to clear field" title="Click here to clear field">
     <IMG SRC="redcross.jpg" BORDER=0></A>
-    to <INPUT TYPE="text" NAME="period_stop_pick" VALUE="{stop}" ALT="Stop time" DISABLED="TRUE">
+    to <INPUT TYPE="text" NAME="period_stop_pick" VALUE="{j_stop}" ALT="Stop time" DISABLED="TRUE">
     <a href="javascript:show_calendar('document.archive_search_form.period_stop_pick', document.archive_search_form.period_stop_pick.value);" alt="Click to select a date/time" title="Click to select a date/time">
     <img src="cal.gif" width="16" height="16" border="0"></a> 
-    <a href="#" onClick="javascript: document.archive_search_form.period_to_pick.value=''" alt="Click here to clear field" title="Click here to clear field">
+    <a href="#" onClick="javascript: document.archive_search_form.period_stop_pick.value=''" alt="Click here to clear field" title="Click here to clear field">
     <IMG SRC="redcross.jpg" BORDER=0></A>
     <INPUT TYPE="submit" onClick="setPeriodTimestamps();" VALUE="Refresh graphs">
    </FONT>
@@ -287,9 +286,6 @@ B></TH>
 <!-- END BLOCK : sorted_list -->
 </TR>
 </TABLE>
-
-<p>
-(Nodes colored by 1-minute load) | <A HREF="../../node_legend.html" ALT="Node Image egend">Legend</A>
 
 </CENTER>
 

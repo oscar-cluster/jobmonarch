@@ -1,9 +1,9 @@
 <?php
 // If php is compiled without globals
 //
-if ( !empty( $_GET ) ) {
-        extract( $_GET );
-}
+//if ( !empty( $_GET ) ) {
+//        extract( $_GET );
+//}
 
 class HTTPVariables {
 
@@ -59,12 +59,12 @@ $my_dir = getcwd();
 // Load Ganglia's PHP
 chdir( $GANGLIA_PATH );
 
-$context = 'cluster';
-
 include_once "./conf.php";
 include_once "./functions.php";
 include_once "./ganglia.php";
-//include_once "./get_context.php";
+include_once "./get_context.php";
+unset( $start );
+$context = 'cluster';
 include_once "./get_ganglia.php";
 
 // Back to our PHP
@@ -228,10 +228,13 @@ class TarchDbase {
 class TarchRrdGraph {
 	var $rrdbin, $rrdvalues, $clustername, $hostname, $tempdir, $tarchdir, $metrics;
 
-	function TarchRrd( $clustername, $rrdbin = '/usr/bin/rrdtool', $tarchdir = '/data/toga/rrds' ) {
+	function TarchRrdGraph( $clustername, $hostname, $rrdbin = '/usr/bin/rrdtool', $tarchdir = '/data/toga/rrds' ) {
+	
 		$this->rrdbin = $rrdbin;
 		$this->rrdvalues = array();
 		$this->tarchdir = $tarchdir;
+		$this->clustername = $clustername;
+		$this->hostname = $hostname;
 	}
 
 	function doCmd( $command ) {
@@ -273,8 +276,12 @@ class TarchRrdGraph {
 
 	function getTimePeriods( $start, $end ) {
 
+		//printf("start = %s end = %s\n", $start, $end );
 		$times = array();
 		$dirlist = $this->dirList( $this->tarchdir . '/' . $this->clustername . '/' . $this->hostname );
+
+		//print_r( $dirlist );
+
 		$first = 0;
 		$last = 9999999999999;
 
@@ -286,15 +293,57 @@ class TarchRrdGraph {
 				$last = $dir;
 		}
 
+		//printf( "first = %s last = %s\n", $first, $last );
+
 		foreach( $dirlist as $dir ) {
 
-			if( $dir >= $first and $dir <= $last and !array_key_exists( $dir, $times ) )
+			//printf( "dir %s ", $dir );
+
+			if( $dir >= $first and $dir <= $last and !array_key_exists( $dir, $times ) ) {
+			
 				$times[] = $dir;
+				//printf("newtime %s ", $dir );
+
+			}
 		}
+
+		//print_r( $times );
 
 		sort( $times );
 
+		//print_r( $times );
+
 		return $times;
+	}
+
+	function getRrdDirs( $start, $stop ) {
+
+		//printf( "tarchdir = %s\n", $this->tarchdir );
+		$timess = $this->getTimePeriods( $start, $stop );
+		//print_r( $timess );
+
+		$rrd_files = array();
+
+		foreach( $timess as $time ) {
+
+			$rrd_files[] = $this->tarchdir . '/' . $this->clustername . '/' . $this->hostname. '/'.$time;
+		}
+
+		return $rrd_files;
+	}
+
+	function getRrdFiles( $metric, $start, $stop ) {
+
+		$times = $this->getTimePeriods( $start, $stop );
+
+		$rrd_files = array();
+
+		foreach( $times as $time ) {
+
+			$rrd_files[] = $this->tarchdir . '/' . $this->clustername . '/' . $this->hostname . '/' .$time. '/' . $metric. '.rrd';
+		}
+
+		return $rrd_files;
 	}
 
 	function graph( $descr ) {
@@ -308,6 +357,7 @@ class TarchRrdGraph {
 		//$graph = $this->doCmd( $command );
 
 		//return $graph;
+		return 0;
 	}
 }
 

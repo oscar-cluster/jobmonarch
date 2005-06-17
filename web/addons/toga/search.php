@@ -127,6 +127,11 @@ function datetimeToEpoch( $datetime ) {
 	return $timestamp;
 }
 
+function epochToDatetime( $epoch ) {
+
+	return strftime( "%d-%m-%Y %H:%M:%S", $epoch );
+}
+
 function timeToEpoch( $time ) {
 
         $time_fields = explode( ':', $time );
@@ -158,8 +163,11 @@ function timeToEpoch( $time ) {
 function makeSearchPage() {
 	global $clustername, $tpl, $id, $user, $name, $start_from_time, $start_to_time, $queue;
 	global $end_from_time, $end_to_time, $filter, $default_showhosts, $m, $hosts_up;
+	global $start, $stop;
 
 	$metricname = $m;
+	//printf("job_start = %s job_stop = %s\n", $job_start, $job_stop );
+	//printf("start = %s stop = %s\n", $start, $stop );
 
 	$tpl->assign( "cluster", $clustername );
 	$tpl->assign( "id_value", $id );
@@ -196,16 +204,31 @@ function makeSearchPage() {
 			$tpl->assign( "req_memory", $job[requested_memory] );
 
 			$nodes_nr = count( $nodes );
-			$domain = $job[domain];
+
+			// need to replace later with domain stored from dbase
+			//
+			//$job_domain = $job[domain];
+
+			$myhost = $_SERVER[HTTP_HOST];
+			$myhf = explode( '.', $myhost );
+			$myhf = array_reverse( $myhf );
+			array_pop( $myhf );
+			$myhf = array_reverse( $myhf );
+			$job_domain = implode( '.', $myhf );
+			
+			//print_r( $job );
+			//printf( "job domain = %s\n", $job_domain);
 			$ppn = (int) $job[ppn] ? $job[ppn] : 1;
 			$cpus = $nodes_nr * $ppn;
 
 			$tpl->assign( "nodes", $nodes_nr );
 			$tpl->assign( "cpus", $cpus );
 
-			$runningtime = intval( $job[stop_timestamp] - $job[start_timestamp] );
-			$tpl->assign( "started", makeDate( $job[start_timestamp] ) );
-			$tpl->assign( "finished", makeDate( $job[stop_timestamp] ) );
+			$job_start = $job[start_timestamp];
+			$job_stop = $job[stop_timestamp];
+			$runningtime = intval( $job_stop - $job_start );
+			$tpl->assign( "started", makeDate( $job_start ) );
+			$tpl->assign( "finished", makeDate( $job_stop ) );
 			$tpl->assign( "runningtime", makeTime( $runningtime ) );
 			
 			//print_r( $job );
@@ -222,7 +245,7 @@ function makeSearchPage() {
 			$tpl->assign("checked$showhosts", "checked");
 
 			# Present a width list
-			$cols_menu = "<SELECT NAME=\"hc\" OnChange=\"toga_form.submit();\">\n";
+			$cols_menu = "<SELECT NAME=\"hc\" OnChange=\"archive_search_form.submit();\">\n";
 
 			$hostcols = ($hc) ? $hc : 4;
 
@@ -242,26 +265,36 @@ function makeSearchPage() {
 			if( $showhosts ) {
 				//bla
 
-				if( !isset($start) ) $start="jobstart";
-				if( !isset($stop) ) $stop="now";
-				//$tpl->assign("start", $start);
-				//$tpl->assign("stop", $stop);
+				//printf("job_start = %s job_stop = %s\n", $job_start, $job_stop );
+				//printf("start = %s stop = %s\n", $start, $stop );
+
+				if( !$start ) // Add an additional 5 minutes before
+					$start = intval( $job_start - 600 );
+				else
+					$start = datetimeToEpoch( $start );
+
+				if( !$stop ) // Add an additional 5 minutes after
+					$stop = intval( $job_stop + 600 );
+				else
+					$stop = datetimeToEpoch( $stop );
+
+				//printf("start = %s stop = %s\n", $start, $stop );
+
+				$tpl->assign("j_start", epochToDatetime( $start ) );
+				$tpl->assign("j_stop", epochToDatetime( $stop ) );
+
+				$hosts_up = array();
+
+				foreach( $nodes as $mynode )
+					$hosts_up[] = $mynode[hostname];
+
+				//print_r( $hosts_up );
 
 				$sorted_hosts = array();
-				$hosts_up = $jobs[$filter[id]][nodes];
-
-				$r = intval($job_runningtime * 1.25);
-
-				$jobrange = ($job_runningtime < 3600) ? -3600 : -$r ;
-				$jobstart = $report_time - $job_runningtime;
-
-				if ($reports[$metricname])
-					$metricval = "g";
-				else
-					$metricval = "m";
+				//$hosts_up = $jobs[$filter[id]][nodes];
 
 				foreach ($hosts_up as $host ) {
-					$host = $host. '.'.$domain;
+					$host = $host. '.'.$job_domain;
 					$cpus = $metrics[$host]["cpu_num"][VAL];
 					if (!$cpus) $cpus=1;
 					$load_one  = $metrics[$host]["load_one"][VAL];
@@ -306,21 +339,19 @@ function makeSearchPage() {
 					//echo "$host: $value, ";
 					$val = $metrics[$host][$metricname];
 					$class = "metric";
-					$host_link="\"?c=$cluster_url&h=$host_url&r=job&jr=$jobrange&js=$jobstart\"";
+					$host_link="\"?c=$cluster_url&h=$host_url&job_start=$job_start&job_stop=$job_stop&start=$start&stop=$stop\"";
 
 					if ($val[TYPE]=="timestamp" or $always_timestamp[$metricname]) {
 						$textval = date("r", $val[VAL]);
 					} elseif ($val[TYPE]=="string" or $val[SLOPE]=="zero" or $always_constant[$metricname] or ($max_graphs > 0 and $i > $max_graphs )) {
 						$textval = "$val[VAL] $val[UNITS]";
 					} else {
-						$load_color = load_color($host_load[$host]);
-						$graphargs = ($reports[$metricname]) ? "g=$metricname&" : "m=$metricname&";
-						$graphargs .= "z=small&c=$cluster_url&h=$host_url&l=$load_color" ."&v=$val[VAL]&x=$max&n=$min&r=job&jr=$jobrange&js=$jobstart";
+						$graphargs = "z=small&c=$cluster_url&m=$metricname&h=$host_url&v=$val[VAL]&x=$max&n=$min&job_start=$job_start&job_stop=$job_stop&start=$start&stop=$stop";
 					}
 					if ($textval) {
 						$cell="<td class=$class>".  "<b><a href=$host_link>$host</a></b><br>".  "<i>$metricname:</i> <b>$textval</b></td>";
 					} else {
-						$cell="<td><a href=$host_link>".  "<img src=\"../../graph.php?$graphargs\" ".  "alt=\"$host\" height=112 width=225 border=0></a></td>";
+						$cell="<td><a href=$host_link>".  "<img src=\"./graph.php?$graphargs\" ".  "alt=\"$host\" border=0></a></td>";
 					}
 
 					$tpl->assign("metric_image", $cell);

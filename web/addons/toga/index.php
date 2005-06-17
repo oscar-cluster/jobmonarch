@@ -38,7 +38,7 @@ function makeHeader() {
 	global $metrics, $reports, $m, $default_metric;
 	global $default_refresh, $filterorder, $view;
 	global $TARCHD;
-
+	
 	if( isset($default_metric) and !isset($m) )
 		$metricname = $default_metric;
 	else
@@ -145,6 +145,7 @@ function makeHeader() {
 	$firsthost = key($metrics);
 	foreach ($metrics[$firsthost] as $m => $foo)
 		$context_metrics[] = $m;
+
 	foreach ($reports as $r => $foo)
 		$context_metrics[] = $r;
 
@@ -318,6 +319,5 @@ switch( $view ) {
 }
 
 makeFooter();
-
 $tpl->printToScreen();
 ?>
