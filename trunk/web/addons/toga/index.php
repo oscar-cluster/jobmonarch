@@ -37,7 +37,7 @@ function makeHeader() {
 	global $self, $filter, $cluster_url, $get_metric_string;
 	global $metrics, $reports, $m, $default_metric;
 	global $default_refresh, $filterorder, $view;
-	global $TARCHD;
+	global $TARCHD, $period_start, $period_stop, $h, $id;
 	
 	if( isset($default_metric) and !isset($m) )
 		$metricname = $default_metric;
@@ -188,14 +188,16 @@ function makeHeader() {
 	}
 
 	if( $view == "search" ) {
+
 		$node_menu .= "<B>&gt;</B>\n";
 		$node_menu .= "<B>Jobarchive</B> ";
 		$tpl->assign("view", "search" );
 		$form_name = "archive_search_form";
-		$tpl->assign("form_name", $form_name );
+		$tpl->assignGlobal("form_name", $form_name );
+
 	} else {
 		$form_name = "toga_form";
-		$tpl->assign("form_name", $form_name );
+		$tpl->assignGlobal("form_name", $form_name );
 		$tpl->assign("view", "overview" );
 	}
 
@@ -217,8 +219,9 @@ function makeHeader() {
 			}
 			$metric_menu .= "</SELECT>\n";
 
-			$tpl->assign("metric_menu", $metric_menu );
 		}
+
+		$tpl->assign("metric_menu", $metric_menu );
 	}
 	$m = $metricname;
 
@@ -268,9 +271,21 @@ function includeOverview() {
 	$tpl->assignInclude( "main", "templates/overview.tpl" );
 }
 
+function includeHostPage() {
+
+	global $tpl;
+
+	$tpl->assignInclude( "main", "templates/host_view.tpl" );
+}
+
 $tpl = new TemplatePower( "templates/index.tpl" );
 
 $tpl->assignInclude( "header", "templates/header.tpl" );
+
+if( isset( $h ) and $h != '' ) {
+	$hostname = $h;
+	$view = "host";
+}
 
 switch( $view ) {
 
@@ -282,6 +297,11 @@ switch( $view ) {
 	case "search":
 
 		includeSearchPage();
+		break;
+
+	case "host":
+
+		includeHostPage();
 		break;
 
 	default:
@@ -310,6 +330,12 @@ switch( $view ) {
 
 		include "./search.php";
 		makeSearchPage();
+		break;
+
+	case "host":
+
+		include "./host_view.php";
+		makeHostView();
 		break;
 
 	default:

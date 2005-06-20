@@ -47,7 +47,7 @@ $trd = new TarchRrdGraph( $cluster, $hostname );
 $graph = $metricname;
 
 if (isset($graph)) {
-	$rrd_dirs = $trd->getRrdDirs( $start, $stop );
+	$rrd_dirs = $trd->getRrdDirs( $period_start, $period_stop );
 	$series = '';
 
 	if($graph == "cpu_report") {
@@ -331,7 +331,7 @@ $title = "$hostname";
 #
 # Generate the rrdtool graph command.
 #
-$command = RRDTOOL . " graph - --start $start --end $stop ".
+$command = RRDTOOL . " graph - --start $period_start --end $period_stop ".
 	"--width $width --height $height $upper_limit $lower_limit ".
 	"--title '$title' $vertical_label $extras $background ".
 	$series;
