@@ -163,13 +163,13 @@ function colorDiffer( $first, $second ) {
 	// Make sure these two colors differ atleast 50 R/G/B
 	$min_diff = 50;
 
-	$c1r = decHex( colorRed( $first ) );
-	$c1g = decHex( colorGreen( $first ) );
-	$c1b = decHex( colorBlue( $first ) );
+	$c1r = hexDec( colorRed( $first ) );
+	$c1g = hexDec( colorGreen( $first ) );
+	$c1b = hexDec( colorBlue( $first ) );
 
-	$c2r = decHex( colorRed( $second ) );
-	$c2g = decHex( colorGreen( $second ) );
-	$c2b = decHex( colorBlue( $second ) );
+	$c2r = hexDec( colorRed( $second ) );
+	$c2g = hexDec( colorGreen( $second ) );
+	$c2b = hexDec( colorBlue( $second ) );
 
 	$rdiff = ($c1r >= $c2r) ? $c1r - $c2r : $c2r - $c1r;
 	$gdiff = ($c1g >= $c2g) ? $c1g - $c2g : $c2g - $c1g;
@@ -183,35 +183,39 @@ function colorDiffer( $first, $second ) {
 
 function randomColor( $known_colors ) {
 
-	$start = hexdec( "004E00" );
-	$end = hexdec( "FFFFFF" );
+	$start = "004E00";
+	
+	$start_red = colorRed( $start );
+	$start_green = colorGreen( $start );
+	$start_blue = colorBlue( $start );
+	
+	$end = "FFFFFF";
 
-	if( count( $known_colors ) == 0 )
-		return dechex(rand( $start, $end ));
+	$end_red = colorRed( $end );
+	$end_green = colorGreen( $end );
+	$end_blue = colorBlue( $end );
 
-	$color_changed = TRUE;
+	$change_color = TRUE;
 
-	while( $color_changed ) {
+	while( $change_color ) {
 
-		$color_changed = FALSE;
+		$change_color = FALSE;
 
-		foreach( $known_colors as $old ) {
+		$new_red = rand( hexDec( $start_red ), hexDec( $end_red ) );
+		$new_green = rand( hexDec( $start_green ), hexDec( $end_green ) );
+		$new_blue = rand( hexDec( $start_blue ), hexDec( $end_blue ) );
 
-			if( !isset( $new ) )
-				$new = rand( $start, $end );
+		$new = decHex( $new_red ) . decHex( $new_green ) . decHex( $new_blue );
 
-			if( !colorDiffer( dechex( $new ), $old ) )
+		foreach( $known_colors as $old )
 
-				while( !colorDiffer( $new, $old ) ) {
+			if( !colorDiffer( $new, $old ) )
 
-					$new = rand( $start, $end );
-					$color_changed = TRUE;
-				}
-		}
+	 			$change_color = TRUE;
 	}
 
 	// Whoa! Actually found a good color ;)
-	return dechex( $new );
+	return $new;
 }
 
 function drawJobPie() {
