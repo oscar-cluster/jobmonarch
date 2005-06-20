@@ -669,7 +669,7 @@ function makeOverview() {
 				//echo "$host: $value, ";
 				$val = $metrics[$host][$metricname];
 				$class = "metric";
-				$host_link="\"?c=$cluster_url&h=$host_url&r=job&jr=$jobrange&js=$jobstart\"";
+				$host_link="\"../../?c=$cluster_url&h=$host_url&r=job&jr=$jobrange&js=$jobstart\"";
 
 				if ($val[TYPE]=="timestamp" or $always_timestamp[$metricname]) {
 					$textval = date("r", $val[VAL]);
