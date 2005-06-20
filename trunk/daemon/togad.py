@@ -316,7 +316,11 @@ class RRDMutator:
 
 		debug_msg( 8, self.binary + ' ' + action + ' ' + filename + ' ' + arg_string  )
 
-		for line in os.popen( self.binary + ' ' + action + ' ' + filename + ' ' + arg_string ).readlines():
+		cmd = os.popen( self.binary + ' ' + action + ' ' + filename + ' ' + arg_string )
+		lines = cmd.readlines()
+		cmd.close()
+
+		for line in lines:
 
 			if line.find( 'ERROR' ) != -1:
 
@@ -1124,7 +1128,7 @@ class RRDHandler:
 
 				for period, pmetric in metric_serial_table.items():
 
-					self.createCheck( hostname, metricname, period )	
+					create_ret = self.createCheck( hostname, metricname, period )	
 
 					update_ret = self.update( hostname, metricname, period, pmetric )
 
@@ -1134,6 +1138,7 @@ class RRDHandler:
 					else:
 						debug_msg( 9, 'metric update failed' )
 
+					update_rets.append( create_ret )
 					update_rets.append( update_ret )
 
 				if not (1) in update_rets:
