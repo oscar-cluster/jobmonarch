@@ -163,7 +163,7 @@ function timeToEpoch( $time ) {
 function makeSearchPage() {
 	global $clustername, $tpl, $id, $user, $name, $start_from_time, $start_to_time, $queue;
 	global $end_from_time, $end_to_time, $filter, $default_showhosts, $m, $hosts_up;
-	global $start, $stop;
+	global $period_start, $period_stop;
 
 	$metricname = $m;
 	//printf("job_start = %s job_stop = %s\n", $job_start, $job_stop );
@@ -268,20 +268,20 @@ function makeSearchPage() {
 				//printf("job_start = %s job_stop = %s\n", $job_start, $job_stop );
 				//printf("start = %s stop = %s\n", $start, $stop );
 
-				if( !$start ) // Add an additional 5 minutes before
-					$start = intval( $job_start - 600 );
+				if( !$period_start ) // Add an additional 5 minutes before
+					$period_start = intval( $job_start - (intval( $runningtime * 0.10 ) ) );
 				else
-					$start = datetimeToEpoch( $start );
+					$period_start = datetimeToEpoch( $period_start );
 
-				if( !$stop ) // Add an additional 5 minutes after
-					$stop = intval( $job_stop + 600 );
+				if( !$period_stop ) // Add an additional 5 minutes after
+					$period_stop = intval( $job_stop + (intval( $runningtime * 0.10 ) ) );
 				else
-					$stop = datetimeToEpoch( $stop );
+					$period_stop = datetimeToEpoch( $period_stop );
 
 				//printf("start = %s stop = %s\n", $start, $stop );
 
-				$tpl->assign("j_start", epochToDatetime( $start ) );
-				$tpl->assign("j_stop", epochToDatetime( $stop ) );
+				$tpl->assign("period_start", epochToDatetime( $period_start ) );
+				$tpl->assign("period_stop", epochToDatetime( $period_stop ) );
 
 				$hosts_up = array();
 
@@ -339,14 +339,14 @@ function makeSearchPage() {
 					//echo "$host: $value, ";
 					$val = $metrics[$host][$metricname];
 					$class = "metric";
-					$host_link="\"?c=$cluster_url&h=$host_url&job_start=$job_start&job_stop=$job_stop&start=$start&stop=$stop\"";
+					$host_link="\"?c=$cluster_url&h=$host_url&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop\"";
 
 					if ($val[TYPE]=="timestamp" or $always_timestamp[$metricname]) {
 						$textval = date("r", $val[VAL]);
 					} elseif ($val[TYPE]=="string" or $val[SLOPE]=="zero" or $always_constant[$metricname] or ($max_graphs > 0 and $i > $max_graphs )) {
 						$textval = "$val[VAL] $val[UNITS]";
 					} else {
-						$graphargs = "z=small&c=$cluster_url&m=$metricname&h=$host_url&v=$val[VAL]&x=$max&n=$min&job_start=$job_start&job_stop=$job_stop&start=$start&stop=$stop";
+						$graphargs = "z=small&c=$cluster_url&m=$metricname&h=$host_url&v=$val[VAL]&x=$max&n=$min&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop";
 					}
 					if ($textval) {
 						$cell="<td class=$class>".  "<b><a href=$host_link>$host</a></b><br>".  "<i>$metricname:</i> <b>$textval</b></td>";

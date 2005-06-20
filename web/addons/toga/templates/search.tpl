@@ -51,8 +51,8 @@ function setFilter( filtername, filterval ) {
 
 	function setPeriodTimestamps() {
 
-		document.archive_search_form.start.value = document.archive_search_form.period_start_pick.value; 
-		document.archive_search_form.stop.value = document.archive_search_form.period_stop_pick.value;
+		document.archive_search_form.period_start.value = document.archive_search_form.period_start_pick.value; 
+		document.archive_search_form.period_stop.value = document.archive_search_form.period_stop_pick.value;
 	}
 
 </SCRIPT>
@@ -257,16 +257,16 @@ B></TH>
    <FONT SIZE="-1">
    Columns&nbsp;&nbsp;{cols_menu}
    </FONT><BR>
-   <FONT SIZE="-1">
-    <INPUT TYPE="HIDDEN" NAME="start" VALUE="{j_start}">
-    <INPUT TYPE="HIDDEN" NAME="stop" VALUE="{j_stop}">
+<FONT SIZE="-1">
+    <INPUT TYPE="HIDDEN" NAME="period_start" VALUE="{period_start}">
+    <INPUT TYPE="HIDDEN" NAME="period_stop" VALUE="{period_stop}">
     Graph timeperiod from 
-    <INPUT TYPE="text" NAME="period_start_pick" VALUE="{j_start}" ALT="Start time" DISABLED="TRUE">
+    <INPUT TYPE="text" NAME="period_start_pick" VALUE="{period_start}" ALT="Start time" DISABLED="TRUE">
     <a href="javascript:show_calendar('document.archive_search_form.period_start_pick', document.archive_search_form.period_start_pick.value);" alt="Click to select a date/time" title="Click to select a date/time">
     <img src="cal.gif" width="16" height="16" border="0"></a> 
     <a href="#" onClick="javascript: document.archive_search_form.period_start_pick.value=''" alt="Click here to clear field" title="Click here to clear field">
     <IMG SRC="redcross.jpg" BORDER=0></A>
-    to <INPUT TYPE="text" NAME="period_stop_pick" VALUE="{j_stop}" ALT="Stop time" DISABLED="TRUE">
+    to <INPUT TYPE="text" NAME="period_stop_pick" VALUE="{period_stop}" ALT="Stop time" DISABLED="TRUE">
     <a href="javascript:show_calendar('document.archive_search_form.period_stop_pick', document.archive_search_form.period_stop_pick.value);" alt="Click to select a date/time" title="Click to select a date/time">
     <img src="cal.gif" width="16" height="16" border="0"></a> 
     <a href="#" onClick="javascript: document.archive_search_form.period_stop_pick.value=''" alt="Click here to clear field" title="Click here to clear field">
