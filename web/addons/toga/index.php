@@ -153,38 +153,33 @@ function makeHeader() {
 
 	if( count( $filter ) > 0 && $view != "search" ) {
 
-		$filter_fields = explode( ",", $filterorder );
-		$onclick_href = array();
+		$my_ct = 1;
+		$filter_nr = count( $filter );
 
-		if( count( $filter_fields ) > 1 ) {
-			//for( $i = (count( $filter_fields )-2); $i >= 0; $i-- ) {
-				
-			//	for( $l = intval($i+1); $l <=(count($filter_fields)-1); $l++ ) {
-					//$onclick_href[$filter_fields[$i]] = $onclick_href[$filter_fields[$i]] . "removeFilter( '" . $filter_fields[$l] . "' );";
-			//		if( !isset( $onclick_href[$filter_fields[$i]] ) )
-			//			$onclick_href[$filter_fields[$i]] = "removeFilters( '".$filter_fields[$l];
-			//		else
-			//			$onclick_href[$filter_fields[$i]] = $onclick_href[$filter_fields[$i]] . " ". $filter_fields[$l];
-						
-			//	}
-			//	$onclick_href[$filter_fields[$i]] = $onclick_href[$filter_fields[$i]] . "' )";
-			//}
-			foreach( $filter_fields as $filtername ) {
+		foreach( $filter as $filtername=>$filterval ) {
 
-				$node_menu .= "<B>&gt;</B>\n";
-				if( isset( $onclick_href[$filtername] ) )
-					$node_menu .= "<B><A HREF =\"#\" onClick=\"".$onclick_href[$filtername]."\">$filtername: $filter[$filtername]</A></B> ";
-				else
-					$node_menu .= "<B>$filtername: $filter[$filtername]</B> ";
+			$node_menu .= "<B>&gt;</B>\n";
+
+			$href = "<A HREF=\"./?c=".rawurlencode($clustername);
+			$temp_ct = 0;
+			$n_filter = $filter;
+
+			foreach( $n_filter as $n_filtername=>$n_filterval ) {
+
+				if( $temp_ct < $my_ct )
+					$href .= "&". $n_filtername . "=" . $n_filterval;
+
+				$temp_ct++;
 			}
-		} else {
+			$href .= "\">";
 
-			foreach( $filter as $filtername=>$filterval ) {
-				$node_menu .= "<B>&gt;</B>\n";
+			if( $my_ct < $filter_nr )
+				$node_menu .= "<B>$href$filtername: $filterval</A></B> ";
+			else
 				$node_menu .= "<B>$filtername: $filterval</B> ";
-			}
-		}
 
+			$my_ct++;
+		}
 	}
 
 	if( $view == "search" ) {
