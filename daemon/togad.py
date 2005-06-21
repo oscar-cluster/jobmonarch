@@ -215,7 +215,7 @@ class DataSQLStore:
 
 			elif valname == 'nodes' and value:
 
-				ids = self.addNodes( value )
+				ids = self.addNodes( value, jobattrs['domain'] )
 				node_list = value
 
 		if action == 'insert':
@@ -229,12 +229,13 @@ class DataSQLStore:
 
 			self.setDatabase( "UPDATE jobs SET %s WHERE job_id=%s" %(update_str, job_id) )
 
-	def addNodes( self, hostnames ):
+	def addNodes( self, hostnames, domain ):
 
 		ids = [ ]
 
 		for node in hostnames:
 
+			node = '%s.%s' %( node, domain )
 			id = self.getNodeId( node )
 	
 			if not id:
