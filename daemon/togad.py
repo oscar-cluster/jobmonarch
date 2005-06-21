@@ -490,7 +490,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 					self.jobs_processed.append( jobid )
 
 				self.jobAttrs[ jobid ]['status'] = 'F'
-				self.jobAttrs[ jobid ]['stop_timestamp'] = str( int( jobinfo['reported'] ) + int( jobinfo['poll_interval'] ) )
+				self.jobAttrs[ jobid ]['stop_timestamp'] = str( mytime )
 
 				if not jobid in self.jobs_to_store:
 					self.jobs_to_store.append( jobid )
@@ -498,7 +498,8 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 		debug_msg( 1, printTime() + ' - torque_xml_thread(): Storing..' )
 
 		for jobid in self.jobs_to_store:
-			self.ds.storeJobInfo( jobid, self.jobAttrs[ jobid ] )	
+			if self.jobAttrs[ jobid ]['status'] not in [ 'E' ]:
+				self.ds.storeJobInfo( jobid, self.jobAttrs[ jobid ] )	
 
 		debug_msg( 1, printTime() + ' - torque_xml_thread(): Done storing.' )
 
