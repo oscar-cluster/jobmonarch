@@ -10,11 +10,11 @@ function validateFormInput() {
 
 	$none_set = 0;
 
-	//if( $id == '' or $user == '' or $name == '' or $start_from_time == '' or $start_to_time == '' or $queue == '' or $end_from_time == '' or $end_to_time == '') $none_set = 1;
+	if( $id == '' or $user == '' or $name == '' or $start_from_time == '' or $start_to_time == '' or $queue == '' or $end_from_time == '' or $end_to_time == '') $none_set = 1;
 
-	//if (!isset($id) and !isset($user) and !isset($start_from_time) and !isset($start_to_time) and !isset($end_from_time) and !isset($end_to_time) and !isset($queue) ) $none_set = 0;
+	if (!isset($id) and !isset($user) and !isset($start_from_time) and !isset($start_to_time) and !isset($end_from_time) and !isset($end_to_time) and !isset($queue) ) $none_set = 1;
 
-	if( $none_set ) {
+	if( $none_set == 1 ) {
 		$error = 1;
 		$error_msg = "<FONT COLOR=\"red\"><B>No search criteria set!</B></FONT>";
 	}
