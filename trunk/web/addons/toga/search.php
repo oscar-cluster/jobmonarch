@@ -10,13 +10,15 @@ function validateFormInput() {
 
 	$none_set = 0;
 
-	if( $id == '' or $user == '' or $name == '' or $start_from_time == '' or $start_to_time == '' or $queue == '' or $end_from_time == '' or $end_to_time == '') $none_set = 1;
-
-	if (!isset($id) and !isset($user) and !isset($start_from_time) and !isset($start_to_time) and !isset($end_from_time) and !isset($end_to_time) and !isset($queue) ) $none_set = 1;
-
-	if( $none_set == 1 ) {
+	if( $id == '' and $user == '' and $name == '' and $start_from_time == '' and $start_to_time == '' and $queue == '' and $end_from_time == '' and $end_to_time == '') {
 		$error = 1;
 		$error_msg = "<FONT COLOR=\"red\"><B>No search criteria set!</B></FONT>";
+	}
+
+	if( !is_numeric($id) and !$error and $id != '') {
+
+		$error = 1;
+		$error_msg = "<FONT COLOR=\"red\"><B>Id must be a number</B></FONT>";
 	}
 
 	// doe checks en set error en error_msg in case shit
@@ -346,7 +348,7 @@ function makeSearchPage() {
 					} elseif ($val[TYPE]=="string" or $val[SLOPE]=="zero" or $always_constant[$metricname] or ($max_graphs > 0 and $i > $max_graphs )) {
 						$textval = "$val[VAL] $val[UNITS]";
 					} else {
-						$graphargs = "z=small&c=$cluster_url&m=$metricname&h=$host_url&v=$val[VAL]&x=$max&n=$min&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop";
+						$graphargs = "z=small&c=$cluster_url&m=$metricname&h=$host_url&v=$val[VAL]&x=$max&n=$min&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop&min=$min&max=$max";
 					}
 					if ($textval) {
 						$cell="<td class=$class>".  "<b><a href=$host_link>$host</a></b><br>".  "<i>$metricname:</i> <b>$textval</b></td>";

@@ -328,12 +328,63 @@ $title = "$hostname";
 //	}
 //}
 
+function determineXGrid( $p_start, $p_stop ) {
+
+	$period = intval( $p_stop - $p_start );
+
+	// Syntax: <minor_grid_lines_time_declr>:<major_grid_lines_time_declr>:<labels_time_declr>:<offset>:<format>
+	//
+	// Where each <*time_declr*> = <time_type>:<time_interval>
+
+	// Less than 1 minute
+	if( $period < 60 )
+
+		$my_grid = "SECOND:5:SECOND:25:SECOND:25:0:%X";
+
+	// Less than 10 minutes
+	else if( $period < 600 )
+
+		$my_grid = "SECOND:50:MINUTE:1:MINUTE:1:0:%X";
+
+	// Less than 1 hour
+	else if( $period < 3600 )
+
+		$my_grid = "MINUTE:5:MINUTE:10:MINUTE:10:0:%X";
+
+	// Less than 1 day
+	//
+	else if( $period < 86400 ) 
+
+		$my_grid = "HOUR:1:HOUR:2:HOUR:2:0:%X";
+
+	// Less than 15 days
+	//
+	else if( $period < 1296000 )
+
+		$my_grid = "HOUR:30:DAY:1:DAY:1:0:%x";
+		
+	// Less than 30 days (a month)
+	//
+	elseif( $period < 2592000 )
+
+		$my_grid = "DAY:5:DAY:10:DAY:10:0:%x";
+
+	if( isset( $my_grid ) )
+
+		return "--x-grid $my_grid";
+
+	else
+		return "";
+}
+
+$xgrid = determineXGrid( $period_start, $period_stop );
+
 #
 # Generate the rrdtool graph command.
 #
 $command = RRDTOOL . " graph - --start $period_start --end $period_stop ".
 	"--width $width --height $height $upper_limit $lower_limit ".
-	"--title '$title' $vertical_label $extras $background ".
+	"--title '$title' $vertical_label $extras $background $xgrid ".
 	$series;
 
 $debug=0;

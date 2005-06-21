@@ -107,7 +107,7 @@ class TarchDbase {
 	function searchDbase( $id = null, $queue = null, $user = null, $name = null, $start_from_time = null, $start_to_time = null, $end_from_time = null, $end_to_time = null ) {
 
 		if( $id ) 
-			$query = "SELECT job_id FROM jobs WHERE job_id = '$id'";
+			$query = "SELECT job_id FROM jobs WHERE job_id = '$id' AND job_status = 'F'";
 		else {
 			$query_args = array();
 			
@@ -126,7 +126,7 @@ class TarchDbase {
 			if( $end_to_time )
 				$query_args[] = "job_stop_timestamp <= $end_to_time";
 
-			$query = "SELECT job_id FROM jobs WHERE ";
+			$query = "SELECT job_id FROM jobs WHERE job_status = 'F' AND ";
 			$extra_query_args = '';
 
 			foreach( $query_args as $myquery ) {
