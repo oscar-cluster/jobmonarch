@@ -113,7 +113,9 @@ function makeHeader() {
 		exit;
 	}
 
-	$tpl->assign( "refresh", $default_refresh );
+	if( $view != "search" ) {
+		$tpl->assign( "refresh", $default_refresh );
+
 	$tpl->assign( "date", date("r") );
 	$tpl->assign( "page_title", $title );
 
