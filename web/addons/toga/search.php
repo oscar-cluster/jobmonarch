@@ -211,12 +211,12 @@ function makeSearchPage() {
 			//
 			//$job_domain = $job[domain];
 
-			$myhost = $_SERVER[HTTP_HOST];
-			$myhf = explode( '.', $myhost );
-			$myhf = array_reverse( $myhf );
-			array_pop( $myhf );
-			$myhf = array_reverse( $myhf );
-			$job_domain = implode( '.', $myhf );
+			//$myhost = $_SERVER[HTTP_HOST];
+			//$myhf = explode( '.', $myhost );
+			//$myhf = array_reverse( $myhf );
+			//array_pop( $myhf );
+			//$myhf = array_reverse( $myhf );
+			//$job_domain = implode( '.', $myhf );
 			
 			//print_r( $job );
 			//printf( "job domain = %s\n", $job_domain);
@@ -296,7 +296,7 @@ function makeSearchPage() {
 				//$hosts_up = $jobs[$filter[id]][nodes];
 
 				foreach ($hosts_up as $host ) {
-					$host = $host. '.'.$job_domain;
+					//$host = $host. '.'.$job_domain;
 					$cpus = $metrics[$host]["cpu_num"][VAL];
 					if (!$cpus) $cpus=1;
 					$load_one  = $metrics[$host]["load_one"][VAL];
