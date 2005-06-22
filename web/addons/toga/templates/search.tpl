@@ -193,7 +193,7 @@ function setFilter( filtername, filterval ) {
   <TD></TD>
   <TD></TD>
   <TD></TD>
-  <TD>{form_error_msg}</TD>
+  <TD></TD>
   <TD>
   <INPUT TYPE="submit" VALUE="Search archive" onClick="setSearchTimestamps();">
   </TD>
@@ -201,7 +201,7 @@ function setFilter( filtername, filterval ) {
 </TR>
 
 </TABLE>
-<BR><BR>
+{form_error_msg}<BR><BR>
 <!-- START BLOCK : search_results -->
 
 <INPUT TYPE="HIDDEN" NAME="sortby" VALUE="{sortby}">
