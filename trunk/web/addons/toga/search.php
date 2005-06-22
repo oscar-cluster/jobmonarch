@@ -4,31 +4,61 @@ global $clustername, $tpl;
 
 function validateFormInput() {
 	global $clustername, $tpl, $id, $user, $name, $start_from_time, $start_to_time, $queue;
-	global $end_from_time, $end_to_time;
+	global $end_from_time, $end_to_time, $period_start, $period_stop;
 
 	$error = 0;
+	$error_msg = "<FONT COLOR=\"red\"><B>";
+	$show_msg = 0;
 
 	$none_set = 0;
 
 	if( $id == '' and $user == '' and $name == '' and $start_from_time == '' and $start_to_time == '' and $queue == '' and $end_from_time == '' and $end_to_time == '') {
 		$error = 1;
-		$error_msg = "<FONT COLOR=\"red\"><B>No search criteria set!</B></FONT>";
+		$show_msg = 1;
+		$error_msg .= "No search criteria set!";
 	}
 
 	if( !is_numeric($id) and !$error and $id != '') {
 
 		$error = 1;
-		$error_msg = "<FONT COLOR=\"red\"><B>Id must be a number</B></FONT>";
+		$show_msg = 1;
+		$error_msg .= "Id must be a number";
 	}
 
+	//printf( "period_start = %s period_stop = %s\n", $period_start, $period_stop );
+
+	if( !$error and $period_start != '' ) {
+		//printf( "period_start = %s period_stop = %s\n", $period_start, $period_stop );
+		$pstart_epoch = datetimeToEpoch( $period_start );
+		//printf( "period_start = %s period_stop = %s\n", $period_start, $period_stop );
+		if( $period_stop != '' ) {
+
+			$pstop_epoch = datetimeToEpoch( $period_stop );
+			printf( "pstop_epoch = %s pstart_epoch = %s\n", $pstop_epoch, $pstart_epoch );
+
+			if( $pstart_epoch > $pstop_epoch ) {
+
+				$show_msg = 1;
+				$error_msg .= "Graph timeperiod reset: start date/time can't be later than end";
+				$period_stop = '';
+				$period_start = '';
+			} else if( $pstop_epoch == $pstart_epoch ) {
+
+				$show_msg = 1;
+				$error_msg .= "Graph timeperiod reset: start and end date/time can't be the same";
+				$period_stop = '';
+				$period_start = '';
+			}
+		}
+	}
+
+	$error_msg .= "</B></FONT>";
 	// doe checks en set error en error_msg in case shit
 
-	if( $error) {
+	if( $show_msg )
 		$tpl->assign( "form_error_msg", $error_msg );
-		return 0;
-	} else {
-		return 1;
-	}
+
+	return ($error ? 0 : 1 );
 }
 
 function makeTime( $time ) {
@@ -107,6 +137,7 @@ function makeDate( $time ) {
 
 function datetimeToEpoch( $datetime ) {
 
+	//printf("datetime = %s\n", $datetime );
 	$datetime_fields = explode( ' ', $datetime );
 
 	$date = $datetime_fields[0];
@@ -118,13 +149,19 @@ function datetimeToEpoch( $datetime ) {
 	$months = $date_fields[1];
 	$years = $date_fields[2];
 
+	//printf( "days = %s months = %s years = %s\n", $days, $months, $years );
+
 	$time_fields = explode( ':', $time );
 
 	$hours = $time_fields[0];
 	$minutes = $time_fields[1];
 	$seconds = $time_fields[2];
 
+	//printf( "hours = %s minutes = %s seconds = %s\n", $hours, $minutes, $seconds );
+
 	$timestamp = mktime( $hours, $minutes, $seconds, $months, $days, $years );
+
+	//printf( "timestamp = %s\n", $timestamp );
 
 	return $timestamp;
 }
@@ -270,12 +307,12 @@ function makeSearchPage() {
 				//printf("job_start = %s job_stop = %s\n", $job_start, $job_stop );
 				//printf("start = %s stop = %s\n", $start, $stop );
 
-				if( !$period_start ) // Add an additional 5 minutes before
+				if( !$period_start ) // Add an extra 10% to graphstart
 					$period_start = intval( $job_start - (intval( $runningtime * 0.10 ) ) );
 				else
 					$period_start = datetimeToEpoch( $period_start );
 
-				if( !$period_stop ) // Add an additional 5 minutes after
+				if( !$period_stop ) // Add an extra 10% to graphend
 					$period_stop = intval( $job_stop + (intval( $runningtime * 0.10 ) ) );
 				else
 					$period_stop = datetimeToEpoch( $period_stop );
