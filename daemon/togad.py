@@ -499,7 +499,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 		debug_msg( 1, printTime() + ' - torque_xml_thread(): Storing..' )
 
 		for jobid in self.jobs_to_store:
-			if self.jobAttrs[ jobid ]['status'] not in [ 'E' ]:
+			if self.jobAttrs[ jobid ]['status'] in [ 'R', 'Q', 'F' ]:
 				self.ds.storeJobInfo( jobid, self.jobAttrs[ jobid ] )	
 
 		debug_msg( 1, printTime() + ' - torque_xml_thread(): Done storing.' )
