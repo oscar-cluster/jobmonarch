@@ -23,10 +23,33 @@ $filter = array();
 if( !isset($view) ) $view = "overview";
 if( !isset($sortorder) ) $sortorder = "asc";
 if( !isset($sortby) ) $sortby = "id";
-if( isset($queue) && ($queue!='')) $filter[queue]=$queue;
-if( isset($state) && ($state!='')) $filter[state]=$state;
-if( isset($user) && ($user!='')) $filter[user]=$user;
-if( isset($id) && ($id!='')) $filter[id]=$id;
+
+$myfilter_fields = explode( ",", $filterorder );
+
+// Fill filter array in order they were picked by user
+foreach( $myfilter_fields as $myfilter ) {
+
+	switch( $myfilter ) {
+
+		case "queue":
+			$filter[queue]=$queue;
+			break;
+		case "state":
+			$filter[state]=$state;
+			break;
+		case "user":
+			$filter[user]=$user;
+			break;
+		case "id":
+			$filter[id]=$id;
+			break;
+	}
+}
+
+//if( isset($queue) && ($queue!='')) $filter[queue]=$queue;
+//if( isset($state) && ($state!='')) $filter[state]=$state;
+//if( isset($user) && ($user!='')) $filter[user]=$user;
+//if( isset($id) && ($id!='')) $filter[id]=$id;
 
 function makeHeader() {
 
@@ -163,15 +186,23 @@ function makeHeader() {
 			$href = "<A HREF=\"./?c=".rawurlencode($clustername);
 			$temp_ct = 0;
 			$n_filter = $filter;
+			$my_filterorder = "";
+			$my_filters = array_keys( $filter );
 
 			foreach( $n_filter as $n_filtername=>$n_filterval ) {
 
-				if( $temp_ct < $my_ct )
+				if( $temp_ct < $my_ct ) {
 					$href .= "&". $n_filtername . "=" . $n_filterval;
+
+					if( $my_filterorder == "" )
+						$my_filterorder = $my_filters[$temp_ct];
+					else
+						$my_filterorder .= "," . $my_filters[$temp_ct];
+				}
 
 				$temp_ct++;
 			}
-			$href .= "\">";
+			$href .= "&filterorder=$my_filterorder\">";
 
 			if( $my_ct < $filter_nr )
 				$node_menu .= "<B>$href$filtername: $filterval</A></B> ";

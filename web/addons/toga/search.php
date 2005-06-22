@@ -34,7 +34,7 @@ function validateFormInput() {
 		if( $period_stop != '' ) {
 
 			$pstop_epoch = datetimeToEpoch( $period_stop );
-			printf( "pstop_epoch = %s pstart_epoch = %s\n", $pstop_epoch, $pstart_epoch );
+			//printf( "pstop_epoch = %s pstart_epoch = %s\n", $pstop_epoch, $pstart_epoch );
 
 			if( $pstart_epoch > $pstop_epoch ) {
 
