@@ -336,48 +336,77 @@ function determineXGrid( $p_start, $p_stop ) {
 	//
 	// Where each <*time_declr*> = <time_type>:<time_interval>
 
-	// Less than 1 minute
-	if( $period < 60 )
+	//$my_lines1 = intval( $period / 3.0 );
+	//$my_lines2 = intval( $period / 6.0 );
 
-		$my_grid = "SECOND:5:SECOND:25:SECOND:25:0:%X";
+	//$my_grid = "SECOND:$my_lines2:SECOND:$my_lines1:SECOND:$my_lines1:0:%R";
+
+	//return "--x-grid $my_grid";
+
+	// Less than 1 minute
+	if( $period < 60 ) {
+
+		$tm_formt = "%X";
+		$my_grid = "SECOND:15:SECOND:30:SECOND:30:0:$tm_formt";
 
 	// Less than 10 minutes
-	else if( $period < 600 )
+	} else if( $period < 600 ) {
 
-		$my_grid = "SECOND:50:MINUTE:1:MINUTE:1:0:%X";
+		$tm_formt = "%R";
+		$my_grid = "MINUTE:1:MINUTE:3:MINUTE:3:0:$tm_formt";
 
 	// Less than 1 hour
-	else if( $period < 3600 )
+	} else if( $period < 3600 ) {
 
-		$my_grid = "MINUTE:5:MINUTE:10:MINUTE:10:0:%X";
+		$tm_formt = "%R";
+		$my_grid = "MINUTE:5:MINUTE:15:MINUTE:15:0:$tm_formt";
+
+	// Less than 15 hour
+	} else if( $period < 3600 ) {
+
+		$tm_formt = "%R";
+		$my_grid = "HOUR:1:HOUR:2:HOUR:2:0:$tm_formt";
 
 	// Less than 1 day
 	//
-	else if( $period < 86400 ) 
+	} else if( $period < 86400 ) {
 
-		$my_grid = "HOUR:1:HOUR:2:HOUR:2:0:%X";
+		$tm_formt = "%R";
+		$my_grid = "HOUR:2:HOUR:5:HOUR:5:0:$tm_formt";
 
 	// Less than 15 days
 	//
-	else if( $period < 1296000 )
+	} else if( $period < 1296000 ) {
 
-		$my_grid = "HOUR:30:DAY:1:DAY:1:0:%x";
+		$tm_formt = "%e-%m";
+		$my_grid = "HOUR:1:DAY:3:DAY:3:0:'$tm_formt'";
 		
 	// Less than 30 days (a month)
 	//
-	elseif( $period < 2592000 )
+	} else if( $period < 2592000 ) {
 
-		$my_grid = "DAY:5:DAY:10:DAY:10:0:%x";
+		$tm_formt = "%e-%m";
+		$my_grid = "DAY:5:DAY:10:DAY:10:0:'$tm_formt'";
+	}
 
-	if( isset( $my_grid ) )
+	if( isset( $my_grid ) ) {
 
-		return "--x-grid $my_grid";
+		$ret_str = "--x-grid $my_grid";
+		return array($ret_str,$tm_formt);
 
-	else
-		return "";
+	} else {
+		return array( "", "" );
+	}
 }
 
-$xgrid = determineXGrid( $period_start, $period_stop );
+list( $xgrid, $t_format ) = determineXGrid( $period_start, $period_stop );
+
+if( $t_format != "" ) {
+	$prnt_start = strftime( $t_format, $period_start );
+	$prnt_stop = strftime( $t_format, $period_stop );
+	$series = "COMMENT:'     Timescale $prnt_start - $prnt_stop' " . $series;
+}
+
 
 #
 # Generate the rrdtool graph command.
