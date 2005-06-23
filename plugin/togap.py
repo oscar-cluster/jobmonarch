@@ -9,6 +9,10 @@ DEBUG_LEVEL = 0
 #
 DAEMONIZE = 1
 
+# Which multicast port (and gmond) to transmit to
+#
+GANGLIA_MULTICAST_PORT = 8649
+
 # Which Torque server to monitor
 #
 TORQUE_SERVER = 'localhost'
