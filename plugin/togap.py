@@ -128,7 +128,7 @@ class PBSDataGatherer:
 	def initPbsQuery( self ):
 
 		self.pq = None
-		self.pq = PBSQuery( 'login.irc.sara.nl' )
+		self.pq = PBSQuery()
 
 	def getAttr( self, attrs, name ):
 		"""Return certain attribute from dictionary, if exists"""
