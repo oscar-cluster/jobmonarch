@@ -117,7 +117,7 @@ class DataProcessor:
 		except NameError:
 			debug_msg( 10, 'Assuming /etc/gmond.conf for gmetric cmd (ommitting)' )
 
-		cmd = cmd + ' -n' + str( metricname )+ ' -v"' + str( metricval )+ '" -t' + str( valtype ) + ' -d' + str( self.dmax )
+		cmd = cmd + ' -p' + str( GANGLIA_MULTICAST_PORT ) + ' -n' + str( metricname )+ ' -v"' + str( metricval )+ '" -t' + str( valtype ) + ' -d' + str( self.dmax )
 
 		debug_msg( 10, printTime() + ' ' + cmd )
 		os.system( cmd )
