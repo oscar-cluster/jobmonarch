@@ -17,6 +17,8 @@ if( isset($queue) && ($queue!='')) $filter[queue]=$queue;
 
 function drawSmallClusterImage() {
 
+	global $clustername;
+
 	$ic = new ClusterImage( $clustername );
 	$ic->draw();
 }
