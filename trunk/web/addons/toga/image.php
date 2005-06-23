@@ -9,6 +9,7 @@ $httpvars = new HTTPVariables( $HTTP_GET_VARS, $_GET );
 $view = $httpvars->getHttpVar( "view" );
 $clustername = $httpvars->getClusterName();
 
+//printf("clustername = %s\n", $clustername );
 if( isset($id) && ($id!='')) $filter[id]=$id;
 if( isset($state) && ($state!='')) $filter[state]=$state;
 if( isset($user) && ($user!='')) $filter[user]=$user;
@@ -22,7 +23,7 @@ function drawSmallClusterImage() {
 
 function drawBigClusterImage() {
 
-	global $filter;
+	global $filter, $clustername;
 
 	$ic = new ClusterImage( $clustername );
 	foreach( $filter as $filtername=>$filtervalue ) {

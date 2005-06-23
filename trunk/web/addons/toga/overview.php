@@ -4,7 +4,7 @@ global $hosts_up, $m, $start, $end, $filterorder;
 
 //$tpl->assign("_ROOT.summary", "" );
 
-$data_gatherer = new DataGatherer();
+$data_gatherer = new DataGatherer( $clustername );
 
 //$tpl->assign( "self", "./index.php" );
 $tpl->assign( "clustername", $clustername );
