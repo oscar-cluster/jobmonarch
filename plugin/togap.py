@@ -9,10 +9,6 @@ DEBUG_LEVEL = 0
 #
 DAEMONIZE = 1
 
-# Which multicast port (and gmond) to transmit to
-#
-GANGLIA_MULTICAST_PORT = 8649
-
 # Which Torque server to monitor
 #
 TORQUE_SERVER = 'localhost'
@@ -117,7 +113,7 @@ class DataProcessor:
 		except NameError:
 			debug_msg( 10, 'Assuming /etc/gmond.conf for gmetric cmd (ommitting)' )
 
-		cmd = cmd + ' -p' + str( GANGLIA_MULTICAST_PORT ) + ' -n' + str( metricname )+ ' -v"' + str( metricval )+ '" -t' + str( valtype ) + ' -d' + str( self.dmax )
+		cmd = cmd + ' -n' + str( metricname )+ ' -v"' + str( metricval )+ '" -t' + str( valtype ) + ' -d' + str( self.dmax )
 
 		debug_msg( 10, printTime() + ' ' + cmd )
 		os.system( cmd )
