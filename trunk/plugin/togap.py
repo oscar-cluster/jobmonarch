@@ -9,6 +9,10 @@ DEBUG_LEVEL = 0
 #
 DAEMONIZE = 1
 
+# Which Torque server to monitor
+#
+TORQUE_SERVER = 'localhost'
+
 # How many seconds interval for polling of jobs
 #
 # this will effect directly how accurate the
@@ -128,7 +132,10 @@ class PBSDataGatherer:
 	def initPbsQuery( self ):
 
 		self.pq = None
-		self.pq = PBSQuery()
+		if( TORQUE_SERVER ):
+			self.pq = PBSQuery( TORQUE_SERVER )
+		else
+			self.pq = PBSQuery()
 
 	def getAttr( self, attrs, name ):
 		"""Return certain attribute from dictionary, if exists"""
