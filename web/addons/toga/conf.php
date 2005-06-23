@@ -23,7 +23,7 @@ $JOB_NODE_MARKING = "J";
 // XML Datasource for Toga
 // by default localhost's gmetad
 //
-$DATA_SOURCE = '127.0.0.1:8649';
+$DATA_SOURCE = '127.0.0.1:8651';
 
 // Is there a jobarchive?
 //

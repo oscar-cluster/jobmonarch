@@ -398,10 +398,11 @@ class DataGatherer {
 
 	var $xmlhandler, $data, $httpvars;
 
-	function DataGatherer() {
+	function DataGatherer( $cluster ) {
 
 		global $DATA_SOURCE;
-		
+	
+		//printf("dg cluster = %s\n", $cluster );
 		$ds_fields = explode( ':', $DATA_SOURCE );
 		$ds_ip = $ds_fields[0];
 		$ds_port = $ds_fields[1];
@@ -410,7 +411,7 @@ class DataGatherer {
 
 		$this->parser = xml_parser_create();
 		$this->httpvars = $httpvars;
-		$this->xmlhandler = new TorqueXMLHandler();
+		$this->xmlhandler = new TorqueXMLHandler( $cluster );
 		xml_set_element_handler( $this->parser, array( &$this->xmlhandler, 'startElement' ), array( &$this->xmlhandler, 'stopElement' ) );
 	}
 
@@ -451,13 +452,15 @@ class DataGatherer {
 
 class TorqueXMLHandler {
 
-	var $clusters, $heartbeat, $nodes, $jobs;
+	var $clusters, $heartbeat, $nodes, $jobs, $clustername, $proc_cluster;
 
-	function TorqueXMLHandler() {
+	function TorqueXMLHandler( $clustername ) {
 		$jobs = array();
 		$clusters = array();
-		$nodes = array();
+		$this->nodes = array();
 		$heartbeat = array();
+		$this->clustername = $clustername;
+		//printf(" cluster set to %s \n", $this->clustername );
 	}
 
 	function getCpus() {
@@ -488,24 +491,29 @@ class TorqueXMLHandler {
 
 		$jobid = null;
 
-		// printf( '%s=%s', $attrs[NAME], $attrs[VAL] );
+		//printf( '%s=%s', $attrs[NAME], $attrs[VAL] );
+
+		//printf( "clustername = %s proc_cluster = %s\n", $this->clustername, $this->proc_cluster );
 
 		if( $name == 'CLUSTER' ) {
 
-			$clustername = $attrs[VAL];
+			$this->proc_cluster = $attrs[NAME];
+			//printf( "Found cluster %s\n", $attrs[NAME] );
+			//print_r( $attrs );
 
-			if( !isset( $clusters[$clustername] ) )
-				$clusters[$clustername] = array();
+			//if( !isset( $clusters[$clustername] ) )
+			//	$clusters[$clustername] = array();
 
-		} else if( $name == 'HOST' ) {
+		} else if( $name == 'HOST' and $this->proc_cluster == $this->clustername) {
 
 			$hostname = $attrs[NAME];
 			$location = $attrs[LOCATION];
+			//printf( "Found node %s\n", $hostname );
 
 			if( !isset( $this->nodes[$hostname] ) )
-				$this->nodes[$hostname] = new NodeImage( $hostname );
+				$nodes[$hostname] = new NodeImage( $hostname );
 
-		} else if( $name == 'METRIC' and strstr( $attrs[NAME], 'TOGA' ) ) {
+		} else if( $name == 'METRIC' and strstr( $attrs[NAME], 'TOGA' ) and $this->proc_cluster == $this->clustername ) {
 
 			if( strstr( $attrs[NAME], 'TOGA-HEARTBEAT' ) ) {
 
@@ -575,12 +583,14 @@ class TorqueXMLHandler {
 							else
 								$my_node->addJob( $jobid, 1 );
 
-						$this->nodes[$host] = $my_node;
+						$nodes[$host] = $my_node;
 					}
 				}
 			}
 		}
 		$this->jobs = $jobs;
+		//print_r( $nodes );
+		$this->nodes = $nodes;
 	}
 
 	function stopElement( $parser, $name ) {
@@ -624,6 +634,7 @@ class TorqueXMLHandler {
 	}
 
 	function getNodes() {
+		//print_r( $this->nodes );
 		return $this->nodes;
 	}
 
@@ -793,7 +804,8 @@ class ClusterImage {
 
 	function ClusterImage( $clustername ) {
 
-		$this->dataget = new DataGatherer();
+		//printf( "image cluster = %s\n", $clustername );
+		$this->dataget = new DataGatherer( $clustername );
 		$this->clustername = $clustername;
 		$this->filters = array();
 	}
