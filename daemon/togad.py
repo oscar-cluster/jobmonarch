@@ -60,7 +60,7 @@ ARCHIVE_XMLSOURCE = "localhost:8651"
 #
 # Syntax: [ "<clustername>", "<clustername>" ]
 #
-ARCHIVE_DATASOURCES = [ "LISA Cluster" ]
+ARCHIVE_DATASOURCES = [ "LISA Cluster", "LISA Test Cluster" ]
 
 # Where to store the archived rrd's
 #
@@ -640,7 +640,7 @@ class XMLErrorHandler( xml.sax.handler.ErrorHandler ):
 			debug_msg( 0, 'No XML data found: Socket not (re)connected or datasource not available.' )
 			return 0
 
-		debug_msg( 0, 'Non-recoverable XML error ' + str( exception ) )
+		debug_msg( 0, 'FATAL ERROR: Non-recoverable XML error ' + str( exception ) )
 		sys.exit( 1 )
 
 	def warning( self, exception ):
@@ -691,7 +691,7 @@ class XMLGatherer:
 
 		if self.s is None:
 
-			debug_msg( 0, 'ERROR: Could not open socket or unable to connect to datasource!' )
+			debug_msg( 0, 'FATAL ERROR: Could not open socket or unable to connect to datasource!' )
 			sys.exit( 1 )
 
 	def disconnect( self ):
@@ -1304,17 +1304,14 @@ class RRDHandler:
 def daemon():
 	"""daemonized threading"""
 
-	print 'daemon 1'
 	# Fork the first child
 	#
 	pid = os.fork()
 
-	print 'daemon 2'
 	if pid > 0:
 
 		sys.exit(0)  # end parent
 
-	print 'daemon 3'
 	# creates a session and sets the process group ID 
 	#
 	os.setsid()
@@ -1323,18 +1320,15 @@ def daemon():
 	#
 	pid = os.fork()
 
-	print 'daemon 4'
 	if pid > 0:
 
 		sys.exit(0)  # end parent
 
-	print 'daemon 5'
 	# Go to the root directory and set the umask
 	#
 	os.chdir('/')
 	os.umask(0)
 
-	print 'daemon 6'
 	sys.stdin.close()
 	sys.stdout.close()
 	sys.stderr.close()
@@ -1343,7 +1337,6 @@ def daemon():
 	os.dup(0)
 	os.dup(0)
 
-	debug_msg( 0, 'daemon started.' )
 	run()
 
 def run():
