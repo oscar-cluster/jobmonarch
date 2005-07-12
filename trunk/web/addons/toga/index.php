@@ -150,7 +150,7 @@ function makeHeader() {
 
 	# Show grid.
 	$mygrid =  ($self == "unspecified") ? "" : $self;
-	$node_menu .= "<B>$mygrid $meta_designator</B> ";
+	$node_menu .= "<B><A HREF=\"../..\">$mygrid $meta_designator</A></B> ";
 	$node_menu .= "<B>&gt;</B>\n";
 
 	if ($physical)

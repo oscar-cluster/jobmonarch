@@ -910,7 +910,8 @@ class ClusterImage {
 		}
 
 		//printf( "imagecreate: %dx%d", ($nodes_per_row*$node_width), ($node_rows*$node_width) );
-		$image = imageCreateTrueColor( ($nodes_per_row*$node_width)+1, ($node_rows*$node_width)+1 );
+		//$image = imageCreateTrueColor( ($nodes_per_row*$node_width)+1, ($node_rows*$node_width)+1 );
+		$image = imageCreateTrueColor( $max_width, ($node_rows*$node_width)+1 );
 		$colorwhite = imageColorAllocate( $image, 255, 255, 255 );
 		imageFill( $image, 0, 0, $colorwhite );
 
