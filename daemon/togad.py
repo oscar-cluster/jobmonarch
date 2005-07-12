@@ -4,6 +4,7 @@ import xml.sax
 import xml.sax.handler
 import socket
 import sys
+import syslog
 import string
 import os
 import os.path
@@ -13,7 +14,7 @@ import random
 from types import *
 import DBClass
 
-# Specify debugging level here;
+# Specify debugging level here (only when _not_ DAEMONIZE)
 #
 # 11 = XML: metrics
 # 10 = XML: host, cluster, grid, ganglia
@@ -21,8 +22,28 @@ import DBClass
 # 8  = RRD file activity
 # 6  = SQL
 # 1  = daemon threading
+# 0  = errors
 #
+# default: 0
 DEBUG_LEVEL = 1
+
+# Enable logging to syslog?
+#
+USE_SYSLOG = 1
+
+# What level msg'es should be logged to syslog?
+#
+# default: lvl 0 (errors)
+#
+SYSLOG_LEVEL = 0
+
+# Which facility to use in syslog
+#
+# Syntax I.e.:
+# 	LOG_KERN, LOG_USER, LOG_MAIL, LOG_DAEMON, LOG_AUTH, LOG_LPR, 
+# 	LOG_NEWS, LOG_UUCP, LOG_CRON and LOG_LOCAL0 to LOG_LOCAL7
+#
+SYSLOG_FACILITY = syslog.LOG_DAEMON
 
 # Where is the gmetad.conf located
 #
@@ -57,7 +78,7 @@ TOGA_SQL_DBASE = "localhost/toga"
 
 # Wether or not to run as a daemon in background
 #
-DAEMONIZE = 0
+DAEMONIZE = 1
 
 ######################
 #                    #
@@ -102,7 +123,7 @@ class DataSQLStore:
 		try:
 			self.dbc     = DBClass.DB(self.db_vars)
 		except DBClass.DBError, details:
-			print 'Error in connection to db: %s' %details
+			debug_msg( 0, 'FATAL ERROR: Unable to connect to database!: ' +str(details) )
 			sys.exit(1)
 
 	def setDatabase(self, statement):
@@ -125,8 +146,7 @@ class DataSQLStore:
 				
 		except DBClass.DBError, detail:
 			operation = statement.split(' ')[0]
-			print "%s operation on database failed while performing\n'%s'\n%s"\
-				%(operation, statement, detail)
+			debug_msg( 0, 'FATAL ERROR: ' +operation+ ' on database failed while doing ['+statement+'] full msg: '+str(detail) )
 			sys.exit(1)
 
 		debug_msg( 6, 'doDatabase(): result: %s' %(result) )
@@ -334,44 +354,6 @@ class RRDMutator:
 class XMLProcessor:
 	"""Skeleton class for XML processor's"""
 
-	def daemon( self ):
-		"""Run as daemon forever"""
-
-		# Fork the first child
-		#
-		pid = os.fork()
-
-		if pid > 0:
-
-			sys.exit(0)  # end parent
-
-		# creates a session and sets the process group ID 
-		#
-		os.setsid()
-
-		# Fork the second child
-		#
-		pid = os.fork()
-
-		if pid > 0:
-
-			sys.exit(0)  # end parent
-
-		# Go to the root directory and set the umask
-		#
-		os.chdir('/')
-		os.umask(0)
-
-		sys.stdin.close()
-		sys.stdout.close()
-		sys.stderr.close()
-
-		os.open('/dev/null', 0)
-		os.dup(0)
-		os.dup(0)
-
-		self.run()
-
 	def run( self ):
 		"""Do main processing of XML here"""
 
@@ -392,15 +374,15 @@ class TorqueXMLProcessor( XMLProcessor ):
 	def run( self ):
 		"""Main XML processing"""
 
-		debug_msg( 1, printTime() + ' - torque_xml_thread(): started.' )
+		debug_msg( 1, 'torque_xml_thread(): started.' )
 
 		while( 1 ):
 
 			self.myXMLSource = self.myXMLGatherer.getFileObject()
-			debug_msg( 1, printTime() + ' - torque_xml_thread(): Parsing..' )
+			debug_msg( 1, 'torque_xml_thread(): Parsing..' )
 			xml.sax.parse( self.myXMLSource, self.myXMLHandler, self.myXMLError )
-			debug_msg( 1, printTime() + ' - torque_xml_thread(): Done parsing.' )
-			debug_msg( 1, printTime() + ' - torque_xml_thread(): Sleeping.. (%ss)' %(str( self.config.getLowestInterval() ) ) )
+			debug_msg( 1, 'torque_xml_thread(): Done parsing.' )
+			debug_msg( 1, 'torque_xml_thread(): Sleeping.. (%ss)' %(str( self.config.getLowestInterval() ) ) )
 			time.sleep( self.config.getLowestInterval() )
 
 class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
@@ -496,13 +478,13 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 				if not jobid in self.jobs_to_store:
 					self.jobs_to_store.append( jobid )
 
-		debug_msg( 1, printTime() + ' - torque_xml_thread(): Storing..' )
+		debug_msg( 1, 'torque_xml_thread(): Storing..' )
 
 		for jobid in self.jobs_to_store:
 			if self.jobAttrs[ jobid ]['status'] in [ 'R', 'Q', 'F' ]:
 				self.ds.storeJobInfo( jobid, self.jobAttrs[ jobid ] )	
 
-		debug_msg( 1, printTime() + ' - torque_xml_thread(): Done storing.' )
+		debug_msg( 1, 'torque_xml_thread(): Done storing.' )
 
 		self.jobs_processed = [ ]
 		self.jobs_to_store = [ ]
@@ -554,9 +536,9 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 
 		self.config = config
 		self.clusters = { }
-		debug_msg( 0, printTime() + ' - Checking existing toga rrd archive..' )
+		debug_msg( 1, 'Checking existing toga rrd archive..' )
 		self.gatherClusters()
-		debug_msg( 0, printTime() + ' - Check done.' )
+		debug_msg( 1, 'Check done.' )
 
 	def gatherClusters( self ):
 		"""Find all existing clusters in archive dir"""
@@ -646,7 +628,7 @@ class XMLErrorHandler( xml.sax.handler.ErrorHandler ):
 	def error( self, exception ):
 		"""Recoverable error"""
 
-		debug_msg( 0, 'Recoverable error ' + str( exception ) )
+		debug_msg( 0, 'Recoverable XML error ' + str( exception ) + ' ignored.' )
 
 	def fatalError( self, exception ):
 		"""Non-recoverable error"""
@@ -655,10 +637,10 @@ class XMLErrorHandler( xml.sax.handler.ErrorHandler ):
 
 		# Ignore 'no element found' errors
 		if exception_str.find( 'no element found' ) != -1:
-			debug_msg( 1, 'No XML data found: probably socket not (re)connected.' )
+			debug_msg( 0, 'No XML data found: Socket not (re)connected or datasource not available.' )
 			return 0
 
-		debug_msg( 0, 'Non-recoverable error ' + str( exception ) )
+		debug_msg( 0, 'Non-recoverable XML error ' + str( exception ) )
 		sys.exit( 1 )
 
 	def warning( self, exception ):
@@ -709,7 +691,7 @@ class XMLGatherer:
 
 		if self.s is None:
 
-			debug_msg( 0, 'Could not open socket' )
+			debug_msg( 0, 'ERROR: Could not open socket or unable to connect to datasource!' )
 			sys.exit( 1 )
 
 	def disconnect( self ):
@@ -775,16 +757,24 @@ class GangliaXMLProcessor( XMLProcessor ):
 
 				# threaded call to: self.processXML()
 				#
-				xml_thread = threading.Thread( None, self.processXML, 'xml_thread' )
-				xml_thread.start()
+				try:
+					xml_thread = threading.Thread( None, self.processXML, 'xml_thread' )
+					xml_thread.start()
+				except threading.error, msg:
+					debug_msg( 0, 'ERROR: Unable to start xml_thread!: '+str(msg))
+					#return 1
 
 			if not store_thread.isAlive():
 				# Store metrics every .. sec
 
 				# threaded call to: self.storeMetrics()
 				#
-				store_thread = threading.Thread( None, self.storeMetrics, 'store_thread' )
-				store_thread.start()
+				try:
+					store_thread = threading.Thread( None, self.storeMetrics, 'store_thread' )
+					store_thread.start()
+				except threading.error, msg:
+					debug_msg( 0, 'ERROR: Unable to start store_thread!: '+str(msg))
+					#return 1
 		
 			# Just sleep a sec here, to prevent daemon from going mad. We're all threads here anyway
 			time.sleep( 1 )	
@@ -792,71 +782,79 @@ class GangliaXMLProcessor( XMLProcessor ):
 	def storeMetrics( self ):
 		"""Store metrics retained in memory to disk"""
 
-		debug_msg( 1, printTime() + ' - ganglia_store_thread(): started.' )
-
 		# Store metrics somewhere between every 360 and 640 seconds
 		#
 		STORE_INTERVAL = random.randint( 360, 640 )
 
-		store_metric_thread = threading.Thread( None, self.storeThread, 'store_metric_thread' )
-		store_metric_thread.start()
+		try:
+			store_metric_thread = threading.Thread( None, self.storeThread, 'store_metric_thread' )
+			store_metric_thread.start()
+		except threading.error, msg:
+			debug_msg( 0, 'ERROR: Unable to start ganglia_store_thread()!: '+str(msg) )
+			return 1
 
-		debug_msg( 1, printTime() + ' - ganglia_store_thread(): Sleeping.. (%ss)' %STORE_INTERVAL )
+		debug_msg( 1, 'ganglia_store_thread(): started.' )
+
+		debug_msg( 1, 'ganglia_store_thread(): Sleeping.. (%ss)' %STORE_INTERVAL )
 		time.sleep( STORE_INTERVAL )
-		debug_msg( 1, printTime() + ' - ganglia_store_thread(): Done sleeping.' )
+		debug_msg( 1, 'ganglia_store_thread(): Done sleeping.' )
 
 		if store_metric_thread.isAlive():
 
-			debug_msg( 1, printTime() + ' - ganglia_store_thread(): storemetricthread() still running, waiting to finish..' )
+			debug_msg( 1, 'ganglia_store_thread(): storemetricthread() still running, waiting to finish..' )
 			store_metric_thread.join( STORE_TIMEOUT ) # Maximum time is for storing thread to finish
-			debug_msg( 1, printTime() + ' - ganglia_store_thread(): Done waiting.' )
+			debug_msg( 1, 'ganglia_store_thread(): Done waiting.' )
 
-		debug_msg( 1, printTime() + ' - ganglia_store_thread(): finished.' )
+		debug_msg( 1, 'ganglia_store_thread(): finished.' )
 
 		return 0
 
 	def storeThread( self ):
 		"""Actual metric storing thread"""
 
-		debug_msg( 1, printTime() + ' - ganglia_store_metric_thread(): started.' )
-		debug_msg( 1, printTime() + ' - ganglia_store_metric_thread(): Storing data..' )
+		debug_msg( 1, 'ganglia_store_metric_thread(): started.' )
+		debug_msg( 1, 'ganglia_store_metric_thread(): Storing data..' )
 		ret = self.myXMLHandler.storeMetrics()
-		debug_msg( 1, printTime() + ' - ganglia_store_metric_thread(): Done storing.' )
-		debug_msg( 1, printTime() + ' - ganglia_store_metric_thread(): finished.' )
+		debug_msg( 1, 'ganglia_store_metric_thread(): Done storing.' )
+		debug_msg( 1, 'ganglia_store_metric_thread(): finished.' )
 		
 		return ret
 
 	def processXML( self ):
 		"""Process XML"""
 
-		debug_msg( 1, printTime() + ' - xmlthread(): started.' )
+		try:
+			parsethread = threading.Thread( None, self.parseThread, 'parsethread' )
+			parsethread.start()
+		except threading.error, msg:
+			debug_msg( 0, 'ERROR: Unable to start ganglia_xml_thread()!: ' + str(msg) )
+			return 1
 
-		parsethread = threading.Thread( None, self.parseThread, 'parsethread' )
-		parsethread.start()
+		debug_msg( 1, 'ganglia_xml_thread(): started.' )
 
-		debug_msg( 1, printTime() + ' - ganglia_xml_thread(): Sleeping.. (%ss)' %self.config.getLowestInterval() )
+		debug_msg( 1, 'ganglia_xml_thread(): Sleeping.. (%ss)' %self.config.getLowestInterval() )
 		time.sleep( float( self.config.getLowestInterval() ) )	
-		debug_msg( 1, printTime() + ' - ganglia_xml_thread(): Done sleeping.' )
+		debug_msg( 1, 'ganglia_xml_thread(): Done sleeping.' )
 
 		if parsethread.isAlive():
 
-			debug_msg( 1, printTime() + ' - ganglia_xml_thread(): parsethread() still running, waiting to finish..' )
+			debug_msg( 1, 'ganglia_xml_thread(): parsethread() still running, waiting (%ss) to finish..' %PARSE_TIMEOUT )
 			parsethread.join( PARSE_TIMEOUT ) # Maximum time for XML thread to finish
-			debug_msg( 1, printTime() + ' - ganglia_xml_thread(): Done waiting.' )
+			debug_msg( 1, 'ganglia_xml_thread(): Done waiting.' )
 
-		debug_msg( 1, printTime() + ' - ganglia_xml_thread(): finished.' )
+		debug_msg( 1, 'ganglia_xml_thread(): finished.' )
 
 		return 0
 
 	def parseThread( self ):
 		"""Actual parsing thread"""
 
-		debug_msg( 1, printTime() + ' - ganglia_parse_thread(): started.' )
-		debug_msg( 1, printTime() + ' - ganglia_parse_thread(): Parsing XML..' )
+		debug_msg( 1, 'ganglia_parse_thread(): started.' )
+		debug_msg( 1, 'ganglia_parse_thread(): Parsing XML..' )
 		self.myXMLSource = self.myXMLGatherer.getFileObject()
 		ret = xml.sax.parse( self.myXMLSource, self.myXMLHandler, self.myXMLError )
-		debug_msg( 1, printTime() + ' - ganglia_parse_thread(): Done parsing.' )
-		debug_msg( 1, printTime() + ' - ganglia_parse_thread(): finished.' )
+		debug_msg( 1, 'ganglia_parse_thread(): Done parsing.' )
+		debug_msg( 1, 'ganglia_parse_thread(): finished.' )
 
 		return ret
 
@@ -1247,7 +1245,7 @@ class RRDHandler:
 			try:
 				os.makedirs( rrd_dir )
 
-			except OSError, msg:
+			except os.OSError, msg:
 
 				if msg.find( 'File exists' ) != -1:
 
@@ -1303,23 +1301,85 @@ class RRDHandler:
 
 		return 0
 
-def main():
-	"""Program startup"""
+def daemon():
+	"""daemonized threading"""
+
+	print 'daemon 1'
+	# Fork the first child
+	#
+	pid = os.fork()
+
+	print 'daemon 2'
+	if pid > 0:
+
+		sys.exit(0)  # end parent
+
+	print 'daemon 3'
+	# creates a session and sets the process group ID 
+	#
+	os.setsid()
+
+	# Fork the second child
+	#
+	pid = os.fork()
+
+	print 'daemon 4'
+	if pid > 0:
+
+		sys.exit(0)  # end parent
+
+	print 'daemon 5'
+	# Go to the root directory and set the umask
+	#
+	os.chdir('/')
+	os.umask(0)
+
+	print 'daemon 6'
+	sys.stdin.close()
+	sys.stdout.close()
+	sys.stderr.close()
+
+	os.open('/dev/null', 0)
+	os.dup(0)
+	os.dup(0)
+
+	debug_msg( 0, 'daemon started.' )
+	run()
+
+def run():
+	"""Threading start"""
 
 	myTorqueProcessor = TorqueXMLProcessor()
 	myGangliaProcessor = GangliaXMLProcessor()
 
-	if DAEMONIZE:
-		torque_xml_thread = threading.Thread( None, myTorqueProcessor.daemon, 'torque_proc_thread' )
-		ganglia_xml_thread = threading.Thread( None, myGangliaProcessor.daemon, 'ganglia_proc_thread' )
-	else:
+	try:
 		torque_xml_thread = threading.Thread( None, myTorqueProcessor.run, 'torque_proc_thread' )
 		ganglia_xml_thread = threading.Thread( None, myGangliaProcessor.run, 'ganglia_proc_thread' )
 
-	torque_xml_thread.start()
-	ganglia_xml_thread.start()
+		torque_xml_thread.start()
+		ganglia_xml_thread.start()
+		
+	except threading.error, msg:
+		debug_msg( 0, 'FATAL ERROR: Unable to start main threads!: '+ str(msg) )
+		syslog.closelog()
+		sys.exit(1)
+		
+	debug_msg( 0, 'main threading started.' )
 
+def main():
+	"""Program startup"""
+
+	if( DAEMONIZE and USE_SYSLOG ):
+		syslog.openlog( 'jobarchived', syslog.LOG_NOWAIT, SYSLOG_FACILITY )
+
+	if DAEMONIZE:
+		daemon()
+	else:
+		run()
+
+#
 # Global functions
+#
 
 def check_dir( directory ):
 	"""Check if directory is a proper directory. I.e.: Does _not_ end with a '/'"""
@@ -1330,10 +1390,13 @@ def check_dir( directory ):
 	return directory
 
 def debug_msg( level, msg ):
-	"""Only print msg if it is not below our debug level"""
+	"""Only print msg if correct levels"""
 
-	if (DEBUG_LEVEL >= level):
-		sys.stderr.write( msg + '\n' )
+	if (not DAEMONIZE and DEBUG_LEVEL >= level):
+		sys.stderr.write( printTime() + ' - ' + msg + '\n' )
+	
+	if (DAEMONIZE and USE_SYSLOG and SYSLOG_LEVEL >= level):
+		syslog.syslog( msg )
 
 def printTime( ):
 	"""Print current time in human readable format"""
