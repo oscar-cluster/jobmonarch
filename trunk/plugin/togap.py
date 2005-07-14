@@ -242,7 +242,7 @@ class PBSDataGatherer:
 				nodeslist = count_mynodes
 			else:
 				start_timestamp = ''
-				nodeslit = ''
+				nodeslist = ''
 
 			myAttrs = { }
 			myAttrs['name'] = name
