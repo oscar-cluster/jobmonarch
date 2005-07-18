@@ -118,7 +118,7 @@ class DataProcessor:
 		debug_msg( 10, printTime() + ' ' + cmd )
 		os.system( cmd )
 
-class PBSDataGatherer:
+class DataGatherer:
 
 	jobs = { }
 
@@ -134,7 +134,7 @@ class PBSDataGatherer:
 		self.pq = None
 		if( TORQUE_SERVER ):
 			self.pq = PBSQuery( TORQUE_SERVER )
-		else
+		else:
 			self.pq = PBSQuery()
 
 	def getAttr( self, attrs, name ):
@@ -446,7 +446,7 @@ def debug_msg( level, msg ):
 def main():
 	"""Application start"""
 
-	gather = PBSDataGatherer()
+	gather = DataGatherer()
 	if DAEMONIZE:
 		gather.daemon()
 	else:
