@@ -760,7 +760,7 @@ class GangliaXMLProcessor( XMLProcessor ):
 				try:
 					xml_thread = threading.Thread( None, self.processXML, 'xml_thread' )
 					xml_thread.start()
-				except threading.error, msg:
+				except error, msg:
 					debug_msg( 0, 'ERROR: Unable to start xml_thread!: '+str(msg))
 					#return 1
 
@@ -772,7 +772,7 @@ class GangliaXMLProcessor( XMLProcessor ):
 				try:
 					store_thread = threading.Thread( None, self.storeMetrics, 'store_thread' )
 					store_thread.start()
-				except threading.error, msg:
+				except error, msg:
 					debug_msg( 0, 'ERROR: Unable to start store_thread!: '+str(msg))
 					#return 1
 		
@@ -789,7 +789,7 @@ class GangliaXMLProcessor( XMLProcessor ):
 		try:
 			store_metric_thread = threading.Thread( None, self.storeThread, 'store_metric_thread' )
 			store_metric_thread.start()
-		except threading.error, msg:
+		except error, msg:
 			debug_msg( 0, 'ERROR: Unable to start ganglia_store_thread()!: '+str(msg) )
 			return 1
 
@@ -826,7 +826,7 @@ class GangliaXMLProcessor( XMLProcessor ):
 		try:
 			parsethread = threading.Thread( None, self.parseThread, 'parsethread' )
 			parsethread.start()
-		except threading.error, msg:
+		except error, msg:
 			debug_msg( 0, 'ERROR: Unable to start ganglia_xml_thread()!: ' + str(msg) )
 			return 1
 
@@ -1352,7 +1352,7 @@ def run():
 		torque_xml_thread.start()
 		ganglia_xml_thread.start()
 		
-	except threading.error, msg:
+	except error, msg:
 		debug_msg( 0, 'FATAL ERROR: Unable to start main threads!: '+ str(msg) )
 		syslog.closelog()
 		sys.exit(1)
