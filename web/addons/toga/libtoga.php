@@ -383,6 +383,8 @@ class DataSource {
 			return;
 		}
 
+		stream_set_timeout( $fp, 30 );
+
 		while ( !feof( $fp ) ) {
 			
 			$data .= fread( $fp, 16384 );
