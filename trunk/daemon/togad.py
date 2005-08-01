@@ -9,6 +9,7 @@ import string
 import os
 import os.path
 import time
+import thread
 import threading
 import random
 from types import *
@@ -380,7 +381,12 @@ class TorqueXMLProcessor( XMLProcessor ):
 
 			self.myXMLSource = self.myXMLGatherer.getFileObject()
 			debug_msg( 1, 'torque_xml_thread(): Parsing..' )
-			xml.sax.parse( self.myXMLSource, self.myXMLHandler, self.myXMLError )
+
+			try:
+				xml.sax.parse( self.myXMLSource, self.myXMLHandler, self.myXMLError )
+			except socket.error, msg:
+				debug_msg( 0, 'ERROR: Socket error in connect to datasource!: %s' %msg )
+				
 			debug_msg( 1, 'torque_xml_thread(): Done parsing.' )
 			debug_msg( 1, 'torque_xml_thread(): Sleeping.. (%ss)' %(str( self.config.getLowestInterval() ) ) )
 			time.sleep( self.config.getLowestInterval() )
@@ -760,7 +766,7 @@ class GangliaXMLProcessor( XMLProcessor ):
 				try:
 					xml_thread = threading.Thread( None, self.processXML, 'xml_thread' )
 					xml_thread.start()
-				except error, msg:
+				except thread.error, msg:
 					debug_msg( 0, 'ERROR: Unable to start xml_thread!: '+str(msg))
 					#return 1
 
@@ -772,7 +778,7 @@ class GangliaXMLProcessor( XMLProcessor ):
 				try:
 					store_thread = threading.Thread( None, self.storeMetrics, 'store_thread' )
 					store_thread.start()
-				except error, msg:
+				except thread.error, msg:
 					debug_msg( 0, 'ERROR: Unable to start store_thread!: '+str(msg))
 					#return 1
 		
@@ -789,7 +795,7 @@ class GangliaXMLProcessor( XMLProcessor ):
 		try:
 			store_metric_thread = threading.Thread( None, self.storeThread, 'store_metric_thread' )
 			store_metric_thread.start()
-		except error, msg:
+		except thread.error, msg:
 			debug_msg( 0, 'ERROR: Unable to start ganglia_store_thread()!: '+str(msg) )
 			return 1
 
@@ -815,10 +821,12 @@ class GangliaXMLProcessor( XMLProcessor ):
 		debug_msg( 1, 'ganglia_store_metric_thread(): started.' )
 		debug_msg( 1, 'ganglia_store_metric_thread(): Storing data..' )
 		ret = self.myXMLHandler.storeMetrics()
+		if ret > 0:
+			debug_msg( 0, 'ganglia_store_metric_thread(): UNKNOWN ERROR %s while storing Metrics!' %str(ret) )
 		debug_msg( 1, 'ganglia_store_metric_thread(): Done storing.' )
 		debug_msg( 1, 'ganglia_store_metric_thread(): finished.' )
 		
-		return ret
+		return 0
 
 	def processXML( self ):
 		"""Process XML"""
@@ -826,7 +834,7 @@ class GangliaXMLProcessor( XMLProcessor ):
 		try:
 			parsethread = threading.Thread( None, self.parseThread, 'parsethread' )
 			parsethread.start()
-		except error, msg:
+		except thread.error, msg:
 			debug_msg( 0, 'ERROR: Unable to start ganglia_xml_thread()!: ' + str(msg) )
 			return 1
 
@@ -852,11 +860,16 @@ class GangliaXMLProcessor( XMLProcessor ):
 		debug_msg( 1, 'ganglia_parse_thread(): started.' )
 		debug_msg( 1, 'ganglia_parse_thread(): Parsing XML..' )
 		self.myXMLSource = self.myXMLGatherer.getFileObject()
-		ret = xml.sax.parse( self.myXMLSource, self.myXMLHandler, self.myXMLError )
+
+		try:
+			xml.sax.parse( self.myXMLSource, self.myXMLHandler, self.myXMLError )
+		except socket.error, msg:
+			debug_msg( 0, 'ERROR: Socket error in connect to datasource!: %s' %msg )
+
 		debug_msg( 1, 'ganglia_parse_thread(): Done parsing.' )
 		debug_msg( 1, 'ganglia_parse_thread(): finished.' )
 
-		return ret
+		return 0
 
 class GangliaConfigParser:
 
@@ -1114,7 +1127,12 @@ class RRDHandler:
 				while len( self.myMetrics[ hostname ][ metricname ] ) > 0:
 
 					if len( self.myMetrics[ hostname ][ metricname ] ) > 0:
-						metrics_to_store.append( self.myMetrics[ hostname ][ metricname ].pop( 0 ) )
+
+						try:
+							metrics_to_store.append( self.myMetrics[ hostname ][ metricname ].pop( 0 ) )
+						except IndexError, msg:
+
+							pass
 
 				self.slot.release()
 				#
@@ -1352,7 +1370,7 @@ def run():
 		torque_xml_thread.start()
 		ganglia_xml_thread.start()
 		
-	except error, msg:
+	except thread.error, msg:
 		debug_msg( 0, 'FATAL ERROR: Unable to start main threads!: '+ str(msg) )
 		syslog.closelog()
 		sys.exit(1)
