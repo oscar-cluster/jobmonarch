@@ -24,7 +24,14 @@ if( !isset($view) ) $view = "overview";
 if( !isset($sortorder) ) $sortorder = "asc";
 if( !isset($sortby) ) $sortby = "id";
 
-$myfilter_fields = explode( ",", $filterorder );
+if( isset( $filterorder ) && ($filterorder!='') ) {
+	$myfilter_fields = explode( ",", $filterorder );
+} else {
+	if( isset($queue) && ($queue!='')) $filter[queue]=$queue;
+	if( isset($state) && ($state!='')) $filter[state]=$state;
+	if( isset($user) && ($user!='')) $filter[user]=$user;
+	if( isset($id) && ($id!='')) $filter[id]=$id;
+}
 
 // Fill filter array in order they were picked by user
 foreach( $myfilter_fields as $myfilter ) {
@@ -232,6 +239,8 @@ function makeHeader() {
 	$tpl->assign("node_menu", $node_menu);
 
 	if( array_key_exists( "id", $filter ) ) {
+
+		//print_r( $context_metrics );
 
 		if (is_array($context_metrics) ) {
 			$metric_menu = "<B>Metric</B>&nbsp;&nbsp;"
