@@ -409,7 +409,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 		just one XML statement with all info
 		"""
 		
-		heartbeat = 0
+		self.heartbeat = 0
 		
 		jobinfo = { }
 
@@ -448,7 +448,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 						jobinfo[ valname ] = value
 
 				if check_change:
-					if self.jobinfoChanged( self.jobAttrs, job_id, jobinfo ) and self.jobAttrs[ job_id ]['status'] != 'E':
+					if self.jobinfoChanged( self.jobAttrs, job_id, jobinfo ) and self.jobAttrs[ job_id ]['status'] in [ 'R', 'Q' ]:
 						self.jobAttrs[ job_id ]['stop_timestamp'] = ''
 						self.jobAttrs[ job_id ] = self.setJobAttrs( self.jobAttrs[ job_id ], jobinfo )
 						if not job_id in self.jobs_to_store:
@@ -466,34 +466,35 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 	def endDocument( self ):
 		"""When all metrics have gone, check if any jobs have finished"""
 
-		for jobid, jobinfo in self.jobAttrs.items():
+		if self.heartbeat:
+			for jobid, jobinfo in self.jobAttrs.items():
 
-			# This is an old job, not in current jobinfo list anymore
-			# it must have finished, since we _did_ get a new heartbeat
-			#
-			mytime = int( jobinfo['reported'] ) + int( jobinfo['poll_interval'] )
+				# This is an old job, not in current jobinfo list anymore
+				# it must have finished, since we _did_ get a new heartbeat
+				#
+				mytime = int( jobinfo['reported'] ) + int( jobinfo['poll_interval'] )
 
-			if mytime < self.heartbeat and jobid not in self.jobs_processed and jobinfo['status'] == 'R':
+				if mytime < self.heartbeat and jobid not in self.jobs_processed and jobinfo['status'] == 'R':
 
-				if not jobid in self.jobs_processed:
-					self.jobs_processed.append( jobid )
+					if not jobid in self.jobs_processed:
+						self.jobs_processed.append( jobid )
 
-				self.jobAttrs[ jobid ]['status'] = 'F'
-				self.jobAttrs[ jobid ]['stop_timestamp'] = str( mytime )
+					self.jobAttrs[ jobid ]['status'] = 'F'
+					self.jobAttrs[ jobid ]['stop_timestamp'] = str( mytime )
 
-				if not jobid in self.jobs_to_store:
-					self.jobs_to_store.append( jobid )
+					if not jobid in self.jobs_to_store:
+						self.jobs_to_store.append( jobid )
 
-		debug_msg( 1, 'torque_xml_thread(): Storing..' )
+			debug_msg( 1, 'torque_xml_thread(): Storing..' )
 
-		for jobid in self.jobs_to_store:
-			if self.jobAttrs[ jobid ]['status'] in [ 'R', 'Q', 'F' ]:
-				self.ds.storeJobInfo( jobid, self.jobAttrs[ jobid ] )	
+			for jobid in self.jobs_to_store:
+				if self.jobAttrs[ jobid ]['status'] in [ 'R', 'Q', 'F' ]:
+					self.ds.storeJobInfo( jobid, self.jobAttrs[ jobid ] )	
 
-		debug_msg( 1, 'torque_xml_thread(): Done storing.' )
+			debug_msg( 1, 'torque_xml_thread(): Done storing.' )
 
-		self.jobs_processed = [ ]
-		self.jobs_to_store = [ ]
+			self.jobs_processed = [ ]
+			self.jobs_to_store = [ ]
 
 	def setJobAttrs( self, old, new ):
 		"""
