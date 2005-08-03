@@ -199,10 +199,110 @@ function timeToEpoch( $time ) {
         return $myepoch;
 }
 
+function sortJobs( $jobs, $nodes, $sortby, $sortorder ) {
+
+	//printf("sortby = %s sortorder = %s\n", $sortby, $sortorder );
+
+        $sorted = array();
+
+        $cmp = create_function( '$a, $b',
+                "global \$sortby, \$sortorder;".
+
+                "if( \$a == \$b ) return 0;".
+
+                "if (\$sortorder==\"desc\")".
+                        "return ( \$a < \$b ) ? 1 : -1;".
+                "else if (\$sortorder==\"asc\")".
+                        "return ( \$a > \$b ) ? 1 : -1;" );
+
+	//print_r( $jobs );
+
+        foreach( $jobs as $jobid => $jobattrs ) {
+
+                        $state = $jobattrs[status];
+                        $user = $jobattrs[owner];
+                        $queue = $jobattrs[queue];
+                        $name = $jobattrs[name];
+                        $req_cpu = $jobattrs[requested_time];
+                        $req_memory = $jobattrs[requested_memory];
+
+                        //if( $state == 'R' )
+			$mynodes = count( $nodes[$jobid] );
+                        //else
+                        //        $nodes = $jobattrs[nodes];
+
+                        $ppn = (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
+                        $cpus = $mynodes * $ppn;
+                        $start_time = (int) $jobattrs[start_timestamp];
+                        $stop_time = (int) $jobattrs[stop_timestamp];
+                        $runningtime = $stop_time - $start_time;
+
+                        switch( $sortby ) {
+                                case "id":
+                                        $sorted[$jobid] = $jobid;
+                                        break;
+
+                                case "state":
+                                        $sorted[$jobid] = $state;
+                                        break;
+
+                                case "user":
+                                        $sorted[$jobid] = $user;
+                                        break;
+
+                                case "queue":
+                                        $sorted[$jobid] = $queue;
+                                        break;
+
+                                case "name":
+                                        $sorted[$jobid] = $name;
+                                        break;
+
+                                case "req_cpu":
+                                        $sorted[$jobid] = timeToEpoch( $req_cpu );
+                                        break;
+
+                                case "req_mem":
+                                        $sorted[$jobid] = $req_memory;
+                                        break;
+
+                                case "nodes":
+                                        $sorted[$jobid] = $mynodes;
+                                        break;
+
+                                case "cpus":
+                                        $sorted[$jobid] = $cpus;
+                                        break;
+
+                                case "start":
+                                        $sorted[$jobid] = $start_time;
+                                        break;
+
+                                case "runningtime":
+                                        $sorted[$jobid] = $runningtime;
+                                        break;
+
+                                default:
+                                        break;
+
+                        }
+        }
+
+        //uasort( $sorted, $cmp );
+        if( $sortorder == "asc" )
+                arsort( $sorted );
+        else if( $sortorder == "desc" )
+                asort( $sorted );
+
+	//print_r( $sorted );
+
+        return array_keys( $sorted );
+}
+
 function makeSearchPage() {
 	global $clustername, $tpl, $id, $user, $name, $start_from_time, $start_to_time, $queue;
 	global $end_from_time, $end_to_time, $filter, $default_showhosts, $m, $hosts_up;
-	global $period_start, $period_stop;
+	global $period_start, $period_stop, $sortby, $sortorder;
 
 	$metricname = $m;
 	//printf("job_start = %s job_stop = %s\n", $job_start, $job_stop );
@@ -221,6 +321,8 @@ function makeSearchPage() {
 	if( validateFormInput() ) {
 
 		$tpl->newBlock( "search_results" );
+		$tpl->assign( "sortby", $sortby);
+		$tpl->assign( "sortorder", $sortorder);
 		$tdb = new TarchDbase();
 		if( $start_from_time ) $start_from_time = datetimeToEpoch( $start_from_time );
 		if( $start_to_time ) $start_to_time = datetimeToEpoch( $start_to_time );
@@ -228,10 +330,31 @@ function makeSearchPage() {
 		if( $end_to_time ) $end_to_time = datetimeToEpoch( $end_to_time );
 		$search_ids = $tdb->searchDbase( $id, $queue, $user, $name, $start_from_time, $start_to_time, $end_from_time, $end_to_time );
 
-		foreach( $search_ids as $foundid ) {
+		$jobs = array();
+		$nodes = array();
 
-			$job = $tdb->getJobArray( $foundid );
-			$nodes = $tdb->getNodesForJob( $foundid );
+		//print_r( $search_ids );
+
+		foreach( $search_ids as $myid ) {
+
+			//printf( "myid %s\n", $myid );
+			$jobs[$myid] = $tdb->getJobArray( $myid );
+			$nodes[$myid] = $tdb->getNodesForJob( $myid );
+		}
+
+		//print_r( $nodes );
+		$sorted_search = sortJobs( $jobs, $nodes, $sortby, $sortorder );
+
+		//print_r( $sorted_search );
+		foreach( $sorted_search as $sortid ) {
+
+			$job = $jobs[$sortid];
+			//print_r( $job );
+			$foundid = $job[id];
+			//printf( "foundid %s\n", $foundid );
+
+			//$job = $tdb->getJobArray( $foundid );
+			//$nodes = $tdb->getNodesForJob( $foundid );
 
 			$tpl->newBlock( "node" );
 			$tpl->assign( "id", $job[id] );
@@ -242,7 +365,7 @@ function makeSearchPage() {
 			$tpl->assign( "req_cpu", makeTime( TimeToEpoch( $job[requested_time] ) ) );
 			$tpl->assign( "req_memory", $job[requested_memory] );
 
-			$nodes_nr = count( $nodes );
+			$nodes_nr = count( $nodes[$foundid] );
 
 			// need to replace later with domain stored from dbase
 			//
@@ -324,7 +447,7 @@ function makeSearchPage() {
 
 				$hosts_up = array();
 
-				foreach( $nodes as $mynode )
+				foreach( $nodes[$jobid] as $mynode )
 					$hosts_up[] = $mynode[hostname];
 
 				//print_r( $hosts_up );
