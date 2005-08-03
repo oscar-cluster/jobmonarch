@@ -1018,6 +1018,10 @@ class RRDHandler:
 	def memMetric( self, host, metric ):
 		"""Store metric from host in memory"""
 
+		# <ATOMIC>
+		#
+		self.slot.acquire()
+		
 		if self.myMetrics.has_key( host ):
 
 			if self.myMetrics[ host ].has_key( metric['name'] ):
@@ -1027,6 +1031,7 @@ class RRDHandler:
 					if mymetric['time'] == metric['time']:
 
 						# Allready have this metric, abort
+						self.slot.release()
 						return 1
 			else:
 				self.myMetrics[ host ][ metric['name'] ] = [ ]
@@ -1036,10 +1041,6 @@ class RRDHandler:
 
 		# Push new metric onto stack
 		# atomic code; only 1 thread at a time may access the stack
-
-		# <ATOMIC>
-		#
-		self.slot.acquire()
 
 		self.myMetrics[ host ][ metric['name'] ].append( metric )
 
@@ -1132,6 +1133,9 @@ class RRDHandler:
 							metrics_to_store.append( self.myMetrics[ hostname ][ metricname ].pop( 0 ) )
 						except IndexError, msg:
 
+							# Somehow sometimes myMetrics[ hostname ][ metricname ]
+							# is still len 0 when the statement is executed.
+							# Just ignore indexerror's..
 							pass
 
 				self.slot.release()
@@ -1159,9 +1163,12 @@ class RRDHandler:
 					update_rets.append( create_ret )
 					update_rets.append( update_ret )
 
-				if not (1) in update_rets:
+				# Lets ignore errors here for now, we need to make sure last update time
+				# is correct!
+				#
+				#if not (1) in update_rets:
 
-					self.memLastUpdate( hostname, metricname, metrics_to_store )
+				self.memLastUpdate( hostname, metricname, metrics_to_store )
 
 	def makeTimeSerial( self ):
 		"""Generate a time serial. Seconds since epoch"""
