@@ -402,14 +402,16 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 		self.jobs_processed = [ ]
 		self.jobs_to_store = [ ]
 
+	def startDocument( self ):
+
+		self.heartbeat = 0
+
 	def startElement( self, name, attrs ):
 		"""
 		This XML will be all gmetric XML
 		so there will be no specific start/end element
 		just one XML statement with all info
 		"""
-		
-		self.heartbeat = 0
 		
 		jobinfo = { }
 
