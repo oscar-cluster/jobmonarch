@@ -258,7 +258,7 @@ class DataGatherer:
 			myAttrs['domain'] = string.join( socket.getfqdn().split( '.' )[1:], '.' )
 			myAttrs['poll_interval'] = TORQUE_POLL_INTERVAL
 
-			if self.jobDataChanged( jobs, job_id, myAttrs ):
+			if self.jobDataChanged( jobs, job_id, myAttrs ) and myAttrs['status'] in [ 'R', 'Q' ]:
 				jobs[ job_id ] = myAttrs
 
 				#debug_msg( 10, printTime() + ' job %s state changed' %(job_id) )
