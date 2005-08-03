@@ -278,6 +278,10 @@ function sortJobs( $jobs, $nodes, $sortby, $sortorder ) {
                                         $sorted[$jobid] = $start_time;
                                         break;
 
+				case "finished":
+					$sorted[$jobid] = $stop_time;
+					break;
+
                                 case "runningtime":
                                         $sorted[$jobid] = $runningtime;
                                         break;
