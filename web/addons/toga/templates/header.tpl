@@ -40,16 +40,16 @@
       <B>{alt_view}</B>
      </TD>
 
-<!-- START BLOCK : search -->
-     <TD><CENTER>
-       <A HREF="./?c={cluster_url}&view=search">
-       Jobarchive<BR>
-       <IMG SRC="./bricks.jpg" HEIGHT=50 WIDTH=50 ALT="Search the archive for {cluster}" TITLE="Search the archive for {cluster}" BORDER=0></A></CENTER>
-     </TD>
-<!-- END BLOCK : search -->
-
   </TR>
   </TABLE>
+
+<!-- START BLOCK : search -->
+     <TD align="right"><CENTER>
+       <A HREF="./?c={cluster_url}&view=search">
+       <B><I>Jobarchive</I></B><BR>
+       <IMG SRC="./document_archive.jpg" HEIGHT=100 ALT="Search the archive for {cluster}" TITLE="Search the archive for {cluster}" BORDER=0></A></CENTER>
+     </TD>
+<!-- END BLOCK : search -->
 
   </TD>
 </TR>
@@ -58,4 +58,5 @@
 <FONT SIZE="+1">
 {node_menu}
 </FONT>
+
 <HR SIZE="1" NOSHADE>
