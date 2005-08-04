@@ -401,7 +401,6 @@ function makeSearchPage() {
 			//print_r( $nodes );
 		}
 
-		
 		if( count( $search_ids ) == 1 ) {
 
 			$tpl->newBlock( "showhosts" );
@@ -451,10 +450,8 @@ function makeSearchPage() {
 
 				$hosts_up = array();
 
-				foreach( $nodes[$jobid] as $mynode )
+				foreach( $nodes[$id] as $mynode )
 					$hosts_up[] = $mynode[hostname];
-
-				//print_r( $hosts_up );
 
 				$sorted_hosts = array();
 				//$hosts_up = $jobs[$filter[id]][nodes];
