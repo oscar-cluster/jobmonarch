@@ -576,7 +576,7 @@ function makeOverview() {
 	//$tpl->assignGlobal("f_cpus_nr", $f_cpus );
 	//$tpl->assignGlobal("f_jobs_nr", $f_jobs );
 
-	if( array_key_exists( "id", $filter ) and $start_time ) {
+	if( intval($view_jobs) == 1 and $start_time ) {
 		$tpl->newBlock( "showhosts" );
 
 		# Present a width list
