@@ -26,6 +26,14 @@ TORQUE_POLL_INTERVAL = 10
 #
 #GMOND_CONF = '/etc/gmond.conf'
 
+# Wether or not to detect differences in 
+# time from Torque server and local time.
+#
+# Ideally both machines (if not the same)
+# should have the same time (via ntp or whatever)
+#
+DETECT_TIME_DIFFS = 1
+
 from PBSQuery import PBSQuery
 import sys
 import time
@@ -126,6 +134,7 @@ class DataGatherer:
 		"""Setup appropriate variables"""
 
 		self.jobs = { }
+		self.timeoffset = 0
 		self.dp = DataProcessor()
 		self.initPbsQuery()
 
@@ -219,6 +228,16 @@ class DataGatherer:
 					if nodeslist.count( host ) == 0:
 						nodeslist.append( host )
 
+				if DETECT_TIME_DIFFS:
+
+					# If a job start if later than our current date,
+					# that must mean the Torque server's time is later
+					# than our local time.
+				
+					if int(start_timestamp) > int( int(self.cur_time) + int(self.timeoffset) ):
+
+						self.timeoffset = int( int(start_timestamp) - int(self.cur_time) )
+
 			elif status == 'Q':
 				start_timestamp = ''
 				count_mynodes = 0
@@ -253,7 +272,7 @@ class DataGatherer:
 			myAttrs['ppn'] = ppn
 			myAttrs['status'] = status
 			myAttrs['start_timestamp'] = start_timestamp
-			myAttrs['reported'] = str( int( self.cur_time ) )
+			myAttrs['reported'] = str( int( int( self.cur_time ) + int( self.timeoffset ) ) )
 			myAttrs['nodes'] = nodeslist
 			myAttrs['domain'] = string.join( socket.getfqdn().split( '.' )[1:], '.' )
 			myAttrs['poll_interval'] = TORQUE_POLL_INTERVAL
@@ -276,7 +295,7 @@ class DataGatherer:
 	def submitJobData( self, jobs ):
 		"""Submit job info list"""
 
-		self.dp.multicastGmetric( 'TOGA-HEARTBEAT', str( int( self.cur_time ) ) )
+		self.dp.multicastGmetric( 'TOGA-HEARTBEAT', str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
 
 		# Now let's spread the knowledge
 		#
