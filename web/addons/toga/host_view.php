@@ -5,6 +5,36 @@ include_once "./libtoga.php";
 //$tpl->assignInclude("extra", "templates/host_extra.tpl");
 //$tpl->prepare();
 
+function datetimeToEpoch( $datetime ) {
+
+        //printf("datetime = %s\n", $datetime );
+        $datetime_fields = explode( ' ', $datetime );
+
+        $date = $datetime_fields[0];
+        $time = $datetime_fields[1];
+
+        $date_fields = explode( '-', $date );
+
+        $days = $date_fields[0];
+        $months = $date_fields[1];
+        $years = $date_fields[2];
+
+        //printf( "days = %s months = %s years = %s\n", $days, $months, $years );
+
+        $time_fields = explode( ':', $time );
+
+        $hours = $time_fields[0];
+        $minutes = $time_fields[1];
+        $seconds = $time_fields[2];
+
+        //printf( "hours = %s minutes = %s seconds = %s\n", $hours, $minutes, $seconds );
+
+        $timestamp = mktime( $hours, $minutes, $seconds, $months, $days, $years );
+
+        //printf( "timestamp = %s\n", $timestamp );
+
+        return $timestamp;
+}
 
 function makeHostView() {
 
@@ -23,6 +53,13 @@ function makeHostView() {
 	$tpl->assign("node_image", "../../".node_image($metrics));
 	$tpl->assign("sort",$sort);
 	$tpl->assign("range",$range);
+
+	if( !is_numeric( $period_start ) ) {
+		$period_start = datetimeToEpoch( $period_start );
+	}
+	if( !is_numeric( $period_stop ) ) {
+		$period_stop = datetimeToEpoch( $period_stop );
+	}
 
 	if($hosts_up)
 	      $tpl->assign("node_msg", "This host is up and running."); 

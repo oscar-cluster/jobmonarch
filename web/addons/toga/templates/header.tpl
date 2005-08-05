@@ -5,10 +5,22 @@
 <META http-equiv="Content-type" content="text/html; charset=utf-8">
 <META http-equiv="refresh" content="{refresh}{redirect}" >
 <LINK rel="stylesheet" href="./styles.css" type="text/css">
+<SCRIPT LANGUAGE="javascript" SRC="ts_picker.js"></SCRIPT>
+<SCRIPT LANGUAGE="javascript">
+
+        function setPeriodTimestamps() {
+
+                document.{form_name}.period_start.value = document.{form_name}.period_start_pick.value;
+                document.{form_name}.period_stop.value = document.{form_name}.period_stop_pick.value;
+        }
+
+</SCRIPT>
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
-<FORM ACTION="./?c={cluster}&view={view}" METHOD="GET" NAME="{form_name}">
+<FORM ACTION="./" METHOD="GET" NAME="{form_name}">
+<INPUT TYPE="HIDDEN" NAME="c" VALUE="{cluster}">
+<INPUT TYPE="HIDDEN" NAME="view" VALUE="{view}">
 <TABLE WIDTH="100%">
 <TR>
   <TD ROWSPAN="2" WIDTH="150">
@@ -34,7 +46,30 @@
      <TD COLSPAN=1>
      {metric_menu} &nbsp;&nbsp;
      {range_menu}&nbsp;&nbsp;
-     {sort_menu}
+     {sort_menu}&nbsp;&nbsp;
+<!-- START BLOCK : timeperiod -->
+    <INPUT TYPE="HIDDEN" NAME="period_start" VALUE="{period_start}">
+    <INPUT TYPE="HIDDEN" NAME="period_stop" VALUE="{period_stop}">
+    <INPUT TYPE="HIDDEN" NAME="h" VALUE="{hostname}">
+    <BR><BR><B>Graph timeperiod/ from
+    <INPUT TYPE="text" NAME="period_start_pick" VALUE="{period_start}" ALT="Start time" DISABLED="TRUE">
+    <a href="javascript:show_calendar('document.{form_name}.period_start_pick', document.{form_name}.period_start_pick.value);" alt="Click to select a date/time" title="Click to select a date/time">
+    <img src="cal.gif" width="16" height="16" border="0"></a>
+    <a href="#" onClick="javascript: document.{form_name}.period_start_pick.value=''" alt="Click here to clear field" title="Click here to clear field">
+    <IMG SRC="redcross.jpg" BORDER=0></A>
+    to <INPUT TYPE="text" NAME="period_stop_pick" VALUE="{period_stop}" ALT="Stop time" DISABLED="TRUE">
+    <a href="javascript:show_calendar('document.{form_name}.period_stop_pick', document.{form_name}.period_stop_pick.value);" alt="Click to select a date/time" title="Click to select a date/time">
+    <img src="cal.gif" width="16" height="16" border="0"></a>
+    <a href="#" onClick="javascript: document.{form_name}.period_stop_pick.value=''" alt="Click here to clear field" title="Click here to clear field">
+    </B>
+    <IMG SRC="redcross.jpg" BORDER=0></A>
+
+<!-- START BLOCK : hostview -->
+    <INPUT TYPE="HIDDEN" NAME="job_start" VALUE="{job_start}">
+    <INPUT TYPE="HIDDEN" NAME="job_stop" VALUE="{job_stop}">
+<!-- END BLOCK : hostview -->
+    <INPUT TYPE="submit" onClick="setPeriodTimestamps();" VALUE="Refresh graphs">
+<!-- END BLOCK : timeperiod -->
      </TD>
      <TD>
       <B>{alt_view}</B>
