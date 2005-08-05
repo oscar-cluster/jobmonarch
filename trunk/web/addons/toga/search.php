@@ -166,11 +166,6 @@ function datetimeToEpoch( $datetime ) {
 	return $timestamp;
 }
 
-function epochToDatetime( $epoch ) {
-
-	return strftime( "%d-%m-%Y %H:%M:%S", $epoch );
-}
-
 function timeToEpoch( $time ) {
 
         $time_fields = explode( ':', $time );
@@ -445,8 +440,12 @@ function makeSearchPage() {
 
 				//printf("start = %s stop = %s\n", $start, $stop );
 
+		                $tpl->gotoBlock( "timeperiod" );
+
 				$tpl->assign("period_start", epochToDatetime( $period_start ) );
 				$tpl->assign("period_stop", epochToDatetime( $period_stop ) );
+
+		                $tpl->gotoBlock( "_ROOT" );
 
 				$hosts_up = array();
 

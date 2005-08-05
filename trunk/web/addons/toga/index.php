@@ -58,6 +58,11 @@ foreach( $myfilter_fields as $myfilter ) {
 //if( isset($user) && ($user!='')) $filter[user]=$user;
 //if( isset($id) && ($id!='')) $filter[id]=$id;
 
+function epochToDatetime( $epoch ) {
+
+        return strftime( "%d-%m-%Y %H:%M:%S", $epoch );
+}
+
 function makeHeader() {
 
 	global $tpl, $grid, $context, $initgrid;
@@ -68,6 +73,7 @@ function makeHeader() {
 	global $metrics, $reports, $m, $default_metric;
 	global $default_refresh, $filterorder, $view;
 	global $TARCHD, $period_start, $period_stop, $h, $id;
+	global $job_start, $job_stop;
 	
 	if( isset($default_metric) and !isset($m) )
 		$metricname = $default_metric;
@@ -222,52 +228,78 @@ function makeHeader() {
 		}
 	}
 
-	if( $view == "search" ) {
+	$m = $metricname;
+
+
+	$tpl->gotoBlock( "_ROOT" );
+	$tpl->assignGlobal("view", $view);
+
+	if( array_key_exists( "id", $filter ) or isset($hostname) ) {
+
+		//print_r( $context_metrics );
+
+		if( !isset( $hostname ) ) {
+
+			if (is_array($context_metrics) ) {
+				$metric_menu = "<B>Metric</B>&nbsp;&nbsp;"
+					."<SELECT NAME=\"m\" OnChange=\"".$form_name.".submit();\">\n";
+
+				sort($context_metrics);
+				foreach( $context_metrics as $k ) {
+					$url = rawurlencode($k);
+					$metric_menu .= "<OPTION VALUE=\"$url\" ";
+					if ($k == $metricname )
+						$metric_menu .= "SELECTED";
+					$metric_menu .= ">$k\n";
+				}
+				$metric_menu .= "</SELECT>\n";
+
+			}
+		}
+
+		$tpl->assign("metric_menu", $metric_menu );
+
+		if( $view == "search" or $view == "host" ) {
+			$tpl->newBlock("timeperiod");
+			if( is_numeric( $period_start ) ) {
+				$period_start = epochToDatetime( $period_start );
+			}
+			if( is_numeric( $period_stop ) ) {
+				$period_stop = epochToDatetime( $period_stop );
+			}
+			$tpl->assign("period_start", $period_start );
+			$tpl->assign("period_stop", $period_stop );
+			$tpl->assign("hostname", $hostname );
+
+			if( $view == "host" ) {
+				$tpl->newBlock("hostview");
+				$tpl->assign("job_start", $job_start );
+				$tpl->assign("job_stop", $job_stop );
+			}
+		} 
+
+	}
+
+	if( $view == "search" or $view == "host" ) {
 
 		$node_menu .= "<B>&gt;</B>\n";
 		$node_menu .= "<B>Jobarchive</B> ";
-		$tpl->assign("view", "search" );
 		$form_name = "archive_search_form";
 		$tpl->assignGlobal("form_name", $form_name );
 
 	} else {
 		$form_name = "toga_form";
 		$tpl->assignGlobal("form_name", $form_name );
-		$tpl->assign("view", "overview" );
 	}
-
-	$tpl->assign("node_menu", $node_menu);
-
-	if( array_key_exists( "id", $filter ) ) {
-
-		//print_r( $context_metrics );
-
-		if (is_array($context_metrics) ) {
-			$metric_menu = "<B>Metric</B>&nbsp;&nbsp;"
-				."<SELECT NAME=\"m\" OnChange=\"".$form_name.".submit();\">\n";
-
-			sort($context_metrics);
-			foreach( $context_metrics as $k ) {
-				$url = rawurlencode($k);
-				$metric_menu .= "<OPTION VALUE=\"$url\" ";
-				if ($k == $metricname )
-					$metric_menu .= "SELECTED";
-				$metric_menu .= ">$k\n";
-			}
-			$metric_menu .= "</SELECT>\n";
-
-		}
-
-		$tpl->assign("metric_menu", $metric_menu );
-	}
-	$m = $metricname;
 
 	if( $TARCHD ) {
 		$tpl->newBlock( "search" );
 		$tpl->assignGlobal( "cluster_url", rawurlencode($clustername) );
 		$tpl->assignGlobal( "cluster", $clustername );
-		$tpl->gotoBlock( "_ROOT" );
 	}
+	$tpl->gotoBlock( "_ROOT" );
+	$tpl->assignGlobal( "cluster", $clustername );
+	$tpl->assign("node_menu", $node_menu);
 
 	# Make sure that no data is cached..
 	header ("Expires: Mon, 26 Jul 1997 05:00:00 GMT");    # Date in the past
