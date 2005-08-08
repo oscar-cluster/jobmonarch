@@ -236,7 +236,23 @@ class DataSQLStore:
 
 			elif valname == 'nodes' and value:
 
-				ids = self.addNodes( value, jobattrs['domain'] )
+				node_invalid = 0
+
+				if len(value) == 1:
+				
+					for node_char in str(value[0]):
+
+						if string.find( string.digits, node_char ) == -1:
+
+							node_invalid = 1
+
+				if not node_invalid:
+
+					ids = self.addNodes( value, jobattrs['domain'] )
+
+				else:
+					ids = [ ]
+
 				node_list = value
 
 		if action == 'insert':
@@ -249,6 +265,9 @@ class DataSQLStore:
 		elif action == 'update':
 
 			self.setDatabase( "UPDATE jobs SET %s WHERE job_id=%s" %(update_str, job_id) )
+
+			if len( ids ) > 0:
+				self.addJobNodes( job_id, ids )
 
 	def addNodes( self, hostnames, domain ):
 
