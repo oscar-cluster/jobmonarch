@@ -153,6 +153,17 @@ class DataSQLStore:
 		debug_msg( 6, 'doDatabase(): result: %s' %(result) )
 		return result
 
+	def getJobNodeId( self, job_id, node_id ):
+
+		id = self.getDatabase( "SELECT job_id,node_id FROM job_nodes WHERE job_id = '%s' AND node_id = '%s'" %(job_id, node_id) )
+		if len( id ) > 0:
+
+			if len( id[0] ) > 0 and id[0] != '':
+			
+				return 1
+
+		return 0
+
 	def getNodeId( self, hostname ):
 
 		id = self.getDatabase( "SELECT node_id FROM nodes WHERE node_hostname = '%s'" %hostname )
@@ -236,38 +247,38 @@ class DataSQLStore:
 
 			elif valname == 'nodes' and value:
 
-				node_invalid = 0
+				node_valid = 1
 
 				if len(value) == 1:
 				
-					for node_char in str(value[0]):
+					if jobattrs['status'] == 'Q':
 
-						if string.find( string.digits, node_char ) == -1:
+						node_valid = 0
 
-							node_invalid = 1
+					else:
 
-				if not node_invalid:
+						node_valid = 0
+
+						for node_char in str(value[0]):
+
+							if string.find( string.digits, node_char ) != -1 and not node_valid:
+
+								node_valid = 1
+
+				if node_valid:
 
 					ids = self.addNodes( value, jobattrs['domain'] )
-
-				else:
-					ids = [ ]
-
-				node_list = value
 
 		if action == 'insert':
 
 			self.setDatabase( "INSERT INTO jobs ( %s ) VALUES ( %s )" %( insert_col_str, insert_val_str ) )
 
-			if len( ids ) > 0:
-				self.addJobNodes( job_id, ids )
-
 		elif action == 'update':
 
 			self.setDatabase( "UPDATE jobs SET %s WHERE job_id=%s" %(update_str, job_id) )
 
-			if len( ids ) > 0:
-				self.addJobNodes( job_id, ids )
+		if len( ids ) > 0:
+			self.addJobNodes( job_id, ids )
 
 	def addNodes( self, hostnames, domain ):
 
@@ -289,7 +300,10 @@ class DataSQLStore:
 	def addJobNodes( self, jobid, nodes ):
 
 		for node in nodes:
-			self.addJobNode( jobid, node )
+
+			if not self.getJobNodeId( jobid, node ):
+
+				self.addJobNode( jobid, node )
 
 	def addJobNode( self, jobid, nodeid ):
 
