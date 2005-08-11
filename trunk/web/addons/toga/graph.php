@@ -170,7 +170,9 @@ if (isset($graph)) {
 				$cpu_str = ":'CPUs'";
 				$run_str = ":'Running Processes'";
 			} else {
-
+				$load_str = "";
+				$cpu_str = "";
+				$run_str = "";
 			}
 
 			$series .= "DEF:'load_one${def_nr}'='${rrd_dir}/load_one.rrd':'sum':AVERAGE "
@@ -399,21 +401,25 @@ function determineXGrid( $p_start, $p_stop ) {
 	}
 }
 
-list( $xgrid, $t_format ) = determineXGrid( $period_start, $period_stop );
+#list( $xgrid, $t_format ) = determineXGrid( $period_start, $period_stop );
 
-if( $t_format != "" ) {
-	$prnt_start = strftime( $t_format, $period_start );
-	$prnt_stop = strftime( $t_format, $period_stop );
-	$series = "COMMENT:'     Timescale $prnt_start - $prnt_stop' " . $series;
-}
+#if( $t_format != "" ) {
+#	$prnt_start = strftime( $t_format, $period_start );
+#	$prnt_stop = strftime( $t_format, $period_stop );
+#	$series .= " COMMENT:'     Timescale $prnt_start - $prnt_stop' ";
+#}
 
 
 #
 # Generate the rrdtool graph command.
 #
+#$command = RRDTOOL . " graph - --start $period_start --end $period_stop ".
+#	"--width $width --height $height $upper_limit $lower_limit ".
+#	"--title '$title' $vertical_label $extras $background $xgrid ".
+#	$series;
 $command = RRDTOOL . " graph - --start $period_start --end $period_stop ".
-	"--width $width --height $height $upper_limit $lower_limit ".
-	"--title '$title' $vertical_label $extras $background $xgrid ".
+	"--width $width --height $height ".
+	"--title '$title' $extras $background ".
 	$series;
 
 $debug=0;
