@@ -59,7 +59,7 @@ class DataProcessor:
 		# 'A metric will be deleted DMAX seconds after it is received, and
 	        # DMAX=0 means eternal life.'
 
-		self.dmax = str( int( TORQUE_POLL_INTERVAL ) )
+		self.dmax = str( int( int( TORQUE_POLL_INTERVAL ) + 2 ) )
 
 		try:
 			gmond_file = GMOND_CONF
