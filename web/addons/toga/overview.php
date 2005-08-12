@@ -678,7 +678,11 @@ function makeOverview() {
 				} else {
 					$load_color = load_color($host_load[$host]);
 					$graphargs = ($reports[$metricname]) ? "g=$metricname&" : "m=$metricname&";
-					$graphargs .= "z=small&c=$cluster_url&h=$host_url&l=$load_color" ."&v=$val[VAL]&x=$max&n=$min&r=job&jr=$jobrange&js=$jobstart";
+					$graphargs .= "z=small&c=$cluster_url&h=$host_url&l=$load_color" ."&v=$val[VAL]&r=job&jr=$jobrange&js=$jobstart";
+					if( $max > 0 ) {
+
+						$graphargs .= "&x=$max&n=$min";
+					}
 				}
 				if ($textval) {
 					$cell="<td class=$class>".  "<b><a href=$host_link>$host</a></b><br>".  "<i>$metricname:</i> <b>$textval</b></td>";

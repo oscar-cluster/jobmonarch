@@ -409,6 +409,7 @@ function determineXGrid( $p_start, $p_stop ) {
 #	$series .= " COMMENT:'     Timescale $prnt_start - $prnt_stop' ";
 #}
 
+$lower_limit = "--lower-limit 0";
 
 #
 # Generate the rrdtool graph command.
@@ -418,7 +419,7 @@ function determineXGrid( $p_start, $p_stop ) {
 #	"--title '$title' $vertical_label $extras $background $xgrid ".
 #	$series;
 $command = RRDTOOL . " graph - --start $period_start --end $period_stop ".
-	"--width $width --height $height ".
+	"--width $width --height $height $lower_limit ".
 	"--title '$title' $extras $background ".
 	$series;
 
