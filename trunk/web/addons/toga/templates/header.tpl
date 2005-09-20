@@ -51,7 +51,7 @@
     <INPUT TYPE="HIDDEN" NAME="period_start" VALUE="{period_start}">
     <INPUT TYPE="HIDDEN" NAME="period_stop" VALUE="{period_stop}">
     <INPUT TYPE="HIDDEN" NAME="h" VALUE="{hostname}">
-    <BR><BR><B>Graph timeperiod/ from
+    <BR><BR><B>Graph/ from
     <INPUT TYPE="text" NAME="period_start_pick" VALUE="{period_start}" ALT="Start time" DISABLED="TRUE">
     <a href="javascript:show_calendar('document.{form_name}.period_start_pick', document.{form_name}.period_start_pick.value);" alt="Click to select a date/time" title="Click to select a date/time">
     <img src="cal.gif" width="16" height="16" border="0"></a>
