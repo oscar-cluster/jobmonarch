@@ -1,22 +1,11 @@
 <HR>
 <CENTER>
 <FONT SIZE="-1" class=footer>
-Toga Web Frontend version {togaweb-version}
-<A HREF="http://toga.sourceforge.net/">Check for Updates.</A><BR>
+Job Monarch version {monarch-version}<BR>
 
-Toga Archive Daemon <i>(tarchd)</i> version {togaarch-version}
-<A HREF="http://toga.sourceforge.net/">Check for Updates.</A><BR>
-
-Toga Plugin Daemon <i>(tplugd)</i> version {togaplug-version}
-<A HREF="http://toga.sourceforge.net/">Check for Updates.</A><BR>
-
-Gmetad Web Frontend version {webfrontend-version}
+Ganglia version {webfrontend-version}
 <A HREF="http://ganglia.sourceforge.net/downloads.php?component=ganglia-webfrontend&amp;
 version={webfrontend-version}">Check for Updates.</A><BR>
-
-Gmetad Web Backend <i>({webbackend-component})</i> version {webbackend-version}
-<A HREF="http://ganglia.sourceforge.net/downloads.php?component={webbackend-component}&amp;
-version={webbackend-version}">Check for Updates.</A><BR>
 
 Downloading and parsing ganglia's XML tree took {parsetime}.<BR>
 Images created with <A HREF="http://www.rrdtool.com/">RRDTool</A>.<BR>

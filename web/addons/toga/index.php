@@ -309,12 +309,11 @@ function makeHeader() {
 }
 
 function makeFooter() {
-	global $tpl, $version, $parsetime;
+	global $tpl, $version, $parsetime, $monarchversion;
 
+	$tpl->gotoBlock( "_ROOT" );
 	$tpl->assign("webfrontend-version",$version["webfrontend"]);
-	$tpl->assign("togaweb-version", "0.1");
-	$tpl->assign("togaarch-version", "0.1");
-	$tpl->assign("togaplug-version", "0.1");
+	$tpl->assign("monarch-version", $monarchversion);
 
 	if ($version["gmetad"]) {
 		$tpl->assign("webbackend-component", "gmetad");

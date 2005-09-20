@@ -51,6 +51,7 @@ class HTTPVariables {
 // Toga's conf
 //
 include_once "./conf.php";
+include_once "./version.php";
 
 global $GANGLIA_PATH;
 

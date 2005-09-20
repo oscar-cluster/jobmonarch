@@ -624,7 +624,11 @@ function makeOverview() {
 				$metricval = "m";
 						
 			foreach ($hosts_up as $host ) {
-				$host = $host. '.'.$domain;
+
+				$domain_len = 0 - strlen( $domain );
+				if( substr( $host, $domain_len ) != $domain ) {
+					$host = $host. '.'.$domain;
+				}
 				$cpus = $metrics[$host]["cpu_num"][VAL];
 				if (!$cpus) $cpus=1;
 				$load_one  = $metrics[$host]["load_one"][VAL];
