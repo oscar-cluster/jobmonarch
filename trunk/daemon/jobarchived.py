@@ -12,6 +12,7 @@ import time
 import thread
 import threading
 import random
+import re
 from types import *
 import DBClass
 
@@ -70,6 +71,11 @@ ARCHIVE_PATH = '/data/toga/rrds'
 # Amount of hours to store in one single archived .rrd
 #
 ARCHIVE_HOURS_PER_RRD = 12
+
+# Which metrics to exclude from archiving
+# NOTE: This can be a regexp or a string
+#
+ARCHIVE_EXCLUDE_METRICS = [ "^Temp_.*_.*", ".*_Temp_.*", ".*_RPM_.*", ".*_Battery_.*" ]
 
 # Toga's SQL dbase to use
 #
@@ -644,8 +650,22 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 		elif name == 'METRIC' and self.clusterName in ARCHIVE_DATASOURCES:
 
 			type = attrs.get( 'TYPE', "" )
+			
+			exclude_metric = False
+			
+			for ex_metricstr in ARCHIVE_EXCLUDE_METRICS:
 
-			if type not in UNSUPPORTED_ARCHIVE_TYPES:
+				orig_name = attrs.get( 'NAME', "" )	
+
+				if string.lower( orig_name ) == string.lower( ex_metricstr ):
+				
+					exclude_metric = True
+
+				elif re.match( ex_metricstr, orig_name ):
+
+					exclude_metric = True
+
+			if type not in UNSUPPORTED_ARCHIVE_TYPES and not exclude_metric:
 
 				myMetric = { }
 				myMetric['name'] = attrs.get( 'NAME', "" )
