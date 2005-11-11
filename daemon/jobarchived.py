@@ -454,7 +454,11 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 		
 		jobinfo = { }
 
-		if name == 'METRIC':
+		if name == 'CLUSTER':
+
+			self.clustername = attrs.get( 'NAME', "" )
+
+		elif name == 'METRIC' and self.clustername in ARCHIVE_DATASOURCES:
 
 			metricname = attrs.get( 'NAME', "" )
 
