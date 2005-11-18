@@ -513,7 +513,7 @@ class TorqueXMLHandler {
 			$location = $attrs[LOCATION];
 			//printf( "Found node %s\n", $hostname );
 
-			if( !isset( $this->nodes[$hostname] ) )
+			if( !isset( $nodes[$hostname] ) )
 				$nodes[$hostname] = new NodeImage( $hostname );
 
 		} else if( $name == 'METRIC' and strstr( $attrs[NAME], 'TOGA' ) and $this->proc_cluster == $this->clustername ) {
@@ -572,12 +572,21 @@ class TorqueXMLHandler {
 			
 					foreach( $jobs[$jobid][nodes] as $node ) {
 
-						$host = $node.'.'.$jobs[$jobid][domain];
+						$domain = $jobs[$jobid][domain];
+		                                $domain_len = 0 - strlen( $domain );
+
+						if( substr( $node, $domain_len ) != $domain ) {
+							$host = $node. '.'.$domain;
+						} else {
+							$host = $node;
+						}
+
+						//$host = $node.'.'.$jobs[$jobid][domain];
 				
-						if( !isset( $this->nodes[$host] ) )
+						if( !isset( $nodes[$host] ) )
 							$my_node = new NodeImage( $host );
 						else
-							$my_node = $this->nodes[$host];
+							$my_node = $nodes[$host];
 
 						if( !$my_node->hasJob( $jobid ) )
 
@@ -594,6 +603,7 @@ class TorqueXMLHandler {
 		$this->jobs = $jobs;
 		//print_r( $nodes );
 		$this->nodes = $nodes;
+		//print_r( $this->nodes );
 	}
 
 	function stopElement( $parser, $name ) {
