@@ -91,7 +91,7 @@ class TarchDbase {
 
 	var $ip, $dbase, $conn;
 
-	function TarchDbase( $ip = null, $dbase = 'toga' ) {
+	function TarchDbase( $ip = null, $dbase = 'jobarch' ) {
 		$this->ip = $ip;
 		$this->dbase = $dbase;
 		$this->conn = null;
@@ -102,7 +102,7 @@ class TarchDbase {
 		if( $this->ip == null and $this->dbase == 'toga' )
 			$this->conn = pg_connect( "dbname=".$this->dbase );
 		else
-			$this->conn = pg_connect( "host=".$this->ip." dbase=".$this->dbase );
+			$this->conn = pg_connect( "host=".$this->ip." dbname=".$this->dbase );
 	}
 
 	function searchDbase( $id = null, $queue = null, $user = null, $name = null, $start_from_time = null, $start_to_time = null, $end_from_time = null, $end_to_time = null ) {
@@ -229,7 +229,7 @@ class TarchDbase {
 class TarchRrdGraph {
 	var $rrdbin, $rrdvalues, $clustername, $hostname, $tempdir, $tarchdir, $metrics;
 
-	function TarchRrdGraph( $clustername, $hostname, $rrdbin = '/usr/bin/rrdtool', $tarchdir = '/data/toga/rrds' ) {
+	function TarchRrdGraph( $clustername, $hostname, $rrdbin = '/usr/bin/rrdtool', $tarchdir = '/data/jobarch/rrds' ) {
 	
 		$this->rrdbin = $rrdbin;
 		$this->rrdvalues = array();
