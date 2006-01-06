@@ -27,6 +27,14 @@ $DATA_SOURCE = '127.0.0.1:8651';
 
 // Is there a jobarchive?
 //
-$TARCHD = 1;
+$JOB_ARCHIVE = 1;
+
+// Path to the job archive
+//
+$JOB_ARCHIVE_DIR = '/data/jobarch/rrds';
+
+// Path to rrdtool binary
+//
+$RRDTOOL = '/usr/bin/rrdtool';
 
 ?>
