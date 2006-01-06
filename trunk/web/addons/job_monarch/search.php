@@ -322,7 +322,7 @@ function makeSearchPage() {
 		$tpl->newBlock( "search_results" );
 		$tpl->assign( "sortby", $sortby);
 		$tpl->assign( "sortorder", $sortorder);
-		$tdb = new TarchDbase();
+		$tdb = new TarchDbase( "127.0.0.1" );
 		if( $start_from_time ) $start_from_time = datetimeToEpoch( $start_from_time );
 		if( $start_to_time ) $start_to_time = datetimeToEpoch( $start_to_time );
 		if( $end_from_time ) $end_from_time = datetimeToEpoch( $end_from_time );
