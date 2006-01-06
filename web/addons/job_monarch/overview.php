@@ -9,7 +9,7 @@ $data_gatherer = new DataGatherer( $clustername );
 //$tpl->assign( "self", "./index.php" );
 $tpl->assign( "clustername", $clustername );
 
-if( $TARCHD )
+if( $JOB_ARCHIVE )
 	$tpl->assign( "cluster_url", rawurlencode($clustername) );
 
 $data_gatherer->parseXML();

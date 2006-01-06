@@ -72,7 +72,7 @@ function makeHeader() {
 	global $self, $filter, $cluster_url, $get_metric_string;
 	global $metrics, $reports, $m, $default_metric;
 	global $default_refresh, $filterorder, $view;
-	global $TARCHD, $period_start, $period_stop, $h, $id;
+	global $JOB_ARCHIVE, $period_start, $period_stop, $h, $id;
 	global $job_start, $job_stop;
 	
 	if( isset($default_metric) and !isset($m) )
@@ -292,7 +292,7 @@ function makeHeader() {
 		$tpl->assignGlobal("form_name", $form_name );
 	}
 
-	if( $TARCHD ) {
+	if( $JOB_ARCHIVE ) {
 		$tpl->newBlock( "search" );
 		$tpl->assignGlobal( "cluster_url", rawurlencode($clustername) );
 		$tpl->assignGlobal( "cluster", $clustername );

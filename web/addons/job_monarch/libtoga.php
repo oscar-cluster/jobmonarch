@@ -54,6 +54,8 @@ include_once "./conf.php";
 include_once "./version.php";
 
 global $GANGLIA_PATH;
+global $RRDTOOL;
+global $JOB_ARCHIVE_DIR;
 
 $my_dir = getcwd();
 
@@ -229,11 +231,14 @@ class TarchDbase {
 class TarchRrdGraph {
 	var $rrdbin, $rrdvalues, $clustername, $hostname, $tempdir, $tarchdir, $metrics;
 
-	function TarchRrdGraph( $clustername, $hostname, $rrdbin = '/usr/bin/rrdtool', $tarchdir = '/data/jobarch/rrds' ) {
-	
-		$this->rrdbin = $rrdbin;
+	function TarchRrdGraph( $clustername, $hostname ) {
+
+		global $RRDTOOL;
+		global $JOB_ARCHIVE_DIR;
+
+		$this->rrdbin = $RRDTOOL;
 		$this->rrdvalues = array();
-		$this->tarchdir = $tarchdir;
+		$this->tarchdir = $JOB_ARCHIVE_DIR;
 		$this->clustername = $clustername;
 		$this->hostname = $hostname;
 	}
