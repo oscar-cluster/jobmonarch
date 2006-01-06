@@ -56,6 +56,7 @@ include_once "./version.php";
 global $GANGLIA_PATH;
 global $RRDTOOL;
 global $JOB_ARCHIVE_DIR;
+global $JOB_ARCHIVE_DBASE;
 
 $my_dir = getcwd();
 
@@ -94,8 +95,13 @@ class TarchDbase {
 	var $ip, $dbase, $conn;
 
 	function TarchDbase( $ip = null, $dbase = 'jobarch' ) {
-		$this->ip = $ip;
-		$this->dbase = $dbase;
+
+		global $JOB_ARCHIVE_DBASE;
+
+		$db_fields = explode( '/', $JOB_ARCHIVE_DBASE );
+
+		$this->ip = $db_fields[0];
+		$this->dbase = $db_fields[1];
 		$this->conn = null;
 	}
 

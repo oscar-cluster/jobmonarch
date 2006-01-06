@@ -22,6 +22,7 @@ $JOB_NODE_MARKING = "J";
 
 // XML Datasource for Toga
 // by default localhost's gmetad
+// [syntax: <ip>:<port>]
 //
 $DATA_SOURCE = '127.0.0.1:8651';
 
@@ -29,12 +30,16 @@ $DATA_SOURCE = '127.0.0.1:8651';
 //
 $JOB_ARCHIVE = 1;
 
-// Path to the job archive
+// Path to the job archive rrd files
 //
-$JOB_ARCHIVE_DIR = '/data/jobarch/rrds';
+$JOB_ARCHIVE_DIR = "/data/jobarch/rrds";
+
+// Location of the job archive database
+// [syntax: <ip>/<dbase>]
+//
+$JOB_ARCHIVE_DBASE = "127.0.0.1/jobarch";
 
 // Path to rrdtool binary
 //
-$RRDTOOL = '/usr/bin/rrdtool';
-
+$RRDTOOL = "/usr/bin/rrdtool";
 ?>
