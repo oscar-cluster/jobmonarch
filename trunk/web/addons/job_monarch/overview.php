@@ -455,7 +455,22 @@ function makeOverview() {
 	$used_cpus = 0;
 	$used_nodes = 0;
 
+	$queued_jobs = 0;
+	$queued_nodes = 0;
+	$queued_cpus = 0;
+
+	$total_nodes = 0;
+	$total_cpus = 0;
+	$total_jobs = 0;
+
 	$all_used_nodes = array();
+	$total_used_nodes = array();
+
+	$running_name_nodes = array();
+
+	$running_nodes = 0;
+	$running_jobs = 0;
+	$running_cpus = 0;
 
 	$avail_nodes = count( $gnodes );
 	$avail_cpus = cluster_sum("cpu_num", $metrics);
@@ -464,27 +479,46 @@ function makeOverview() {
 	$view_jobs = 0;
 	$view_nodes = 0;
 
-	$view_used_nodes = array();
+	$all_nodes = 0;
+	$all_jobs = 0;
+	$all_cpus = 0;
+
+	$view_name_nodes = array();
 
 	foreach( $sorted_jobs as $jobid => $sortdec ) {
 
 		$report_time = $jobs[$jobid][reported];
 
-		$nodes = count( $jobs[$jobid][nodes] );
+		if( $jobs[$jobid][status] == 'R' )
+			$nodes = count( $jobs[$jobid][nodes] );
+		else if( $jobs[$jobid][status] == 'Q' )
+			$nodes = $jobs[$jobid][nodes];
+
 		$ppn = (int) $jobs[$jobid][ppn] ? $jobs[$jobid][ppn] : 1;
 		$cpus = $nodes * $ppn;
-
-		foreach( $jobs[$jobid][nodes] as $tempnode )
-			$all_used_nodes[] = $tempnode;
-
-		if( $jobs[$jobid][status] == 'R' ) {
-			$used_cpus += $cpus;
-			$used_jobs++;
-		}
 
 		if( $report_time == $heartbeat ) {
 
 			$display_job = 1;
+
+			foreach( $jobs[$jobid][nodes] as $tempnode )
+				$all_used_nodes[] = $tempnode;
+
+			$used_cpus += $cpus;
+
+			if( $jobs[$jobid][status] == 'R' ) {
+				$running_cpus += $cpus;
+				$running_jobs++;
+
+				foreach( $jobs[$jobid][nodes] as $tempnode )
+					$running_name_nodes[] = $tempnode;
+			}
+
+			if( $jobs[$jobid][status] == 'Q' ) {
+				$queued_cpus += $cpus;
+				$queued_nodes += $nodes;
+				$queued_jobs++;
+			}
 
 			foreach( $filter as $filtername=>$filtervalue ) {
 
@@ -511,10 +545,6 @@ function makeOverview() {
 				$tpl->assign("req_cpu", makeTime( timeToEpoch( $jobs[$jobid][requested_time] ) ) );
 				$tpl->assign("req_memory", $jobs[$jobid][requested_memory] );
 
-				if( $jobs[$jobid][status] == 'R' )
-					$nodes = count( $jobs[$jobid][nodes] );
-				else if( $jobs[$jobid][status] == 'Q' )
-					$nodes = $jobs[$jobid][nodes];
 
 				$ppn = (int) $jobs[$jobid][ppn] ? $jobs[$jobid][ppn] : 1;
 				$cpus = $nodes * $ppn;
@@ -528,9 +558,9 @@ function makeOverview() {
 
 				if( $jobs[$jobid][status] == 'R' )
 					foreach( $jobs[$jobid][nodes] as $tempnode )
-						$view_used_nodes[] = $tempnode;
+						$view_name_nodes[] = $tempnode;
 				else if( $jobs[$jobid][status] == 'Q' )
-					$view_nodes += $jobs[$jobid][nodes];
+					$view_nodes += (int) $jobs[$jobid][nodes];
 
 				if( $even ) {
 
@@ -553,9 +583,16 @@ function makeOverview() {
 		}
 	}
 	array_unique( $all_used_nodes );
-	array_unique( $view_used_nodes );
+	array_unique( $view_name_nodes );
+	array_unique( $running_name_nodes );
+
 	$used_nodes = count( $all_used_nodes );
-	$view_nodes += count( $view_used_nodes );
+	$view_nodes += count( $view_name_nodes );
+	$running_nodes += count( $running_name_nodes );
+
+	$total_nodes = $queued_nodes + $running_nodes;
+	$total_cpus = $queued_cpus + $running_cpus;
+	$total_jobs = $queued_jobs + $running_jobs;
 
 	//$tpl->assignGlobal("cpus_nr", $overview_cpus );
 	//$tpl->assignGlobal("jobs_nr", $overview_jobs );
@@ -563,9 +600,27 @@ function makeOverview() {
 	$tpl->assignGlobal("avail_nodes", $avail_nodes );
 	$tpl->assignGlobal("avail_cpus", $avail_cpus );
 
+	$tpl->assignGlobal("queued_nodes", $queued_nodes );
+	$tpl->assignGlobal("queued_jobs", $queued_jobs );
+	$tpl->assignGlobal("queued_cpus", $queued_cpus );
+
+	$tpl->assignGlobal("total_nodes", $total_nodes );
+	$tpl->assignGlobal("total_jobs", $total_jobs );
+	$tpl->assignGlobal("total_cpus", $total_cpus );
+
+	$tpl->assignGlobal("running_nodes", $running_nodes );
+	$tpl->assignGlobal("running_jobs", $running_jobs );
+	$tpl->assignGlobal("running_cpus", $running_cpus );
+
 	$tpl->assignGlobal("used_nodes", $used_nodes );
 	$tpl->assignGlobal("used_jobs", $used_jobs );
 	$tpl->assignGlobal("used_cpus", $used_cpus );
+
+	$free_nodes = $avail_nodes - $used_nodes;
+	$free_cpus = $avail_cpus - $used_cpus;
+
+	$tpl->assignGlobal("free_nodes", $free_nodes );
+	$tpl->assignGlobal("free_cpus", $free_cpus );
 
 	$tpl->assignGlobal("view_nodes", $view_nodes );
 	$tpl->assignGlobal("view_jobs", $view_jobs );

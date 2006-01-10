@@ -180,7 +180,47 @@ tr.inactive
    color: rgb(210,210,210);
 }
 
-tr.toga th
+table.overview
+{
+   border-collapse: collapse;
+}
+
+*#kol1
+{
+   border-right-style: solid;
+   border-right-color: rgb(204,204,204);
+}
+
+*#selected
+{
+   background: rgb(153,204,255);
+}
+
+tr.overview_header
+{
+   font: bold 10pt/12pt helvetica, sans-serif;
+   text-align: right;
+   border-collapse: collapse;
+   border-bottom-style: solid; 
+   border-bottom-color: rgb(0,0,0);
+}
+
+tr.overview_line
+{
+   font: 10pt/12pt helvetica, sans-serif;
+   text-align: right;
+   border-collapse: collapse;
+   border-bottom-style: dotted;
+   border-bottom-color: rgb(204,204,204);
+}
+
+tr.overview td
+{
+   font: 10pt/12pt helvetica, sans-serif;
+   text-align: right;
+}
+
+tr.monarch th
 {
    font: bold 12pt/14pt helvetica, sans-serif;
    color: rgb(10,10,10);
@@ -188,6 +228,27 @@ tr.toga th
    border: thin solid rgb(47,47,47);
    padding: 2mm;
    margin: 1mm;
+}
+
+.red
+{
+	color: rgb(204,51,0);
+}
+.blue
+{
+	color: rgb(0,0,153);
+}
+.brown
+{
+	color: rgb(102,102,0);
+}
+.gray
+{
+	color: rgb(204,204,204);
+}
+.green
+{
+	color: rgb(0,204,102);
 }
 
 td em
