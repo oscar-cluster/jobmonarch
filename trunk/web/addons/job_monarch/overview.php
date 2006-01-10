@@ -616,8 +616,8 @@ function makeOverview() {
 	$tpl->assignGlobal("used_jobs", $used_jobs );
 	$tpl->assignGlobal("used_cpus", $used_cpus );
 
-	$free_nodes = $avail_nodes - $used_nodes;
-	$free_cpus = $avail_cpus - $used_cpus;
+	$free_nodes = $avail_nodes - $running_nodes;
+	$free_cpus = $avail_cpus - $running_cpus;
 
 	$tpl->assignGlobal("free_nodes", $free_nodes );
 	$tpl->assignGlobal("free_cpus", $free_cpus );
