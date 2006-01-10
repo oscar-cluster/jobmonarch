@@ -1,23 +1,120 @@
 <BR><BR>
 
 <CENTER>
-<TABLE>
+<TABLE cellpadding="15">
 <TR>
-  <TD ALIGN="CENTER">
-    <IMG SRC="{clusterimage}"><BR>
 
-<TABLE ALIGN=CENTER>
-<TR>
-<TD><FONT SIZE="-1" class=footer>Last updated:</FONT></TD><TD><FONT SIZE="-1" class=footer>{report_time}</TD>
-</TR><TR>
-<TD><FONT SIZE="-1" class=footer>Available:</FONT></TD><TD><FONT SIZE="-1" class=footer>{avail_nodes} nodes / {avail_cpus} cpu's</FONT></TD>
-</TR><TR>
-<TD><FONT SIZE="-1" class=footer>Usage:</FONT></TD><TD><FONT SIZE="-1" class=footer>{used_jobs} jobs - {used_nodes} nodes / {used_cpus} cpu's</FONT></TD>
-</TR><TR>
-<TD><FONT SIZE="-1" class=footer>View:</FONT></TD><TD><FONT SIZE="-1" class=footer>{view_jobs} jobs - {view_nodes} nodes / {view_cpus} cpu's</FONT></TD>
+  <TD>
+
+<TABLE ALIGN=CENTER class="overview" cellpadding="5">
+
+<COL id="kol1">
+<COL id="kol2">
+<COL id="kol3">
+<COL id="kol4">
+
+<TR class="overview_header">
+<TD>Batch</TD>
+<TD>Jobs</TD>
+<TD>Nodes</TD>
+<TD>Cpus</TD>
 </TR>
+
+<TR class="overview_line">
+<TD class="blue">
+Capacity
+</TD>
+<TD class="blue">
+</TD>
+<TD class="blue">
+{avail_nodes}
+</TD>
+<TD class="blue">
+{avail_cpus}
+</TD>
+</TR>
+
+
+<TR class="overview">
+<TD class="red">
+Running
+</TD>
+<TD class="red">
+{running_jobs}
+</TD>
+<TD class="red">
+{running_nodes}
+</TD>
+<TD class="red">
+{running_cpus}
+</TD>
+</TR>
+
+<TR class="overview_line">
+<TD class="gray">
+Queued
+</TD>
+<TD class="gray">
+{queued_jobs}
+</TD>
+<TD class="gray">
+{queued_nodes}
+</TD>
+<TD class="gray">
+{queued_cpus}
+</TD>
+</TR>
+
+<TR class="overview">
+<TD class="brown">
+Total
+</TD>
+<TD class="brown">
+{total_jobs}
+</TD>
+<TD class="brown">
+{total_nodes}
+</TD>
+<TD class="brown">
+{total_cpus}
+</TD>
+</TR>
+
+<TR class="overview">
+<TD class="green">
+Free
+</TD>
+<TD class="green">
+</TD>
+<TD class="green">
+{free_nodes}
+</TD>
+<TD class="green">
+{free_cpus}
+</TD>
+</TR>
+
+<TR class="overview" id="selected">
+<TD>
+View
+</TD>
+<TD>
+{view_jobs}
+</TD>
+<TD>
+{view_nodes}
+</TD>
+<TD>
+{view_cpus}
+</TD>
+</TR>
+
 </TABLE>
-</FONT>
+
+  <TD ALIGN="CENTER"><CENTER>
+    <IMG SRC="{clusterimage}"><BR>
+<FONT class="footer">Last updated: {report_time}</FONT></CENTER>
+  </TD>
 
   </TD>
   <TD ALIGN="CENTER">
@@ -40,7 +137,7 @@
 <INPUT TYPE="HIDDEN" NAME="filterorder" VALUE="{f_order}">
 
 <TABLE WIDTH="90%" CELLPADDING="8" CELLSPACING="3" BORDER=0>
-<TR CLASS="toga">
+<TR CLASS="monarch">
 <TH><B><A HREF="#" onClick="setSort( 'id' )">Id</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'state' )">State</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'user' )">User</A></B></TH>
