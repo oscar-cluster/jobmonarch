@@ -1,45 +1,83 @@
 #!/usr/bin/env python
 
-# Specify debugging level here;
-#
-# 10 = gemtric cmd's
-DEBUG_LEVEL = 0
+import sys, getopt, ConfigParser
 
-# Wether or not to run as a daemon in background
-#
-DAEMONIZE = 1
+def processArgs( args ):
 
-# Which Torque server to monitor
-#
-TORQUE_SERVER = 'localhost'
+	SHORT_L = 'c:'
+	LONG_L = 'config='
 
-# How many seconds interval for polling of jobs
-#
-# this will effect directly how accurate the
-# end time of a job can be determined
-#
-TORQUE_POLL_INTERVAL = 10
+	config_filename = None
 
-# Alternate location of gmond.conf
-#
-# Default: /etc/gmond.conf
-#
-#GMOND_CONF = '/etc/gmond.conf'
+	try:
 
-# Wether or not to detect differences in 
-# time from Torque server and local time.
-#
-# Ideally both machines (if not the same)
-# should have the same time (via ntp or whatever)
-#
-DETECT_TIME_DIFFS = 1
+		opts, args = getopt.getopt( args, SHORT_L, LONG_L )
+
+	except getopt.error, detail:
+
+		print detail
+		sys.exit(1)
+
+	for opt, value in opts:
+
+		if opt in [ '--config', '-c' ]:
+		
+			config_filename = value
+
+	if not config_filename:
+
+		config_filename = '/etc/jobmond.conf'
+
+	return loadConfig( config_filename )
+
+def loadConfig( filename ):
+
+	cfg = ConfigParser.ConfigParser()
+
+	cfg.read( filename )
+
+	global DEBUG_LEVEL, DAEMONIZE, TORQUE_SERVER, TORQUE_POLL_INTERVAL, GMOND_CONF, DETECT_TIME_DIFFS
+
+
+	# Specify debugging level here;
+	#
+	# 10 = gemtric cmd's
+	DEBUG_LEVEL = cfg.getint( 'DEFAULT', 'DEBUG_LEVEL' )
+
+	# Wether or not to run as a daemon in background
+	#
+	DAEMONIZE = cfg.getboolean( 'DEFAULT', 'DAEMONIZE' )
+
+	# Which Torque server to monitor
+	#
+	TORQUE_SERVER = cfg.get( 'DEFAULT', 'TORQUE_SERVER' )
+
+	# How many seconds interval for polling of jobs
+	#
+	# this will effect directly how accurate the
+	# end time of a job can be determined
+	#
+	TORQUE_POLL_INTERVAL = cfg.getint( 'DEFAULT', 'TORQUE_POLL_INTERVAL' )
+
+	# Alternate location of gmond.conf
+	#
+	# Default: /etc/gmond.conf
+	#
+	GMOND_CONF = cfg.get( 'DEFAULT', 'GMOND_CONF' )
+
+	# Wether or not to detect differences in 
+	# time from Torque server and local time.
+	#
+	# Ideally both machines (if not the same)
+	# should have the same time (via ntp or whatever)
+	#
+	DETECT_TIME_DIFFS = cfg.getboolean( 'DEFAULT', 'DETECT_TIME_DIFFS' )
+
+	return True
 
 from PBSQuery import PBSQuery
-import sys
-import time
-import os
-import socket
-import string
+
+import time, os, socket, string
 
 class DataProcessor:
 	"""Class for processing of data"""
@@ -415,7 +453,7 @@ class DataGatherer:
                 #
                 pid = os.fork()
                 if pid > 0:
-                        sys.exit(0)  # end parrent
+                        sys.exit(0)  # end parent
 
                 # creates a session and sets the process group ID
                 #
@@ -425,7 +463,7 @@ class DataGatherer:
                 #
                 pid = os.fork()
                 if pid > 0:
-                        sys.exit(0)  # end parrent
+                        sys.exit(0)  # end parent
 
                 # Go to the root directory and set the umask
                 #
@@ -464,6 +502,9 @@ def debug_msg( level, msg ):
 
 def main():
 	"""Application start"""
+
+	if not processArgs( sys.argv[1:] ):
+		sys.exit( 1 )
 
 	gather = DataGatherer()
 	if DAEMONIZE:
