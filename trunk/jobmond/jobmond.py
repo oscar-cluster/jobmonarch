@@ -32,12 +32,43 @@ def processArgs( args ):
 
 def loadConfig( filename ):
 
+        def getlist( cfg_string ):
+
+                my_list = [ ]
+
+                for item_txt in cfg_string.split( ',' ):
+
+                        sep_char = None
+
+                        item_txt = item_txt.strip()
+
+                        for s_char in [ "'", '"' ]:
+
+                                if item_txt.find( s_char ) != -1:
+
+                                        if item_txt.count( s_char ) != 2:
+
+                                                print 'Missing quote: %s' %item_txt
+                                                sys.exit( 1 )
+
+                                        else:
+
+                                                sep_char = s_char
+                                                break
+
+                        if sep_char:
+
+                                item_txt = item_txt.split( sep_char )[1]
+
+                        my_list.append( item_txt )
+
+                return my_list
+
 	cfg = ConfigParser.ConfigParser()
 
 	cfg.read( filename )
 
-	global DEBUG_LEVEL, DAEMONIZE, TORQUE_SERVER, TORQUE_POLL_INTERVAL, GMOND_CONF, DETECT_TIME_DIFFS
-
+	global DEBUG_LEVEL, DAEMONIZE, TORQUE_SERVER, TORQUE_POLL_INTERVAL, GMOND_CONF, DETECT_TIME_DIFFS, BATCH_HOST_TRANSLATE
 
 	# Specify debugging level here;
 	#
@@ -73,11 +104,20 @@ def loadConfig( filename ):
 	#
 	DETECT_TIME_DIFFS = cfg.getboolean( 'DEFAULT', 'DETECT_TIME_DIFFS' )
 
+	# Regexp style hostname translation
+	#
+	# Usefull if your Torque hostnames are not the same as your
+	# Ganglia hostnames (different network interfaces)
+	#
+	# Syntax: /orig/new/
+	#
+	BATCH_HOST_TRANSLATE = getlist( cfg.get( 'DEFAULT', 'BATCH_HOST_TRANSLATE' ) )
+
 	return True
 
 from PBSQuery import PBSQuery
 
-import time, os, socket, string
+import time, os, socket, string, re
 
 class DataProcessor:
 	"""Class for processing of data"""
@@ -264,6 +304,14 @@ class DataGatherer:
 					host = node.split( '/' )[0]
 
 					if nodeslist.count( host ) == 0:
+
+						for translate_pattern in BATCH_HOST_TRANSLATE:
+
+							translate_orig = translate_pattern.split( '/' )[1]
+							translate_new = translate_pattern.split( '/' )[2]
+
+							host = re.sub( translate_orig, translate_new, host )
+					
 						nodeslist.append( host )
 
 				if DETECT_TIME_DIFFS:
