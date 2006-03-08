@@ -311,8 +311,10 @@ class DataGatherer:
 							translate_new = translate_pattern.split( '/' )[2]
 
 							host = re.sub( translate_orig, translate_new, host )
-					
-						nodeslist.append( host )
+				
+						if not node in nodeslist:
+				
+							nodeslist.append( host )
 
 				if DETECT_TIME_DIFFS:
 
@@ -467,9 +469,9 @@ class DataGatherer:
 		"""Check if val + text size is not above 1400 (max msg size)"""
 
 		# Max frame size of a udp datagram is 1500 bytes
-		# removing misc header and gmetric stuff leaves about 1400 bytes
+		# removing misc header and gmetric stuff leaves about 1300 bytes
 		#
-		if len( val + text ) > 1400:
+		if len( val + text ) > 900:
 			return 1
 		else:
 			return 0
