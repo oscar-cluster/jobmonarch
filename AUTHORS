@@ -1,20 +1,29 @@
-Design, code and implementation
--------------------------------
+MAIN DEVELOPER(S)
+=================
 
-- jobarchived, jobmond, jobfrontend
+	* Design, code and implementation
 
-	* Ramon Bastiaans <bastiaans@sara.nl>
+	-	Ramon Bastiaans
+		<bastiaans@sara.nl>
 
-Original concept
-----------------
+ORIGINAL CONCEPT(S)
+===================
 
-- pbs_monitor
+	* PBS Monitor
 
-	* Bas van der Vlies <basv@sara.nl>
+	-	Bas van der Vlies
+		<basv@sara.nl>
 
-Original based on
------------------
+	* PBS web software
 
-- PBS web software
+	-	ROCKS Cluster group,
+		San Diego
 
-	* ROCKS Cluster group, San Diego
+CONTRIBUTOR(S)
+==============
+
+	-	Walter de Jong
+		<walter@sara.nl>
+
+	-	Jaap Dijkshoorn
+		<jaap@sara.nl>

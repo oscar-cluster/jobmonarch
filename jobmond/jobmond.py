@@ -383,7 +383,7 @@ class DataGatherer:
 	def submitJobData( self, jobs ):
 		"""Submit job info list"""
 
-		self.dp.multicastGmetric( 'TOGA-HEARTBEAT', str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
+		self.dp.multicastGmetric( 'MONARCH-HEARTBEAT', str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
 
 		# Now let's spread the knowledge
 		#
@@ -392,7 +392,7 @@ class DataGatherer:
 			gmetric_val = self.compileGmetricVal( jobid, jobattrs )
 
 			for val in gmetric_val:
-				self.dp.multicastGmetric( 'TOGA-JOB-' + jobid, val )
+				self.dp.multicastGmetric( 'MONARCH-JOB-' + jobid, val )
 
 	def makeNodeString( self, nodelist ):
 		"""Make one big string of all hosts"""

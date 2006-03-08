@@ -20,7 +20,7 @@ $SMALL_CLUSTERIMAGE_NODEWIDTH = 11;
 //
 $JOB_NODE_MARKING = "J";
 
-// XML Datasource for Toga
+// XML Datasource for Job Monarch
 // by default localhost's gmetad
 // [syntax: <ip>:<port>]
 //

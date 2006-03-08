@@ -1,27 +1,29 @@
-Features on the horizon:
-------------------------
+Functionality TODO (wish) list
+==============================
 
-* Config file and arguments usage for daemons
-  (also --help and possibly a man page)
+	*	Improved config file and arguments usage for daemons
+		(also --help and possibly a man page)
 
-* Actual version reporting by daemons
+	*	Actual version reporting by daemons
 
-* 'queued since' reporting of jobs
+	*	'queued since' reporting of jobs
 
-* Clickable nodes in the "big" cluster image,
-  filtering all jobs on that particular node.
+	*	Usage of a node's (Ganglia) location in the ClusterImage
+		construction (placement by x,y,z coordinates)
+  
+	*	More advanced and detailed graph's, etc
 
-* Mouse hints on the "big" cluster image,
-  showing node information detail when holding
-  over a node. Information such as jobid(s),
-  queues, users, etc
+	*	Clickable nodes in the "big" cluster image,
+		filtering all jobs on that particular node.
 
-* Usage of a node's location in the ClusterImage
-  construction (placement by x,y,z coordinates)
+	*	Mouse hints on the "big" cluster image,
+		showing node information detail when holding
+		over a node. Information such as jobid(s),
+		queues, users, etc
 
-* Usage of regexp's or wildcards at jobsearch
-  i.e. for job name/user/queue
+	*	Usage of regexp's or wildcards at jobsearch
+		i.e. for job name/user/queue
 
-* Ability to search by certain node properties
-  instead of job properties. I.e.: a certain node
-  hostname and/or number of nodes/cpus
+	*	Ability to search by certain node properties
+		instead of job properties. I.e.: a certain node
+		hostname and/or number of nodes/cpus
