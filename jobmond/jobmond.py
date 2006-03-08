@@ -312,7 +312,7 @@ class DataGatherer:
 
 							host = re.sub( translate_orig, translate_new, host )
 				
-						if not node in nodeslist:
+						if not host in nodeslist:
 				
 							nodeslist.append( host )
 
