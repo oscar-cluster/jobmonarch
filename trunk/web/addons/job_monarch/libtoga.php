@@ -527,16 +527,16 @@ class TorqueXMLHandler {
 			if( !isset( $nodes[$hostname] ) )
 				$nodes[$hostname] = new NodeImage( $hostname );
 
-		} else if( $name == 'METRIC' and strstr( $attrs[NAME], 'TOGA' ) and $this->proc_cluster == $this->clustername ) {
+		} else if( $name == 'METRIC' and strstr( $attrs[NAME], 'MONARCH' ) and $this->proc_cluster == $this->clustername ) {
 
-			if( strstr( $attrs[NAME], 'TOGA-HEARTBEAT' ) ) {
+			if( strstr( $attrs[NAME], 'MONARCH-HEARTBEAT' ) ) {
 
 				$this->heartbeat['time'] = $attrs[VAL];
 				//printf( "heartbeat %s\n", $heartbeat['time'] );
 
-			} else if( strstr( $attrs[NAME], 'TOGA-JOB' ) ) {
+			} else if( strstr( $attrs[NAME], 'MONARCH-JOB' ) ) {
 
-				sscanf( $attrs[NAME], 'TOGA-JOB-%d', $jobid );
+				sscanf( $attrs[NAME], 'MONARCH-JOB-%d', $jobid );
 
 				//printf( "jobid %s\n", $jobid );
 
