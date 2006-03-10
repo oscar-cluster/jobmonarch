@@ -307,10 +307,12 @@ class DataGatherer:
 
 						for translate_pattern in BATCH_HOST_TRANSLATE:
 
-							translate_orig = translate_pattern.split( '/' )[1]
-							translate_new = translate_pattern.split( '/' )[2]
+							if translate_pattern.find( '/' ) != -1:
 
-							host = re.sub( translate_orig, translate_new, host )
+								translate_orig = translate_pattern.split( '/' )[1]
+								translate_new = translate_pattern.split( '/' )[2]
+
+								host = re.sub( translate_orig, translate_new, host )
 				
 						if not host in nodeslist:
 				
