@@ -20,9 +20,9 @@ DESCRIPTION
 		Through this daemon, users are able to view the PBS/Torque batch system and the
 		jobs/nodes that are in it (be it either running or queued).
 
-	* jobarchived
+	* jobarchived (optionally)
 
-		The Job Archiving Daemon (optionally).
+		The Job Archiving Daemon.
 
 		Listens to Ganglia's XML stream and archives the job and node statistics.
 		It stores the job statistics in a Postgres SQL database and the node statistics
@@ -32,8 +32,16 @@ DESCRIPTION
 		and view all it's statistics.
 
 		Optionally: You can either choose to use this daemon if your users have use for it.
-		As it can be a heavy application to run - even though optimized (staged/buffered writes
-		and multi threaded) - and not everyone may have a need for it.
+		As it can be a heavy application to run and not everyone may have a need for it.
+
+		- Multithreaded:	Will not miss any data regardless of (slow) storage
+
+		- Staged writing:	Spread load over bigger time periods
+
+		- High precision RRDs:	Allow for zooming on old periods with large precision
+
+		- Timeperiod RRDs:	Allow for smaller number of files while still keeping advantage
+					of small disk space
 		
 	* web
 
@@ -43,7 +51,20 @@ DESCRIPTION
 		data and graphs.
 
 		It does this in a similar layout/setup as Ganglia itself, so the navigation and usage is intuitive.
-		
+
+		- Graphical usage:	Displays graphical cluster overview so you can see the cluster (job) state
+					in one view/image and additional pie chart with relevant information on your
+					current view
+
+		- Filters:		Ability to filter output to limit information displayed (usefull for those
+					clusters with 500+ jobs). This also filters the graphical overview images output
+					and pie chart so you only see the filter relevant data
+
+		- Archive:		When enabling jobarchived, users can go back as far as recorded in the database
+					or archived RRDs to find out what happened to a crashed or old job
+
+		- Zoom ability:		Users can zoom into a timepriod as small as the smallest grain of the RRDS
+					(typically up to 10 seconds) when a jobarchived is present
 
 REQUIREMENTS
 ============
