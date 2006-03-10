@@ -70,47 +70,18 @@ def loadConfig( filename ):
 
 	global DEBUG_LEVEL, DAEMONIZE, TORQUE_SERVER, TORQUE_POLL_INTERVAL, GMOND_CONF, DETECT_TIME_DIFFS, BATCH_HOST_TRANSLATE
 
-	# Specify debugging level here;
-	#
-	# 10 = gemtric cmd's
 	DEBUG_LEVEL = cfg.getint( 'DEFAULT', 'DEBUG_LEVEL' )
 
-	# Wether or not to run as a daemon in background
-	#
 	DAEMONIZE = cfg.getboolean( 'DEFAULT', 'DAEMONIZE' )
 
-	# Which Torque server to monitor
-	#
 	TORQUE_SERVER = cfg.get( 'DEFAULT', 'TORQUE_SERVER' )
 
-	# How many seconds interval for polling of jobs
-	#
-	# this will effect directly how accurate the
-	# end time of a job can be determined
-	#
 	TORQUE_POLL_INTERVAL = cfg.getint( 'DEFAULT', 'TORQUE_POLL_INTERVAL' )
 
-	# Alternate location of gmond.conf
-	#
-	# Default: /etc/gmond.conf
-	#
 	GMOND_CONF = cfg.get( 'DEFAULT', 'GMOND_CONF' )
 
-	# Wether or not to detect differences in 
-	# time from Torque server and local time.
-	#
-	# Ideally both machines (if not the same)
-	# should have the same time (via ntp or whatever)
-	#
 	DETECT_TIME_DIFFS = cfg.getboolean( 'DEFAULT', 'DETECT_TIME_DIFFS' )
 
-	# Regexp style hostname translation
-	#
-	# Usefull if your Torque hostnames are not the same as your
-	# Ganglia hostnames (different network interfaces)
-	#
-	# Syntax: /orig/new/
-	#
 	BATCH_HOST_TRANSLATE = getlist( cfg.get( 'DEFAULT', 'BATCH_HOST_TRANSLATE' ) )
 
 	return True

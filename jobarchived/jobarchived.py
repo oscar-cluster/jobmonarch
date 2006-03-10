@@ -74,46 +74,18 @@ def loadConfig( filename ):
 
 	cfg.read( filename )
 
-	# Which metrics to exclude from archiving
-	global DEBUG_LEVEL, USE_SYSLOG, SYSLOG_LEVEL, SYSLOG_FACILITY, GMETAD_CONF, ARCHIVE_XMLSOURCE, ARCHIVE_DATASOURCES, ARCHIVE_PATH, ARCHIVE_HOURS_PER_RRD, ARCHIVE_EXCLUDE_METRICS, JOB_SQL_DBASE, DAEMONIZE
+	global DEBUG_LEVEL, USE_SYSLOG, SYSLOG_LEVEL, SYSLOG_FACILITY, GMETAD_CONF, ARCHIVE_XMLSOURCE, ARCHIVE_DATASOURCES, ARCHIVE_PATH, ARCHIVE_HOURS_PER_RRD, ARCHIVE_EXCLUDE_METRICS, JOB_SQL_DBASE, DAEMONIZE, RRDTOOL
 
-	# Where to store the archived rrd's
-	#
 	ARCHIVE_PATH = cfg.get( 'DEFAULT', 'ARCHIVE_PATH' )
 
-	# Amount of hours to store in one single archived .rrd
-	#
 	ARCHIVE_HOURS_PER_RRD = cfg.getint( 'DEFAULT', 'ARCHIVE_HOURS_PER_RRD' )
 
-	# Specify debugging level here (only when _not_ DAEMONIZE)
-	#
-	# 11 = XML: metrics
-	# 10 = XML: host, cluster, grid, ganglia
-	# 9  = RRD activity, gmetad config parsing
-	# 8  = RRD file activity
-	# 6  = SQL
-	# 1  = daemon threading
-	# 0  = errors
-	#
-	# default: 0
 	DEBUG_LEVEL = cfg.getint( 'DEFAULT', 'DEBUG_LEVEL' )
 
-	# Enable logging to syslog?
-	#
 	USE_SYSLOG = cfg.getboolean( 'DEFAULT', 'USE_SYSLOG' )
 
-	# What level msg'es should be logged to syslog?
-	#
-	# default: lvl 0 (errors)
-	#
 	SYSLOG_LEVEL = cfg.getint( 'DEFAULT', 'SYSLOG_LEVEL' )
 
-	# Which facility to use in syslog
-	#
-	# Syntax I.e.:
-	# 	LOG_KERN, LOG_USER, LOG_MAIL, LOG_DAEMON, LOG_AUTH, LOG_LPR, 
-	# 	LOG_NEWS, LOG_UUCP, LOG_CRON and LOG_LOCAL0 to LOG_LOCAL7
-	#
 	try:
 
 		SYSLOG_FACILITY = eval( 'syslog.LOG_' + cfg.get( 'DEFAULT', 'SYSLOG_FACILITY' ) )
@@ -123,43 +95,21 @@ def loadConfig( filename ):
 		print 'Unknown syslog facility'
 		sys.exit( 1 )
 
-	# Where is the gmetad.conf located
-	#
 	GMETAD_CONF = cfg.get( 'DEFAULT', 'GMETAD_CONF' )
 
-	# Where to grab XML data from
-	# Normally: local gmetad (port 8651)
-	#
-	# Syntax: <hostname>:<port>
-	#
 	ARCHIVE_XMLSOURCE = cfg.get( 'DEFAULT', 'ARCHIVE_XMLSOURCE' )
 
-	# List of data_source names to archive for
-	#
-	# Syntax: [ "<clustername>", "<clustername>" ]
-	#
         ARCHIVE_DATASOURCES = getlist( cfg.get( 'DEFAULT', 'ARCHIVE_DATASOURCES' ) )
 
-	# NOTE: This can be a regexp or a string
-	#
 	ARCHIVE_EXCLUDE_METRICS = getlist( cfg.get( 'DEFAULT', 'ARCHIVE_EXCLUDE_METRICS' ) )
 
-	# Toga's SQL dbase to use
-	#
-	# Syntax: <hostname>/<database>
-	#
 	JOB_SQL_DBASE = cfg.get( 'DEFAULT', 'JOB_SQL_DBASE' )
 
-	# Wether or not to run as a daemon in background
-	#
 	DAEMONIZE = cfg.getboolean( 'DEFAULT', 'DAEMONIZE' )
 
-	return True
+	RRDTOOL = cfg.get( 'DEFAULT', 'RRDTOOL' )
 
-###
-# You'll only want to change anything below here unless you 
-# know what you are doing (i.e. your name is Ramon Bastiaans :D )
-###
+	return True
 
 # What XML data types not to store
 #
@@ -174,7 +124,7 @@ PARSE_TIMEOUT = 60
 STORE_TIMEOUT = 360
 
 """
-This is TOrque-GAnglia's data Daemon
+The Job Archiving Daemon
 """
 
 from types import *
@@ -390,7 +340,7 @@ class DataSQLStore:
 class RRDMutator:
 	"""A class for performing RRD mutations"""
 
-	binary = '/usr/bin/rrdtool'
+	binary = RRDTOOL
 
 	def __init__( self, binary=None ):
 		"""Set alternate binary if supplied"""
