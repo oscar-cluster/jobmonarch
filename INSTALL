@@ -54,7 +54,7 @@ REQUIREMENTS
 
 	jobmond:
 
-		- pbs_python v2.8.1 or higher
+		- pbs_python v2.8.2 or higher
 		  ftp://ftp.sara.nl/pub/outgoing/pbs_python.tar.gz
 
 		- gmond v3.0.1 or higher
