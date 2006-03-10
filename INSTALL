@@ -5,7 +5,7 @@ DESCRIPTION
 
 	It is a addon for the Ganglia monitoring system and plugs in to a existing Ganglia setup.
 
-	To view a operational setup with Job Monarch, have a look here: http://ganglia.sara.nl/?c
+	To view a operational setup with Job Monarch, have a look here: http://ganglia.sara.nl/
 
 
 	Job Monarch stands for 'Job Monitoring and Archiving' tool and consists of three (3) components:
@@ -48,29 +48,44 @@ DESCRIPTION
 REQUIREMENTS
 ============
 
+	all:
+
+		- Python 2.3 or higher
+
 	jobmond:
 
 		- pbs_python v2.8.1 or higher
 		  ftp://ftp.sara.nl/pub/outgoing/pbs_python.tar.gz
 
-		- gmond 3.0.1 or higher
+		- gmond v3.0.1 or higher
 		  http://www.ganglia.info
 
 	jobarchived:
 
-		- Postgres SQL v7.xx
+		- Postgres vSQL 7.xx
 		  http://www.postgres.org
 
 		- rrdtool v1.xx
 		  http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/
 
-		- gmetad 3.x.x
+		- python-pgsql v4.x.x
+		  http://sourceforge.net/projects/pypgsql/
+
+		- gmetad v3.x.x
 		  http://www.ganglia.info
 
 	web:
 
-		- PHP 4.1 or higher
+		- PHP v4.1 or higher
 		  http://www.php.net
+
+		- php-pgsql v4.x.x
+		  (should come with Postgres)
+
+		- GD v2.x
+		  http://www.boutell.com/gd/
+
+		- Ganglia web frontend v3.x.x
 
 
 INSTALLATION
@@ -79,22 +94,112 @@ INSTALLATION
 	Prior to installing the software make sure you meet the necessary requirements as
 	mentioned above.
 
-	1. copy
+	NOTE: You can choose to install to other path/directories if your setup is different.
 
+	* jobmond
+
+		1. Copy jobmond.py:
+
+		 > cp jobmond/jobmond.py /usr/local/sbin/jobmond.py
+
+		2. Copy jobmond.conf:
+		
+		 > cp jobmond/jobmond.conf /etc/jobmond.conf
+
+	* jobarchived
+
+		1. Create a Postgres SQL database for jobarchived:
+
+		 > createdb jobarchive
+
+		2. Setup jobarchived's tables:
+
+		 > psql -f jobarchived/job_dbase.sql jobarchive
+
+		3. Copy jobarchived/jobarchived.conf:
+
+		 > cp jobarchived/jobarchived.conf /etc/jobarchived.conf
+
+		4. Copy jobarchived.py and DBClass.py:
+
+		 > cp jobarchived/jobarchived.py /usr/local/sbin/jobarchived.py
+		 > cp jobarchived/DBClass.py /usr/local/sbin/DBClass.py
+
+	* web
+
+		1. Copy the Job Monarch Template to your Ganglia installation
+
+		 > cp -a web/templates/job_monarch /var/www/ganglia/templates
+
+		2. Copy the web interface files to the addon directory in Ganglia
+
+		 > cp -a web/addons/job_monarch /var/www/ganglia/addons
 
 CONFIGURATION
 =============
 
+	After installation each component requires additional configuration.
+
+	* jobmond
+	
+		1. Edit Jobmond's config to reflect your settings:
+
+		 - In /etc/jobmond.conf
+
+		   ( see config comments for syntax and explanation )
+
+	* jobarchived
+
+		1. Edit Jobarchived's config to reflect your settings:
+
+		 - In /etc/jobarchived.conf
+
+		   ( see config comments for syntax and explanation )
+
+	* web
+
+		1. Change your Ganglia's web template to Job Monarch
+
+		 - In /var/www/ganglia/conf.php:
+
+		 > $template_name = "job_monarch";
+
+		2. Change Job Monarch's config to reflect your settings:
+
+		 - In /var/www/ganglia/addons/job_monarch/conf.php
+
+		   ( see config comments for syntax and explanation )
 
 START
 =====
 
+	* jobmond
 
+		The Job Monitor has to be run on a machine that is allowed to
+		query the PBS/Torque server.
+		Make sure that if you have 'acl_hosts' enabled on your PBS/Torque
+		server that jobmond's machine is in it.
+
+		1. Start the Job Monitor:
+
+		 > /usr/local/sbin/jobmond.py -c /etc/jobmond.conf
+
+	* jobarchived
+
+		1. Start the Job Archiver:
+
+		 > /usr/local/sbin/jobarchived.py -c /etc/jobarchived.conf
+
+	* web
+
+		Doesn't require you to (re)start anything.
+		( make sure the Postgres database is running though )
 
 CONTACT
 =======
 
 	To contact the author for anything from bugfixes to flame/hate mail:
 
-	Ramon Bastiaans
-	<ramon ( a t ) sara ( d o t ) nl>
+	* Ramon Bastiaans
+
+	  <ramon ( a t ) sara ( d o t ) nl>
