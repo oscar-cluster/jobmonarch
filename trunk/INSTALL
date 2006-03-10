@@ -62,7 +62,7 @@ REQUIREMENTS
 
 	jobarchived:
 
-		- Postgres vSQL 7.xx
+		- Postgres SQL v7.xx
 		  http://www.postgres.org
 
 		- rrdtool v1.xx
@@ -86,6 +86,7 @@ REQUIREMENTS
 		  http://www.boutell.com/gd/
 
 		- Ganglia web frontend v3.x.x
+		  http://www.ganglia.info
 
 
 INSTALLATION
