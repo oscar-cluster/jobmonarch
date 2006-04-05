@@ -56,7 +56,7 @@ function setFilter( filtername, filterval ) {
 
 <BR><BR>
 
-<TABLE WIDTH="90%">
+<TABLE WIDTH="100%">
 
 <TR>
   <TD CLASS=title COLSPAN="2">

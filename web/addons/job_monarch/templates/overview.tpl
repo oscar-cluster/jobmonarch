@@ -136,7 +136,7 @@ View
 <INPUT TYPE="HIDDEN" NAME="id" VALUE="{f_id}">
 <INPUT TYPE="HIDDEN" NAME="filterorder" VALUE="{f_order}">
 
-<TABLE WIDTH="90%" CELLPADDING="8" CELLSPACING="3" BORDER=0>
+<TABLE WIDTH="100%" CELLPADDING="8" CELLSPACING="3" BORDER=0>
 <TR CLASS="monarch">
 <TH><B><A HREF="#" onClick="setSort( 'id' )">Id</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'state' )">State</A></B></TH>
