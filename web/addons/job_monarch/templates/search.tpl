@@ -202,7 +202,7 @@ function setFilter( filtername, filterval ) {
 <INPUT TYPE="HIDDEN" NAME="filterorder" VALUE="{f_order}">
 
 <TABLE WIDTH="90%" CELLPADDING="8" CELLSPACING="3" BORDER=0>
-<TR CLASS="toga">
+<TR CLASS="monarch">
 <TH><B><A HREF="#" onClick="setSort( 'id' )">Id</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'state' )">State</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'user' )">User</A></B></TH>
@@ -210,8 +210,7 @@ function setFilter( filtername, filterval ) {
 <TH><B><A HREF="#" onClick="setSort( 'name' )">Name</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'req_cpu' )">Req. CPU time</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'req_mem' )">Req. Memory</A></B></TH>
-<TH><B><A HREF="#" onClick="setSort( 'nodes' )">Nodes</A>/<A HREF="#" onClick="setSort( 'cpus' )">Cpus</A></
-B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'nodes' )">Nodes</A>/<A HREF="#" onClick="setSort( 'cpus' )">Cpus</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'start' )">Started</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'finished' )">Finished</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'runningtime' )">Runningtime</A></B></TH>
