@@ -354,6 +354,8 @@ function makeSearchPage() {
 		$jobs = array();
 		$nodes = array();
 
+		$even = 1;
+
 		//print_r( $search_ids );
 
 		foreach( $search_ids as $myid ) {
@@ -387,6 +389,17 @@ function makeSearchPage() {
 			$tpl->assign( "req_memory", $job[requested_memory] );
 
 			$nodes_nr = count( $nodes[$foundid] );
+
+			if( $even ) {
+
+				$tpl->assign("nodeclass", "even");
+				$even = 0;
+			} else {
+
+				$tpl->assign("nodeclass", "odd");
+				$even = 1;
+			}
+
 
 			// need to replace later with domain stored from dbase
 			//
