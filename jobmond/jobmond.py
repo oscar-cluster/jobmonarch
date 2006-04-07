@@ -287,7 +287,6 @@ class DataGatherer:
 			status = self.getAttr( attrs, 'job_state' )
 
 			queued_timestamp = self.getAttr( attrs, 'ctime' )
-			print queued_timestamp
 
 			if status == 'R':
 				start_timestamp = self.getAttr( attrs, 'mtime' )
