@@ -561,9 +561,40 @@ function makeOverview() {
 				$tpl->assign( "clustername", $clustername );
 				$tpl->assign("id", $jobid );
 				$tpl->assign("state", $jobs[$jobid][status] );
+
+				$fullstate = '';
+				if( $jobs[$jobid][status] == 'R' ) {
+					$fullstate = "Running";
+				} else if( $jobs[$jobid][status] == 'Q' ) {
+					$fullstate = "Queued";
+				}
+
+				$tpl->assign("fullstate", $fullstate );
+				
 				$tpl->assign("user", $jobs[$jobid][owner] );
 				$tpl->assign("queue", $jobs[$jobid][queue] );
-				$tpl->assign("name", $jobs[$jobid][name] );
+
+				$fulljobname = $jobs[$jobid][name];
+				$shortjobname = '';
+
+				$tpl->assign("fulljobname", $fulljobname );
+
+				if( mb_strwidth( $fulljobname ) > 10 ) {
+					$tpl->newBlock("jobname_hint_start");
+					$tpl->gotoBlock("node");
+
+					$shortjobname = mb_strimwidth( $fulljobname, 0, 9 ) . '..';
+				} else {
+					$shortjobname = $fulljobname;
+				}
+				
+				$tpl->assign("name", $shortjobname );
+
+				if( strlen( $fulljobname ) > 10 ) {
+					$tpl->newBlock("jobname_hint_end");
+					$tpl->gotoBlock("node");
+				}
+
 				$domain = $jobs[$jobid][domain];
 				$tpl->assign("req_cpu", makeTime( timeToEpoch( $jobs[$jobid][requested_time] ) ) );
 				$tpl->assign("req_memory", $jobs[$jobid][requested_memory] );
