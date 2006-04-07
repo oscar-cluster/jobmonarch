@@ -230,12 +230,10 @@ tr.monarch th
    margin: 1mm;
 }
 
-tr.jobname_hint
+.jobname_hint
 {
-   border-collapse: collapse;
-   border-width: medium;
-   border-bottom-style: dotted;
-   border-bottom-color: rgb(0,0,255);
+   border-bottom: thin dotted;
+   border-bottom-color: rgb(255,0,0);
 }
 
 .red
