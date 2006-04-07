@@ -286,6 +286,9 @@ class DataGatherer:
 
 			status = self.getAttr( attrs, 'job_state' )
 
+			queued_timestamp = self.getAttr( attrs, 'ctime' )
+			print queued_timestamp
+
 			if status == 'R':
 				start_timestamp = self.getAttr( attrs, 'mtime' )
 				nodes = self.getAttr( attrs, 'exec_host' ).split( '+' )
@@ -354,6 +357,7 @@ class DataGatherer:
 			myAttrs['ppn'] = ppn
 			myAttrs['status'] = status
 			myAttrs['start_timestamp'] = start_timestamp
+			myAttrs['queued_timestamp'] = queued_timestamp
 			myAttrs['reported'] = str( int( int( self.cur_time ) + int( self.timeoffset ) ) )
 			myAttrs['nodes'] = nodeslist
 			myAttrs['domain'] = string.join( socket.getfqdn().split( '.' )[1:], '.' )
@@ -420,6 +424,9 @@ class DataGatherer:
 
 		if jobattrs['start_timestamp'] != '':
 			appendList.append( 'start_timestamp=' + jobattrs['start_timestamp'] )
+			
+		if jobattrs['queued_timestamp'] != '':
+			appendList.append( 'queued_timestamp=' + jobattrs['queued_timestamp'] )
 
 		appendList.append( 'reported=' + jobattrs['reported'] )
 		appendList.append( 'poll_interval=' + str( jobattrs['poll_interval'] ) )

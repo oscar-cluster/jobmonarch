@@ -614,7 +614,7 @@ function makeOverview() {
 
 				if( $COLUMN_QUEUED ) {
 					$tpl->newBlock( "column_queued" );
-					$tpl->assign( "queued", $jobs[$jobid][queued] );
+					$tpl->assign( "queued", makeDate( $jobs[$jobid][queued_timestamp] ) );
 					$tpl->gotoBlock( "node" );
 				}
 
