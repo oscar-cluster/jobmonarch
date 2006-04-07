@@ -395,6 +395,7 @@ function sortJobs( $jobs, $sortby, $sortorder ) {
 
                         $ppn = (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
                         $cpus = $nodes * $ppn;
+			$queued_time = (int) $jobattrs[queued_timestamp];
                         $start_time = (int) $jobattrs[start_timestamp];
 			$runningtime = $report_time - $start_time;
 
@@ -433,6 +434,10 @@ function sortJobs( $jobs, $sortby, $sortorder ) {
 
 				case "cpus":
 					$sorted[$jobid] = $cpus;
+					break;
+
+				case "queued":
+					$sorted[$jobid] = $queued_time;
 					break;
 
 				case "start":
