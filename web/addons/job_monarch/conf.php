@@ -3,6 +3,10 @@
 //
 $default_showhosts = 1;
 
+// Show the column job attribute 'requested memory'?
+//
+$COLUMN_REQUESTED_MEMORY = 0;
+
 // Path to Ganglia's web frontend root
 //
 $GANGLIA_PATH = "/var/www/ganglia";

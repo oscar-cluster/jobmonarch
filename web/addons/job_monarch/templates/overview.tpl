@@ -143,9 +143,14 @@ View
 <TH><B><A HREF="#" onClick="setSort( 'user' )">User</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'queue' )">Queue</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'name' )" ALT="Jobname" TITLE="Jobname">Name</A></B></TH>
-<TH><B><A HREF="#" onClick="setSort( 'req_cpu' )">Req. CPU time</A></B></TH>
-<TH><B><A HREF="#" onClick="setSort( 'req_mem' )">Req. Memory</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'req_cpu' )" ALT="Requested CPU Time (walltime)" TITLE="Requested CPU Time (walltime)">Req. CPU time</A></B></TH>
+<!-- START BLOCK : column_req_mem -->
+<TH><B><A HREF="#" onClick="setSort( 'req_mem' )" ALT="Requested Memory" TITLE="Requested Memory">Req. Memory</A></B></TH>
+<!-- END BLOCK : column_req_mem -->
 <TH><B><A HREF="#" onClick="setSort( 'nodes' )" ALT="Nodes" TITLE="Nodes">N</A>/<A HREF="#" onClick="setSort( 'cpus' )" ALT="Processors" TITLE="Processors">P</A></B></TH>
+<!-- START BLOCK : column_queued -->
+<TH><B><A HREF="#" onClick="setSort( 'queued' )">Queued</A></B></TH>
+<!-- END BLOCK : column_queued -->
 <TH><B><A HREF="#" onClick="setSort( 'start' )">Started</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'runningtime' )">Runningtime</A></B></TH>
 </TR>
@@ -166,7 +171,9 @@ View
 <!-- END BLOCK : jobname_hint_end -->
     </TD>
     <TD>{req_cpu}</TD>
+<!-- START BLOCK : column_req_mem -->
     <TD>{req_memory}</TD>
+<!-- END BLOCK : column_req_mem -->
     <TD>{nodes}/{cpus}</TD>
     <TD>{started}</TD>
     <TD>{runningtime}</TD>

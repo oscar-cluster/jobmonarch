@@ -23,7 +23,7 @@
  */
 
 global $GANGLIA_PATH, $clustername, $tpl, $filter, $cluster, $get_metric_string, $cluster_url, $sh;
-global $hosts_up, $m, $start, $end, $filterorder;
+global $hosts_up, $m, $start, $end, $filterorder, $COLUMN_REQUESTED_MEMORY;
 
 //$tpl->assign("_ROOT.summary", "" );
 
@@ -508,6 +508,11 @@ function makeOverview() {
 
 	$view_name_nodes = array();
 
+	if( $COLUMN_REQUESTED_MEMORY ) {
+		$tpl->newBlock( "column_req_mem" );
+		$tpl->gotoBlock( "node" );
+	}
+
 	foreach( $sorted_jobs as $jobid => $sortdec ) {
 
 		$report_time = $jobs[$jobid][reported];
@@ -597,8 +602,12 @@ function makeOverview() {
 
 				$domain = $jobs[$jobid][domain];
 				$tpl->assign("req_cpu", makeTime( timeToEpoch( $jobs[$jobid][requested_time] ) ) );
-				$tpl->assign("req_memory", $jobs[$jobid][requested_memory] );
 
+				if( $COLUMN_REQUESTED_MEMORY ) {
+					$tpl->newBlock( "column_req_mem" );
+					$tpl->assign( "req_memory", $jobs[$jobid][requested_memory] );
+					$tpl->gotoBlock( "node" );
+				}
 
 				$ppn = (int) $jobs[$jobid][ppn] ? $jobs[$jobid][ppn] : 1;
 				$cpus = $nodes * $ppn;
