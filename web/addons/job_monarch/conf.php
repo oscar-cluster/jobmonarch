@@ -7,6 +7,10 @@ $default_showhosts = 1;
 //
 $COLUMN_REQUESTED_MEMORY = 0;
 
+// Show the column job attribute 'queued' (since)?
+//
+$COLUMN_QUEUED = 1;
+
 // Path to Ganglia's web frontend root
 //
 $GANGLIA_PATH = "/var/www/ganglia";

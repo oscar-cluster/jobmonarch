@@ -23,7 +23,7 @@
  */
 
 global $GANGLIA_PATH, $clustername, $tpl, $filter, $cluster, $get_metric_string, $cluster_url, $sh;
-global $hosts_up, $m, $start, $end, $filterorder, $COLUMN_REQUESTED_MEMORY;
+global $hosts_up, $m, $start, $end, $filterorder, $COLUMN_REQUESTED_MEMORY, $COLUMN_QUEUED;
 
 //$tpl->assign("_ROOT.summary", "" );
 
@@ -464,7 +464,7 @@ function makeOverview() {
 	global $sortorder, $sortby, $filter, $sh, $hc, $m;
 	global $cluster_url, $get_metric_string, $host_url, $metrics;
 	global $start, $end, $reports, $gnodes, $default_showhosts;
-
+	global $COLUMN_QUEUED, $COLUMN_REQUESTED_MEMORY;
 	$metricname = $m;
 
 	$tpl->assign("sortorder", $sortorder );
@@ -509,8 +509,11 @@ function makeOverview() {
 	$view_name_nodes = array();
 
 	if( $COLUMN_REQUESTED_MEMORY ) {
-		$tpl->newBlock( "column_req_mem" );
-		$tpl->gotoBlock( "node" );
+		$tpl->newBlock( "column_header_req_mem" );
+	}
+
+	if( $COLUMN_QUEUED ) {
+		$tpl->newBlock( "column_header_queued" );
 	}
 
 	foreach( $sorted_jobs as $jobid => $sortdec ) {
@@ -606,6 +609,12 @@ function makeOverview() {
 				if( $COLUMN_REQUESTED_MEMORY ) {
 					$tpl->newBlock( "column_req_mem" );
 					$tpl->assign( "req_memory", $jobs[$jobid][requested_memory] );
+					$tpl->gotoBlock( "node" );
+				}
+
+				if( $COLUMN_QUEUED ) {
+					$tpl->newBlock( "column_queued" );
+					$tpl->assign( "queued", $jobs[$jobid][queued] );
 					$tpl->gotoBlock( "node" );
 				}
 
