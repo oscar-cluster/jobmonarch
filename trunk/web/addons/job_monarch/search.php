@@ -153,9 +153,9 @@ function makeTime( $time ) {
         return $date_str;
 }
 
-function makeDate( $time ) {
-        return strftime( "%a %d %b %Y %H:%M:%S", $time );
-}
+//function makeDate( $time ) {
+//        return strftime( "%a %d %b %Y %H:%M:%S", $time );
+//}
 
 function datetimeToEpoch( $datetime ) {
 
