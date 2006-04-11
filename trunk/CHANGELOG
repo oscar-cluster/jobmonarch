@@ -1,0 +1,24 @@
+0.1.1:
+
+	web)
+
+		- fixed: misc. layout bugs for overview & search
+		- changed: column requested memory is now optional through conf.php
+		- changed: search and overview tables are now full screen (100%)
+		- changed: overview jobnames are now cutoff at max 9 characters
+		           to prevent (layout) scews in the tables
+		- added: (optional) column 'queued' (since) in overview
+		- added: search results (can) now have a SEARCH_RESULT_LIMIT
+		         this increases performance of the database significantly!
+
+	jobmond)
+
+		- added: now reports 'queued since' (or creation time) of jobs
+
+	documentation)
+
+		- fixed: e-mail adress in INSTALL
+
+0.1.0:
+
+	- First public release
