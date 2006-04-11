@@ -141,6 +141,8 @@ class TarchDbase {
 
 	function searchDbase( $id = null, $queue = null, $user = null, $name = null, $start_from_time = null, $start_to_time = null, $end_from_time = null, $end_to_time = null ) {
 
+		global $SEARCH_RESULT_LIMIT;
+
 		if( $id ) 
 			$query = "SELECT job_id FROM jobs WHERE job_id = '$id' AND job_status = 'F'";
 		else {
@@ -161,7 +163,7 @@ class TarchDbase {
 			if( $end_to_time )
 				$query_args[] = "job_stop_timestamp <= $end_to_time";
 
-			$query = "SELECT job_id FROM jobs WHERE job_status = 'F' AND ";
+			$query = "FROM jobs WHERE job_status = 'F' AND ";
 			$extra_query_args = '';
 
 			foreach( $query_args as $myquery ) {
@@ -174,7 +176,16 @@ class TarchDbase {
 			$query .= $extra_query_args;
 		}
 
-		$ids = $this->queryDbase( $query );
+		$count_result_idname = "COUNT(job_id)";
+		$select_result_idname = "job_id";
+
+		$count_query = "SELECT " . $count_result_idname . " " . $query;
+
+		$count_result = $this->queryDbase( $count_query );
+		$this->resultcount = (int) $count_result[0][count];
+
+		$select_query = "SELECT " . $select_result_idname . " " . $query . " ORDER BY job_id LIMIT " . $SEARCH_RESULT_LIMIT;
+		$ids = $this->queryDbase( $select_query );
 
 		$ret = array();
 

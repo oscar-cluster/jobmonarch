@@ -324,6 +324,7 @@ function makeSearchPage() {
 	global $clustername, $tpl, $id, $user, $name, $start_from_time, $start_to_time, $queue;
 	global $end_from_time, $end_to_time, $filter, $default_showhosts, $m, $hosts_up;
 	global $period_start, $period_stop, $sortby, $sortorder, $COLUMN_REQUESTED_MEMORY;
+	global $SEARCH_RESULT_LIMIT;
 
 	$metricname = $m;
 	//printf("job_start = %s job_stop = %s\n", $job_start, $job_stop );
@@ -350,6 +351,13 @@ function makeSearchPage() {
 		if( $end_from_time ) $end_from_time = datetimeToEpoch( $end_from_time );
 		if( $end_to_time ) $end_to_time = datetimeToEpoch( $end_to_time );
 		$search_ids = $tdb->searchDbase( $id, $queue, $user, $name, $start_from_time, $start_to_time, $end_from_time, $end_to_time );
+
+		if( ($tdb->resultcount) > (int) $SEARCH_RESULT_LIMIT ) {
+			$tpl->gotoBlock( "_ROOT" );
+		
+			$tpl->assign( "form_error_msg", "Got " . $tdb->resultcount . " search results, output limited to last " . $SEARCH_RESULT_LIMIT . " jobs." );
+			$tpl->gotoBlock( "search_results" );
+		}
 
 		$jobs = array();
 		$nodes = array();
