@@ -201,16 +201,18 @@ function setFilter( filtername, filterval ) {
 <INPUT TYPE="HIDDEN" NAME="sortorder" VALUE="{sortorder}">
 <INPUT TYPE="HIDDEN" NAME="filterorder" VALUE="{f_order}">
 
-<TABLE WIDTH="90%" CELLPADDING="8" CELLSPACING="3" BORDER=0>
+<TABLE WIDTH="100%" CELLPADDING="2" CELLSPACING="2" BORDER=0>
 <TR CLASS="monarch">
-<TH><B><A HREF="#" onClick="setSort( 'id' )">Id</A></B></TH>
-<TH><B><A HREF="#" onClick="setSort( 'state' )">State</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'id' )" ALT="Jobid" TITLE="Jobid">Id</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'state' )" ALT="State" TITLE="State">S</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'user' )">User</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'queue' )">Queue</A></B></TH>
-<TH><B><A HREF="#" onClick="setSort( 'name' )">Name</A></B></TH>
-<TH><B><A HREF="#" onClick="setSort( 'req_cpu' )">Req. CPU time</A></B></TH>
-<TH><B><A HREF="#" onClick="setSort( 'req_mem' )">Req. Memory</A></B></TH>
-<TH><B><A HREF="#" onClick="setSort( 'nodes' )">Nodes</A>/<A HREF="#" onClick="setSort( 'cpus' )">Cpus</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'name' )" ALT="Jobname" TITLE="Jobname">Name</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'req_cpu' )" ALT="Requested CPU Time (walltime)" TITLE="Requested CPU Time (walltime)">Req. CPU time</A></B></TH>
+<!-- START BLOCK : column_header_req_mem -->
+<TH><B><A HREF="#" onClick="setSort( 'req_mem' )" ALT="Requested Memory" TITLE="Requested Memory">Req. Memory</A></B></TH>
+<!-- END BLOCK : column_header_req_mem -->
+<TH><B><A HREF="#" onClick="setSort( 'nodes' )" ALT="Nodes" TITLE="Nodes">N</A>/<A HREF="#" onClick="setSort( 'cpus' )" ALT="Processors" TITLE="Processors">P</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'start' )">Started</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'finished' )">Finished</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'runningtime' )">Runningtime</A></B></TH>
@@ -222,9 +224,19 @@ function setFilter( filtername, filterval ) {
     <TD><A HREF="#" onClick="setFilter( 'state', '{state}' )">{state}</A></TD>
     <TD><A HREF="#" onClick="setFilter( 'user', '{user}' )">{user}</A></TD>
     <TD><A HREF="#" onClick="setFilter( 'queue', '{queue}' )">{queue}</A></TD>
-    <TD>{name}</TD>
+    <TD ALT="{fulljobname}" TITLE="{fulljobname}">
+<!-- START BLOCK : jobname_hint_start -->
+    <FONT CLASS="jobname_hint">
+<!-- END BLOCK : jobname_hint_start -->
+    {name}
+<!-- START BLOCK : jobname_hint_end -->
+    </FONT>
+<!-- END BLOCK : jobname_hint_end -->
+    </TD>
     <TD>{req_cpu}</TD>
+<!-- START BLOCK : column_req_mem -->
     <TD>{req_memory}</TD>
+<!-- END BLOCK : column_req_mem -->
     <TD>{nodes}/{cpus}</TD>
     <TD>{started}</TD>
     <TD>{finished}</TD>
