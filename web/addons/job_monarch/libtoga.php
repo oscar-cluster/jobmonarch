@@ -24,12 +24,6 @@
  */
 
 
-// If php is compiled without globals
-//
-//if ( !empty( $_GET ) ) {
-//        extract( $_GET );
-//}
-
 class HTTPVariables {
 
 	var $clustername, $metricname;
@@ -114,6 +108,13 @@ global $default_metric;
 // Ganglia's array of host metrics
 //
 global $metrics, $hosts_up;
+
+global $DATETIME_FORMAT;
+
+function makeDate( $time ) {
+	global $DATETIME_FORMAT;
+	return strftime( $DATETIME_FORMAT, $time );
+}
 
 class TarchDbase {
 

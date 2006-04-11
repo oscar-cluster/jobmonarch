@@ -15,6 +15,10 @@ $COLUMN_QUEUED = 1;
 //
 $GANGLIA_PATH = "/var/www/ganglia";
 
+// Format of how to display a date and time in human readable format
+//
+$DATETIME_FORMAT = "%a %d %b %Y %H:%M:%S";
+
 // Max size of small clusterimage
 // (250 pixels is same width as Ganglia's pie chart)
 //
