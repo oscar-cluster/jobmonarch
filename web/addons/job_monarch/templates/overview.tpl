@@ -161,7 +161,7 @@ View
     <TD><A HREF="#" onClick="setFilter( 'state', '{state}' )" ALT="{fullstate}" TITLE="{fullstate}">{state}</A></TD>
     <TD><A HREF="#" onClick="setFilter( 'user', '{user}' )">{user}</A></TD>
     <TD><A HREF="#" onClick="setFilter( 'queue', '{queue}' )">{queue}</A></TD>
-    <TD alt="{fulljobname}" title="{fulljobname}">
+    <TD ALT="{fulljobname}" TITLE="{fulljobname}">
 <!-- START BLOCK : jobname_hint_start -->
     <FONT CLASS="jobname_hint">
 <!-- END BLOCK : jobname_hint_start -->
