@@ -3,6 +3,10 @@
 //
 $default_showhosts = 1;
 
+// Stop displaying archive search results after SEARCH_RESULT_LIMIT
+//
+$SEARCH_RESULT_LIMIT = 20;
+
 // Show the column job attribute 'requested memory'?
 //
 $COLUMN_REQUESTED_MEMORY = 0;
