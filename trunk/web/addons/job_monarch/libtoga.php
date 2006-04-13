@@ -143,9 +143,10 @@ class TarchDbase {
 
 		global $SEARCH_RESULT_LIMIT;
 
-		if( $id ) 
-			$query = "SELECT job_id FROM jobs WHERE job_id = '$id' AND job_status = 'F'";
-		else {
+		if( $id ) {
+			$select_query = "SELECT job_id FROM jobs WHERE job_id = '$id' AND job_status = 'F'";
+			$this->resultcount = 1;
+		} else {
 			$query_args = array();
 			
 			if( $queue )
@@ -174,17 +175,18 @@ class TarchDbase {
 					$extra_query_args .= " AND ".$myquery;
 			}
 			$query .= $extra_query_args;
+
+			$count_result_idname = "COUNT(job_id)";
+			$select_result_idname = "job_id";
+
+			$count_query = "SELECT " . $count_result_idname . " " . $query;
+
+			$count_result = $this->queryDbase( $count_query );
+			$this->resultcount = (int) $count_result[0][count];
+
+			$select_query = "SELECT " . $select_result_idname . " " . $query . " ORDER BY job_id LIMIT " . $SEARCH_RESULT_LIMIT;
 		}
 
-		$count_result_idname = "COUNT(job_id)";
-		$select_result_idname = "job_id";
-
-		$count_query = "SELECT " . $count_result_idname . " " . $query;
-
-		$count_result = $this->queryDbase( $count_query );
-		$this->resultcount = (int) $count_result[0][count];
-
-		$select_query = "SELECT " . $select_result_idname . " " . $query . " ORDER BY job_id LIMIT " . $SEARCH_RESULT_LIMIT;
 		$ids = $this->queryDbase( $select_query );
 
 		$ret = array();
