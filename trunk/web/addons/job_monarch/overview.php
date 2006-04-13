@@ -659,9 +659,9 @@ function makeOverview() {
 			}
 		}
 	}
-	array_unique( $all_used_nodes );
-	array_unique( $view_name_nodes );
-	array_unique( $running_name_nodes );
+	$all_used_nodes = array_unique( $all_used_nodes );
+	$view_name_nodes = array_unique( $view_name_nodes );
+	$running_name_nodes = array_unique( $running_name_nodes );
 
 	$used_nodes = count( $all_used_nodes );
 	$view_nodes += count( $view_name_nodes );
