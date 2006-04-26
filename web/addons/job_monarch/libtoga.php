@@ -575,7 +575,7 @@ class TorqueXMLHandler {
 
 			} else if( strstr( $attrs[NAME], 'MONARCH-JOB' ) ) {
 
-				sscanf( $attrs[NAME], 'MONARCH-JOB-%d', $jobid );
+				sscanf( $attrs[NAME], 'MONARCH-JOB-%d-%d', $jobid, $monincr );
 
 				//printf( "jobid %s\n", $jobid );
 
@@ -603,7 +603,8 @@ class TorqueXMLHandler {
 
 							foreach( $mynodes as $node )
 
-								$jobs[$jobid][$toganame][] = $node;
+								if( !in_array( $node, $jobs[$jobid][$toganame] ) )
+									$jobs[$jobid][$toganame][] = $node;
 
 						} else if( $jobs[$jobid][status] == 'Q' ) {
 
