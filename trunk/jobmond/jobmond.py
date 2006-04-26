@@ -111,6 +111,8 @@ from PBSQuery import PBSQuery
 
 import time, os, socket, string, re
 
+METRIC_MAX_VAL_LEN = 900
+
 class DataProcessor:
 	"""Class for processing of data"""
 
@@ -129,7 +131,7 @@ class DataProcessor:
 		# 'A metric will be deleted DMAX seconds after it is received, and
 	        # DMAX=0 means eternal life.'
 
-		self.dmax = str( int( int( TORQUE_POLL_INTERVAL ) + 2 ) )
+		self.dmax = str( int( int( TORQUE_POLL_INTERVAL ) * 2 ) )
 
 		try:
 			gmond_file = GMOND_CONF
@@ -348,19 +350,19 @@ class DataGatherer:
 				nodeslist = ''
 
 			myAttrs = { }
-			myAttrs['name'] = name
-			myAttrs['queue'] = queue 
-			myAttrs['owner'] = owner 
-			myAttrs['requested_time'] = requested_time
-			myAttrs['requested_memory'] = requested_memory
-			myAttrs['ppn'] = ppn
-			myAttrs['status'] = status
-			myAttrs['start_timestamp'] = start_timestamp
-			myAttrs['queued_timestamp'] = queued_timestamp
+			myAttrs['name'] = str( name )
+			myAttrs['queue'] = str( queue )
+			myAttrs['owner'] = str( owner )
+			myAttrs['requested_time'] = str( requested_time )
+			myAttrs['requested_memory'] = str( requested_memory )
+			myAttrs['ppn'] = str( ppn )
+			myAttrs['status'] = str( status )
+			myAttrs['start_timestamp'] = str( start_timestamp )
+			myAttrs['queued_timestamp'] = str( queued_timestamp )
 			myAttrs['reported'] = str( int( int( self.cur_time ) + int( self.timeoffset ) ) )
 			myAttrs['nodes'] = nodeslist
 			myAttrs['domain'] = string.join( socket.getfqdn().split( '.' )[1:], '.' )
-			myAttrs['poll_interval'] = TORQUE_POLL_INTERVAL
+			myAttrs['poll_interval'] = str( TORQUE_POLL_INTERVAL )
 
 			if self.jobDataChanged( jobs, job_id, myAttrs ) and myAttrs['status'] in [ 'R', 'Q' ]:
 				jobs[ job_id ] = myAttrs
@@ -388,93 +390,74 @@ class DataGatherer:
 
 			gmetric_val = self.compileGmetricVal( jobid, jobattrs )
 
+			metric_increment = 0
+
 			for val in gmetric_val:
-				self.dp.multicastGmetric( 'MONARCH-JOB-' + jobid, val )
-
-	def makeNodeString( self, nodelist ):
-		"""Make one big string of all hosts"""
-
-		node_str = None
-
-		for node in nodelist:
-			if not node_str:
-				node_str = node
-			else:
-				node_str = node_str + ';' + node
-
-		return node_str
+				self.dp.multicastGmetric( 'MONARCH-JOB-' + jobid + '-' + str(metric_increment), val )
+				metric_increment = metric_increment + 1
 
 	def compileGmetricVal( self, jobid, jobattrs ):
 		"""Create a val string for gmetric of jobinfo"""
 
-		appendList = [ ]
-		appendList.append( 'name=' + jobattrs['name'] )
-		appendList.append( 'queue=' + jobattrs['queue'] )
-		appendList.append( 'owner=' + jobattrs['owner'] )
-		appendList.append( 'requested_time=' + jobattrs['requested_time'] )
-
-		if jobattrs['requested_memory'] != '':
-			appendList.append( 'requested_memory=' + jobattrs['requested_memory'] )
-
-		if jobattrs['ppn'] != '':
-			appendList.append( 'ppn=' + jobattrs['ppn'] )
-
-		appendList.append( 'status=' + jobattrs['status'] )
-
-		if jobattrs['start_timestamp'] != '':
-			appendList.append( 'start_timestamp=' + jobattrs['start_timestamp'] )
-			
-		if jobattrs['queued_timestamp'] != '':
-			appendList.append( 'queued_timestamp=' + jobattrs['queued_timestamp'] )
-
-		appendList.append( 'reported=' + jobattrs['reported'] )
-		appendList.append( 'poll_interval=' + str( jobattrs['poll_interval'] ) )
-		appendList.append( 'domain=' + jobattrs['domain'] )
-
-		if jobattrs['status'] == 'R':
-			if len( jobattrs['nodes'] ) > 0:
-				appendList.append( 'nodes=' + self.makeNodeString( jobattrs['nodes'] ) )
-		elif jobattrs['status'] == 'Q':
-			appendList.append( 'nodes=' + str(jobattrs['nodes']) )
-
-		return self.makeAppendLists( appendList )
-
-	def makeAppendLists( self, append_list ):
-		"""
-		Divide all values from append_list over strings with a maximum
-		size of 1400
-		"""
-
-		app_lists = [ ]
+		gval_lists = [ ]
 
 		mystr = None
 
-		for val in append_list:
+		val_list = { }
 
-			if not mystr:
-				mystr = val
-			else:
-				if not self.checkValAppendMaxSize( mystr, val ):
-					mystr = mystr + ' ' + val
+		for val_name, val_value in jobattrs.items():
+
+			val_list_names_len	= len( string.join( val_list.keys() ) ) + len(val_list.keys())
+			val_list_vals_len	= len( string.join( val_list.values() ) ) + len(val_list.values())
+
+			if (val_name != 'nodes' and val_value != '') or (val_name == 'nodes' and jobattrs['status'] == 'Q'):
+
+				if (val_list_names_len + len(val_name) ) + (val_list_vals_len + len(str(val_value)) ) > METRIC_MAX_VAL_LEN:
+
+					gval_lists.append( val_list )
+					val_list = { }
+
+				val_list[ val_name ] = val_value
+
+			elif val_name == 'nodes' and jobattrs['status'] == 'R':
+
+				node_str = None
+
+				for node in val_value:
+
+					if node_str:
+						node_str = node_str + ';' + node
+					else:
+						node_str = node
+
+					if (val_list_names_len + len(val_name) ) + (val_list_vals_len + len(node_str) ) > METRIC_MAX_VAL_LEN:
+
+						val_list[ val_name ] = node_str
+						gval_lists.append( val_list )
+						val_list = { }
+						node_str = None
+
+				val_list[ val_name ] = node_str
+				gval_lists.append( val_list )
+				val_list = { }
+
+		str_list = [ ]
+
+		for val_list in gval_lists:
+
+			my_val_str = None
+
+			for val_name, val_value in val_list.items():
+
+				if my_val_str:
+
+					my_val_str = my_val_str + ' ' + val_name + '=' + val_value
 				else:
-					# Too big, new appenlist
-					app_lists.append( mystr )
-					mystr = val
+					my_val_str = val_name + '=' + val_value
 
-		app_lists.append( mystr )
+			str_list.append( my_val_str )
 
-		return app_lists
-
-	def checkValAppendMaxSize( self, val, text ):
-		"""Check if val + text size is not above 1400 (max msg size)"""
-
-		# Max frame size of a udp datagram is 1500 bytes
-		# removing misc header and gmetric stuff leaves about 1300 bytes
-		#
-		if len( val + text ) > 900:
-			return 1
-		else:
-			return 0
+		return str_list
 
 	def printJobs( self, jobs ):
 		"""Print a jobinfo overview"""
