@@ -344,7 +344,7 @@ class DataGatherer:
 					else:
 						count_mynodes = count_mynodes + int( nodepart )
 						
-				nodeslist = count_mynodes
+				nodeslist = str( count_mynodes )
 			else:
 				start_timestamp = ''
 				nodeslist = ''
@@ -410,16 +410,7 @@ class DataGatherer:
 			val_list_names_len	= len( string.join( val_list.keys() ) ) + len(val_list.keys())
 			val_list_vals_len	= len( string.join( val_list.values() ) ) + len(val_list.values())
 
-			if (val_name != 'nodes' and val_value != '') or (val_name == 'nodes' and jobattrs['status'] == 'Q'):
-
-				if (val_list_names_len + len(val_name) ) + (val_list_vals_len + len(str(val_value)) ) > METRIC_MAX_VAL_LEN:
-
-					gval_lists.append( val_list )
-					val_list = { }
-
-				val_list[ val_name ] = val_value
-
-			elif val_name == 'nodes' and jobattrs['status'] == 'R':
+			if val_name == 'nodes' and jobattrs['status'] == 'R':
 
 				node_str = None
 
@@ -440,6 +431,18 @@ class DataGatherer:
 				val_list[ val_name ] = node_str
 				gval_lists.append( val_list )
 				val_list = { }
+
+			elif val_value != '':
+
+				if (val_list_names_len + len(val_name) ) + (val_list_vals_len + len(str(val_value)) ) > METRIC_MAX_VAL_LEN:
+
+					gval_lists.append( val_list )
+					val_list = { }
+
+				val_list[ val_name ] = val_value
+
+		if len(val_list) > 0:
+			gval_lists.append( val_list )
 
 		str_list = [ ]
 
