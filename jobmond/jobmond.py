@@ -155,6 +155,8 @@ class DataProcessor:
 		for the syntax we use
 		"""
 
+		global METRIC_MAX_VAL_LEN
+
 		for line in os.popen( self.binary + ' --version' ).readlines():
 
 			line = line.split( ' ' )
@@ -180,6 +182,14 @@ class DataProcessor:
 						if version_patch < 1:
 						
 							incompatible = 1
+
+						if version_patch < 3:
+
+							METRIC_MAX_VAL_LEN = 900
+
+						elif version_patch >= 3:
+
+							METRIC_MAX_VAL_LEN = 1400
 
 		return incompatible
 
