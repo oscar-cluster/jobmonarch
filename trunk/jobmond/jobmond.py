@@ -593,7 +593,7 @@ def main():
 		#
 		#except ImportError:
 		#
-		#	debug_msg( 0, "fatal error: BATCH_API set to 'pbs' but python module 'pbs_python' is not installed' )
+		#	debug_msg( 0, "fatal error: BATCH_API set to 'sge' but python module 'sge_drmaa' is not installed' )
 		#	sys.exit( 1 )
 		#
 		#gather = SgeDataGatherer()
