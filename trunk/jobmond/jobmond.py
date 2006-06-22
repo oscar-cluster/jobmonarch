@@ -89,15 +89,15 @@ def loadConfig( filename ):
 
 	cfg.read( filename )
 
-	global DEBUG_LEVEL, DAEMONIZE, TORQUE_SERVER, TORQUE_POLL_INTERVAL, GMOND_CONF, DETECT_TIME_DIFFS, BATCH_HOST_TRANSLATE
+	global DEBUG_LEVEL, DAEMONIZE, BATCH_SERVER, BATCH_POLL_INTERVAL, GMOND_CONF, DETECT_TIME_DIFFS, BATCH_HOST_TRANSLATE, BATCH_API
 
 	DEBUG_LEVEL = cfg.getint( 'DEFAULT', 'DEBUG_LEVEL' )
 
 	DAEMONIZE = cfg.getboolean( 'DEFAULT', 'DAEMONIZE' )
 
-	TORQUE_SERVER = cfg.get( 'DEFAULT', 'TORQUE_SERVER' )
+	BATCH_SERVER = cfg.get( 'DEFAULT', 'BATCH_SERVER' )
 
-	TORQUE_POLL_INTERVAL = cfg.getint( 'DEFAULT', 'TORQUE_POLL_INTERVAL' )
+	BATCH_POLL_INTERVAL = cfg.getint( 'DEFAULT', 'BATCH_POLL_INTERVAL' )
 
 	GMOND_CONF = cfg.get( 'DEFAULT', 'GMOND_CONF' )
 
@@ -105,9 +105,10 @@ def loadConfig( filename ):
 
 	BATCH_HOST_TRANSLATE = getlist( cfg.get( 'DEFAULT', 'BATCH_HOST_TRANSLATE' ) )
 
+	BATCH_API = cfg.get( 'DEFAULT', 'BATCH_API' )
+
 	return True
 
-from PBSQuery import PBSQuery
 
 import time, os, socket, string, re
 
@@ -131,7 +132,7 @@ class DataProcessor:
 		# 'A metric will be deleted DMAX seconds after it is received, and
 	        # DMAX=0 means eternal life.'
 
-		self.dmax = str( int( int( TORQUE_POLL_INTERVAL ) * 2 ) )
+		self.dmax = str( int( int( BATCH_POLL_INTERVAL ) * 2 ) )
 
 		try:
 			gmond_file = GMOND_CONF
@@ -208,9 +209,25 @@ class DataProcessor:
 		debug_msg( 10, printTime() + ' ' + cmd )
 		os.system( cmd )
 
-class DataGatherer:
+class SgeDataGatherer:
+
+	"""Placeholder for Babu Sundaram's SGE implementation"""
+
+        def daemon( self ):
+
+		pass
+
+        def run( self ):
+
+		pass
+
+class PbsDataGatherer:
+
+	"""This is the DataGatherer for PBS and Torque"""
 
 	jobs = { }
+
+	global PBSQuery
 
 	def __init__( self ):
 		"""Setup appropriate variables"""
@@ -223,8 +240,8 @@ class DataGatherer:
 	def initPbsQuery( self ):
 
 		self.pq = None
-		if( TORQUE_SERVER ):
-			self.pq = PBSQuery( TORQUE_SERVER )
+		if( BATCH_SERVER ):
+			self.pq = PBSQuery( BATCH_SERVER )
 		else:
 			self.pq = PBSQuery()
 
@@ -372,7 +389,7 @@ class DataGatherer:
 			myAttrs['reported'] = str( int( int( self.cur_time ) + int( self.timeoffset ) ) )
 			myAttrs['nodes'] = nodeslist
 			myAttrs['domain'] = string.join( socket.getfqdn().split( '.' )[1:], '.' )
-			myAttrs['poll_interval'] = str( TORQUE_POLL_INTERVAL )
+			myAttrs['poll_interval'] = str( BATCH_POLL_INTERVAL )
 
 			if self.jobDataChanged( jobs, job_id, myAttrs ) and myAttrs['status'] in [ 'R', 'Q' ]:
 				jobs[ job_id ] = myAttrs
@@ -533,7 +550,7 @@ class DataGatherer:
 		
 			self.jobs = self.getJobData( self.jobs )
 			self.submitJobData( self.jobs )
-			time.sleep( TORQUE_POLL_INTERVAL )	
+			time.sleep( BATCH_POLL_INTERVAL )	
 
 def printTime( ):
 	"""Print current time/date in human readable format for log/debug"""
@@ -549,16 +566,48 @@ def debug_msg( level, msg ):
 def main():
 	"""Application start"""
 
+	global PBSQuery
+
 	if not processArgs( sys.argv[1:] ):
 		sys.exit( 1 )
 
-	gather = DataGatherer()
+	if BATCH_API == 'pbs':
+
+		try:
+			from PBSQuery import PBSQuery
+
+		except ImportError:
+
+			debug_msg( 0, "fatal error: BATCH_API set to 'pbs' but python module 'pbs_python' is not installed" )
+			sys.exit( 1 )
+
+		gather = PbsDataGatherer()
+
+	elif BATCH_API == 'sge':
+
+		pass
+		# import Babu's code here
+		#
+		#try:
+		#	import sge_drmaa
+		#
+		#except ImportError:
+		#
+		#	debug_msg( 0, "fatal error: BATCH_API set to 'pbs' but python module 'pbs_python' is not installed' )
+		#	sys.exit( 1 )
+		#
+		#gather = SgeDataGatherer()
+
+	else:
+		debug_msg( 0, "fatal error: unknown BATCH_API '" + BATCH_API + "' is not supported" )
+		sys.exit( 1 )
+
 	if DAEMONIZE:
 		gather.daemon()
 	else:
 		gather.run()
 
-# w00t someone started me
+# wh00t? someone started me! :)
 #
 if __name__ == '__main__':
 	main()
