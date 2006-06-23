@@ -532,8 +532,8 @@ class TorqueXMLHandler {
 
 	function startElement( $parser, $name, $attrs ) {
 
-		$jobs = &$this->jobs;
-		$nodes = &$this->nodes;
+		$jobs = $this->jobs;
+		$nodes = $this->nodes;
 
 		if ( $attrs[TN] ) {
 
@@ -601,10 +601,12 @@ class TorqueXMLHandler {
 
 							$mynodes = explode( ';', $togavalue );
 
-							foreach( $mynodes as $node )
+							foreach( $mynodes as $node ) {
 
-								if( !in_array( $node, $jobs[$jobid][$toganame] ) )
+								if( !in_array( $node, $jobs[$jobid][$toganame] ) ) {
 									$jobs[$jobid][$toganame][] = $node;
+								}
+							}
 
 						} else if( $jobs[$jobid][status] == 'Q' ) {
 
