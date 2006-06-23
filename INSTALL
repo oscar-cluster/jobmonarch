@@ -101,7 +101,7 @@ REQUIREMENTS
 		  http://www.php.net
 
 		- php-mbstring (multibyte string handling support)
-		  (if you get blacnk pages: configure php with --enable-mbstring)
+		  (configure php with --enable-mbstring)
 
 		- php-pgsql v4.x.x
 		  (should come with Postgres)
