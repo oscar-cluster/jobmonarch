@@ -302,6 +302,8 @@ function makeHeader() {
 
 	}
 
+	//$ex_fn = $tpl->getVarValue( "_ROOT", "form_name" );
+
 	if( $view == "search" or $view == "host" ) {
 
 		$node_menu .= "<B>&gt;</B>\n";
@@ -374,7 +376,7 @@ $tpl->assignInclude( "header", "templates/header.tpl" );
 
 if( isset( $h ) and $h != '' ) {
 	$hostname = $h;
-	$view = "host";
+	//$view = "host";
 }
 
 switch( $view ) {
@@ -389,10 +391,10 @@ switch( $view ) {
 		includeSearchPage();
 		break;
 
-	case "host":
+	//case "host":
 
-		includeHostPage();
-		break;
+	//	includeHostPage();
+	//	break;
 
 	default:
 
@@ -422,11 +424,11 @@ switch( $view ) {
 		makeSearchPage();
 		break;
 
-	case "host":
+	//case "host":
 
-		include "./host_view.php";
-		makeHostView();
-		break;
+	//	include "./host_view.php";
+	//	makeHostView();
+	//	break;
 
 	default:
 

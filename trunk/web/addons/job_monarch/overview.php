@@ -23,13 +23,10 @@
  */
 
 global $GANGLIA_PATH, $clustername, $tpl, $filter, $cluster, $get_metric_string, $cluster_url, $sh;
-global $hosts_up, $m, $start, $end, $filterorder, $COLUMN_REQUESTED_MEMORY, $COLUMN_QUEUED;
-
-//$tpl->assign("_ROOT.summary", "" );
+global $hosts_up, $m, $start, $end, $filterorder, $COLUMN_REQUESTED_MEMORY, $COLUMN_QUEUED, $hostname, $piefilter;
 
 $data_gatherer = new DataGatherer( $clustername );
 
-//$tpl->assign( "self", "./index.php" );
 $tpl->assign( "clustername", $clustername );
 
 if( $JOB_ARCHIVE )
@@ -42,32 +39,31 @@ $jobs = $data_gatherer->getJobs();
 $gnodes = $data_gatherer->getNodes();
 $cpus = $data_gatherer->getCpus();
 
-$filter_image_url = "";
+function setupFilterSettings() {
+	global $tpl, $filter, $clustername, $piefilter;
 
-foreach( $filter as $filtername => $filtervalue ) {
-	$tpl->assign( "f_".$filtername, $filtervalue );
-	$filter_image_url .= "&$filtername=$filtervalue";
+	$filter_image_url = "";
+
+	$tpl->gotoBlock( "_ROOT" );
+
+	foreach( $filter as $filtername => $filtervalue ) {
+		$tpl->assign( "f_".$filtername, $filtervalue );
+		$filter_image_url .= "&$filtername=$filtervalue";
+	}
+
+	$tpl->assign( "clusterimage", "./image.php?c=".rawurlencode($clustername)."&view=big-clusterimage".$filter_image_url );
+	$tpl->assign( "f_order", $filterorder );
+
+	if( array_key_exists( "id", $filter ) )
+		$piefilter = 'id';
+	else if( array_key_exists( "user", $filter ) )
+		$piefilter = 'user';
+	else if( array_key_exists( "queue", $filter ) )
+		$piefilter = 'queue';
+
+	$pie = drawPie();
+	$tpl->assign("pie", $pie );
 }
-
-$tpl->assign( "clusterimage", "./image.php?c=".rawurlencode($clustername)."&view=big-clusterimage".$filter_image_url );
-$tpl->assign( "f_order", $filterorder );
-
-if( array_key_exists( "id", $filter ) )
-	$piefilter = 'id';
-else if( array_key_exists( "user", $filter ) )
-	$piefilter = 'user';
-else if( array_key_exists( "queue", $filter ) )
-	$piefilter = 'queue';
-
-$pie = drawPie();
-$tpl->assign("pie", $pie );
-
-//if( !array_key_exists( 'id', $filter ) ) {
-
-//	$graph_args = "c=$cluster_url&$get_metric_string&st=$cluster[LOCALTIME]";
-//	$tpl->newBlock( "average_graphs" );
-//	$tpl->assign( "graph_args", $graph_args );
-//}
 
 function timeToEpoch( $time ) {
 
@@ -469,7 +465,7 @@ function makeOverview() {
 	global $sortorder, $sortby, $filter, $sh, $hc, $m;
 	global $cluster_url, $get_metric_string, $host_url, $metrics;
 	global $start, $end, $reports, $gnodes, $default_showhosts;
-	global $COLUMN_QUEUED, $COLUMN_REQUESTED_MEMORY;
+	global $COLUMN_QUEUED, $COLUMN_REQUESTED_MEMORY, $hostname;
 	$metricname = $m;
 
 	$tpl->assign("sortorder", $sortorder );
@@ -521,6 +517,8 @@ function makeOverview() {
 		$tpl->newBlock( "column_header_queued" );
 	}
 
+	$last_displayed_job = null;
+
 	foreach( $sorted_jobs as $jobid => $sortdec ) {
 
 		$report_time = $jobs[$jobid][reported];
@@ -546,11 +544,27 @@ function makeOverview() {
 				$running_cpus += $cpus;
 				$running_jobs++;
 
-				foreach( $jobs[$jobid][nodes] as $tempnode )
+				foreach( $jobs[$jobid][nodes] as $tempnode ) {
 					$running_name_nodes[] = $tempnode;
+
+					if( isset( $hostname ) && $hostname != '' )
+						//$filter[host] = $hostname;
+
+						$domain_len = 0 - strlen( $jobs[$jobid][domain] );
+						$hostnode = $tempnode;
+						if( substr( $hostnode, $domain_len ) != $jobs[$jobid][domain] ) {
+							$hostnode = $hostnode. '.'. $jobs[$jobid][domain];
+						}
+
+						if( isset($hostname) && $hostname != '' && $hostname != $hostnode )
+							$display_job = 0;
+				}
 			}
 
 			if( $jobs[$jobid][status] == 'Q' ) {
+				if( isset( $hostname ) && $hostname != '' )
+					$display_job = 0;
+
 				$queued_cpus += $cpus;
 				$queued_nodes += $nodes;
 				$queued_jobs++;
@@ -573,6 +587,9 @@ function makeOverview() {
 				$tpl->newBlock("node");
 				$tpl->assign( "clustername", $clustername );
 				$tpl->assign("id", $jobid );
+
+				$last_displayed_job = $jobid;
+
 				$tpl->assign("state", $jobs[$jobid][status] );
 
 				$fullstate = '';
@@ -671,9 +688,6 @@ function makeOverview() {
 	$total_cpus = $queued_cpus + $running_cpus;
 	$total_jobs = $queued_jobs + $running_jobs;
 
-	//$tpl->assignGlobal("cpus_nr", $overview_cpus );
-	//$tpl->assignGlobal("jobs_nr", $overview_jobs );
-
 	$tpl->assignGlobal("avail_nodes", $avail_nodes );
 	$tpl->assignGlobal("avail_cpus", $avail_cpus );
 
@@ -704,15 +718,21 @@ function makeOverview() {
 	$tpl->assignGlobal("view_cpus", $view_cpus );
 
 	$tpl->assignGlobal("report_time", makeDate( $heartbeat));
-	
-	//$tpl->assignGlobal("f_cpus_nr", $f_cpus );
-	//$tpl->assignGlobal("f_jobs_nr", $f_jobs );
+
+	//if( intval($view_jobs) == 1 and $start_time )
+	//	if( $last_displayed_job != null )
+	//		$filter[id] = $last_displayed_job;
+
+	//makeHeader();
+	setupFilterSettings();
 
 	if( intval($view_jobs) == 1 and $start_time ) {
+
 		$tpl->newBlock( "showhosts" );
 
 		# Present a width list
 		$cols_menu = "<SELECT NAME=\"hc\" OnChange=\"toga_form.submit();\">\n";
+
 
 		$hostcols = ($hc) ? $hc : 4;
 
@@ -754,7 +774,7 @@ function makeOverview() {
 				$metricval = "g";
 			else
 				$metricval = "m";
-						
+				
 			foreach ($hosts_up as $host ) {
 
 				$domain_len = 0 - strlen( $domain );
