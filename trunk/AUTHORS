@@ -4,7 +4,7 @@ MAIN DEVELOPER(S)
 	* Design, code and implementation
 
 	-	Ramon Bastiaans
-		<bastiaans@sara.nl>
+		< bastiaans ( a t ) sara ( d o t ) nl >
 
 ORIGINAL CONCEPT(S)
 ===================
@@ -12,7 +12,7 @@ ORIGINAL CONCEPT(S)
 	* PBS Monitor
 
 	-	Bas van der Vlies
-		<basv@sara.nl>
+		< basv ( a t ) sara ( d o t ) nl >
 
 	* PBS web software
 
@@ -22,8 +22,17 @@ ORIGINAL CONCEPT(S)
 CONTRIBUTOR(S)
 ==============
 
+	* Support, testing and idea's
+
+	-	Bas van der Vlies
+		< basv ( a t ) sara ( d o t ) nl >
+
 	-	Walter de Jong
-		<walter@sara.nl>
+		< walter ( a t ) sara ( d o t ) nl >
 
 	-	Jaap Dijkshoorn
-		<jaap@sara.nl>
+		< jaap ( a t ) sara ( d o t ) nl >
+
+	* Telling me that php-mbstring is required
+
+	-	Matt Cuttler, BNL
