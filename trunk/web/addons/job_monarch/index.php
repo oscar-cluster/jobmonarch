@@ -211,6 +211,14 @@ function makeHeader( $page_call ) {
 
 	$node_menu .= "<B><A HREF=\"./?c=".rawurlencode($clustername)."\">Joblist</A></B> ";
 
+	if( isset( $hostname ) ) {
+
+		$node_menu .= "<B>&gt;</B>\n";
+		$href = "<A HREF=\"./?c=".rawurlencode($clustername)."&h=".$hostname."\">";
+		$node_menu .= "<B>$href";
+		$node_menu .= "host: $hostname</A></B> ";
+	}
+
 	if( count( $filter ) > 0 && $view != "search" ) {
 
 		$my_ct = 1;
