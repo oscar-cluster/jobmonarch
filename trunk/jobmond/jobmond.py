@@ -105,6 +105,7 @@ def loadConfig( filename ):
 		#
 
 		BATCH_SERVER = cfg.get( 'DEFAULT', 'TORQUE_SERVER' )
+		api_guess = 'pbs'
 	
 	try:
 	
@@ -116,14 +117,26 @@ def loadConfig( filename ):
 		#
 
 		BATCH_POLL_INTERVAL = cfg.getint( 'DEFAULT', 'TORQUE_POLL_INTERVAL' )
+		api_guess = 'pbs'
+		
 	GMOND_CONF = cfg.get( 'DEFAULT', 'GMOND_CONF' )
 
 	DETECT_TIME_DIFFS = cfg.getboolean( 'DEFAULT', 'DETECT_TIME_DIFFS' )
 
 	BATCH_HOST_TRANSLATE = getlist( cfg.get( 'DEFAULT', 'BATCH_HOST_TRANSLATE' ) )
 
-	BATCH_API = cfg.get( 'DEFAULT', 'BATCH_API' )
+	try:
 
+		BATCH_API = cfg.get( 'DEFAULT', 'BATCH_API' )
+
+	except ConfigParser.NoOptionError, detail:
+
+		if BATCH_SERVER and api_guess:
+			BATCH_API = api_guess
+		else:
+			debug_msg( 0, "fatal error: BATCH_API not set and can't make guess" )
+			sys.exit( 1 )
+	
 	return True
 
 

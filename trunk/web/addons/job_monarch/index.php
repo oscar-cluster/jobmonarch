@@ -85,7 +85,7 @@ function epochToDatetime( $epoch ) {
         return strftime( "%d-%m-%Y %H:%M:%S", $epoch );
 }
 
-function makeHeader() {
+function makeHeader( $page_call ) {
 
 	global $tpl, $grid, $context, $initgrid;
 	global $jobrange, $jobstart, $title;
@@ -316,7 +316,7 @@ function makeHeader() {
 		$tpl->assignGlobal("form_name", $form_name );
 	}
 
-	if( $JOB_ARCHIVE ) {
+	if( $JOB_ARCHIVE && $page_call == 'index' ) {
 		$tpl->newBlock( "search" );
 		$tpl->assignGlobal( "cluster_url", rawurlencode($clustername) );
 		$tpl->assignGlobal( "cluster", $clustername );
@@ -406,7 +406,7 @@ $tpl->assignInclude( "footer", "templates/footer.tpl" );
 $tpl->prepare();
 
 $title = "Torque Report";
-makeHeader();
+makeHeader( 'index' );
 $tpl->assign("cluster_url", rawurlencode($clustername) );
 $tpl->assign("cluster", $clustername );
 
