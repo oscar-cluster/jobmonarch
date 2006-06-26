@@ -719,11 +719,11 @@ function makeOverview() {
 
 	$tpl->assignGlobal("report_time", makeDate( $heartbeat));
 
-	//if( intval($view_jobs) == 1 and $start_time )
-	//	if( $last_displayed_job != null )
-	//		$filter[id] = $last_displayed_job;
+	if( intval($view_jobs) == 1 and $start_time )
+		if( $last_displayed_job != null )
+			$filter[id] = $last_displayed_job;
 
-	//makeHeader();
+	makeHeader( 'overview' );
 	setupFilterSettings();
 
 	if( intval($view_jobs) == 1 and $start_time ) {
