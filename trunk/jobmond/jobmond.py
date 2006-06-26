@@ -95,10 +95,27 @@ def loadConfig( filename ):
 
 	DAEMONIZE = cfg.getboolean( 'DEFAULT', 'DAEMONIZE' )
 
-	BATCH_SERVER = cfg.get( 'DEFAULT', 'BATCH_SERVER' )
+	try:
 
-	BATCH_POLL_INTERVAL = cfg.getint( 'DEFAULT', 'BATCH_POLL_INTERVAL' )
+		BATCH_SERVER = cfg.get( 'DEFAULT', 'BATCH_SERVER' )
 
+	except ConfigParser.NoOptionError:
+
+		# Backwards compatibility for old configs
+		#
+
+		BATCH_SERVER = cfg.get( 'DEFAULT', 'TORQUE_SERVER' )
+	
+	try:
+	
+		BATCH_POLL_INTERVAL = cfg.getint( 'DEFAULT', 'BATCH_POLL_INTERVAL' )
+
+	except ConfigParser.NoOptionError:
+
+		# Backwards compatibility for old configs
+		#
+
+		BATCH_POLL_INTERVAL = cfg.getint( 'DEFAULT', 'TORQUE_POLL_INTERVAL' )
 	GMOND_CONF = cfg.get( 'DEFAULT', 'GMOND_CONF' )
 
 	DETECT_TIME_DIFFS = cfg.getboolean( 'DEFAULT', 'DETECT_TIME_DIFFS' )
