@@ -567,9 +567,9 @@ class PbsDataGatherer:
                 sys.stdout.close()
                 sys.stderr.close()
 
-                os.open('/dev/null', 0)
-                os.dup(0)
-                os.dup(0)
+                os.open('/dev/null', os.O_RDWR)
+                os.dup2(0, 1)
+                os.dup2(0, 2)
 
                 self.run()
 
