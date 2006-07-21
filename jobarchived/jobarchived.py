@@ -361,7 +361,7 @@ class DataSQLStore:
 class RRDMutator:
 	"""A class for performing RRD mutations"""
 
-	binary = RRDTOOL
+	binary = None
 
 	def __init__( self, binary=None ):
 		"""Set alternate binary if supplied"""
@@ -1064,7 +1064,7 @@ class RRDHandler:
 		self.cluster = cluster
 		self.config = config
 		self.slot = threading.Lock()
-		self.rrdm = RRDMutator()
+		self.rrdm = RRDMutator( RRDTOOL )
 		self.gatherLastUpdates()
 
 	def gatherLastUpdates( self ):
