@@ -33,8 +33,8 @@ class HTTPVariables {
 
 		$this->restvars = array();
 
-		$this->clustername = $httpvars["c"] ? $httpvars["c"] : null;
-		$this->metricname = $httpvars["m"] ? $httpvars["m"] : null;
+		$this->clustername = $httpvars["c"] ? $httpvars["c"] : $getvars["c"];
+		$this->metricname = $httpvars["m"] ? $httpvars["m"] : $getvars["m"];
 
 		foreach( $httpvars as $httpvar => $httpval ) {
 			
@@ -830,7 +830,7 @@ class NodeImage {
 			$usecolor = $this->colorHex( load_color($load) );
 			imageFilledRectangle( $this->image, $this->x+1, $this->y+1, $this->x+($size-1), $this->y+($size-1), $usecolor );
 			if( count( $this->jobs ) > 0 )
-				imageString( $this->image, 1, $this->x+(($size/2)-2), $this->y+(($size/2)-3), $JOB_NODE_MARKING, $black_color );
+				imageString( $this->image, 1, $this->x+(($size/2)-1), $this->y+(($size/2)-4), $JOB_NODE_MARKING, $black_color );
 
 		} else {
 
