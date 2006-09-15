@@ -338,10 +338,17 @@ class PbsDataGatherer:
 
 			mynoderequest = self.getAttr( attrs, 'Resource_List.nodes' )
 
+			ppn = ''
+
 			if mynoderequest.find( ':' ) != -1 and mynoderequest.find( 'ppn' ) != -1:
-				ppn = mynoderequest.split( ':' )[1].split( 'ppn=' )[1]
-			else:
-				ppn = ''
+
+				mynoderequest_fields = mynoderequest.split( ':' )
+
+				for mynoderequest_field in mynoderequest_fields:
+
+					if mynoderequest_field.find( 'ppn' ) != -1:
+
+						ppn = mynoderequest_field.split( 'ppn=' )[1]
 
 			status = self.getAttr( attrs, 'job_state' )
 
