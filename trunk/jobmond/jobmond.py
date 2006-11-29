@@ -316,7 +316,12 @@ class PbsDataGatherer:
 	
 		#print self.pq.getnodes()
 	
-		joblist = self.pq.getjobs()
+		joblist = {}
+		while len(joblist) == 0:
+			try:
+				joblist = self.pq.getjobs()
+			except PBSError:
+				time.sleep( TORQUE_POLL_INTERVAL )
 
 		self.cur_time = time.time()
 
@@ -611,7 +616,7 @@ def main():
 	if BATCH_API == 'pbs':
 
 		try:
-			from PBSQuery import PBSQuery
+			from PBSQuery import PBSQuery, PBSError
 
 		except ImportError:
 
