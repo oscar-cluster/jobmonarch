@@ -514,7 +514,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 			elif metricname.find( 'MONARCH-JOB' ) != -1:
 
-				job_id = metricname.split( 'MONARCH-JOB-' )[1]
+				job_id = metricname.split( 'MONARCH-JOB-' )[1].split( '-' )[0]
 				val = attrs.get( 'VAL', "" )
 
 				if not job_id in self.jobs_processed:
