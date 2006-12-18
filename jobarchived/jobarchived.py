@@ -509,12 +509,12 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 			metricname = attrs.get( 'NAME', "" )
 
-			if metricname == 'TOGA-HEARTBEAT':
+			if metricname == 'MONARCH-HEARTBEAT':
 				self.heartbeat = attrs.get( 'VAL', "" )
 
-			elif metricname.find( 'TOGA-JOB' ) != -1:
+			elif metricname.find( 'MONARCH-JOB' ) != -1:
 
-				job_id = metricname.split( 'TOGA-JOB-' )[1]
+				job_id = metricname.split( 'MONARCH-JOB-' )[1]
 				val = attrs.get( 'VAL', "" )
 
 				if not job_id in self.jobs_processed:
