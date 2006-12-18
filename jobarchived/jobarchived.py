@@ -21,7 +21,15 @@
 # SVN $Id$
 #
 
-import getopt, syslog, ConfigParser, sys
+DEFAULT_SEARCH_PATH     = '/usr/share/jobarchived'
+
+import sys
+
+if DEFAULT_SEARCH_PATH not in sys.path:
+
+        sys.path.append( DEFAULT_SEARCH_PATH )
+
+import getopt, syslog, ConfigParser
 
 def processArgs( args ):
 
