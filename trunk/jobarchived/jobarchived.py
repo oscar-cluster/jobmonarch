@@ -449,14 +449,17 @@ class XMLProcessor:
 class TorqueXMLProcessor( XMLProcessor ):
 	"""Main class for processing XML and acting with it"""
 
-	def __init__( self ):
+	def __init__( self, XMLSource ):
 		"""Setup initial XML connection and handlers"""
 
-		self.myXMLGatherer = XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
-		self.myXMLSource = self.myXMLGatherer.getFileObject()
-		self.myXMLHandler = TorqueXMLHandler()
-		self.myXMLError = XMLErrorHandler()
-		self.config = GangliaConfigParser( GMETAD_CONF )
+		self.myXMLGatherer	= XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
+		#self.myXMLSource	= self.myXMLGatherer.getFileObject()
+		self.myXMLSource	= XMLSource
+		print self.myXMLSource
+		self.myXMLHandler	= TorqueXMLHandler()
+		self.myXMLError		= XMLErrorHandler()
+
+		self.config		= GangliaConfigParser( GMETAD_CONF )
 
 	def run( self ):
 		"""Main XML processing"""
@@ -465,11 +468,13 @@ class TorqueXMLProcessor( XMLProcessor ):
 
 		while( 1 ):
 
-			self.myXMLSource = self.myXMLGatherer.getFileObject()
+			#self.myXMLSource = self.mXMLGatherer.getFileObject()
 			debug_msg( 1, 'torque_xml_thread(): Parsing..' )
 
+			my_data	= self.myXMLSource.getData()
+
 			try:
-				xml.sax.parse( self.myXMLSource, self.myXMLHandler, self.myXMLError )
+				xml.sax.parseString( my_data, self.myXMLHandler, self.myXMLError )
 			except socket.error, msg:
 				debug_msg( 0, 'ERROR: Socket error in connect to datasource!: %s' %msg )
 				
@@ -768,19 +773,34 @@ class XMLErrorHandler( xml.sax.handler.ErrorHandler ):
 class XMLGatherer:
 	"""Setup a connection and file object to Ganglia's XML"""
 
-	s = None
-	fd = None
+	s		= None
+	fd		= None
+	data		= None
+
+	# Time since the last update
+	#
+	LAST_UPDATE	= 0
+
+	# Minimum interval between updates
+	#
+	MIN_UPDATE_INT	= 10
+
+	# Is a update occuring now
+	#
+	update_now	= False
 
 	def __init__( self, host, port ):
 		"""Store host and port for connection"""
 
 		self.host = host
 		self.port = port
-		self.connect()
-		self.makeFileDescriptor()
 
-	def connect( self ):
+		self.retrieveData()
+
+	def retrieveData( self ):
 		"""Setup connection to XML source"""
+
+		self.update_now	= True
 
 		for res in socket.getaddrinfo( self.host, self.port, socket.AF_UNSPEC, socket.SOCK_STREAM ):
 
@@ -795,6 +815,8 @@ class XMLGatherer:
 				self.s = None
 				continue
 
+			print self.s
+
 		    	try:
 
 				self.s.connect( sa )
@@ -806,16 +828,32 @@ class XMLGatherer:
 
 		    	break
 
+		print self.s
+
 		if self.s is None:
 
 			debug_msg( 0, 'FATAL ERROR: Could not open socket or unable to connect to datasource!' )
+			self.update_now	= False
 			sys.exit( 1 )
+
+		else:
+			self.s.send( '\n' )
+
+			my_fp			= self.s.makefile( 'r' )
+			my_data			= my_fp.readlines()
+			my_data			= string.join( my_data, '' )
+
+			self.data		= my_data
+
+			self.LAST_UPDATE	= time.time()
+
+		self.update_now	= False
 
 	def disconnect( self ):
 		"""Close socket"""
 
 		if self.s:
-			self.s.shutdown( 2 )
+			#self.s.shutdown( 2 )
 			self.s.close()
 			self.s = None
 
@@ -824,13 +862,43 @@ class XMLGatherer:
 
 		self.disconnect()
 
-	def reconnect( self ):
+	def reGetData( self ):
 		"""Reconnect"""
+
+		while self.update_now:
+
+			# Must be another update in progress:
+			# Wait until the update is complete
+			#
+			time.sleep( 1 )
 
 		if self.s:
 			self.disconnect()
 
-		self.connect()
+		self.retrieveData()
+
+	def getData( self ):
+
+		"""Return the XML data"""
+
+		# If more than MIN_UPDATE_INT seconds passed since last data update
+		# update the XML first before returning it
+		#
+
+		cur_time	= time.time()
+
+		if ( cur_time - self.LAST_UPDATE ) > self.MIN_UPDATE_INT:
+
+			self.reGetData()
+
+		while self.update_now:
+
+			# Must be another update in progress:
+			# Wait until the update is complete
+			#
+			time.sleep( 1 )
+			
+		return self.data
 
 	def makeFileDescriptor( self ):
 		"""Make file descriptor that points to our socket connection"""
@@ -851,15 +919,17 @@ class XMLGatherer:
 class GangliaXMLProcessor( XMLProcessor ):
 	"""Main class for processing XML and acting with it"""
 
-	def __init__( self ):
+	def __init__( self, XMLSource ):
 		"""Setup initial XML connection and handlers"""
 
-		self.config = GangliaConfigParser( GMETAD_CONF )
+		self.config		= GangliaConfigParser( GMETAD_CONF )
 
-		self.myXMLGatherer = XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
-		self.myXMLSource = self.myXMLGatherer.getFileObject()
-		self.myXMLHandler = GangliaXMLHandler( self.config )
-		self.myXMLError = XMLErrorHandler()
+		self.myXMLGatherer	= XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
+		#self.myXMLSource	= self.myXMLGatherer.getFileObject()
+		self.myXMLSource	= XMLSource
+		print self.myXMLSource
+		self.myXMLHandler	= GangliaXMLHandler( self.config )
+		self.myXMLError		= XMLErrorHandler()
 
 	def run( self ):
 		"""Main XML processing; start a xml and storethread"""
@@ -970,10 +1040,12 @@ class GangliaXMLProcessor( XMLProcessor ):
 
 		debug_msg( 1, 'ganglia_parse_thread(): started.' )
 		debug_msg( 1, 'ganglia_parse_thread(): Parsing XML..' )
-		self.myXMLSource = self.myXMLGatherer.getFileObject()
+		#self.myXMLSource = self.myXMLGatherer.getFileObject()
+		
+		my_data	= self.myXMLSource.getData()
 
 		try:
-			xml.sax.parse( self.myXMLSource, self.myXMLHandler, self.myXMLError )
+			xml.sax.parseString( my_data, self.myXMLHandler, self.myXMLError )
 		except socket.error, msg:
 			debug_msg( 0, 'ERROR: Socket error in connect to datasource!: %s' %msg )
 
@@ -1478,8 +1550,10 @@ def daemon():
 def run():
 	"""Threading start"""
 
-	myTorqueProcessor = TorqueXMLProcessor()
-	myGangliaProcessor = GangliaXMLProcessor()
+	myXMLSource		= XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] )
+
+	myTorqueProcessor	= TorqueXMLProcessor( myXMLSource )
+	myGangliaProcessor	= GangliaXMLProcessor( myXMLSource )
 
 	try:
 		torque_xml_thread = threading.Thread( None, myTorqueProcessor.run, 'torque_proc_thread' )
