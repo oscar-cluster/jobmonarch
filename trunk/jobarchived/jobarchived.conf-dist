@@ -40,11 +40,11 @@ SYSLOG_FACILITY			: DAEMON
 GMETAD_CONF			: /etc/gmetad.conf
 
 # Where to grab XML data from
-# Usually: local gmetad (port 8651)
+# Usually: local gmetad (port 8652)
 #
 # Syntax: <hostname>:<port>
 #
-ARCHIVE_XMLSOURCE		: localhost:8651
+ARCHIVE_XMLSOURCE		: localhost:8652
 
 # List of data_source names to archive for
 #
@@ -64,7 +64,7 @@ ARCHIVE_HOURS_PER_RRD		: 12
 # Which metrics to exclude from archiving
 # NOTE: This can be a regexp or a string
 #
-ARCHIVE_EXCLUDE_METRICS		: "^Temp_.*_.*", ".*_Temp_.*", ".*_RPM_.*", ".*_Battery_.*"
+ARCHIVE_EXCLUDE_METRICS		: ".*Temp.*", ".*RPM.*", ".*Version.*", ".*Tag$", "boottime", "gexec", "os.*", "machine_type"
 
 # Where to store the archived rrd's
 #
