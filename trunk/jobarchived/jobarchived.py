@@ -815,8 +815,6 @@ class XMLGatherer:
 				self.s = None
 				continue
 
-			print self.s
-
 		    	try:
 
 				self.s.connect( sa )
@@ -827,8 +825,6 @@ class XMLGatherer:
 				continue
 
 		    	break
-
-		print self.s
 
 		if self.s is None:
 
