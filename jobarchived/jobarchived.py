@@ -455,7 +455,6 @@ class TorqueXMLProcessor( XMLProcessor ):
 		self.myXMLGatherer	= XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
 		#self.myXMLSource	= self.myXMLGatherer.getFileObject()
 		self.myXMLSource	= XMLSource
-		print self.myXMLSource
 		self.myXMLHandler	= TorqueXMLHandler()
 		self.myXMLError		= XMLErrorHandler()
 
@@ -923,7 +922,6 @@ class GangliaXMLProcessor( XMLProcessor ):
 		self.myXMLGatherer	= XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
 		#self.myXMLSource	= self.myXMLGatherer.getFileObject()
 		self.myXMLSource	= XMLSource
-		print self.myXMLSource
 		self.myXMLHandler	= GangliaXMLHandler( self.config )
 		self.myXMLError		= XMLErrorHandler()
 
