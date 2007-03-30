@@ -120,7 +120,7 @@ class TarchDbase {
 
 	var $ip, $dbase, $conn;
 
-	function TarchDbase( $ip = null, $dbase = 'jobarch' ) {
+	function TarchDbase( $ip = null, $dbase = null ) {
 
 		global $JOB_ARCHIVE_DBASE;
 
@@ -133,7 +133,7 @@ class TarchDbase {
 
 	function connect() {
 
-		if( $this->ip == null and $this->dbase == 'toga' )
+		if( $this->ip == null )
 			$this->conn = pg_connect( "dbname=".$this->dbase );
 		else
 			$this->conn = pg_connect( "host=".$this->ip." dbname=".$this->dbase );
