@@ -549,7 +549,7 @@ function makeOverview() {
 				foreach( $jobs[$jobid][nodes] as $tempnode ) {
 					$running_name_nodes[] = $tempnode;
 
-					if( isset( $hostname ) && $hostname != '' )
+					if( isset( $hostname ) && $hostname != '' ) {
 						//$filter[host] = $hostname;
 
 						$domain_len = 0 - strlen( $jobs[$jobid][domain] );
@@ -564,6 +564,7 @@ function makeOverview() {
 						} else if( !$found_node_job ) {
 							$display_job = 0;
 						}
+					}
 				}
 			}
 
