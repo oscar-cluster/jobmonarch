@@ -42,7 +42,14 @@ function drawSmallClusterImage() {
 
 	global $clustername;
 
-	$ic = new ClusterImage( $clustername );
+	$data_gatherer = new DataGatherer( $clustername );
+	$data_gatherer->parseXML();
+
+	if( $data_gatherer->isJobmonRunning() )
+		$ic = new ClusterImage( $clustername );
+	else
+		$ic = new EmptyImage();
+
 	$ic->draw();
 }
 

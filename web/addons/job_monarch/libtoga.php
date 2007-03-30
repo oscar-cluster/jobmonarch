@@ -501,6 +501,11 @@ class DataGatherer {
 		$handler = $this->xmlhandler;
 		return $handler->getHeartbeat();
 	}
+
+	function isJobmonRunning() {
+		$handler = $this->xmlhandler;
+		return $handler->isJobmonRunning();
+	}
 }
 
 class TorqueXMLHandler {
@@ -528,6 +533,14 @@ class TorqueXMLHandler {
 
 			$cpus = $cpus + $mycpus;
 		}
+	}
+
+	function isJobmonRunning() {
+
+		if (isset( $this->heartbeat['time'] ))
+			return 1;
+		else
+			return 0;
 	}
 
 	function startElement( $parser, $name, $attrs ) {
@@ -1011,6 +1024,19 @@ class ClusterImage {
 			}
 		}
 		
+		header( 'Content-type: image/png' );
+		imagePNG( $image );
+		imageDestroy( $image );
+	}
+}
+
+class EmptyImage {
+
+	function draw() {
+		$image		= imageCreateTrueColor( 1, 1 );
+		$colorwhite	= imageColorAllocate( $image, 255, 255, 255 );
+		imageFill( $image, 0, 0, $colorwhite );                         
+
 		header( 'Content-type: image/png' );
 		imagePNG( $image );
 		imageDestroy( $image );
