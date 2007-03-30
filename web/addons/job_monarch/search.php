@@ -322,7 +322,7 @@ function sortJobs( $jobs, $nodes, $sortby, $sortorder ) {
 
 function makeSearchPage() {
 	global $clustername, $tpl, $id, $user, $name, $start_from_time, $start_to_time, $queue;
-	global $end_from_time, $end_to_time, $filter, $default_showhosts, $m, $hosts_up;
+	global $end_from_time, $end_to_time, $filter, $default_showhosts, $m, $hosts_up, $hc;
 	global $period_start, $period_stop, $sortby, $sortorder, $COLUMN_REQUESTED_MEMORY;
 	global $SEARCH_RESULT_LIMIT;
 
