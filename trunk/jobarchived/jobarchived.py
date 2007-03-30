@@ -103,7 +103,7 @@ def loadConfig( filename ):
 
 	cfg.read( filename )
 
-	global DEBUG_LEVEL, USE_SYSLOG, SYSLOG_LEVEL, SYSLOG_FACILITY, GMETAD_CONF, ARCHIVE_XMLSOURCE, ARCHIVE_DATASOURCES, ARCHIVE_PATH, ARCHIVE_HOURS_PER_RRD, ARCHIVE_EXCLUDE_METRICS, JOB_SQL_DBASE, DAEMONIZE, RRDTOOL
+	global DEBUG_LEVEL, USE_SYSLOG, SYSLOG_LEVEL, SYSLOG_FACILITY, GMETAD_CONF, ARCHIVE_XMLSOURCE, ARCHIVE_DATASOURCES, ARCHIVE_PATH, ARCHIVE_HOURS_PER_RRD, ARCHIVE_EXCLUDE_METRICS, JOB_SQL_DBASE, DAEMONIZE, RRDTOOL, JOB_TIMEOUT
 
 	ARCHIVE_PATH		= cfg.get( 'DEFAULT', 'ARCHIVE_PATH' )
 
@@ -133,6 +133,8 @@ def loadConfig( filename ):
 	ARCHIVE_EXCLUDE_METRICS	= getlist( cfg.get( 'DEFAULT', 'ARCHIVE_EXCLUDE_METRICS' ) )
 
 	JOB_SQL_DBASE		= cfg.get( 'DEFAULT', 'JOB_SQL_DBASE' )
+
+	JOB_TIMEOUT		= cfg.getint( 'DEFAULT', 'JOB_TIMEOUT' )
 
 	DAEMONIZE		= cfg.getboolean( 'DEFAULT', 'DAEMONIZE' )
 
@@ -366,6 +368,66 @@ class DataSQLStore:
 
 		self.addJob( jobid, jobattrs )
 
+	def checkStaleJobs( self ):
+
+		q = "SELECT * from jobs WHERE job_status != 'F'"
+
+		r = self.getDatabase( q )
+
+		if len( r ) == 0:
+
+			return None
+
+		cleanjobs	= [ ]
+		timeoutjobs	= [ ]
+
+		jobtimeout_sec	= JOB_TIMEOUT * (60 * 60)
+		cur_time	= time.time()
+
+		for row in r:
+
+			job_id			= row[0]
+			job_requested_time	= row[4]
+			job_status		= row[7]
+			job_start_timestamp	= row[8]
+
+			if job_status == 'Q' or not job_start_timestamp:
+
+				cleanjobs.append( job_id )
+
+			else:
+
+				start_timestamp = int( job_start_timestamp )
+
+				if ( cur_time - start_timestamp ) > jobtimeout_sec:
+
+					if job_requested_time:
+
+						rtime_epoch	= reqtime2epoch( job_requested_time )
+					else:
+						rtime_epoch	= None
+					
+					timeoutjobs.append( (job_id, job_start_timestamp, rtime_epoch) )
+
+		debug_msg( 1, 'Found ' + str( len( cleanjobs ) ) + ' stale jobs in database: deleting entries' )
+
+		for j in cleanjobs:
+
+			q = "DELETE FROM jobs WHERE job_id = '" + str( j ) + "'"
+			self.setDatabase( q )
+
+		debug_msg( 1, 'Found ' + str( len( timeoutjobs ) ) + ' timed out jobs in database: closing entries' )
+
+		for j in timeoutjobs:
+
+			( i, s, r )		= j
+
+			if r:
+				new_end_timestamp	= int( s ) + r
+
+			q = "UPDATE jobs SET job_stop_timestamp = '" + str( new_end_timestamp ) + "' WHERE job_id = '" + str(i) + "'"
+			self.setDatabase( q )
+
 class RRDMutator:
 	"""A class for performing RRD mutations"""
 
@@ -456,13 +518,13 @@ class XMLProcessor:
 class TorqueXMLProcessor( XMLProcessor ):
 	"""Main class for processing XML and acting with it"""
 
-	def __init__( self, XMLSource ):
+	def __init__( self, XMLSource, DataStore ):
 		"""Setup initial XML connection and handlers"""
 
 		#self.myXMLGatherer	= XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
 		#self.myXMLSource	= self.myXMLGatherer.getFileObject()
 		self.myXMLSource	= XMLSource
-		self.myXMLHandler	= TorqueXMLHandler()
+		self.myXMLHandler	= TorqueXMLHandler( DataStore )
 		self.myXMLError		= XMLErrorHandler()
 
 		self.config		= GangliaConfigParser( GMETAD_CONF )
@@ -493,9 +555,10 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 	jobAttrs = { }
 
-	def __init__( self ):
+	def __init__( self, datastore ):
 
-		self.ds			= DataSQLStore( JOB_SQL_DBASE.split( '/' )[0], JOB_SQL_DBASE.split( '/' )[1] )
+		#self.ds			= DataSQLStore( JOB_SQL_DBASE.split( '/' )[0], JOB_SQL_DBASE.split( '/' )[1] )
+		self.ds			= datastore
 		self.jobs_processed	= [ ]
 		self.jobs_to_store	= [ ]
 
@@ -593,7 +656,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 			debug_msg( 1, 'torque_xml_thread(): Storing..' )
 
 			for jobid in self.jobs_to_store:
-				if self.jobAttrs[ jobid ]['status'] in [ 'R', 'Q', 'F' ]:
+				if self.jobAttrs[ jobid ]['status'] in [ 'R', 'F' ]:
 
 					self.ds.storeJobInfo( jobid, self.jobAttrs[ jobid ] )
 
@@ -647,11 +710,15 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 	"""Parse Ganglia's XML"""
 
-	def __init__( self, config ):
+	def __init__( self, config, datastore ):
 		"""Setup initial variables and gather info on existing rrd archive"""
 
 		self.config	= config
 		self.clusters	= { }
+		self.ds		= datastore
+		debug_msg( 1, 'Checking database..' )
+		self.ds.checkStaleJobs()
+		debug_msg( 1, 'Check done.' )
 		debug_msg( 1, 'Checking existing toga rrd archive..' )
 		self.gatherClusters()
 		debug_msg( 1, 'Check done.' )
@@ -929,7 +996,7 @@ class XMLGatherer:
 class GangliaXMLProcessor( XMLProcessor ):
 	"""Main class for processing XML and acting with it"""
 
-	def __init__( self, XMLSource ):
+	def __init__( self, XMLSource, DataStore ):
 		"""Setup initial XML connection and handlers"""
 
 		self.config		= GangliaConfigParser( GMETAD_CONF )
@@ -937,7 +1004,8 @@ class GangliaXMLProcessor( XMLProcessor ):
 		#self.myXMLGatherer	= XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
 		#self.myXMLSource	= self.myXMLGatherer.getFileObject()
 		self.myXMLSource	= XMLSource
-		self.myXMLHandler	= GangliaXMLHandler( self.config )
+		self.ds			= DataStore
+		self.myXMLHandler	= GangliaXMLHandler( self.config, self.ds )
 		self.myXMLError		= XMLErrorHandler()
 
 	def run( self ):
@@ -1566,9 +1634,10 @@ def run():
 	"""Threading start"""
 
 	myXMLSource		= XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] )
+	myDataStore		= DataSQLStore( JOB_SQL_DBASE.split( '/' )[0], JOB_SQL_DBASE.split( '/' )[1] )
 
-	myTorqueProcessor	= TorqueXMLProcessor( myXMLSource )
-	myGangliaProcessor	= GangliaXMLProcessor( myXMLSource )
+	myTorqueProcessor	= TorqueXMLProcessor( myXMLSource, myDataStore )
+	myGangliaProcessor	= GangliaXMLProcessor( myXMLSource, myDataStore )
 
 	try:
 		torque_xml_thread	= threading.Thread( None, myTorqueProcessor.run, 'torque_proc_thread' )
@@ -1609,6 +1678,16 @@ def check_dir( directory ):
 		directory = directory[:-1]
 
 	return directory
+
+def reqtime2epoch( rtime ):
+
+	(hours, minutes, seconds )	= rtime.split( ':' )
+
+	etime	= int(seconds)
+	etime	= etime + ( int(minutes) * 60 )
+	etime	= etime + ( int(hours) * 60 * 60 )
+
+	return etime
 
 def debug_msg( level, msg ):
 	"""Only print msg if correct levels"""

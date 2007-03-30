@@ -76,6 +76,13 @@ ARCHIVE_PATH			: /var/lib/jobarch
 #
 JOB_SQL_DBASE			: localhost/jobarchive
 
+# Timeout for jobs in archive
+#
+# Assume job has already finished while jobarchived was not running
+# after this amount of hours: the it will be finished anyway in the database
+#
+JOB_TIMEOUT			: 168
+
 # Location of rrdtool binary
 #
 RRDTOOL				: /usr/bin/rrdtool
