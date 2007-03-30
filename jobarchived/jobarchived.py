@@ -719,7 +719,7 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 		debug_msg( 1, 'Checking database..' )
 		self.ds.checkStaleJobs()
 		debug_msg( 1, 'Check done.' )
-		debug_msg( 1, 'Checking existing toga rrd archive..' )
+		debug_msg( 1, 'Checking rrd archive..' )
 		self.gatherClusters()
 		debug_msg( 1, 'Check done.' )
 
