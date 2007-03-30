@@ -459,7 +459,7 @@ class TorqueXMLProcessor( XMLProcessor ):
 	def __init__( self, XMLSource ):
 		"""Setup initial XML connection and handlers"""
 
-		self.myXMLGatherer	= XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
+		#self.myXMLGatherer	= XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
 		#self.myXMLSource	= self.myXMLGatherer.getFileObject()
 		self.myXMLSource	= XMLSource
 		self.myXMLHandler	= TorqueXMLHandler()
@@ -653,7 +653,7 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 		self.config	= config
 		self.clusters	= { }
 		debug_msg( 1, 'Checking existing toga rrd archive..' )
-		#self.gatherClusters()
+		self.gatherClusters()
 		debug_msg( 1, 'Check done.' )
 
 	def gatherClusters( self ):
@@ -784,6 +784,7 @@ class XMLGatherer:
 	s		= None
 	fd		= None
 	data		= None
+	slot		= None
 
 	# Time since the last update
 	#
@@ -800,8 +801,9 @@ class XMLGatherer:
 	def __init__( self, host, port ):
 		"""Store host and port for connection"""
 
-		self.host = host
-		self.port = port
+		self.host	= host
+		self.port	= port
+		self.slot       = threading.Lock()
 
 		self.retrieveData()
 
@@ -809,6 +811,8 @@ class XMLGatherer:
 		"""Setup connection to XML source"""
 
 		self.update_now	= True
+
+		self.slot.acquire()
 
 		for res in socket.getaddrinfo( self.host, self.port, socket.AF_UNSPEC, socket.SOCK_STREAM ):
 
@@ -850,6 +854,8 @@ class XMLGatherer:
 			self.data		= my_data
 
 			self.LAST_UPDATE	= time.time()
+
+		self.slot.release()
 
 		self.update_now	= False
 
@@ -928,7 +934,7 @@ class GangliaXMLProcessor( XMLProcessor ):
 
 		self.config		= GangliaConfigParser( GMETAD_CONF )
 
-		self.myXMLGatherer	= XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
+		#self.myXMLGatherer	= XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
 		#self.myXMLSource	= self.myXMLGatherer.getFileObject()
 		self.myXMLSource	= XMLSource
 		self.myXMLHandler	= GangliaXMLHandler( self.config )
@@ -1046,6 +1052,8 @@ class GangliaXMLProcessor( XMLProcessor ):
 		#self.myXMLSource = self.myXMLGatherer.getFileObject()
 		
 		my_data	= self.myXMLSource.getData()
+
+		#print my_data
 
 		try:
 			xml.sax.parseString( my_data, self.myXMLHandler, self.myXMLError )
