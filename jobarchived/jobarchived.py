@@ -33,8 +33,8 @@ import getopt, syslog, ConfigParser
 
 def processArgs( args ):
 
-        SHORT_L = 'c:'
-        LONG_L = 'config='
+        SHORT_L	= 'c:'
+        LONG_L	= 'config='
 
         config_filename = None
 
@@ -105,38 +105,38 @@ def loadConfig( filename ):
 
 	global DEBUG_LEVEL, USE_SYSLOG, SYSLOG_LEVEL, SYSLOG_FACILITY, GMETAD_CONF, ARCHIVE_XMLSOURCE, ARCHIVE_DATASOURCES, ARCHIVE_PATH, ARCHIVE_HOURS_PER_RRD, ARCHIVE_EXCLUDE_METRICS, JOB_SQL_DBASE, DAEMONIZE, RRDTOOL
 
-	ARCHIVE_PATH = cfg.get( 'DEFAULT', 'ARCHIVE_PATH' )
+	ARCHIVE_PATH		= cfg.get( 'DEFAULT', 'ARCHIVE_PATH' )
 
-	ARCHIVE_HOURS_PER_RRD = cfg.getint( 'DEFAULT', 'ARCHIVE_HOURS_PER_RRD' )
+	ARCHIVE_HOURS_PER_RRD	= cfg.getint( 'DEFAULT', 'ARCHIVE_HOURS_PER_RRD' )
 
-	DEBUG_LEVEL = cfg.getint( 'DEFAULT', 'DEBUG_LEVEL' )
+	DEBUG_LEVEL		= cfg.getint( 'DEFAULT', 'DEBUG_LEVEL' )
 
-	USE_SYSLOG = cfg.getboolean( 'DEFAULT', 'USE_SYSLOG' )
+	USE_SYSLOG		= cfg.getboolean( 'DEFAULT', 'USE_SYSLOG' )
 
-	SYSLOG_LEVEL = cfg.getint( 'DEFAULT', 'SYSLOG_LEVEL' )
+	SYSLOG_LEVEL		= cfg.getint( 'DEFAULT', 'SYSLOG_LEVEL' )
 
 	try:
 
-		SYSLOG_FACILITY = eval( 'syslog.LOG_' + cfg.get( 'DEFAULT', 'SYSLOG_FACILITY' ) )
+		SYSLOG_FACILITY	= eval( 'syslog.LOG_' + cfg.get( 'DEFAULT', 'SYSLOG_FACILITY' ) )
 
 	except AttributeError, detail:
 
 		print 'Unknown syslog facility'
 		sys.exit( 1 )
 
-	GMETAD_CONF = cfg.get( 'DEFAULT', 'GMETAD_CONF' )
+	GMETAD_CONF		= cfg.get( 'DEFAULT', 'GMETAD_CONF' )
 
-	ARCHIVE_XMLSOURCE = cfg.get( 'DEFAULT', 'ARCHIVE_XMLSOURCE' )
+	ARCHIVE_XMLSOURCE	= cfg.get( 'DEFAULT', 'ARCHIVE_XMLSOURCE' )
 
-        ARCHIVE_DATASOURCES = getlist( cfg.get( 'DEFAULT', 'ARCHIVE_DATASOURCES' ) )
+        ARCHIVE_DATASOURCES	= getlist( cfg.get( 'DEFAULT', 'ARCHIVE_DATASOURCES' ) )
 
-	ARCHIVE_EXCLUDE_METRICS = getlist( cfg.get( 'DEFAULT', 'ARCHIVE_EXCLUDE_METRICS' ) )
+	ARCHIVE_EXCLUDE_METRICS	= getlist( cfg.get( 'DEFAULT', 'ARCHIVE_EXCLUDE_METRICS' ) )
 
-	JOB_SQL_DBASE = cfg.get( 'DEFAULT', 'JOB_SQL_DBASE' )
+	JOB_SQL_DBASE		= cfg.get( 'DEFAULT', 'JOB_SQL_DBASE' )
 
-	DAEMONIZE = cfg.getboolean( 'DEFAULT', 'DAEMONIZE' )
+	DAEMONIZE		= cfg.getboolean( 'DEFAULT', 'DAEMONIZE' )
 
-	RRDTOOL = cfg.get( 'DEFAULT', 'RRDTOOL' )
+	RRDTOOL			= cfg.get( 'DEFAULT', 'RRDTOOL' )
 
 	return True
 
@@ -263,11 +263,11 @@ class DataSQLStore:
 
 	def mutateJob( self, action, job_id, jobattrs ):
 
-		job_values = [ 'name', 'queue', 'owner', 'requested_time', 'requested_memory', 'ppn', 'status', 'start_timestamp', 'stop_timestamp' ]
+		job_values	= [ 'name', 'queue', 'owner', 'requested_time', 'requested_memory', 'ppn', 'status', 'start_timestamp', 'stop_timestamp' ]
 
-		insert_col_str = 'job_id'
-		insert_val_str = "'%s'" %job_id
-		update_str = None
+		insert_col_str	= 'job_id'
+		insert_val_str	= "'%s'" %job_id
+		update_str	= None
 
 		debug_msg( 6, 'mutateJob(): %s %s' %(action,job_id))
 
@@ -339,8 +339,8 @@ class DataSQLStore:
 
 		for node in hostnames:
 
-			node = '%s.%s' %( node, domain )
-			id = self.getNodeId( node )
+			node	= '%s.%s' %( node, domain )
+			id	= self.getNodeId( node )
 	
 			if not id:
 				self.setDatabase( "INSERT INTO nodes ( node_hostname ) VALUES ( '%s' )" %node )
@@ -394,11 +394,17 @@ class RRDMutator:
 
 		debug_msg( 8, self.binary + ' info "' + filename + '"' )
 
-		for line in os.popen( self.binary + ' info "' + filename + '"' ).readlines():
+		my_pipe		= os.popen( self.binary + ' info "' + filename + '"' )
+
+		for line in my_pipe.readlines():
 
 			if line.find( 'last_update') != -1:
 
 				last_update = line.split( ' = ' )[1]
+
+		if my_pipe:
+
+			my_pipe.close()
 
 		if last_update:
 			return last_update
@@ -424,8 +430,9 @@ class RRDMutator:
 
 		debug_msg( 8, self.binary + ' ' + action + ' ' + filename + ' ' + arg_string  )
 
-		cmd = os.popen( self.binary + ' ' + action + ' ' + filename + ' ' + arg_string )
-		lines = cmd.readlines()
+		cmd	= os.popen( self.binary + ' ' + action + ' ' + filename + ' ' + arg_string )
+		lines	= cmd.readlines()
+
 		cmd.close()
 
 		for line in lines:
@@ -488,13 +495,13 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 	def __init__( self ):
 
-		self.ds = DataSQLStore( JOB_SQL_DBASE.split( '/' )[0], JOB_SQL_DBASE.split( '/' )[1] )
-		self.jobs_processed = [ ]
-		self.jobs_to_store = [ ]
+		self.ds			= DataSQLStore( JOB_SQL_DBASE.split( '/' )[0], JOB_SQL_DBASE.split( '/' )[1] )
+		self.jobs_processed	= [ ]
+		self.jobs_to_store	= [ ]
 
 	def startDocument( self ):
 
-		self.heartbeat = 0
+		self.heartbeat	= 0
 
 	def startElement( self, name, attrs ):
 		"""
@@ -518,15 +525,17 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 			elif metricname.find( 'MONARCH-JOB' ) != -1:
 
-				job_id = metricname.split( 'MONARCH-JOB-' )[1].split( '-' )[0]
-				val = attrs.get( 'VAL', "" )
+				job_id	= metricname.split( 'MONARCH-JOB-' )[1].split( '-' )[0]
+				val	= attrs.get( 'VAL', "" )
 
 				if not job_id in self.jobs_processed:
+
 					self.jobs_processed.append( job_id )
 
 				check_change = 0
 
 				if self.jobAttrs.has_key( job_id ):
+
 					check_change = 1
 
 				valinfo = val.split( ' ' )
@@ -535,8 +544,8 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 					if len( myval.split( '=' ) ) > 1:
 
-						valname = myval.split( '=' )[0]
-						value = myval.split( '=' )[1]
+						valname	= myval.split( '=' )[0]
+						value	= myval.split( '=' )[1]
 
 						if valname == 'nodes':
 							value = value.split( ';' )
@@ -545,8 +554,8 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 				if check_change:
 					if self.jobinfoChanged( self.jobAttrs, job_id, jobinfo ) and self.jobAttrs[ job_id ]['status'] in [ 'R', 'Q' ]:
-						self.jobAttrs[ job_id ]['stop_timestamp'] = ''
-						self.jobAttrs[ job_id ] = self.setJobAttrs( self.jobAttrs[ job_id ], jobinfo )
+						self.jobAttrs[ job_id ]['stop_timestamp']	= ''
+						self.jobAttrs[ job_id ]				= self.setJobAttrs( self.jobAttrs[ job_id ], jobinfo )
 						if not job_id in self.jobs_to_store:
 							self.jobs_to_store.append( job_id )
 
@@ -593,8 +602,8 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 			debug_msg( 1, 'torque_xml_thread(): Done storing.' )
 
-			self.jobs_processed = [ ]
-			self.jobs_to_store = [ ]
+			self.jobs_processed	= [ ]
+			self.jobs_to_store	= [ ]
 
 	def setJobAttrs( self, old, new ):
 		"""
@@ -641,22 +650,22 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 	def __init__( self, config ):
 		"""Setup initial variables and gather info on existing rrd archive"""
 
-		self.config = config
-		self.clusters = { }
+		self.config	= config
+		self.clusters	= { }
 		debug_msg( 1, 'Checking existing toga rrd archive..' )
-		self.gatherClusters()
+		#self.gatherClusters()
 		debug_msg( 1, 'Check done.' )
 
 	def gatherClusters( self ):
 		"""Find all existing clusters in archive dir"""
 
-		archive_dir = check_dir(ARCHIVE_PATH)
+		archive_dir	= check_dir(ARCHIVE_PATH)
 
-		hosts = [ ]
+		hosts		= [ ]
 
 		if os.path.exists( archive_dir ):
 
-			dirlist = os.listdir( archive_dir )
+			dirlist	= os.listdir( archive_dir )
 
 			for item in dirlist:
 
@@ -671,22 +680,22 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 
 		if name == 'GANGLIA_XML':
 
-			self.XMLSource = attrs.get( 'SOURCE', "" )
-			self.gangliaVersion = attrs.get( 'VERSION', "" )
+			self.XMLSource		= attrs.get( 'SOURCE', "" )
+			self.gangliaVersion	= attrs.get( 'VERSION', "" )
 
 			debug_msg( 10, 'Found XML data: source %s version %s' %( self.XMLSource, self.gangliaVersion ) )
 
 		elif name == 'GRID':
 
-			self.gridName = attrs.get( 'NAME', "" )
-			self.time = attrs.get( 'LOCALTIME', "" )
+			self.gridName	= attrs.get( 'NAME', "" )
+			self.time	= attrs.get( 'LOCALTIME', "" )
 
 			debug_msg( 10, '`-Grid found: %s' %( self.gridName ) )
 
 		elif name == 'CLUSTER':
 
-			self.clusterName = attrs.get( 'NAME', "" )
-			self.time = attrs.get( 'LOCALTIME', "" )
+			self.clusterName	= attrs.get( 'NAME', "" )
+			self.time		= attrs.get( 'LOCALTIME', "" )
 
 			if not self.clusters.has_key( self.clusterName ) and self.clusterName in ARCHIVE_DATASOURCES:
 
@@ -696,9 +705,9 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 
 		elif name == 'HOST' and self.clusterName in ARCHIVE_DATASOURCES:     
 
-			self.hostName = attrs.get( 'NAME', "" )
-			self.hostIp = attrs.get( 'IP', "" )
-			self.hostReported = attrs.get( 'REPORTED', "" )
+			self.hostName		= attrs.get( 'NAME', "" )
+			self.hostIp		= attrs.get( 'IP', "" )
+			self.hostReported	= attrs.get( 'REPORTED', "" )
 
 			debug_msg( 10, ' | |-Host found: %s - ip %s reported %s' %( self.hostName, self.hostIp, self.hostReported ) )
 
@@ -722,10 +731,10 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 
 			if type not in UNSUPPORTED_ARCHIVE_TYPES and not exclude_metric:
 
-				myMetric = { }
-				myMetric['name'] = attrs.get( 'NAME', "" )
-				myMetric['val'] = attrs.get( 'VAL', "" )
-				myMetric['time'] = self.hostReported
+				myMetric		= { }
+				myMetric['name']	= attrs.get( 'NAME', "" )
+				myMetric['val']		= attrs.get( 'VAL', "" )
+				myMetric['time']	= self.hostReported
 
 				self.clusters[ self.clusterName ].memMetric( self.hostName, myMetric )
 
@@ -1069,9 +1078,9 @@ class GangliaConfigParser:
 
 				if line.find( 'data_source' ) != -1 and line[0] != '#':
 
-					source = { }
-					source['name'] = line.split( '"' )[1]
-					source_words = line.split( '"' )[2].split( ' ' )
+					source		= { }
+					source['name']	= line.split( '"' )[1]
+					source_words	= line.split( '"' )[2].split( ' ' )
 
 					for word in source_words:
 
@@ -1134,11 +1143,12 @@ class RRDHandler:
 	def __init__( self, config, cluster ):
 		"""Setup initial variables"""
 
-		self.block = 0
-		self.cluster = cluster
-		self.config = config
-		self.slot = threading.Lock()
-		self.rrdm = RRDMutator( RRDTOOL )
+		self.block	= 0
+		self.cluster	= cluster
+		self.config	= config
+		self.slot	= threading.Lock()
+		self.rrdm	= RRDMutator( RRDTOOL )
+
 		self.gatherLastUpdates()
 
 	def gatherLastUpdates( self ):
@@ -1158,8 +1168,8 @@ class RRDHandler:
 
 		for host in hosts:
 
-			host_dir = cluster_dir + '/' + host
-			dirlist = os.listdir( host_dir )
+			host_dir	= cluster_dir + '/' + host
+			dirlist		= os.listdir( host_dir )
 
 			for dir in dirlist:
 
@@ -1170,9 +1180,11 @@ class RRDHandler:
 				self.timeserials[ host ].append( dir )
 
 			last_serial = self.getLastRrdTimeSerial( host )
+
 			if last_serial:
 
 				metric_dir = cluster_dir + '/' + host + '/' + last_serial
+
 				if os.path.exists( metric_dir ):
 
 					dirlist = os.listdir( metric_dir )
@@ -1213,8 +1225,8 @@ class RRDHandler:
 			else:
 				self.myMetrics[ host ][ metric['name'] ] = [ ]
 		else:
-			self.myMetrics[ host ] = { }
-			self.myMetrics[ host ][ metric['name'] ] = [ ]
+			self.myMetrics[ host ]				= { }
+			self.myMetrics[ host ][ metric['name'] ]	= [ ]
 
 		# Push new metric onto stack
 		# atomic code; only 1 thread at a time may access the stack
@@ -1231,14 +1243,15 @@ class RRDHandler:
 		but only those that we didn't store before
 		"""
 
-		update_list = [ ]
-		metric = None
+		update_list	= [ ]
+		metric		= None
 
 		while len( metriclist ) > 0:
 
 			metric = metriclist.pop( 0 )
 
 			if self.checkStoreMetric( host, metric ):
+
 				update_list.append( '%s:%s' %( metric['time'], metric['val'] ) )
 
 		return update_list
@@ -1358,8 +1371,8 @@ class RRDHandler:
 	def makeRrdPath( self, host, metricname, timeserial ):
 		"""Make a RRD location/path and filename"""
 
-		rrd_dir = '%s/%s/%s/%s' %( check_dir(ARCHIVE_PATH), self.cluster, host, timeserial )
-		rrd_file = '%s/%s.rrd' %( rrd_dir, metricname )
+		rrd_dir		= '%s/%s/%s/%s'	%( check_dir(ARCHIVE_PATH), self.cluster, host, timeserial )
+		rrd_file	= '%s/%s.rrd'	%( rrd_dir, metricname )
 
 		return rrd_dir, rrd_file
 
@@ -1413,9 +1426,9 @@ class RRDHandler:
 
 			if metric['name'] == metricname:
 
-				period = self.determinePeriod( host, metric['time'] )	
+				period		= self.determinePeriod( host, metric['time'] )	
 
-				archive_secs = ARCHIVE_HOURS_PER_RRD * (60 * 60)
+				archive_secs	= ARCHIVE_HOURS_PER_RRD * (60 * 60)
 
 				if (int( metric['time'] ) - int( period ) ) > archive_secs:
 
@@ -1463,10 +1476,10 @@ class RRDHandler:
 
 		if not os.path.exists( rrd_file ):
 
-			interval = self.config.getInterval( self.cluster )
-			heartbeat = 8 * int( interval )
+			interval	= self.config.getInterval( self.cluster )
+			heartbeat	= 8 * int( interval )
 
-			params = [ ]
+			params		= [ ]
 
 			params.append( '--step' )
 			params.append( str( interval ) )
@@ -1489,9 +1502,9 @@ class RRDHandler:
 
 		debug_msg( 9, 'rrdupdate: using timeserial %s for %s/%s' %( timeserial, host, metricname ) )
 
-		rrd_dir, rrd_file = self.makeRrdPath( host, metricname, timeserial )
+		rrd_dir, rrd_file	= self.makeRrdPath( host, metricname, timeserial )
 
-		update_list = self.makeUpdateList( host, metriclist )
+		update_list		= self.makeUpdateList( host, metriclist )
 
 		if len( update_list ) > 0:
 			ret = self.rrdm.update( str(rrd_file), update_list )
@@ -1550,8 +1563,8 @@ def run():
 	myGangliaProcessor	= GangliaXMLProcessor( myXMLSource )
 
 	try:
-		torque_xml_thread = threading.Thread( None, myTorqueProcessor.run, 'torque_proc_thread' )
-		ganglia_xml_thread = threading.Thread( None, myGangliaProcessor.run, 'ganglia_proc_thread' )
+		torque_xml_thread	= threading.Thread( None, myTorqueProcessor.run, 'torque_proc_thread' )
+		ganglia_xml_thread	= threading.Thread( None, myGangliaProcessor.run, 'ganglia_proc_thread' )
 
 		torque_xml_thread.start()
 		ganglia_xml_thread.start()
