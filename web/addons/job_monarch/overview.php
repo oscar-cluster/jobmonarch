@@ -23,7 +23,7 @@
  */
 
 global $GANGLIA_PATH, $clustername, $tpl, $filter, $cluster, $get_metric_string, $cluster_url, $sh;
-global $hosts_up, $m, $start, $end, $filterorder, $COLUMN_REQUESTED_MEMORY, $COLUMN_QUEUED, $hostname, $piefilter;
+global $hosts_up, $m, $start, $end, $filterorder, $COLUMN_REQUESTED_MEMORY, $COLUMN_QUEUED, $COLUMN_NODES, $hostname, $piefilter;
 
 $data_gatherer = new DataGatherer( $clustername );
 
@@ -465,7 +465,7 @@ function makeOverview() {
 	global $sortorder, $sortby, $filter, $sh, $hc, $m;
 	global $cluster_url, $get_metric_string, $host_url, $metrics;
 	global $start, $end, $reports, $gnodes, $default_showhosts;
-	global $COLUMN_QUEUED, $COLUMN_REQUESTED_MEMORY, $hostname;
+	global $COLUMN_QUEUED, $COLUMN_REQUESTED_MEMORY, $COLUMN_NODES, $hostname;
 	$metricname = $m;
 
 	$tpl->assign("sortorder", $sortorder );
@@ -511,6 +511,10 @@ function makeOverview() {
 
 	if( $COLUMN_REQUESTED_MEMORY ) {
 		$tpl->newBlock( "column_header_req_mem" );
+	}
+
+	if( $COLUMN_NODES ) {
+		$tpl->newBlock( "column_header_nodes" );
 	}
 
 	if( $COLUMN_QUEUED ) {
@@ -641,6 +645,7 @@ function makeOverview() {
 					$tpl->gotoBlock( "node" );
 				}
 
+
 				if( $COLUMN_QUEUED ) {
 					$tpl->newBlock( "column_queued" );
 					$tpl->assign( "queued", makeDate( $jobs[$jobid][queued_timestamp] ) );
@@ -657,11 +662,19 @@ function makeOverview() {
 				$view_cpus += $cpus;
 				$view_jobs++;
 
-				if( $jobs[$jobid][status] == 'R' )
+				if( $jobs[$jobid][status] == 'R' ) {
 					foreach( $jobs[$jobid][nodes] as $tempnode )
 						$view_name_nodes[] = $tempnode;
-				else if( $jobs[$jobid][status] == 'Q' )
+
+					if( $COLUMN_NODES ) {
+						$tpl->newBlock( "column_nodes" );
+						$nodes_hostnames = implode( " ", $jobs[$jobid][nodes] );
+						$tpl->assign( "nodes_hostnames", $nodes_hostnames );
+						$tpl->gotoBlock( "node" );
+					}
+				} else if( $jobs[$jobid][status] == 'Q' ) {
 					$view_nodes += (int) $jobs[$jobid][nodes];
+				}
 
 				if( $even ) {
 

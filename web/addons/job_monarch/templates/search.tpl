@@ -213,6 +213,9 @@ function setFilter( filtername, filterval ) {
 <TH><B><A HREF="#" onClick="setSort( 'req_mem' )" ALT="Requested Memory" TITLE="Requested Memory">Req. Memory</A></B></TH>
 <!-- END BLOCK : column_header_req_mem -->
 <TH><B><A HREF="#" onClick="setSort( 'nodes' )" ALT="Nodes" TITLE="Nodes">N</A>/<A HREF="#" onClick="setSort( 'cpus' )" ALT="Processors" TITLE="Processors">P</A></B></TH>
+<!-- START BLOCK : column_header_nodes -->
+<TH><B><A HREF="#" onClick="setSort( 'nodes' )" ALT="Nodes" TITLE="Nodes">Nodes</A></B></TH>
+<!-- END BLOCK : column_header_nodes -->
 <TH><B><A HREF="#" onClick="setSort( 'start' )">Started</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'finished' )">Finished</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'runningtime' )">Runningtime</A></B></TH>
@@ -238,6 +241,9 @@ function setFilter( filtername, filterval ) {
     <TD>{req_memory}</TD>
 <!-- END BLOCK : column_req_mem -->
     <TD>{nodes}/{cpus}</TD>
+<!-- START BLOCK : column_nodes -->
+    <TD>{nodes_hostnames}</TD>
+<!-- END BLOCK : column_nodes -->
     <TD>{started}</TD>
     <TD>{finished}</TD>
     <TD>{runningtime}</TD>

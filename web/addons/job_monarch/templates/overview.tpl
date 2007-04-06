@@ -151,6 +151,9 @@ View
 <!-- START BLOCK : column_header_queued -->
 <TH><B><A HREF="#" onClick="setSort( 'queued' )">Queued</A></B></TH>
 <!-- END BLOCK : column_header_queued -->
+<!-- START BLOCK : column_header_nodes -->
+<TH><B><A HREF="#" onClick="setSort( 'nodes' )" ALT="Nodes" TITLE="Nodes">Nodes</A></B></TH>
+<!-- END BLOCK : column_header_nodes -->
 <TH><B><A HREF="#" onClick="setSort( 'start' )">Started</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'runningtime' )">Runningtime</A></B></TH>
 </TR>
@@ -178,6 +181,9 @@ View
 <!-- START BLOCK : column_queued -->
     <TD>{queued}</TD>
 <!-- END BLOCK : column_queued -->
+<!-- START BLOCK : column_nodes -->
+    <TD>{nodes_hostnames}</TD>
+<!-- END BLOCK : column_nodes -->
     <TD>{started}</TD>
     <TD>{runningtime}</TD>
   </TR>
