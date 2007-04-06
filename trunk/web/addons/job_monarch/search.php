@@ -324,7 +324,7 @@ function makeSearchPage() {
 	global $clustername, $tpl, $id, $user, $name, $start_from_time, $start_to_time, $queue;
 	global $end_from_time, $end_to_time, $filter, $default_showhosts, $m, $hosts_up, $hc;
 	global $period_start, $period_stop, $sortby, $sortorder, $COLUMN_REQUESTED_MEMORY;
-	global $SEARCH_RESULT_LIMIT;
+	global $SEARCH_RESULT_LIMIT, $COLUMN_NODES;
 
 	$metricname = $m;
 	//printf("job_start = %s job_stop = %s\n", $job_start, $job_stop );
@@ -376,6 +376,9 @@ function makeSearchPage() {
 		if( $COLUMN_REQUESTED_MEMORY ) {
 			$tpl->newBlock( "column_header_req_mem" );
 		}
+		if( $COLUMN_NODES ) {
+			$tpl->newBlock( "column_header_nodes" );
+		}
 
 		//print_r( $nodes );
 		$sorted_search = sortJobs( $jobs, $nodes, $sortby, $sortorder );
@@ -401,7 +404,18 @@ function makeSearchPage() {
 
 			if( $COLUMN_REQUESTED_MEMORY ) {
 				$tpl->newBlock( "column_req_mem" );
-				$tpl->assign( "req_memory", $jobs[$jobid][requested_memory] );
+				//$tpl->assign( "req_memory", $jobs[$jobid][requested_memory] );
+				$tpl->assign( "req_memory", $job[requested_memory] );
+				$tpl->gotoBlock( "node" );
+			}
+			if( $COLUMN_NODES) {
+
+				foreach( $nodes[$foundid] as $mynode )
+					$job_nodes[] = $mynode[hostname];
+
+				$tpl->newBlock( "column_nodes" );
+				$nodes_hostnames = implode( " ", $job_nodes );
+				$tpl->assign( "nodes_hostnames", $nodes_hostnames );
 				$tpl->gotoBlock( "node" );
 			}
 
