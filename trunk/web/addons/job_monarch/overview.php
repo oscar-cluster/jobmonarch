@@ -539,8 +539,11 @@ function makeOverview() {
 
 			$display_job = 1;
 
-			foreach( $jobs[$jobid][nodes] as $tempnode )
-				$all_used_nodes[] = $tempnode;
+			if( $jobs[$jobid][status] == 'R' ) {
+				foreach( $jobs[$jobid][nodes] as $tempnode ) {
+					$all_used_nodes[] = $tempnode;
+				}
+			}
 
 			$used_cpus += $cpus;
 
