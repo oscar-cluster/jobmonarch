@@ -56,22 +56,25 @@ if( isset( $filterorder ) && ($filterorder!='') ) {
 }
 
 // Fill filter array in order they were picked by user
-foreach( $myfilter_fields as $myfilter ) {
+if( isset($myfilter_fields) ) {
 
-	switch( $myfilter ) {
+	foreach( $myfilter_fields as $myfilter ) {
 
-		case "queue":
-			$filter[queue]=$queue;
-			break;
-		case "state":
-			$filter[state]=$state;
-			break;
-		case "user":
-			$filter[user]=$user;
-			break;
-		case "id":
-			$filter[id]=$id;
-			break;
+		switch( $myfilter ) {
+
+			case "queue":
+				$filter[queue]=$queue;
+				break;
+			case "state":
+				$filter[state]=$state;
+				break;
+			case "user":
+				$filter[user]=$user;
+				break;
+			case "id":
+				$filter[id]=$id;
+				break;
+		}
 	}
 }
 

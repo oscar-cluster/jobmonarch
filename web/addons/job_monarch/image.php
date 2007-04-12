@@ -58,24 +58,27 @@ function drawBigClusterImage() {
 	global $filter, $clustername;
 
 	$ic = new ClusterImage( $clustername );
-	foreach( $filter as $filtername=>$filtervalue ) {
-		//printf("filter %s,%s\n", $filtername, $filtervalue);
-		switch( $filtername ) {
 
-			case "id":
-				$ic->setFilter( 'jobid', $filtervalue );
-				break;
-			case "user":
-				$ic->setFilter( 'owner', $filtervalue);
-				break;
-			case "queue":
-				$ic->setFilter( 'queue', $filtervalue);
-				break;
-			case "state":
-				$ic->setFilter( 'status', $filtervalue);
-				break;
-			default:
-				break;
+	if( isset( $filter ) ) {
+		foreach( $filter as $filtername=>$filtervalue ) {
+			//printf("filter %s,%s\n", $filtername, $filtervalue);
+			switch( $filtername ) {
+
+				case "id":
+					$ic->setFilter( 'jobid', $filtervalue );
+					break;
+				case "user":
+					$ic->setFilter( 'owner', $filtervalue);
+					break;
+				case "queue":
+					$ic->setFilter( 'queue', $filtervalue);
+					break;
+				case "state":
+					$ic->setFilter( 'status', $filtervalue);
+					break;
+				default:
+					break;
+			}
 		}
 	}
 	$ic->draw();

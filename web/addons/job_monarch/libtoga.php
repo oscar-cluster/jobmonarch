@@ -614,6 +614,8 @@ class TorqueXMLHandler {
 
 							$mynodes = explode( ';', $togavalue );
 
+							//print_r($mynodes);
+
 							foreach( $mynodes as $node ) {
 
 								if( !in_array( $node, $jobs[$jobid][$toganame] ) ) {
@@ -635,33 +637,36 @@ class TorqueXMLHandler {
 				if( isset( $jobs[$jobid][domain] ) and isset( $jobs[$jobid][nodes] ) ) {
 			
 					$nr_nodes = count( $jobs[$jobid][nodes] );
-			
-					foreach( $jobs[$jobid][nodes] as $node ) {
+		
+					if( $jobs[$jobid][status] == 'R' ) {
 
-						$domain = $jobs[$jobid][domain];
-		                                $domain_len = 0 - strlen( $domain );
+						foreach( $jobs[$jobid][nodes] as $node ) {
 
-						if( substr( $node, $domain_len ) != $domain ) {
-							$host = $node. '.'.$domain;
-						} else {
-							$host = $node;
-						}
+							$domain = $jobs[$jobid][domain];
+							$domain_len = 0 - strlen( $domain );
 
-						//$host = $node.'.'.$jobs[$jobid][domain];
+							if( substr( $node, $domain_len ) != $domain ) {
+								$host = $node. '.'.$domain;
+							} else {
+								$host = $node;
+							}
+
+							//$host = $node.'.'.$jobs[$jobid][domain];
 				
-						if( !isset( $nodes[$host] ) )
-							$my_node = new NodeImage( $host );
-						else
-							$my_node = $nodes[$host];
-
-						if( !$my_node->hasJob( $jobid ) )
-
-							if( isset( $jobs[$jobid][ppn] ) )
-								$my_node->addJob( $jobid, ((int) $jobs[$jobid][ppn]) );
+							if( !isset( $nodes[$host] ) )
+								$my_node = new NodeImage( $host );
 							else
-								$my_node->addJob( $jobid, 1 );
+								$my_node = $nodes[$host];
 
-						$nodes[$host] = $my_node;
+							if( !$my_node->hasJob( $jobid ) )
+
+								if( isset( $jobs[$jobid][ppn] ) )
+									$my_node->addJob( $jobid, ((int) $jobs[$jobid][ppn]) );
+								else
+									$my_node->addJob( $jobid, 1 );
+
+							$nodes[$host] = $my_node;
+						}
 					}
 				}
 			}
