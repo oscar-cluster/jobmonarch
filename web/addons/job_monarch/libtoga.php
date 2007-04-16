@@ -768,6 +768,8 @@ class NodeImage {
 
 	function NodeImage( $hostname ) {
 
+		global $SMALL_CLUSTERIMAGE_NODEWIDTH;
+
 		$this->jobs = array();
 		//$this->image = $image;
 		//$this->x = $x;
@@ -776,6 +778,7 @@ class NodeImage {
 		$this->hostname = $hostname;
 		$this->cpus = $this->determineCpus();
 		$this->showinfo = 1;
+		$this->size = $SMALL_CLUSTERIMAGE_NODEWIDTH;
 	}
 
 	function addJob( $jobid, $cpus ) {
@@ -843,22 +846,30 @@ class NodeImage {
 		$this->showinfo = $showinfo;
 	}
 
-	function draw() {
+	function drawSmall() {
 
-		$this->drawSmall();
+		global $SMALL_CLUSTERIMAGE_NODEWIDTH;
+
+		$this->size	= $SMALL_CLUSTERIMAGE_NODEWIDTH;
+
+		$this->draw();
 	}
 
 	function drawBig() {
 
+		global $BIG_CLUSTERIMAGE_NODEWIDTH;
+
+		$this->size	= $BIG_CLUSTERIMAGE_NODEWIDTH;
+
+		$this->draw();
 	}
 
-	function drawSmall() {
+	function draw() {
 
-		global $SMALL_CLUSTERIMAGE_NODEWIDTH;
 		global $JOB_NODE_MARKING;
 
 		$black_color = imageColorAllocate( $this->image, 0, 0, 0 );
-		$size = $SMALL_CLUSTERIMAGE_NODEWIDTH;
+		$size = $this->size;
 
 		imageFilledRectangle( $this->image, $this->x, $this->y, $this->x+($size), $this->y+($size), $black_color );
 
@@ -919,18 +930,31 @@ class ClusterImage {
 
 	function ClusterImage( $clustername ) {
 
-		//printf( "image cluster = %s\n", $clustername );
-		$this->dataget = new DataGatherer( $clustername );
-		$this->clustername = $clustername;
-		$this->filters = array();
+		$this->dataget		= new DataGatherer( $clustername );
+		$this->clustername	= $clustername;
+		$this->filters		= array();
+		$this->size		= 's';
+	}
+
+	function setSmall() {
+		$this->size	= 's';
+	}
+
+	function setBig() {
+		$this->size	= 'b';
+	}
+
+	function isSmall() {
+		return ($this->size == 's');
+	}
+
+	function isBig() {
+		return ($this->size == 'b');
 	}
 
 	function setFilter( $filtername, $filtervalue ) {
 
-		//printf("filter %s = %s\n", $filtername, $filtervalue );
-		//printf( "filter set to %s = %s\n", $filtername, $filtervalue );
 		$this->filters[$filtername] = $filtervalue;
-		//print_r($this->filters);
 	}
 
 	function filterNodes( $jobs, $nodes ) {
@@ -953,17 +977,12 @@ class ClusterImage {
 
 						foreach( $this->filters as $filtername => $filtervalue ) {
 
-							//printf("filter bla %s = %s\n", $filtername,$filtervalue );
-
 							if( $filtername!=null && $filtername!='' ) {
 
 								if( $filtername == 'jobid' && !$node->hasJob( $filtervalue) ) {
 									$addhost = 0;
-									//printf("host %s has no job %s\n", $hostname, $filtervalue);
 								} else if( $filtername != 'jobid' ) {
-									//printf("myjob is %s\n", $myjob );
 									if( $jobs[$myjob][$filtername] != $filtervalue ) {
-										//printf("host %s has no job with %s=%s\n", $hostname, $filtername, $filtervalue);
 										$addhost = 0;
 									}
 								}
@@ -983,21 +1002,19 @@ class ClusterImage {
 
 	function draw() {
 
-		//printf("stopt met uitvoer");
-		//return;
-
 		global $SMALL_CLUSTERIMAGE_MAXWIDTH, $SMALL_CLUSTERIMAGE_NODEWIDTH;
+		global $BIG_CLUSTERIMAGE_MAXWIDTH, $BIG_CLUSTERIMAGE_NODEWIDTH;
 	
 		$mydatag = $this->dataget;
 		$mydatag->parseXML();
 
-		//$max_width = 250;
-		//$node_width = 11;
-
-		$max_width = $SMALL_CLUSTERIMAGE_MAXWIDTH;
-		$node_width = $SMALL_CLUSTERIMAGE_NODEWIDTH;
-
-		//printf( "cmaxw %s nmaxw %s", $SMALL_CLUSTERIMAGE_MAXWIDTH, $SMALL_CLUSTERIMAGE_NODEWIDTH );
+		if( $this->isSmall() ) {
+			$max_width = $SMALL_CLUSTERIMAGE_MAXWIDTH;
+			$node_width = $SMALL_CLUSTERIMAGE_NODEWIDTH;
+		} else if( $this->isBig() ) {
+			$max_width = $BIG_CLUSTERIMAGE_MAXWIDTH;
+			$node_width = $BIG_CLUSTERIMAGE_NODEWIDTH;
+		}
 
 		$nodes = $mydatag->getNodes();
 		$nodes_hosts = array_keys( $nodes );
@@ -1055,7 +1072,10 @@ class ClusterImage {
 					if( !in_array( $host, $filtered_nodes ) )
 						$nodes[$host]->setShowinfo( 0 );
 
-					$nodes[$host]->draw();
+					if( $this->isSmall() )
+						$nodes[$host]->drawSmall();
+					else if( $this->isBig() )
+						$nodes[$host]->drawBig();
 				}
 			}
 		}

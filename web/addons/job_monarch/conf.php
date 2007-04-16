@@ -34,7 +34,20 @@ $SMALL_CLUSTERIMAGE_MAXWIDTH = 250;
 
 // The size of a single node in the small clusterimage
 //
-$SMALL_CLUSTERIMAGE_NODEWIDTH = 11;
+$SMALL_CLUSTERIMAGE_NODEWIDTH = 7;
+
+// Max size of small clusterimage
+// (250 pixels is same width as Ganglia's pie chart)
+//
+$BIG_CLUSTERIMAGE_MAXWIDTH = 250;
+
+// The size of a single node in the small clusterimage
+//
+$BIG_CLUSTERIMAGE_NODEWIDTH = 11;
+
+// Max size of small host image
+//
+$SMALL_HOSTIMAGE_MAXWIDTH = 450;
 
 // How to mark nodes with a job in clusterimage
 //
