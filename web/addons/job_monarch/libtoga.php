@@ -1041,11 +1041,22 @@ class ClusterImage {
 			}
 		}
 
-		//printf( "imagecreate: %dx%d", ($nodes_per_row*$node_width), ($node_rows*$node_width) );
-		//$image = imageCreateTrueColor( ($nodes_per_row*$node_width)+1, ($node_rows*$node_width)+1 );
-		$image = imageCreateTrueColor( $max_width, ($node_rows*$node_width)+1 );
+		$y_offset	= 0;
+		$font 		= 2;
+		$fontheight	= ImageFontHeight( $font );
+		$fontspaceing	= 2;
+		$y_offset	= $fontheight + (2 * $fontspaceing);
+
+		$image = imageCreateTrueColor( $max_width, ($y_offset + (($node_rows*$node_width)+1) ) );
 		$colorwhite = imageColorAllocate( $image, 255, 255, 255 );
 		imageFill( $image, 0, 0, $colorwhite );
+
+		if( $this->isSmall() ) {
+
+			$colorblue	= imageColorAllocate( $image, 0, 0, 255 );
+
+			imageString( $image, $font, 2, 2, "Monarch Joblist - cluster: ".$this->clustername, $colorblue );
+		}
 
 		$jobs = $mydatag->getJobs();
 		//printf("filtername = %s\n", $filtername );
@@ -1058,11 +1069,10 @@ class ClusterImage {
 			for( $m = 0; $m < $nodes_per_row; $m++ ) {
 			
 				$x = ($m * $node_width);
-				$y = ($n * $node_width);
+				$y = $y_offset + ($n * $node_width);
 
 				$cur_node = ($n * $nodes_per_row) + ($m);
 				$host = $nodes_hosts[$cur_node];
-
 
 				if( isset( $nodes[$host] ) ) {
 
