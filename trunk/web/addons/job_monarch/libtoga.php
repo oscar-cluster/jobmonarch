@@ -525,13 +525,16 @@ class TorqueXMLHandler {
 
 		$cpus = 0;
 
-		foreach( $this->jobs as $jobid=>$jobattrs ) {
+		if( isset( $this->jobs ) && count( $this->jobs ) > 0 ) {
 
-			$nodes = count( $jobattrs[nodes] );
-			$ppn = (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
-			$mycpus = $nodes * $ppn;
+			foreach( $this->jobs as $jobid=>$jobattrs ) {
 
-			$cpus = $cpus + $mycpus;
+				$nodes = count( $jobattrs[nodes] );
+				$ppn = (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
+				$mycpus = $nodes * $ppn;
+
+				$cpus = $cpus + $mycpus;
+			}
 		}
 	}
 
