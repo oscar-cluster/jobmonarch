@@ -375,80 +375,83 @@ function sortJobs( $jobs, $sortby, $sortorder ) {
 		"else if (\$sortorder==\"asc\")".
 			"return ( \$a > \$b ) ? 1 : -1;" );
 
-        foreach( $jobs as $jobid => $jobattrs ) {
+	if( isset( $jobs ) && count( $jobs ) > 0 ) {
 
-                        $state = $jobattrs[status];
-                        $user = $jobattrs[owner];
-                        $queue = $jobattrs[queue];
-                        $name = $jobattrs[name];
-                        $req_cpu = $jobattrs[requested_time];
-                        $req_memory = $jobattrs[requested_memory];
+		foreach( $jobs as $jobid => $jobattrs ) {
 
-			if( $state == 'R' )
-				$nodes = count( $jobattrs[nodes] );
-			else
-				$nodes = $jobattrs[nodes];
+				$state = $jobattrs[status];
+				$user = $jobattrs[owner];
+				$queue = $jobattrs[queue];
+				$name = $jobattrs[name];
+				$req_cpu = $jobattrs[requested_time];
+				$req_memory = $jobattrs[requested_memory];
 
-                        $ppn = (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
-                        $cpus = $nodes * $ppn;
-			$queued_time = (int) $jobattrs[queued_timestamp];
-                        $start_time = (int) $jobattrs[start_timestamp];
-			$runningtime = $report_time - $start_time;
+				if( $state == 'R' )
+					$nodes = count( $jobattrs[nodes] );
+				else
+					$nodes = $jobattrs[nodes];
 
-			switch( $sortby ) {
-				case "id":
-					$sorted[$jobid] = $jobid;
-					break;
+				$ppn = (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
+				$cpus = $nodes * $ppn;
+				$queued_time = (int) $jobattrs[queued_timestamp];
+				$start_time = (int) $jobattrs[start_timestamp];
+				$runningtime = $report_time - $start_time;
 
-				case "state":
-					$sorted[$jobid] = $state;
-					break;
+				switch( $sortby ) {
+					case "id":
+						$sorted[$jobid] = $jobid;
+						break;
 
-				case "user":
-					$sorted[$jobid] = $user;
-					break;
+					case "state":
+						$sorted[$jobid] = $state;
+						break;
 
-				case "queue":
-					$sorted[$jobid] = $queue;
-					break;
+					case "user":
+						$sorted[$jobid] = $user;
+						break;
 
-				case "name":
-					$sorted[$jobid] = $name;
-					break;
+					case "queue":
+						$sorted[$jobid] = $queue;
+						break;
 
-				case "req_cpu":
-					$sorted[$jobid] = timeToEpoch( $req_cpu );
-					break;
+					case "name":
+						$sorted[$jobid] = $name;
+						break;
 
-				case "req_mem":
-					$sorted[$jobid] = $req_memory;
-					break;
+					case "req_cpu":
+						$sorted[$jobid] = timeToEpoch( $req_cpu );
+						break;
 
-				case "nodes":
-					$sorted[$jobid] = $nodes;
-					break;
+					case "req_mem":
+						$sorted[$jobid] = $req_memory;
+						break;
 
-				case "cpus":
-					$sorted[$jobid] = $cpus;
-					break;
+					case "nodes":
+						$sorted[$jobid] = $nodes;
+						break;
 
-				case "queued":
-					$sorted[$jobid] = $queued_time;
-					break;
+					case "cpus":
+						$sorted[$jobid] = $cpus;
+						break;
 
-				case "start":
-					$sorted[$jobid] = $start_time;
-					break;
+					case "queued":
+						$sorted[$jobid] = $queued_time;
+						break;
 
-				case "runningtime":
-					$sorted[$jobid] = $runningtime;
-					break;
+					case "start":
+						$sorted[$jobid] = $start_time;
+						break;
 
-				default:
-					break;
+					case "runningtime":
+						$sorted[$jobid] = $runningtime;
+						break;
 
-			}
-        }
+					default:
+						break;
+
+				}
+		}
+	}
 
 	//uasort( $sorted, $cmp );
 	if( $sortorder == "asc" )
