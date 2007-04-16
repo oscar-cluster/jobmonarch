@@ -674,7 +674,12 @@ function makeOverview() {
 
 					if( $COLUMN_NODES ) {
 						$tpl->newBlock( "column_nodes" );
-						$nodes_hostnames = implode( " ", $jobs[$jobid][nodes] );
+						$mynodehosts = array();
+						foreach( $jobs[$jobid][nodes] as $mynode ) {
+							$myhost_href = "./?c=".$clustername."&h=".$mynode.".".$jobs[$jobid][domain];
+							$mynodehosts[] = "<A HREF=\"".$myhost_href."\">".$mynode."</A>";
+						}
+						$nodes_hostnames = implode( " ", $mynodehosts );
 						$tpl->assign( "nodes_hostnames", $nodes_hostnames );
 						$tpl->gotoBlock( "node" );
 					}
