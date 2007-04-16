@@ -487,6 +487,11 @@ class DataGatherer {
 		return $handler->getNodes();
 	}
 
+	function getNode( $node ) {
+		$handler = $this->xmlhandler;
+		return $handler->getNode( $node );
+	}
+
 	function getCpus() {
 		$handler = $this->xmlhandler;
 		return $handler->getCpus();
@@ -495,6 +500,11 @@ class DataGatherer {
 	function getJobs() {
 		$handler = $this->xmlhandler;
 		return $handler->getJobs();
+	}
+
+	function getJob( $job ) {
+		$handler = $this->xmlhandler;
+		return $handler->getJob( $job );
 	}
 
 	function getHeartbeat() {
@@ -725,8 +735,26 @@ class TorqueXMLHandler {
 		return $this->nodes;
 	}
 
+	function getNode( $node ) {
+
+		$nodes = &$this->nodes;
+		if( isset( $nodes[$node] ) )
+			return $nodes[$node];
+		else
+			return NULL;
+	}
+
 	function getJobs() {
 		return $this->jobs;
+	}
+
+	function getJob( $job ) {
+
+		$jobs = &$this->jobs;
+		if( isset( $jobs[$job] ) )
+			return $jobs[$job];
+		else
+			return NULL;
 	}
 
 	function getHeartbeat() {
@@ -1051,10 +1079,243 @@ class EmptyImage {
 	}
 }
 
-//$my_data = new DataGatherer();
-//$my_data->parseXML();
-//$my_data->printInfo();
+class HostImage {
 
-//$ic = new ClusterImage( "LISA Cluster" );
-//$ic->draw();
+	var $data_gather, $cluster, $host, $node, $image;
+	var $headerstrlen;
+
+	function HostImage( $data_gather, $cluster, $host ) {
+
+		$this->data_gather 	= $data_gather;
+		$this->cluster		= $cluster;
+		$this->host		= $host;
+		$this->y_offset		= 0;
+		$this->font		= 2;
+		$this->fontspaceing	= 2;
+		$this->headerstrlen	= array();
+
+		$this->fontheight	= ImageFontHeight( $this->font );
+		$this->fontwidth	= ImageFontWidth( $this->font );
+
+		$dg			= &$this->data_gather;
+		$this->node		= &$dg->getNode( $this->host );
+		$n			= &$this->node;
+		$this->njobs		= $n->getJobs();
+	}
+
+	function drawJobs() {
+
+		$dg                     = &$this->data_gather;
+		$colorblack		= imageColorAllocate( $this->image, 0, 0, 0 );
+
+		for( $n = 0; $n < count( $this->njobs ); $n++ ) {
+
+			$jobid			= $this->njobs[$n];
+			$jobinfo		= $dg->getJob( $jobid );
+
+			$xoffset		= 5;
+			imageString( $this->image, $this->font, $xoffset, $this->y_offset, strval( $jobid ), $colorblack );
+
+			foreach( $this->headerstrlen as $headername => $headerlen ) {
+
+				if( $headername == 'nodes' ) {
+					$attrval	= strval( count( $jobinfo[nodes] ) );
+				} else if( $headername == 'cpus' ) {
+
+					if( !isset( $jobinfo[ppn] ) )
+						$jobinfo[ppn] = 1;
+
+					$attrval	= strval( count( $jobinfo[nodes] ) * intval( $jobinfo[ppn] ) );
+
+				} else if( $headername == 'runningtime' ) {
+					$attrval	= makeTime( intval( $jobinfo[reported] ) - intval( $jobinfo[start_timestamp] ) );
+				} else {
+					$attrval	= strval( $jobinfo[$headername] );
+				}
+
+				imageString( $this->image, $this->font, $xoffset, $this->y_offset, $attrval, $colorblack );
+		
+				$xoffset	= $xoffset + ($this->fontwidth * ( $headerlen + 1 ) );
+
+			}
+			
+			$this->newLineOffset();
+		}
+	}
+
+	function drawHeader() {
+
+		$dg                     = &$this->data_gather;
+
+		for( $n = 0; $n < count( $this->njobs ); $n++ ) {
+
+			$jobid			= $this->njobs[$n];
+			$jobinfo		= $dg->getJob( $jobid );
+
+			if( !isset( $this->headerstrlen[id] ) )
+				$this->headerstrlen[id]	= strlen( strval( $jobid ) );
+			else
+				if( strlen( strval( $jobid ) ) > $this->headerstrlen[id] )
+					$this->headerstrlen[id]	= strlen( strval( $jobid ) );
+
+			if( !isset( $this->headerstrlen[owner] ) )
+				$this->headerstrlen[owner]	= strlen( strval( $jobinfo[owner] ) );
+			else
+				if( strlen( strval( $jobinfo[owner] ) ) > $this->headerstrlen[owner] )
+					$this->headerstrlen[owner]	= strlen( strval( $jobinfo[owner] ) );
+
+			if( !isset( $this->headerstrlen[queue] ) )
+				$this->headerstrlen[queue]	= strlen( strval( $jobinfo[queue] ) );
+			else
+				if( strlen( strval( $jobinfo[queue] ) ) > $this->headerstrlen[queue] )
+					$this->headerstrlen[queue]	= strlen( strval( $jobinfo[queue] ) );
+
+			if( !isset( $jobinfo[ppn] ) )
+				$jobinfo[ppn] = 1;
+
+			$cpus			= count( $jobinfo[nodes] ) * intval( $jobinfo[ppn] );
+
+			if( !isset( $this->headerstrlen[cpus] ) )
+				$this->headerstrlen[cpus]	= strlen( strval( $cpus ) );
+			else
+				if( strlen( strval( $cpus ) ) > $this->headerstrlen[cpus] )
+					$this->headerstrlen[cpus]	= strlen( strval( $cpus ) );
+
+			$nodes			= count( $jobinfo[nodes] );
+
+			if( !isset( $this->headerstrlen[nodes] ) )
+				$this->headerstrlen[nodes]	= strlen( strval( $nodes ) );
+			else
+				if( strlen( strval( $nodes) ) > $this->headerstrlen[nodes] )
+					$this->headerstrlen[nodes]	= strlen( strval( $nodes ) );
+
+			$runningtime		= makeTime( intval( $jobinfo[reported] ) - intval( $jobinfo[start_timestamp] ) );
+
+			if( !isset( $this->headerstrlen[runningtime] ) )
+				$this->headerstrlen[runningtime]	= strlen( strval( $runningtime) );
+			else
+				if( strlen( strval( $runningtime) ) > $this->headerstrlen[runningtime] )
+					$this->headerstrlen[runningtime]	= strlen( strval( $runningtime) );
+
+			if( !isset( $this->headerstrlen[name] ) )
+				$this->headerstrlen[name]	= strlen( strval( $jobinfo[name] ) );
+			else
+				if( strlen( strval( $jobinfo[name] ) ) > $this->headerstrlen[name] )
+					$this->headerstrlen[name]	= strlen( strval( $jobinfo[name] ) );
+
+		}
+
+		$xoffset	= 5;
+
+		foreach( $this->headerstrlen as $headername => &$headerlen ) {
+
+			$colorgreen	= imageColorAllocate( $this->image, 0, 200, 0 );
+
+			imageString( $this->image, $this->font, $xoffset, $this->y_offset, ucfirst( $headername ), $colorgreen );
+		
+			if( $headerlen < strlen( $headername ) )
+				$headerlen	= strlen( $headername );
+
+			$xoffset	= $xoffset + ($this->fontwidth * ( $headerlen + 1 ) );
+
+		}
+		$this->newLineOffset();
+	}
+
+	function newLineOffset() {
+
+		$this->y_offset		= $this->y_offset + $this->fontheight + $this->fontspaceing;
+	}
+
+	function draw() {
+
+		$xlen		= 450;
+		$ylen		= ( count( $this->njobs ) * ( $this->fontheight + $this->fontspaceing ) ) + (3 * $this->fontheight);
+
+		$this->image	= imageCreateTrueColor( $xlen, $ylen );
+		$colorwhite	= imageColorAllocate( $this->image, 255, 255, 255 );
+		imageFill( $this->image, 0, 0, $colorwhite );                         
+
+		$colorblue	= imageColorAllocate( $this->image, 0, 0, 255 );
+
+		imageString( $this->image, $this->font, 1, $this->y_offset, "Monarch Joblist - host: ".$this->host, $colorblue );
+		$this->newLineOffset();
+
+		$this->drawHeader();
+		$this->drawJobs();
+
+		header( 'Content-type: image/png' );
+		imagePNG( $this->image );
+		imageDestroy( $this->image );
+	}
+}
+
+function makeTime( $time ) {
+
+        $days = intval( $time / 86400 );
+        $time = ($days>0) ? $time % ($days * 86400) : $time;
+
+        //printf( "time = %s, days = %s\n", $time, $days );
+
+        $date_str = '';
+        $day_str = '';
+
+        if( $days > 0 ) {
+                if( $days > 1 )
+                        $day_str .= $days . ' days';
+                else
+                        $day_str .= $days . ' day';
+        }
+
+        $hours = intval( $time / 3600 );
+        $time = $hours ? $time % ($hours * 3600) : $time;
+
+        //printf( "time = %s, days = %s, hours = %s\n", $time, $days, $hours );
+        if( $hours > 0 ) {
+                $date_str .= $hours . ':';
+                $date_unit = 'hours'; 
+        }
+
+        $minutes = intval( $time / 60 );
+        $seconds = $minutes ? $time % ($minutes * 60) : $time;
+
+        if( $minutes > 0 ) {
+
+                if( $minutes >= 10 )
+                        $date_str .= $minutes . ':';
+                else
+                        $date_str .= '0' . $minutes . ':';
+
+                $date_unit = (!isset($date_unit)) ? 'minutes' : $date_unit;
+        } else {
+                if($hours > 0 ) {
+                        $date_str .= '00:';
+                        $date_unit = (!isset($date_unit)) ? 'minutes' : $date_unit;
+                }
+        }
+
+
+        $date_unit = (!isset($date_unit)) ? 'seconds' : $date_unit;
+
+        if( $seconds > 0 ) {
+
+                if( $seconds >= 10 )
+                        $date_str .= $seconds . ' ' . $date_unit;
+                else
+                        $date_str .= '0' . $seconds . ' ' . $date_unit;
+
+        } else if ( $hours > 0 or $minutes > 0 )
+
+                $date_str .= '00 ' . $date_unit;
+
+        if( $days > 0) {
+
+                if( $hours > 0 or $minutes > 0 or $seconds > 0 )
+                        $date_str = $day_str . ' - ' . $date_str;
+                else
+                        $date_str = $day_str;
+        }
+
+        return $date_str;
+}
 ?>

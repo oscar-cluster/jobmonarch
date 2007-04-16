@@ -38,6 +38,21 @@ if( isset($state) && ($state!='')) $filter[state]=$state;
 if( isset($user) && ($user!='')) $filter[user]=$user;
 if( isset($queue) && ($queue!='')) $filter[queue]=$queue;
 
+function drawHostImage() {
+
+	global $clustername, $hostname;
+
+	$data_gatherer = new DataGatherer( $clustername );
+	$data_gatherer->parseXML();
+
+	if( $data_gatherer->isJobmonRunning() )
+		$ic = new HostImage( $data_gatherer, $clustername, $hostname );
+	else
+		$ic = new EmptyImage();
+
+	$ic->draw();
+}
+
 function drawSmallClusterImage() {
 
 	global $clustername;
@@ -95,6 +110,12 @@ switch( $view ) {
 	case "big-clusterimage":
 
 		drawBigClusterImage();
+	
+		break;
+
+	case "hostimage":
+
+		drawHostImage();
 	
 		break;
 
