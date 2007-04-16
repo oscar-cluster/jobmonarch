@@ -60,10 +60,12 @@ function drawSmallClusterImage() {
 	$data_gatherer = new DataGatherer( $clustername );
 	$data_gatherer->parseXML();
 
-	if( $data_gatherer->isJobmonRunning() )
+	if( $data_gatherer->isJobmonRunning() ) {
 		$ic = new ClusterImage( $clustername );
-	else
+		$ic->setSmall();
+	} else {
 		$ic = new EmptyImage();
+	}
 
 	$ic->draw();
 }
@@ -73,6 +75,7 @@ function drawBigClusterImage() {
 	global $filter, $clustername;
 
 	$ic = new ClusterImage( $clustername );
+	$ic->setBig();
 
 	if( isset( $filter ) ) {
 		foreach( $filter as $filtername=>$filtervalue ) {
