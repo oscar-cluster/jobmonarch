@@ -23,20 +23,34 @@
 
 import sys, getopt, ConfigParser
 
+def usage():
+
+	print
+	print 'usage: jobmond [options]'
+	print 'options:'
+	print '      --config, -c      configuration file'
+	print '      --pidfile, -p     pid file'
+	print '      --help, -h        help'
+	print
+
+
 def processArgs( args ):
 
 	SHORT_L = 'c:'
 	LONG_L = 'config='
 
-	config_filename = None
+	global PIDFILE
+	PIDFILE = None
+	config_filename = '/etc/jobmond.conf'
 
 	try:
 
 		opts, args = getopt.getopt( args, SHORT_L, LONG_L )
 
-	except getopt.error, detail:
+	except getopt.GetoptError, detail:
 
 		print detail
+		usage()
 		sys.exit(1)
 
 	for opt, value in opts:
@@ -45,9 +59,14 @@ def processArgs( args ):
 		
 			config_filename = value
 
-	if not config_filename:
+		if opt in [ '--pidfile', '-p' ]:
 
-		config_filename = '/etc/jobmond.conf'
+			PIDFILE = value
+		
+		if opt in [ '--help', '-h' ]:
+ 
+			usage()
+			sys.exit(1)
 
 	return loadConfig( config_filename )
 
@@ -570,6 +589,8 @@ class PbsDataGatherer:
                 if pid > 0:
                         sys.exit(0)  # end parent
 
+		write_pidfile()
+
                 # Go to the root directory and set the umask
                 #
                 os.chdir('/')
@@ -604,6 +625,16 @@ def debug_msg( level, msg ):
 
         if (DEBUG_LEVEL >= level):
 	                sys.stderr.write( msg + '\n' )
+
+def write_pidfile():
+
+	# Write pidfile if PIDFILE exists
+	if PIDFILE:
+		pid = os.getpid()
+
+		pidfile = open(PIDFILE, 'w')
+		pidfile.write(str(pid))
+		pidfile.close()
 
 def main():
 	"""Application start"""
