@@ -1,3 +1,57 @@
+0.2:
+
+	web)
+		- fixed: misc. optimization and bugfixes
+		- fixed: now fully compatible with latest PHP5 and PHP4
+
+		- changed: cluster image now incorporates small text descr.
+		- changed: monarch (cluster/host) images no longer displayed
+			   for clusters that are not jobmond enabled
+
+		- added: host template
+			 adds a extra monarch host image to Ganglia's host overview
+			 NOTE!: be sure to copy/install new template from addons/templates
+
+		- added: (optional) nodes hostnames column
+			 thanks to: Daniel Barthel - daniel(d.o.t)barthel(a.t)nottingham(d.o.t)ac(d.o.t)uk
+			 for the suggestion
+
+	jobmond)
+
+		- fixed: when a job metric is longer than maximum metric length,
+			 the info is split up amongst multiple metrics
+
+		- fixed: no longer exit when batch server is unavailable
+			 thanks to: Peter Kruse - pk(a.t)q-leap(d.o.t)com
+			 for the patch
+
+		- fixed: fd closure bug causing stderr/stdout to remain open after daemonizing
+
+		- changed: rearranged code to allow support for different batch systems
+
+		- added: pidfile support 
+			 thanks to: Michael Jeanson - michael(a.t)ccs(d.o.t)usherbrooke(d.o.t)ca
+			 for the patch
+
+		- added: usage display
+			 thanks to: Michael Jeanson - michael(a.t)ccs(d.o.t)usherbrooke(d.o.t)ca
+			 for the patch
+
+		- added: queue selection support: ability to specify which QUEUE's to get jobinfo from
+			 thanks to: Michael Jeanson - michael(a.t)ccs(d.o.t)usherbrooke(d.o.t)ca
+			 for the patch
+
+	jobarchived)
+
+		- fixed: XML retrieval for Ganglia version >= 3.0.3 working again
+		- fixed: database storing for Ganglia version >= 3.0.3 working again
+		- fixed: fd closure bug causing stderr/stdout to remain open after daemonizing
+
+		- changed: misc. bugfixes to optimize XML connections
+		- changed: misc. bugfixes for misc. minor issues
+
+		- added: cleaning of stale jobs in dbase: see JOB_TIMEOUT option
+
 0.1.1: 
 
 	web)
