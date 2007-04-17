@@ -6,8 +6,6 @@ Functionality TODO (wish) list
 
 	*	Actual version reporting by daemons
 
-	*	'queued since' reporting of jobs
-
 	*	Usage of a node's (Ganglia) location in the ClusterImage
 		construction (placement by x,y,z coordinates)
   
