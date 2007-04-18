@@ -108,7 +108,7 @@ def loadConfig( filename ):
 
 	cfg.read( filename )
 
-	global DEBUG_LEVEL, DAEMONIZE, BATCH_SERVER, BATCH_POLL_INTERVAL, GMOND_CONF, DETECT_TIME_DIFFS, BATCH_HOST_TRANSLATE, BATCH_API
+	global DEBUG_LEVEL, DAEMONIZE, BATCH_SERVER, BATCH_POLL_INTERVAL, GMOND_CONF, DETECT_TIME_DIFFS, BATCH_HOST_TRANSLATE, BATCH_API, QUEUE
 
 	DEBUG_LEVEL = cfg.getint( 'DEFAULT', 'DEBUG_LEVEL' )
 
@@ -155,6 +155,14 @@ def loadConfig( filename ):
 		else:
 			debug_msg( 0, "fatal error: BATCH_API not set and can't make guess" )
 			sys.exit( 1 )
+
+	try:
+
+		QUEUE = cfg.getlist( 'DEFAULT', 'QUEUE' )
+
+	except ConfigParser.NoOptionError, detail:
+
+		QUEUE = None
 	
 	return True
 
@@ -356,6 +364,13 @@ class PbsDataGatherer:
 
 			name = self.getAttr( attrs, 'Job_Name' )
 			queue = self.getAttr( attrs, 'queue' )
+
+			if QUEUE:
+
+				if QUEUE != queue:
+
+					continue
+
 			owner = self.getAttr( attrs, 'Job_Owner' ).split( '@' )[0]
 			requested_time = self.getAttr( attrs, 'Resource_List.walltime' )
 			requested_memory = self.getAttr( attrs, 'Resource_List.mem' )
