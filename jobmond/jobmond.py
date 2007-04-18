@@ -23,6 +23,11 @@
 
 import sys, getopt, ConfigParser
 
+import xml, xml.sax
+from xml.sax import saxutils, make_parser
+from xml.sax import make_parser
+from xml.sax.handler import feature_namespaces
+
 def usage():
 
 	print
@@ -158,7 +163,7 @@ def loadConfig( filename ):
 
 	try:
 
-		QUEUE = cfg.getlist( 'DEFAULT', 'QUEUE' )
+		QUEUE = getlist( cfg.get( 'DEFAULT', 'QUEUE' ) )
 
 	except ConfigParser.NoOptionError, detail:
 
@@ -266,23 +271,196 @@ class DataProcessor:
 		debug_msg( 10, printTime() + ' ' + cmd )
 		os.system( cmd )
 
-class SgeDataGatherer:
+class DataGatherer:
 
-	"""Placeholder for Babu Sundaram's SGE implementation"""
+	"""Skeleton class for batch system DataGatherer"""
+
+	def printJobs( self, jobs ):
+		"""Print a jobinfo overview"""
+
+		for name, attrs in self.jobs.items():
+
+			print 'job %s' %(name)
+
+			for name, val in attrs.items():
+
+				print '\t%s = %s' %( name, val )
+
+	def printJob( self, jobs, job_id ):
+		"""Print job with job_id from jobs"""
+
+		print 'job %s' %(job_id)
+
+		for name, val in jobs[ job_id ].items():
+
+			print '\t%s = %s' %( name, val )
 
         def daemon( self ):
+                """Run as daemon forever"""
 
-		pass
+                # Fork the first child
+                #
+                pid = os.fork()
+                if pid > 0:
+                        sys.exit(0)  # end parent
+
+                # creates a session and sets the process group ID
+                #
+                os.setsid()
+
+                # Fork the second child
+                #
+                pid = os.fork()
+                if pid > 0:
+                        sys.exit(0)  # end parent
+
+		write_pidfile()
+
+                # Go to the root directory and set the umask
+                #
+                os.chdir('/')
+                os.umask(0)
+
+                sys.stdin.close()
+                sys.stdout.close()
+                sys.stderr.close()
+
+                os.open('/dev/null', os.O_RDWR)
+                os.dup2(0, 1)
+                os.dup2(0, 2)
+
+                self.run()
 
         def run( self ):
+                """Main thread"""
 
-		pass
+                while ( 1 ):
+		
+			self.jobs = self.getJobData( self.jobs )
+			self.submitJobData( self.jobs )
+			time.sleep( BATCH_POLL_INTERVAL )	
 
-class PbsDataGatherer:
+class SgeQstatXMLParser(xml.sax.handler.ContentHandler):
 
-	"""This is the DataGatherer for PBS and Torque"""
+	"""Babu Sundaram's experimental SGE qstat XML parser"""
+
+	def __init__(self, qstatinxml):
+
+		self.qstatfile = qstatinxml
+		self.attribs = {}
+		self.value = ''
+		self.jobID = ''
+		self.currentJobInfo = ''
+		self.job_list = []
+		self.EOFFlag = 0
+		self.jobinfoCount = 0
+
+
+	def startElement(self, name, attrs):
+
+		if name == 'job_list':
+			self.currentJobInfo = 'Status=' + attrs.get('state', None) + ' '
+		elif name == 'job_info':
+			self.job_list = []
+			self.jobinfoCount += 1
+
+	def characters(self, ch):
+
+		self.value = self.value + ch
+
+	def endElement(self, name):
+
+		if len(self.value.strip()) > 0 :
+
+			self.currentJobInfo += name + '=' + self.value.strip() + ' '         
+		elif name != 'job_list':
+
+			self.currentJobInfo += name + '=Unknown '
+
+		if name == 'JB_job_number':
+
+			self.jobID = self.value.strip()
+			self.job_list.append(self.jobID)          
+
+		if name == 'job_list':
+
+			if self.attribs.has_key(self.jobID) == False:
+				self.attribs[self.jobID] = self.currentJobInfo
+			elif self.attribs.has_key(self.jobID) and self.attribs[self.jobID] != self.currentJobInfo:
+				self.attribs[self.jobID] = self.currentJobInfo
+			self.currentJobInfo = ''
+			self.jobID = ''
+
+		elif name == 'job_info' and self.jobinfoCount == 2:
+
+			deljobs = []
+			for id in self.attribs:
+				try:
+					self.job_list.index(str(id))
+				except ValueError:
+					deljobs.append(id)
+			for i in deljobs:
+				del self.attribs[i]
+			deljobs = []
+			self.jobinfoCount = 0
+
+		self.value = ''
+
+class SgeDataGatherer(DataGatherer):
 
 	jobs = { }
+
+	def __init__( self ):
+		"""Setup appropriate variables"""
+
+		self.jobs = { }
+		self.timeoffset = 0
+		self.dp = DataProcessor()
+		self.initSgeJobInfo()
+
+	def initSgeJobInfo( self ):
+		"""This is outside the scope of DRMAA; Get the current jobs in SGE"""
+		"""This is a hack because we cant get info about jobs beyond"""
+		"""those in the current DRMAA session"""
+
+		self.qstatparser = SgeQstatXMLParser( SGE_QSTAT_XML_FILE )
+
+		# Obtain the qstat information from SGE in XML format
+		# This would change to DRMAA-specific calls from 6.0u9
+
+	def getJobData(self):
+		"""Gather all data on current jobs in SGE"""
+
+		# Get the information about the current jobs in the SGE queue
+		info = os.popen("qstat -ext -xml").readlines()
+		f = open(SGE_QSTAT_XML_FILE,'w')
+		for lines in info:
+			f.write(lines)
+		f.close()
+
+		# Parse the input
+		f = open(self.qstatparser.qstatfile, 'r')
+		xml.sax.parse(f, self.qstatparser)
+		f.close()
+
+		self.cur_time = time.time()
+
+		return self.qstatparser.attribs
+
+	def submitJobData(self):
+		"""Submit job info list"""
+
+		self.dp.multicastGmetric( 'MONARCH-HEARTBEAT', str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
+		# Now let's spread the knowledge
+		#
+		metric_increment = 0
+		for jobid, jobattrs in self.qstatparser.attribs.items():
+
+			self.dp.multicastGmetric( 'MONARCH-JOB-' + jobid + '-' + str(metric_increment), jobattrs)
+
+class PbsDataGatherer(DataGatherer):
+
+	"""This is the DataGatherer for PBS and Torque"""
 
 	global PBSQuery
 
@@ -564,71 +742,6 @@ class PbsDataGatherer:
 			str_list.append( my_val_str )
 
 		return str_list
-
-	def printJobs( self, jobs ):
-		"""Print a jobinfo overview"""
-
-		for name, attrs in self.jobs.items():
-
-			print 'job %s' %(name)
-
-			for name, val in attrs.items():
-
-				print '\t%s = %s' %( name, val )
-
-	def printJob( self, jobs, job_id ):
-		"""Print job with job_id from jobs"""
-
-		print 'job %s' %(job_id)
-
-		for name, val in jobs[ job_id ].items():
-
-			print '\t%s = %s' %( name, val )
-
-        def daemon( self ):
-                """Run as daemon forever"""
-
-                # Fork the first child
-                #
-                pid = os.fork()
-                if pid > 0:
-                        sys.exit(0)  # end parent
-
-                # creates a session and sets the process group ID
-                #
-                os.setsid()
-
-                # Fork the second child
-                #
-                pid = os.fork()
-                if pid > 0:
-                        sys.exit(0)  # end parent
-
-		write_pidfile()
-
-                # Go to the root directory and set the umask
-                #
-                os.chdir('/')
-                os.umask(0)
-
-                sys.stdin.close()
-                sys.stdout.close()
-                sys.stderr.close()
-
-                os.open('/dev/null', os.O_RDWR)
-                os.dup2(0, 1)
-                os.dup2(0, 2)
-
-                self.run()
-
-        def run( self ):
-                """Main thread"""
-
-                while ( 1 ):
-		
-			self.jobs = self.getJobData( self.jobs )
-			self.submitJobData( self.jobs )
-			time.sleep( BATCH_POLL_INTERVAL )	
 
 def printTime( ):
 	"""Print current time/date in human readable format for log/debug"""
