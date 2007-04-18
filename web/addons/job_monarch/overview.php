@@ -181,58 +181,73 @@ function drawQueuePie() {
 
 function drawPie() {
 
-	global $jobs, $gnodes, $piefilter, $filter;
+	global $jobs, $gnodes, $piefilter, $filter, $metrics;
 
-	$nodes = $gnodes;
+	$nodes 		= $gnodes;
 
 	if( isset($piefilter) )	
-		$pie_args = "title=" . rawurlencode("Cluster ".$piefilter." usage");
+		$pie_args	= "title=" . rawurlencode("Cluster ".$piefilter." usage");
 	else
-		$pie_args = "title=" . rawurlencode("Cluster queue usage");
+		$pie_args 	= "title=" . rawurlencode("Cluster queue usage");
 		
-	$pie_args .= "&size=250x150";
+	$pie_args 	.= "&size=250x150";
 
-	$queues = array();
-	$nr_jobs = count( $jobs );
-	$nr_nodes = count( $nodes );
+	$queues 	= array();
+	$nr_jobs 	= count( $jobs );
+	$nr_nodes 	= count( $nodes );
 
-	$emptynodes = 0;
+	$nr_cpus 	= cluster_sum("cpu_num", $metrics);
 
-	$job_weight = array();
+	$empty_cpus 	= 0;
+	$used_cpus 	= 0;
+
+	$job_weight 	= array();
 
 	foreach( $nodes as $node ) {
 
-		$myjobs = $node->getJobs();
+		$myjobs		= $node->getJobs();
+		$myhost		= $node->getHostname();
+		$node_cpus	= $metrics[$myhost]["cpu_num"][VAL];
+		$job_cpu	= 0;
 
-		if( count( $myjobs ) == 0 )
-			$emptynodes++;
+		foreach( $myjobs as $myjob ) {
+
+			$job_cpu	+= (int) $jobs[$myjob][ppn] ? $jobs[$myjob][ppn] : 1;
+		}
+
+		$node_freecpu	= $node_cpus - $job_cpu;
+
+		$empty_cpus	+= $node_freecpu;
 	}
-	$used_nodes = $nr_nodes - $emptynodes;
 
-	$empty_percentage = ($emptynodes / $nr_nodes) * 100;
-	$job_percentage = 100 - $empty_percentage; 
+	$used_cpus		= $nr_cpus - $empty_cpus;
 
-	$qcolors = array();
-	$color = randomColor( $qcolors );
-	$qcolors[] = $color;
-	$pie_args .= "&free=$empty_percentage,$color";
+	$empty_percentage 	= ($empty_cpus / $nr_cpus) * 100;
+
+	$qcolors 		= array();
+	$color 			= randomColor( $qcolors );
+	$qcolors[] 		= $color;
+	$pie_args 		.= "&free=$empty_percentage,$color";
 
 	if( isset( $piefilter ) )
 		$filterpie = array();
 
 	foreach( $nodes as $node ) {
 
-		$node_jobs = $node->getJobs();
-		$nr_node_jobs = count( $node_jobs );
-		$myhost = $node->getHostname();
+		$node_jobs 	= $node->getJobs();
+		$nr_node_jobs 	= count( $node_jobs );
+		$myhost 	= $node->getHostname();
+		$node_cpus	= $metrics[$myhost]["cpu_num"][VAL];
 
 		foreach( $node_jobs as $myjob ) {
 
-			// Determine the weight of this job on the node it is running
-			// - what percentage of the node is in use by this job
+			$job_cpu		= (int) $jobs[$myjob][ppn] ? $jobs[$myjob][ppn] : 1;
+
+			// Determine the weight of this job
+			// - what percentage of the cpus is in use by this job
 			//
-			$job_weight[$myjob] = ( 100 / count( $node_jobs ) ) / 100;
-			$qname = $jobs[$myjob][queue];
+			$job_weight[$myjob]	= ( $job_cpu / $nr_cpus );
+
 
 			if( isset($piefilter) ) {
 				$countjob = 1;
@@ -263,6 +278,8 @@ function drawPie() {
 				
 			} else {
 
+				$qname		= $jobs[$myjob][queue];
+
 				if( !isset( $queues[$qname] ) )
 					$queues[$qname] = $job_weight[$myjob];
 				else
@@ -271,7 +288,6 @@ function drawPie() {
 		}
 	}
 
-	//$qcolors = array();
 	if( isset( $piefilter ) )
 		$graphvals = $filterpie;
 	else
@@ -279,11 +295,11 @@ function drawPie() {
 
 	foreach( $graphvals as $name => $totalweight) {
 
-		$percentage = ( $totalweight / $used_nodes ) * $job_percentage;
+		$percentage 	= ( $totalweight * 100 );
 		
-		$color = randomColor( $qcolors );
-		$qcolors[] = $color;
-		$pie_args .= "&$name=$percentage,$color";
+		$color 		= randomColor( $qcolors );
+		$qcolors[] 	= $color;
+		$pie_args 	.= "&$name=$percentage,$color";
 	}
 	$pie = "../../pie.php?$pie_args";
 
