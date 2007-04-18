@@ -556,18 +556,25 @@ function makeOverview() {
 
 				$tpl->assign("fulljobname", $fulljobname );
 
-				if( mb_strwidth( $fulljobname ) > 10 ) {
+				$fulljobname_fields	= explode( ' ', $fulljobname );
+
+				$capjobname	= 0;
+
+				if( strlen( $fulljobname_fields[0] ) > 10 )
+					$capjobname	= 1;
+
+				if( $capjobname ) {
 					$tpl->newBlock("jobname_hint_start");
 					$tpl->gotoBlock("node");
 
-					$shortjobname = mb_strimwidth( $fulljobname, 0, 9 ) . '..';
+					$shortjobname = substr( $fulljobname, 0, 10 ) . '..';
 				} else {
 					$shortjobname = $fulljobname;
 				}
 				
 				$tpl->assign("name", $shortjobname );
 
-				if( strlen( $fulljobname ) > 10 ) {
+				if( $capjobname ) {
 					$tpl->newBlock("jobname_hint_end");
 					$tpl->gotoBlock("node");
 				}
