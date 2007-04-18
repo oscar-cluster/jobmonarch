@@ -427,7 +427,7 @@ class DataSource {
 		$errno = 0;
 		$timeout = 3;
 
-		$fp = fsockopen( $this->ip, $this->port, &$errno, &$errstr, $timeout );
+		$fp = fsockopen( $this->ip, $this->port, $errno, $errstr, $timeout );
 
 		if( !$fp ) {
 			echo 'Unable to connect to '.$this->ip.':'.$this->port; // printf( 'Unable to connect to [%s:%.0f]', $this->ip, $this->port );
@@ -473,8 +473,8 @@ class DataGatherer {
 		$src = &$this->source;
 		$this->data = $src->getData();
 
-		if ( !xml_parse( &$this->parser, $this->data ) )
-			$error = sprintf( 'XML error: %s at %d', xml_error_string( xml_get_error_code( &$this->parser ) ), xml_get_current_line_number( &$this->parser ) );
+		if ( !xml_parse( $this->parser, $this->data ) )
+			$error = sprintf( 'XML error: %s at %d', xml_error_string( xml_get_error_code( $this->parser ) ), xml_get_current_line_number( $this->parser ) );
 	}
 
 	function printInfo() {
