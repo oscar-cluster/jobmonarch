@@ -7,6 +7,7 @@
 		- changed: cluster image now incorporates small text descr.
 		- changed: monarch (cluster/host) images no longer displayed
 			   for clusters that are not jobmond enabled
+		- changed: pie chart percentages are now cpu-based instead of node-based
 
 		- added: host template
 			 adds a extra monarch host image to Ganglia's host overview
