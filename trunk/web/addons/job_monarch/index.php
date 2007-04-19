@@ -416,7 +416,7 @@ switch( $view ) {
 $tpl->assignInclude( "footer", "templates/footer.tpl" );
 $tpl->prepare();
 
-$title = "Torque Report";
+$title = "Batch Report";
 makeHeader( 'index' );
 $tpl->assign("cluster_url", rawurlencode($clustername) );
 $tpl->assign("cluster", $clustername );
