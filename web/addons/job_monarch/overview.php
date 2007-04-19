@@ -610,6 +610,10 @@ function makeOverview() {
 					$tpl->assign( "queued", makeDate( $jobs[$jobid][queued_timestamp] ) );
 					$tpl->gotoBlock( "node" );
 				}
+				if( $COLUMN_NODES ) {
+					$tpl->newBlock( "column_nodes" );
+					$tpl->gotoBlock( "node" );
+				}
 
 				$ppn = (int) $jobs[$jobid][ppn] ? $jobs[$jobid][ppn] : 1;
 				$cpus = $nodes * $ppn;
@@ -626,7 +630,7 @@ function makeOverview() {
 						$view_name_nodes[] = $tempnode;
 
 					if( $COLUMN_NODES ) {
-						$tpl->newBlock( "column_nodes" );
+						$tpl->gotoBlock( "column_nodes" );
 						$mynodehosts = array();
 						foreach( $jobs[$jobid][nodes] as $mynode ) {
 							$myhost_href = "./?c=".$clustername."&h=".$mynode.".".$jobs[$jobid][domain];
