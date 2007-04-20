@@ -40,11 +40,11 @@ SYSLOG_FACILITY			: DAEMON
 GMETAD_CONF			: /etc/gmetad.conf
 
 # Where to grab XML data from
-# Usually: local gmetad (port 8652)
+# Usually: local gmetad (port 8651)
 #
 # Syntax: <hostname>:<port>
 #
-ARCHIVE_XMLSOURCE		: localhost:8652
+ARCHIVE_XMLSOURCE		: localhost:8651
 
 # List of data_source names to archive for
 #

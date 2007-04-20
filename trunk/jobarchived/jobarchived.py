@@ -716,6 +716,7 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 		self.config	= config
 		self.clusters	= { }
 		self.ds		= datastore
+
 		debug_msg( 1, 'Checking database..' )
 		self.ds.checkStaleJobs()
 		debug_msg( 1, 'Check done.' )
@@ -912,7 +913,7 @@ class XMLGatherer:
 			sys.exit( 1 )
 
 		else:
-			self.s.send( '\n' )
+			#self.s.send( '\n' )
 
 			my_fp			= self.s.makefile( 'r' )
 			my_data			= my_fp.readlines()
