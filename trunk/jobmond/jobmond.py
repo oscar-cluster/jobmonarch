@@ -623,7 +623,14 @@ class PbsDataGatherer(DataGatherer):
 					if not numeric_node:
 						count_mynodes = count_mynodes + 1
 					else:
-						count_mynodes = count_mynodes + int( nodepart )
+						try:
+							count_mynodes = count_mynodes + int( nodepart )
+						except ValueError, detail:
+							debug_msg( 10, str( detail ) )
+							debug_msg( 10, "Encountered weird node in Resources_List?!" )
+							debug_msg( 10, 'nodepart = ' + str( nodepart ) )
+							debug_msg( 10, 'job = ' + str( name ) )
+							debug_msg( 10, 'attrs = ' + str( attrs ) )
 						
 				nodeslist = str( count_mynodes )
 			else:
