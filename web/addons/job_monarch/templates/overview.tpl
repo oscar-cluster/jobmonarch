@@ -112,7 +112,14 @@ View
 </TABLE>
 
   <TD ALIGN="CENTER"><CENTER>
-    <IMG SRC="{clusterimage}"><BR>
+<!-- INCLUDESCRIPT BLOCK : ci_script -->
+    <IMG SRC="{clusterimage}" USEMAP="#MONARCH_CLUSTER_BIG" WIDTH="{clusterimage_width}" HEIGHT="{clusterimage_height}" BORDER="0">
+    <MAP NAME="MONARCH_CLUSTER_BIG">
+<!-- START BLOCK : node_clustermap -->
+{node_area_map}
+<!-- END BLOCK : node_clustermap -->
+    </MAP>
+    <BR>
 <FONT class="footer">Last updated: {report_time}</FONT></CENTER>
   </TD>
 

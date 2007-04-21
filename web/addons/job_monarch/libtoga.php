@@ -416,9 +416,19 @@ class DataSource {
 
 	var $data, $ip, $port;
 
-	function DataSource( $ip = '127.0.0.1', $port = 8649 ) {
-		$this->ip = $ip;
-		$this->port = $port;
+	//function DataSource( $ip = '127.0.0.1', $port = 8649 ) {
+	function DataSource() {
+
+		global $DATA_SOURCE;
+
+		$ds_fields 	= explode( ':', $DATA_SOURCE );
+
+		$ds_ip 		= $ds_fields[0];
+		$ds_port 	= $ds_fields[1];
+
+		$this->ip 	= $ds_ip;
+		$this->port 	= $ds_port;
+
 	}
 
 	function getData() {
@@ -453,27 +463,30 @@ class DataGatherer {
 
 	function DataGatherer( $cluster ) {
 
-		global $DATA_SOURCE;
+		//global $DATA_SOURCE;
 	
 		//printf("dg cluster = %s\n", $cluster );
-		$ds_fields = explode( ':', $DATA_SOURCE );
-		$ds_ip = $ds_fields[0];
-		$ds_port = $ds_fields[1];
+		//$ds_fields = explode( ':', $DATA_SOURCE );
+		//$ds_ip = $ds_fields[0];
+		//$ds_port = $ds_fields[1];
 
-		$this->source = new DataSource( $ds_ip, $ds_port );
+		//$this->source = new DataSource( $ds_ip, $ds_port );
 
-		$this->parser = xml_parser_create();
+		$this->cluster	= $cluster;
 		$this->httpvars = $httpvars;
-		$this->xmlhandler = new TorqueXMLHandler( $cluster );
-		xml_set_element_handler( $this->parser, array( &$this->xmlhandler, 'startElement' ), array( &$this->xmlhandler, 'stopElement' ) );
 	}
 
-	function parseXML() {
+	function parseXML( $data ) {
 
-		$src = &$this->source;
-		$this->data = $src->getData();
+		//$src = &$this->source;
+		//$this->data = $src->getData();
 
-		if ( !xml_parse( $this->parser, $this->data ) )
+		$this->parser 		= xml_parser_create();
+		$this->xmlhandler 	= new TorqueXMLHandler( $this->cluster );
+
+		xml_set_element_handler( $this->parser, array( &$this->xmlhandler, 'startElement' ), array( &$this->xmlhandler, 'stopElement' ) );
+		//if ( !xml_parse( $this->parser, $this->data ) )
+		if ( !xml_parse( $this->parser, $data ) )
 			$error = sprintf( 'XML error: %s at %d', xml_error_string( xml_get_error_code( $this->parser ) ), xml_get_current_line_number( $this->parser ) );
 	}
 
@@ -590,7 +603,7 @@ class TorqueXMLHandler {
 			//printf( "Found node %s\n", $hostname );
 
 			if( !isset( $nodes[$hostname] ) )
-				$nodes[$hostname] = new NodeImage( $hostname );
+				$nodes[$hostname] = new NodeImage( $this->proc_cluster, $hostname );
 
 		} else if( $name == 'METRIC' and strstr( $attrs[NAME], 'MONARCH' ) and $this->proc_cluster == $this->clustername ) {
 
@@ -667,7 +680,7 @@ class TorqueXMLHandler {
 							//$host = $node.'.'.$jobs[$jobid][domain];
 				
 							if( !isset( $nodes[$host] ) )
-								$my_node = new NodeImage( $host );
+								$my_node = new NodeImage( $this->proc_cluster, $host );
 							else
 								$my_node = $nodes[$host];
 
@@ -766,7 +779,7 @@ class NodeImage {
 
 	var $image, $x, $y, $hostname, $jobs, $tasks, $showinfo;
 
-	function NodeImage( $hostname ) {
+	function NodeImage( $cluster, $hostname ) {
 
 		global $SMALL_CLUSTERIMAGE_NODEWIDTH;
 
@@ -777,6 +790,7 @@ class NodeImage {
 		$this->tasks = 0;
 		$this->hostname = $hostname;
 		$this->cpus = $this->determineCpus();
+		$this->clustername = $cluster;
 		$this->showinfo = 1;
 		$this->size = $SMALL_CLUSTERIMAGE_NODEWIDTH;
 	}
@@ -817,6 +831,23 @@ class NodeImage {
 
 		$this->x = $x;
 		$this->y = $y;
+	}
+
+	function getImagemapArea() {
+
+		$area_topleft		= $this->x . "," . $this->y;
+		$area_bottomright	= ($this->x + $this->size) . "," . ($this->y + $this->size);
+		$area_coords		= $area_topleft . "," . $area_bottomright;
+
+		$area_href		= "./?c=" . $this->clustername . "&h=" . $this->hostname;
+		$area_tooltip		= $this->hostname . ": " . implode( " ", $this->jobs );
+
+		$tag_href		= "HREF=\"" . $area_href . "\"";
+		$tag_coords		= "COORDS=\"" . $area_coords . "\"";
+		$tag_tooltip1		= "ALT=\"" . $area_tooltip . "\"";
+		$tag_tooltip2		= "TITLE=\"" . $area_tooltip . "\"";
+
+		return ("<AREA SHAPE=\"RECT\" " . $tag_coords . " " . $tag_href . " " . $tag_tooltip1 . " " . $tag_tooltip2 . ">");
 	}
 
 	function colorHex( $color ) {
@@ -928,12 +959,25 @@ class ClusterImage {
 	var $dataget, $image, $clustername;
 	var $filtername, $filters;
 
-	function ClusterImage( $clustername ) {
+	//function ClusterImage( $clustername ) {
+	function ClusterImage( $data, $clustername ) {
 
+		//$this->dataget		= $dataget;
 		$this->dataget		= new DataGatherer( $clustername );
+		$this->data		= $data;
 		$this->clustername	= $clustername;
 		$this->filters		= array();
 		$this->size		= 's';
+		$this->width		= 0;
+		$this->height		= 0;
+		$this->output		= 1;
+	}
+
+	function getWidth() {
+		return $this->width;
+	}
+	function getHeight() {
+		return $this->height;
 	}
 
 	function setSmall() {
@@ -942,6 +986,10 @@ class ClusterImage {
 
 	function setBig() {
 		$this->size	= 'b';
+	}
+
+	function setNoimage() {
+		$this->output	= 0;
 	}
 
 	function isSmall() {
@@ -1006,7 +1054,7 @@ class ClusterImage {
 		global $BIG_CLUSTERIMAGE_MAXWIDTH, $BIG_CLUSTERIMAGE_NODEWIDTH;
 	
 		$mydatag = $this->dataget;
-		$mydatag->parseXML();
+		$mydatag->parseXML( $this->data );
 
 		if( $this->isSmall() ) {
 			$max_width = $SMALL_CLUSTERIMAGE_MAXWIDTH;
@@ -1046,6 +1094,9 @@ class ClusterImage {
 		$fontheight	= ImageFontHeight( $font );
 		$fontspaceing	= 2;
 		$y_offset	= $fontheight + (2 * $fontspaceing);
+
+		$this->width	= $max_width;
+		$this->height	= ($y_offset + (($node_rows*$node_width)+1) );
 
 		$image = imageCreateTrueColor( $max_width, ($y_offset + (($node_rows*$node_width)+1) ) );
 		$colorwhite = imageColorAllocate( $image, 255, 255, 255 );
@@ -1089,10 +1140,27 @@ class ClusterImage {
 				}
 			}
 		}
-		
-		header( 'Content-type: image/png' );
-		imagePNG( $image );
-		imageDestroy( $image );
+	
+		$this->nodes	= &$nodes;
+
+		if ($this->output) {
+			header( 'Content-type: image/png' );
+			imagePNG( $image );
+			imageDestroy( $image );
+		}
+	}
+
+	function getImagemapArea() {
+
+		$clusterimage_map	= "";
+
+		foreach( $this->nodes as $hostname => $node ) {
+
+			$node_map		= $node->getImagemapArea();
+			$clusterimage_map	.= $node_map;
+		}
+
+		return $clusterimage_map;
 	}
 }
 

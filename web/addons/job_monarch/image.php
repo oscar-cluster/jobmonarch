@@ -28,6 +28,28 @@ if ( !empty( $_GET ) ) {
         extract( $_GET );
 }
 
+function checkSessionData() {
+
+	global $_SESSION;
+
+	session_start();
+
+	if( isset( $_SESSION["data"] ) ) {
+		$myxml_data	= &$_SESSION["data"];
+	} else {
+		$myxml_data	= 0;
+	}
+
+	if( !$myxml_data ) {
+		$ds             = new DataSource();
+		$myxml_data     = $ds->getData();
+
+		print_f( "%s\n", $myxml_data );
+	}
+	return $myxml_data;
+}
+
+
 $httpvars = new HTTPVariables( $HTTP_GET_VARS, $_GET );
 $view = $httpvars->getHttpVar( "view" );
 $clustername = $httpvars->getClusterName();
@@ -40,10 +62,14 @@ if( isset($queue) && ($queue!='')) $filter[queue]=$queue;
 
 function drawHostImage() {
 
-	global $clustername, $hostname;
+	global $clustername, $hostname, $data_gatherer;
 
-	$data_gatherer = new DataGatherer( $clustername );
-	$data_gatherer->parseXML();
+	$ds             = new DataSource();
+	$myxml_data     = $ds->getData();
+
+	$data_gatherer	= new DataGatherer( $clustername );
+
+	$data_gatherer->parseXML( $myxml_data );
 
 	if( $data_gatherer->isJobmonRunning() )
 		$ic = new HostImage( $data_gatherer, $clustername, $hostname );
@@ -55,13 +81,17 @@ function drawHostImage() {
 
 function drawSmallClusterImage() {
 
-	global $clustername;
+	global $clustername, $data_gatherer;
 
-	$data_gatherer = new DataGatherer( $clustername );
-	$data_gatherer->parseXML();
+	$ds             = new DataSource();
+	$myxml_data     = $ds->getData();
+
+	$data_gatherer	= new DataGatherer( $clustername );
+
+	$data_gatherer->parseXML( $myxml_data );
 
 	if( $data_gatherer->isJobmonRunning() ) {
-		$ic = new ClusterImage( $clustername );
+		$ic = new ClusterImage( $myxml_data, $clustername );
 		$ic->setSmall();
 	} else {
 		$ic = new EmptyImage();
@@ -74,7 +104,9 @@ function drawBigClusterImage() {
 
 	global $filter, $clustername;
 
-	$ic = new ClusterImage( $clustername );
+	$myxml_data	= checkSessionData();
+
+	$ic = new ClusterImage( $myxml_data, $clustername );
 	$ic->setBig();
 
 	if( isset( $filter ) ) {
