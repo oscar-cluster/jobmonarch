@@ -25,6 +25,9 @@
 global $GANGLIA_PATH, $clustername, $tpl, $filter, $cluster, $get_metric_string, $cluster_url, $sh;
 global $hosts_up, $m, $start, $end, $filterorder, $COLUMN_REQUESTED_MEMORY, $COLUMN_QUEUED, $COLUMN_NODES, $hostname, $piefilter;
 
+$ds		= new DataSource();
+$myxml_data	= $ds->getData();
+
 $data_gatherer = new DataGatherer( $clustername );
 
 $tpl->assign( "clustername", $clustername );
@@ -32,7 +35,7 @@ $tpl->assign( "clustername", $clustername );
 if( $JOB_ARCHIVE )
 	$tpl->assign( "cluster_url", rawurlencode($clustername) );
 
-$data_gatherer->parseXML();
+$data_gatherer->parseXML( $myxml_data );
 
 $heartbeat = $data_gatherer->getHeartbeat();
 $jobs = $data_gatherer->getJobs();
@@ -40,7 +43,7 @@ $gnodes = $data_gatherer->getNodes();
 $cpus = $data_gatherer->getCpus();
 
 function setupFilterSettings() {
-	global $tpl, $filter, $clustername, $piefilter;
+	global $tpl, $filter, $clustername, $piefilter, $data_gatherer, $myxml_data;
 
 	$filter_image_url = "";
 
@@ -51,7 +54,26 @@ function setupFilterSettings() {
 		$filter_image_url .= "&$filtername=$filtervalue";
 	}
 
-	$tpl->assign( "clusterimage", "./image.php?c=".rawurlencode($clustername)."&view=big-clusterimage".$filter_image_url );
+	//include( "./ci_test.php" );
+	session_start();
+	//printf("data %s\n", strval( $myxml_data ) );
+	$_SESSION["data"] = &$myxml_data;
+
+	$ic = new ClusterImage( $myxml_data, $clustername );
+	$ic->setBig();
+	$ic->setNoimage();
+	$ic->draw();
+
+	//$tpl->assign( "clusterimage", "./image.php?c=".rawurlencode($clustername)."&view=big-clusterimage".$filter_image_url );
+	$tpl->assign( "clusterimage", "./image.php?". session_name() . "=" . session_id() ."&c=".rawurlencode($clustername)."&view=big-clusterimage".$filter_image_url );
+
+	$tpl->assign( "clusterimage_width", $ic->getWidth() );
+	$tpl->assign( "clusterimage_height", $ic->getHeight() );
+
+	$tpl->newBlock( "node_clustermap" );
+	$tpl->assign( "node_area_map", $ic->getImagemapArea() );
+	$tpl->gotoBlock( "_ROOT" );
+
 	$tpl->assign( "f_order", $filterorder );
 
 	if( array_key_exists( "id", $filter ) )
