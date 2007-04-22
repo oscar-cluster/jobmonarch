@@ -91,7 +91,7 @@ function epochToDatetime( $epoch ) {
 function makeHeader( $page_call ) {
 
 	global $tpl, $grid, $context, $initgrid;
-	global $jobrange, $jobstart, $title;
+	global $jobrange, $jobstart, $title, $longtitle;
 	global $page, $gridwalk, $clustername;
 	global $parentgrid, $physical, $hostname;
 	global $self, $filter, $cluster_url, $get_metric_string;
@@ -155,6 +155,7 @@ function makeHeader( $page_call ) {
 		$tpl->assign( "refresh", $default_refresh );
 
 	$tpl->assign( "date", date("r") );
+	$tpl->assign( "longpage_title", $longtitle );
 	$tpl->assign( "page_title", $title );
 
 	# The page to go to when "Get Fresh Data" is pressed.
@@ -416,6 +417,7 @@ switch( $view ) {
 $tpl->assignInclude( "footer", "templates/footer.tpl" );
 $tpl->prepare();
 
+$longtitle = "Batch Report :: Powered by Job Monarch!";
 $title = "Batch Report";
 makeHeader( 'index' );
 $tpl->assign("cluster_url", rawurlencode($clustername) );
