@@ -1221,6 +1221,11 @@ class ClusterImage {
 			$fontheight	= ImageFontHeight( $font );
 			$fontspaceing	= 2;
 
+			if( $this->isSmall() ) 
+			{
+				$y_offset	= $y_offset + (2 * $fontspaceing) + $fontheight;
+			}
+
 			if( $this->isBig() ) 
 			{
 
@@ -1247,6 +1252,13 @@ class ClusterImage {
 			$colorwhite	= imageColorAllocate( $image, 255, 255, 255 );
 
 			imageFill( $image, 0, 0, $colorwhite );
+
+			if( $this->isSmall() ) {
+
+				$colorblue	= imageColorAllocate( $image, 0, 0, 255 );
+
+				imageString( $image, $font, 2, 2, "Monarch Joblist - cluster: ".$this->clustername, $colorblue );
+			}
 
 			if( $this->isBig() ) 
 			{
@@ -1307,21 +1319,24 @@ class ClusterImage {
 						else if( $this->isBig() )
 							$nodes[$cur_node]->drawBig();
 					}
-					if( $n == $x_min )
+					if( $this->isBig() ) 
 					{
-						$mfontspacing	= 1;
-						$ylabel_x	= $x - ( $fontwidth * strlen( $y_max ) ) - $mfontspacing;
-						$ylabel_y	= $y;
+						if( $n == $x_min )
+						{
+							$mfontspacing	= 1;
+							$ylabel_x	= $x - ( $fontwidth * strlen( $y_max ) ) - $mfontspacing;
+							$ylabel_y	= $y;
 
-						imageString( $image, $font, $ylabel_x, $ylabel_y, strval( $m ), $colorblue );
-					}
-					if( $m == $y_min )
-					{
-						$mfontspacing	= 2;
-						$xlabel_y	= $y - ( $fontheight * strlen( $x_max ) );
-						$xlabel_x	= $x + $mfontspacing; 
+							imageString( $image, $font, $ylabel_x, $ylabel_y, strval( $m ), $colorblue );
+						}
+						if( $m == $y_min )
+						{
+							$mfontspacing	= 2;
+							$xlabel_y	= $y - ( $fontheight * strlen( $x_max ) );
+							$xlabel_x	= $x + $mfontspacing; 
 
-						imageStringDown( $image, $font, $xlabel_x, $xlabel_y, strval( $n ), $colorblue );
+							imageStringDown( $image, $font, $xlabel_x, $xlabel_y, strval( $n ), $colorblue );
+						}
 					}
 
 					$cur_node++;

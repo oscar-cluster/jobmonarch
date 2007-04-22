@@ -39,7 +39,7 @@ $DATETIME_FORMAT = "%a %d %b %Y %H:%M:%S";
 // Max size of small clusterimage
 // (250 pixels is same width as Ganglia's pie chart)
 //
-$SMALL_CLUSTERIMAGE_MAXWIDTH = 250;
+$SMALL_CLUSTERIMAGE_MAXWIDTH = 300;
 
 // The size of a single node in the small clusterimage
 //
