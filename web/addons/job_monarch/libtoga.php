@@ -80,6 +80,7 @@ global $SORTBY_HOSTNAME;
 global $SORT_ORDER;
 global $skan_str;
 global $x_first, $y_first;
+global $SORT_XLABEL, $SORT_YLABEL;
 
 $my_dir = getcwd();
 
@@ -1059,6 +1060,8 @@ class ClusterImage {
 
 		global $SORTBY_HOSTNAME, $SORT_ORDER, $skan_str;
 		global $x_first, $y_first;
+
+		global $SORT_XLABEL, $SORT_YLABEL;
 	
 		$mydatag = $this->dataget;
 		$mydatag->parseXML( $this->data );
@@ -1209,8 +1212,23 @@ class ClusterImage {
 			//printf( "ss %s\n", $skan_str);
 			$sorted_nodes	= usort( $nodes, "cmp" );
 
-			$x_offset	= 0;
 			$cur_node	= 0;
+
+			$x_offset	= 0;
+			$y_offset	= 0;
+			$font 		= 2;
+			$fontwidth	= ImageFontWidth( $font );
+			$fontheight	= ImageFontHeight( $font );
+			$fontspaceing	= 2;
+
+			if( $this->isBig() ) 
+			{
+
+				$y_offset	= ($fontheight * (1 + strlen( $x_max) ) ) + ((2 + strlen( $x_max)) * $fontspaceing);
+				$x_offset	= ($fontwidth * (1 + strlen( $y_max) ) ) + ((2 + strlen( $y_max)) * $fontspaceing);
+
+			}
+			//$x_offset	= ($fontwidth * 3) + (5 * $fontspaceing);
 
 			//printf( "xmin %s xmax %s\n", $x_min, $x_max );
 			//printf( "ymin %s ymax %s\n", $y_min, $y_max );
@@ -1230,12 +1248,16 @@ class ClusterImage {
 
 			imageFill( $image, 0, 0, $colorwhite );
 
-			//if( $this->isSmall() ) {
+			if( $this->isBig() ) 
+			{
+				$colorblue	= imageColorAllocate( $image, 0, 0, 255 );
 
-			//	$colorblue	= imageColorAllocate( $image, 0, 0, 255 );
+				imageString( $image, $font, $x_offset, $fontspaceing, $SORT_XLABEL, $colorblue );
 
-			//	imageString( $image, $font, 2, 2, "Monarch Joblist - cluster: ".$this->clustername, $colorblue );
-			//}
+				// Stupid php without imageStringDown function
+				//
+				imageStringDown( $image, $font, $fontspaceing, $y_offset, $SORT_YLABEL, $colorblue );
+			}
 
 			for( $n = $x_min; $n <= $x_max; $n++ )
 			{
@@ -1248,6 +1270,23 @@ class ClusterImage {
 					if( $y_min > 0 )
 					{
 						$y	= $y_offset + ( ($m-$y_min) * $node_width );
+					}
+
+					if( $n == $x_min )
+					{
+						$mfontspacing	= 1;
+						$ylabel_x	= $x - ( $fontwidth * strlen( $y_max ) ) - $mfontspacing;
+						$ylabel_y	= $y;
+
+						imageString( $image, $font, $ylabel_x, $ylabel_y, strval( $m ), $colorblue );
+					}
+					if( $m == $y_min )
+					{
+						$mfontspacing	= 2;
+						$xlabel_y	= $y - ( $fontheight * strlen( $x_max ) );
+						$xlabel_x	= $x + $mfontspacing; 
+
+						imageStringDown( $image, $font, $xlabel_x, $xlabel_y, strval( $n ), $colorblue );
 					}
 
 					if( isset( $nodes[$cur_node] ) ) 
@@ -1535,6 +1574,26 @@ class HostImage {
 		header( 'Content-type: image/png' );
 		imagePNG( $this->image );
 		imageDestroy( $this->image );
+	}
+}
+
+function imageStringDown( &$image, $font, $x, $y, &$s, &$col )
+{
+	$fw	= imagefontwidth( $font);
+	$fh	= imagefontheight( $font);
+	
+	$fontspacing = 0;
+
+	$fx	= $x;
+	$fy	= $y;
+
+	for( $n=0; $n<strlen( $s ); $n++ )
+	{
+		$myc	= $s{$n};
+
+		imagestring( $image, $font, $fx, $fy, $myc, $col );
+
+		$fy	+= ($fontspacing + $fh );
 	}
 }
 
