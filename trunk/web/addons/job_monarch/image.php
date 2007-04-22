@@ -44,7 +44,7 @@ function checkSessionData() {
 		$ds             = new DataSource();
 		$myxml_data     = $ds->getData();
 
-		print_f( "%s\n", $myxml_data );
+		//print_f( "%s\n", $myxml_data );
 	}
 	return $myxml_data;
 }
