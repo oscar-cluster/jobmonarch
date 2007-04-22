@@ -1218,7 +1218,14 @@ class ClusterImage {
 			// werkt
 			//print_r( $nodes );
 
-			$image		= imageCreateTrueColor( $this->width, ($y_offset + (($node_rows*$node_width)+1) ) );
+			$image_width	= $x_offset + ($node_width * ($x_max-$x_min+2));
+			$image_width	= ($image_width < $this->width) ? $image_width : $this->width;
+			$image_height	= $y_offset + ($node_width * ($y_max-$y_min+2));
+
+			$this->width	= $image_width;
+			$this->heigth	= $image_heigth;
+
+			$image		= imageCreateTrueColor( $image_width, $image_height );
 			$colorwhite	= imageColorAllocate( $image, 255, 255, 255 );
 
 			imageFill( $image, 0, 0, $colorwhite );
@@ -1243,9 +1250,8 @@ class ClusterImage {
 						$y	= $y_offset + ( ($m-$y_min) * $node_width );
 					}
 
-					if( isset( $nodes[$cur_node] ) ) {
-
-
+					if( isset( $nodes[$cur_node] ) ) 
+					{
 						$host	= $nodes[$cur_node]->getHostname();
 
 						if( $x_first )
