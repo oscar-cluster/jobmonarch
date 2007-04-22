@@ -76,6 +76,10 @@ global $GANGLIA_PATH;
 global $RRDTOOL;
 global $JOB_ARCHIVE_DIR;
 global $JOB_ARCHIVE_DBASE;
+global $SORTBY_HOSTNAME;
+global $SORT_ORDER;
+global $skan_str;
+global $x_first, $y_first;
 
 $my_dir = getcwd();
 
@@ -1052,6 +1056,9 @@ class ClusterImage {
 
 		global $SMALL_CLUSTERIMAGE_MAXWIDTH, $SMALL_CLUSTERIMAGE_NODEWIDTH;
 		global $BIG_CLUSTERIMAGE_MAXWIDTH, $BIG_CLUSTERIMAGE_NODEWIDTH;
+
+		global $SORTBY_HOSTNAME, $SORT_ORDER, $skan_str;
+		global $x_first, $y_first;
 	
 		$mydatag = $this->dataget;
 		$mydatag->parseXML( $this->data );
@@ -1091,6 +1098,7 @@ class ClusterImage {
 
 		$y_offset	= 0;
 		$font 		= 2;
+		$fontwidth	= ImageFontWidth( $font );
 		$fontheight	= ImageFontHeight( $font );
 		$fontspaceing	= 2;
 		$y_offset	= $fontheight + (2 * $fontspaceing);
@@ -1098,16 +1106,16 @@ class ClusterImage {
 		$this->width	= $max_width;
 		$this->height	= ($y_offset + (($node_rows*$node_width)+1) );
 
-		$image = imageCreateTrueColor( $max_width, ($y_offset + (($node_rows*$node_width)+1) ) );
-		$colorwhite = imageColorAllocate( $image, 255, 255, 255 );
-		imageFill( $image, 0, 0, $colorwhite );
+		//$image = imageCreateTrueColor( $max_width, ($y_offset + (($node_rows*$node_width)+1) ) );
+		//$colorwhite = imageColorAllocate( $image, 255, 255, 255 );
+		//imageFill( $image, 0, 0, $colorwhite );
 
-		if( $this->isSmall() ) {
+		//if( $this->isSmall() ) {
 
-			$colorblue	= imageColorAllocate( $image, 0, 0, 255 );
+		//	$colorblue	= imageColorAllocate( $image, 0, 0, 255 );
 
-			imageString( $image, $font, 2, 2, "Monarch Joblist - cluster: ".$this->clustername, $colorblue );
-		}
+		//	imageString( $image, $font, 2, 2, "Monarch Joblist - cluster: ".$this->clustername, $colorblue );
+		//}
 
 		$jobs = $mydatag->getJobs();
 		//printf("filtername = %s\n", $filtername );
@@ -1115,28 +1123,204 @@ class ClusterImage {
 
 		//print_r($filtered_nodes);
 
-		for( $n = 0; $n < $node_rows; $n++ ) {
+		if( $SORTBY_HOSTNAME != "" )
+		{
+
+		        $sorted 	= array();
+
+			$x_first	= 0;
+			$y_first	= 0;
+
+
+			if( strpos( $SORTBY_HOSTNAME, "{x}" ) < strpos( $SORTBY_HOSTNAME, "{y}" ) )
+			{
 			
-			for( $m = 0; $m < $nodes_per_row; $m++ ) {
+				$x_first	= 1;
+			}
+			else
+			{
+				$y_first	= 1;
+		
+			}
+
+			$skan_str	= str_replace( "{x}", "%d", $SORTBY_HOSTNAME );
+			$skan_str	= str_replace( "{y}", "%d", $skan_str );
+
+			$x_min		= null;
+			$x_max		= null;
+			$y_min		= null;
+			$y_max		= null;
+
+			foreach( $nodes as $hostname => $node )
+			{
+				//$n	= sscanf( $hostname, $skan_str, $i, $j );
+				if( $x_first )
+				{
+					$n = sscanf( $hostname, $skan_str, $x, $y );
+				}
+				else if( $y_first )
+				{
+					$n = sscanf( $hostname, $skan_str, $y, $x );
+				}
+
+				//printf( "n %s\n", $n );
+
+				// Remove nodes that don't match
+				//
+				if( $n < 2 )
+				{
+					unset( $nodes[$hostname] );
+				}
+
+				if( !$x_min )
+				{
+					$x_min	= $x;
+				}
+				else if( $x < $x_min )
+				{
+					$x_min	= $x;
+				}
+				if( !$x_max )
+				{
+					$x_max	= $x;
+				}
+				else if( $x > $x_max )
+				{
+					$x_max	= $x;
+				}
+				if( !$y_min )
+				{
+					$y_min	= $y;
+				}
+				else if( $y < $y_min )
+				{
+					$y_min	= $y;
+				}
+				if( !$y_max )
+				{
+					$y_max	= $y;
+				}
+				else if( $y > $y_max )
+				{
+					$y_max	= $y;
+				}
+			}
+
+			//printf( "ss %s\n", $skan_str);
+			$sorted_nodes	= usort( $nodes, "cmp" );
+
+			$x_offset	= 0;
+			$cur_node	= 0;
+
+			//printf( "xmin %s xmax %s\n", $x_min, $x_max );
+			//printf( "ymin %s ymax %s\n", $y_min, $y_max );
+
+			// werkt
+			//print_r( $nodes );
+
+			$image		= imageCreateTrueColor( $this->width, ($y_offset + (($node_rows*$node_width)+1) ) );
+			$colorwhite	= imageColorAllocate( $image, 255, 255, 255 );
+
+			imageFill( $image, 0, 0, $colorwhite );
+
+			//if( $this->isSmall() ) {
+
+			//	$colorblue	= imageColorAllocate( $image, 0, 0, 255 );
+
+			//	imageString( $image, $font, 2, 2, "Monarch Joblist - cluster: ".$this->clustername, $colorblue );
+			//}
+
+			for( $n = $x_min; $n <= $x_max; $n++ )
+			{
+				for( $m = $y_min; $m <= $y_max; $m++ )
+				{
+					if( $x_min > 0 )
+					{
+						$x	= $x_offset + ( ($n-$x_min) * $node_width );
+					}
+					if( $y_min > 0 )
+					{
+						$y	= $y_offset + ( ($m-$y_min) * $node_width );
+					}
+
+					if( isset( $nodes[$cur_node] ) ) {
+
+
+						$host	= $nodes[$cur_node]->getHostname();
+
+						if( $x_first )
+						{
+							$nn = sscanf( $host, $skan_str, $rx, $ry );
+						}
+						else if( $y_first )
+						{
+							$nn = sscanf( $host, $skan_str, $ry, $rx );
+						}
+						if ( $nn < 2 )
+						{
+							continue;
+						}
+						if( ( $rx - $x_min ) > $n )
+						{
+							$m	= $y_max;
+							continue;
+						}
+
+						if( !in_array( $host, $filtered_nodes ) )
+							$nodes[$cur_node]->setShowinfo( 0 );
+
+						$nodes[$cur_node]->setCoords( $x, $y );
+						$nodes[$cur_node]->setImage( $image );
+
+						//print_r( $nodes[$cur_node] );
+
+						if( $this->isSmall() )
+							$nodes[$cur_node]->drawSmall();
+						else if( $this->isBig() )
+							$nodes[$cur_node]->drawBig();
+					}
+					$cur_node++;
+				}
+			}
+
+		}
+		else
+		{
+			$image		= imageCreateTrueColor( $max_width, ($y_offset + (($node_rows*$node_width)+1) ) );
+			$colorwhite	= imageColorAllocate( $image, 255, 255, 255 );
+
+			imageFill( $image, 0, 0, $colorwhite );
+
+			if( $this->isSmall() ) {
+
+				$colorblue	= imageColorAllocate( $image, 0, 0, 255 );
+
+				imageString( $image, $font, 2, 2, "Monarch Joblist - cluster: ".$this->clustername, $colorblue );
+			}
+
+			for( $n = 0; $n < $node_rows; $n++ ) {
 			
-				$x = ($m * $node_width);
-				$y = $y_offset + ($n * $node_width);
+				for( $m = 0; $m < $nodes_per_row; $m++ ) {
+			
+					$x = ($m * $node_width);
+					$y = $y_offset + ($n * $node_width);
 
-				$cur_node = ($n * $nodes_per_row) + ($m);
-				$host = $nodes_hosts[$cur_node];
+					$cur_node = ($n * $nodes_per_row) + ($m);
+					$host = $nodes_hosts[$cur_node];
 
-				if( isset( $nodes[$host] ) ) {
+					if( isset( $nodes[$host] ) ) {
 
-					$nodes[$host]->setCoords( $x, $y );
-					$nodes[$host]->setImage( $image );
+						$nodes[$host]->setCoords( $x, $y );
+						$nodes[$host]->setImage( $image );
 
-					if( !in_array( $host, $filtered_nodes ) )
-						$nodes[$host]->setShowinfo( 0 );
+						if( !in_array( $host, $filtered_nodes ) )
+							$nodes[$host]->setShowinfo( 0 );
 
-					if( $this->isSmall() )
-						$nodes[$host]->drawSmall();
-					else if( $this->isBig() )
-						$nodes[$host]->drawBig();
+						if( $this->isSmall() )
+							$nodes[$host]->drawSmall();
+						else if( $this->isBig() )
+							$nodes[$host]->drawBig();
+					}
 				}
 			}
 		}
@@ -1348,6 +1532,96 @@ class HostImage {
 	}
 }
 
+function array_rem( $val, &$arr )
+{
+	// Delete val from arr
+	//
+	$i	= array_search( $val, $arr );
+
+	if( $i == false ) return false;
+
+	$arr	= array_merge( array_slice( $arr, 0, $i ), array_slice( $arr, $i+1, count( $arr ) ) );
+
+	return true;
+}
+
+function cmp( $a, $b ) 
+{
+	global $SORT_ORDER;
+	global $skan_str;
+	global $x_first, $y_first;
+
+	$a_node		= $a;
+	$b_node		= $b;
+	$a		= $a_node->getHostname();
+	$b		= $b_node->getHostname();
+
+	if( $a == $b ) return 0;
+
+	if( $x_first )
+	{
+		$n = sscanf( $a, $skan_str, $a_x, $a_y );
+		$n = sscanf( $b, $skan_str, $b_x, $b_y );
+	}
+	else if( $y_first )
+	{
+		$n = sscanf( $a, $skan_str, $a_y, $a_x );
+		$n = sscanf( $b, $skan_str, $b_y, $b_x );
+	}
+
+	if ( $SORT_ORDER=="desc" )
+	{
+
+		// 1  = a < b
+		// -1 = a > b
+		//
+		if ($a_x == $b_x)
+		{
+			if ($a_y < $b_y)
+			{
+				return 1;
+			}
+			else if ($a_y > $b_y)
+			{
+				return -1;
+			}
+		}
+		else if ($a_x < $b_x)
+		{
+			return 1;
+		}
+		else if ($a_x > $b_x)
+		{
+			return -1;
+		}
+	}
+	else if ( $SORT_ORDER == "asc" )
+	{
+
+		// 1  = a > b
+		// -1 = a < b
+		//
+		if ($a_x == $b_x)
+		{
+			if ($a_y > $b_y)
+			{
+				return 1;
+			}
+			else if ($a_y < $b_y)
+			{
+				return -1;
+			}
+		}
+		else if ($a_x > $b_x)
+		{
+			return 1;
+		}
+		else if ($a_x < $b_x)
+		{
+			return -1;
+		}
+	}
+}
 function makeTime( $time ) {
 
         $days = intval( $time / 86400 );

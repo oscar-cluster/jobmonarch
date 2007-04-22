@@ -1,4 +1,13 @@
 <?php
+
+// Sort nodes in clusterimage by
+//
+$SORTBY_HOSTNAME = "gb-r{x}n{y}.irc.sara.nl";
+$SORT_ORDER = "asc";
+
+$SORT_XLABEL = "rack";
+$SORT_YLABEL = "node";
+
 // Show hosts in a jobview by default?
 //
 $default_showhosts = 1;
@@ -39,7 +48,7 @@ $SMALL_CLUSTERIMAGE_NODEWIDTH = 7;
 // Max size of small clusterimage
 // (250 pixels is same width as Ganglia's pie chart)
 //
-$BIG_CLUSTERIMAGE_MAXWIDTH = 250;
+$BIG_CLUSTERIMAGE_MAXWIDTH = 450;
 
 // The size of a single node in the small clusterimage
 //
