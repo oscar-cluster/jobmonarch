@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <HTML>
 <HEAD>
-<TITLE>Ganglia:: {page_title}</TITLE>
+<TITLE>Ganglia :: {longpage_title}</TITLE>
 <META http-equiv="Content-type" content="text/html; charset=utf-8">
 <META http-equiv="refresh" content="{refresh}{redirect}" >
 <LINK rel="stylesheet" href="./styles.css" type="text/css">
