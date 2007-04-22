@@ -1272,6 +1272,41 @@ class ClusterImage {
 						$y	= $y_offset + ( ($m-$y_min) * $node_width );
 					}
 
+					if( isset( $nodes[$cur_node] ) ) 
+					{
+						$host	= $nodes[$cur_node]->getHostname();
+
+						if( $x_first )
+						{
+							$nn = sscanf( $host, $skan_str, $rx, $ry );
+						}
+						else if( $y_first )
+						{
+							$nn = sscanf( $host, $skan_str, $ry, $rx );
+						}
+						if ( $nn < 2 )
+						{
+							continue;
+						}
+						if( ( $rx ) > $n )
+						{
+							$m	= $y_max + 1;
+							continue;
+						}
+
+						if( !in_array( $host, $filtered_nodes ) )
+							$nodes[$cur_node]->setShowinfo( 0 );
+
+						$nodes[$cur_node]->setCoords( $x, $y );
+						$nodes[$cur_node]->setImage( $image );
+
+						//print_r( $nodes[$cur_node] );
+
+						if( $this->isSmall() )
+							$nodes[$cur_node]->drawSmall();
+						else if( $this->isBig() )
+							$nodes[$cur_node]->drawBig();
+					}
 					if( $n == $x_min )
 					{
 						$mfontspacing	= 1;
@@ -1289,41 +1324,6 @@ class ClusterImage {
 						imageStringDown( $image, $font, $xlabel_x, $xlabel_y, strval( $n ), $colorblue );
 					}
 
-					if( isset( $nodes[$cur_node] ) ) 
-					{
-						$host	= $nodes[$cur_node]->getHostname();
-
-						if( $x_first )
-						{
-							$nn = sscanf( $host, $skan_str, $rx, $ry );
-						}
-						else if( $y_first )
-						{
-							$nn = sscanf( $host, $skan_str, $ry, $rx );
-						}
-						if ( $nn < 2 )
-						{
-							continue;
-						}
-						if( ( $rx - $x_min ) > $n )
-						{
-							$m	= $y_max;
-							continue;
-						}
-
-						if( !in_array( $host, $filtered_nodes ) )
-							$nodes[$cur_node]->setShowinfo( 0 );
-
-						$nodes[$cur_node]->setCoords( $x, $y );
-						$nodes[$cur_node]->setImage( $image );
-
-						//print_r( $nodes[$cur_node] );
-
-						if( $this->isSmall() )
-							$nodes[$cur_node]->drawSmall();
-						else if( $this->isBig() )
-							$nodes[$cur_node]->drawBig();
-					}
 					$cur_node++;
 				}
 			}

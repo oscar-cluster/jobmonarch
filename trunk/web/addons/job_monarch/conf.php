@@ -48,7 +48,7 @@ $SMALL_CLUSTERIMAGE_NODEWIDTH = 7;
 // Max size of small clusterimage
 // (250 pixels is same width as Ganglia's pie chart)
 //
-$BIG_CLUSTERIMAGE_MAXWIDTH = 450;
+$BIG_CLUSTERIMAGE_MAXWIDTH = 500;
 
 // The size of a single node in the small clusterimage
 //
