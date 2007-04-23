@@ -1,0 +1,30 @@
+DESCRIPTION
+===========
+
+        Job Monarch is a set of tools to monitor batch jobs on a website.
+
+	This is achieved as a addon to Ganglia.
+
+	Job Monarch consists of three parts:
+
+	*	jobmond)
+
+		* Reports job statistics through Ganglia's gmetric/gmond
+
+	*	jobarchived)
+
+		* Optional
+		* Allows the archiving of jobs statistics in a database and more detailed
+		  RRDs, with the purpose of providing users or admins with the ability to
+		  lookup a node's behaviour and environment at the time of a finished job.
+
+	*	web)
+
+		* Frontend that displays the statistics in a intuitive manner
+
+WEBSITE
+=======
+
+For more details, go to the project website:
+
+	* https://subtrac.sara.nl/oss/jobmonarch
