@@ -24,8 +24,8 @@
 <TABLE WIDTH="100%">
 <TR>
   <TD ROWSPAN="2" WIDTH="150">
-  <A HREF="http://monitor2.irc.sara.nl/ganglia/">
-  <IMG SRC="./logo_ned.gif" 
+  <A HREF="https://subtrac.sara.nl/oss/jobmonarch/">
+  <IMG SRC="./jobmonarch.gif" 
       ALT="Ganglia" BORDER="0"></A>
   </TD>
   <TD VALIGN="TOP">
