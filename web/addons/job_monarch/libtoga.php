@@ -1326,7 +1326,14 @@ class ClusterImage {
 			//print_r( $nodes );
 
 			$image_width	= $x_offset + ($node_width * ($x_max-$x_min+2));
-			$image_width	= ($image_width < $this->width) ? $image_width : $this->width;
+			if( $this->isBig() ) 
+			{
+				$image_width	= ($image_width < $this->width) ? $image_width : $this->width;
+			}
+			else if( $this->isSmall() )
+			{
+				$image_width	= $this->width;
+			}
 			$image_height	= $y_offset + ($node_width * ($y_max-$y_min+2));
 
 			$this->width	= $image_width;
