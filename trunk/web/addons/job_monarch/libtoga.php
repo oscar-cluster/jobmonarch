@@ -67,6 +67,8 @@ class HTTPVariables {
 	}
 }
 
+$CLUSTER_CONFS	= array();
+
 // Toga's conf
 //
 include_once "./conf.php";
@@ -76,11 +78,12 @@ global $GANGLIA_PATH;
 global $RRDTOOL;
 global $JOB_ARCHIVE_DIR;
 global $JOB_ARCHIVE_DBASE;
-global $SORTBY_HOSTNAME;
-global $SORT_ORDER;
+//global $SORTBY_HOSTNAME;
+//global $SORT_ORDER;
 global $skan_str;
 global $x_first, $y_first;
-global $SORT_XLABEL, $SORT_YLABEL;
+//global $SORT_XLABEL, $SORT_YLABEL;
+global $CLUSTER_CONFS;
 
 $my_dir = getcwd();
 
@@ -1057,10 +1060,21 @@ class ClusterImage {
 
 		global $SMALL_CLUSTERIMAGE_MAXWIDTH, $SMALL_CLUSTERIMAGE_NODEWIDTH;
 		global $BIG_CLUSTERIMAGE_MAXWIDTH, $BIG_CLUSTERIMAGE_NODEWIDTH;
+		global $CLUSTER_CONFS;
 
-		global $SORTBY_HOSTNAME, $SORT_ORDER, $skan_str;
+		//global $SORTBY_HOSTNAME, $SORT_ORDER, $skan_str;
+		global $skan_str;
 		global $x_first, $y_first;
 
+		foreach( $CLUSTER_CONFS as $confcluster => $conffile )
+		{
+			if( strtolower( $this->clustername ) == $confcluster )
+			{
+				include_once $conffile;
+			}
+		}
+
+		global $SORTBY_HOSTNAME, $SORT_ORDER;
 		global $SORT_XLABEL, $SORT_YLABEL;
 	
 		$mydatag = $this->dataget;

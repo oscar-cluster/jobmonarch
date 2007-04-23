@@ -1,12 +1,14 @@
 <?php
 
+$CLUSTER_CONFS["LISA Cluster"]	= "./clusterconf/lisa.php";
+
 // Sort nodes in clusterimage by
 //
-$SORTBY_HOSTNAME = "gb-r{x}n{y}.irc.sara.nl";
-$SORT_ORDER = "asc";
+//$SORTBY_HOSTNAME = "gb-r{x}n{y}.irc.sara.nl";
+//$SORT_ORDER = "asc";
 
-$SORT_XLABEL = "rack";
-$SORT_YLABEL = "node";
+//$SORT_XLABEL = "rack";
+//$SORT_YLABEL = "node";
 
 // Show hosts in a jobview by default?
 //
