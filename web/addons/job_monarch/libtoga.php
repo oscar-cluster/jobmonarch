@@ -1060,23 +1060,28 @@ class ClusterImage {
 
 		global $SMALL_CLUSTERIMAGE_MAXWIDTH, $SMALL_CLUSTERIMAGE_NODEWIDTH;
 		global $BIG_CLUSTERIMAGE_MAXWIDTH, $BIG_CLUSTERIMAGE_NODEWIDTH;
-		global $CLUSTER_CONFS;
+		global $CLUSTER_CONFS, $confcluster;
 
-		//global $SORTBY_HOSTNAME, $SORT_ORDER, $skan_str;
-		global $skan_str;
+		global $SORTBY_HOSTNAME, $SORT_ORDER, $skan_str;
+		//global $skan_str;
 		global $x_first, $y_first;
 
 		foreach( $CLUSTER_CONFS as $confcluster => $conffile )
 		{
-			if( strtolower( $this->clustername ) == $confcluster )
+			//printf( "cf %s cc %s\n", $this->clustername, $confcluster);
+			//printf( "cf %s cc %s\n", strtolower( trim($this->clustername)), trim($confcluster) );
+			if( strtolower( trim($this->clustername) ) == strtolower(trim($confcluster)) )
 			{
+				//printf( "cf %s cc %s\n", $conffile, $confcluster);
 				include_once $conffile;
 			}
 		}
 
-		global $SORTBY_HOSTNAME, $SORT_ORDER;
-		global $SORT_XLABEL, $SORT_YLABEL;
+		//global $SORTBY_HOSTNAME, $SORT_ORDER;
+		//global $SORT_XLABEL, $SORT_YLABEL;
 	
+		//printf( "SORTBY_HOSTNAME %s SORT_YLABEL %s\n", $SORTBY_HOSTNAME, $SORT_YLABEL );
+
 		$mydatag = $this->dataget;
 		$mydatag->parseXML( $this->data );
 
@@ -1148,20 +1153,54 @@ class ClusterImage {
 			$x_first	= 0;
 			$y_first	= 0;
 
+			$skan_str	= $SORTBY_HOSTNAME;
 
-			if( strpos( $SORTBY_HOSTNAME, "{x}" ) < strpos( $SORTBY_HOSTNAME, "{y}" ) )
+			global $x_present, $y_present;
+			$x_present	= false;
+			$y_present	= false;
+
+			if(stripos( $SORTBY_HOSTNAME, "{x}" ) != false )
+			{
+				$x_present	= true;
+			}
+			if(stripos( $SORTBY_HOSTNAME, "{y}" ) != false )
+			{
+				$y_present	= true;
+			}
+
+			if(( strpos( $SORTBY_HOSTNAME, "{x}" ) < strpos( $SORTBY_HOSTNAME, "{y}" ) ) && ( $x_present && $y_present ))
 			{
 			
 				$x_first	= 1;
 			}
-			else
+			else if(( strpos( $SORTBY_HOSTNAME, "{x}" ) > strpos( $SORTBY_HOSTNAME, "{y}" ) ) && ( $x_present && $y_present ))
 			{
 				$y_first	= 1;
 		
 			}
+			else if( $x_present )
+			{
+				$x_first	= 1;
+			}
+			else if( $y_present )
+			{
+				$y_first	= 1;
+			}
 
-			$skan_str	= str_replace( "{x}", "%d", $SORTBY_HOSTNAME );
-			$skan_str	= str_replace( "{y}", "%d", $skan_str );
+			if(( $x_first ) && ( $x_present && $y_present ) )
+			{
+				$skan_str	= str_replace( "{x}", "%d", $skan_str );
+				$skan_str	= str_replace( "{y}", "%d", $skan_str );
+				//printf("ppoep = %s\n", $skan_str);
+			} 
+			else if( $x_present)
+			{
+				$skan_str	= str_replace( "{x}", "%d", $skan_str );
+			}
+			else if( $y_present)
+			{
+				$skan_str	= str_replace( "{y}", "%d", $skan_str );
+			}
 
 			$x_min		= null;
 			$x_max		= null;
@@ -1170,24 +1209,53 @@ class ClusterImage {
 
 			foreach( $nodes as $hostname => $node )
 			{
-				//$n	= sscanf( $hostname, $skan_str, $i, $j );
-				if( $x_first )
+				$x	= 0;
+				$y	= 0;
+
+				if( $x_present && $y_present )
 				{
-					$n = sscanf( $hostname, $skan_str, $x, $y );
+					//$n	= sscanf( $hostname, $skan_str, $i, $j );
+					if( $x_first )
+					{
+						$n = sscanf( $hostname, $skan_str, $x, $y );
+					}
+					else if( $y_first )
+					{
+						$n = sscanf( $hostname, $skan_str, $y, $x );
+					}
+					// Remove nodes that don't match
+					//
+					if( $n < 2 )
+					{
+						unset( $nodes[$hostname] );
+					}
 				}
-				else if( $y_first )
+				else if( $x_present && !$y_present )
 				{
-					$n = sscanf( $hostname, $skan_str, $y, $x );
+					$n = sscanf( $hostname, $skan_str, $x );
+					// Remove nodes that don't match
+					//
+					if( $n < 1 )
+					{
+						unset( $nodes[$hostname] );
+					}
+					$y	= 1;
 				}
+				else if( $y_present && !$x_present )
+				{
+					$n = sscanf( $hostname, $skan_str, $y );
+					// Remove nodes that don't match
+					//
+					if( $n < 1 )
+					{
+						unset( $nodes[$hostname] );
+					}
+					$x	= 1;
+				}
+				//printf( "xfirst %s yfirst %s\n", $x_first, $y_first );
 
 				//printf( "n %s\n", $n );
 
-				// Remove nodes that don't match
-				//
-				if( $n < 2 )
-				{
-					unset( $nodes[$hostname] );
-				}
 
 				if( !$x_min )
 				{
@@ -1225,6 +1293,8 @@ class ClusterImage {
 
 			//printf( "ss %s\n", $skan_str);
 			$sorted_nodes	= usort( $nodes, "cmp" );
+
+			//print_r( $nodes );
 
 			$cur_node	= 0;
 
@@ -1274,15 +1344,21 @@ class ClusterImage {
 				imageString( $image, $font, 2, 2, "Monarch Joblist - cluster: ".$this->clustername, $colorblue );
 			}
 
-			if( $this->isBig() ) 
+			if( $this->isBig() && ( isset( $SORT_XLABEL ) || isset( $SORT_YLABEL ) ) )
 			{
 				$colorblue	= imageColorAllocate( $image, 0, 0, 255 );
 
-				imageString( $image, $font, $x_offset, $fontspaceing, $SORT_XLABEL, $colorblue );
+				if( isset( $SORT_XLABEL ) )
+				{
+					imageString( $image, $font, $x_offset, $fontspaceing, $SORT_XLABEL, $colorblue );
+				}
 
-				// Stupid php without imageStringDown function
-				//
-				imageStringDown( $image, $font, $fontspaceing, $y_offset, $SORT_YLABEL, $colorblue );
+				if( isset( $SORT_YLABEL ) )
+				{
+					// Stupid php without imageStringDown function
+					//
+					imageStringDown( $image, $font, $fontspaceing, $y_offset, $SORT_YLABEL, $colorblue );
+				}
 			}
 
 			for( $n = $x_min; $n <= $x_max; $n++ )
@@ -1302,22 +1378,33 @@ class ClusterImage {
 					{
 						$host	= $nodes[$cur_node]->getHostname();
 
-						if( $x_first )
+						if( $x_present && $y_present )
 						{
-							$nn = sscanf( $host, $skan_str, $rx, $ry );
+							if( $x_first )
+							{
+								$nn = sscanf( $host, $skan_str, $rx, $ry );
+							}
+							else if( $y_first )
+							{
+								$nn = sscanf( $host, $skan_str, $ry, $rx );
+							}
+							if ( $nn < 2 )
+							{
+								continue;
+							}
+							if( ( $rx ) > $n )
+							{
+								$m	= $y_max + 1;
+								continue;
+							}
 						}
-						else if( $y_first )
+						else if( $x_present )
 						{
-							$nn = sscanf( $host, $skan_str, $ry, $rx );
+							$nn = sscanf( $host, $skan_str, $rx );
 						}
-						if ( $nn < 2 )
+						else if( $y_present )
 						{
-							continue;
-						}
-						if( ( $rx ) > $n )
-						{
-							$m	= $y_max + 1;
-							continue;
+							$nn = sscanf( $host, $skan_str, $ry );
 						}
 
 						if( !in_array( $host, $filtered_nodes ) )
@@ -1335,7 +1422,7 @@ class ClusterImage {
 					}
 					if( $this->isBig() ) 
 					{
-						if( $n == $x_min )
+						if(( $n == $x_min ) && ( isset($SORT_YLABEL) ) )
 						{
 							$mfontspacing	= 1;
 							$ylabel_x	= $x - ( $fontwidth * strlen( $y_max ) ) - $mfontspacing;
@@ -1343,7 +1430,7 @@ class ClusterImage {
 
 							imageString( $image, $font, $ylabel_x, $ylabel_y, strval( $m ), $colorblue );
 						}
-						if( $m == $y_min )
+						if(( $m == $y_min ) && ( isset($SORT_XLABEL) ) )
 						{
 							$mfontspacing	= 2;
 							$xlabel_y	= $y - ( $fontheight * strlen( $x_max ) );
@@ -1644,7 +1731,9 @@ function cmp( $a, $b )
 	global $SORT_ORDER;
 	global $skan_str;
 	global $x_first, $y_first;
+	global $x_present, $y_present;
 
+	//printf("ppoep = %s\n", $skan_str);
 	$a_node		= $a;
 	$b_node		= $b;
 	$a		= $a_node->getHostname();
@@ -1652,24 +1741,75 @@ function cmp( $a, $b )
 
 	if( $a == $b ) return 0;
 
-	if( $x_first )
+	$a_x		= 0;
+	$b_x		= 0;
+	$a_y		= 0;
+	$b_y		= 0;
+
+	if( $x_present && $y_present )
 	{
-		$n = sscanf( $a, $skan_str, $a_x, $a_y );
-		$n = sscanf( $b, $skan_str, $b_x, $b_y );
+		if( $x_first )
+		{
+			$n = sscanf( $a, $skan_str, $a_x, $a_y );
+			$n = sscanf( $b, $skan_str, $b_x, $b_y );
+		}
+		else if( $y_first )
+		{
+			$n = sscanf( $a, $skan_str, $a_y, $a_x );
+			$n = sscanf( $b, $skan_str, $b_y, $b_x );
+		}
+	} 
+	else if( $x_present && !$y_present )
+	{
+		$n = sscanf( $a, $skan_str, $a_x );
+		$n = sscanf( $b, $skan_str, $b_x );
 	}
-	else if( $y_first )
+	else if( $y_present && !$x_present )
 	{
-		$n = sscanf( $a, $skan_str, $a_y, $a_x );
-		$n = sscanf( $b, $skan_str, $b_y, $b_x );
+		$n = sscanf( $a, $skan_str, $a_y );
+		$n = sscanf( $b, $skan_str, $b_y );
 	}
 
 	if ( $SORT_ORDER=="desc" )
 	{
 
-		// 1  = a < b
-		// -1 = a > b
-		//
-		if ($a_x == $b_x)
+		if( $x_present && $y_present )
+		{
+			// 1  = a < b
+			// -1 = a > b
+			//
+			if ($a_x == $b_x)
+			{
+				if ($a_y < $b_y)
+				{
+					return 1;
+				}
+				else if ($a_y > $b_y)
+				{
+					return -1;
+				}
+			}
+			else if ($a_x < $b_x)
+			{
+				return 1;
+			}
+			else if ($a_x > $b_x)
+			{
+				return -1;
+			}
+		} 
+		else if( $x_present && !$y_present )
+		{
+			if ($a_x < $b_x)
+			{
+				return 1;
+			}
+			else if ($a_x > $b_x)
+			{
+				return -1;
+			}
+		}
+		else if( $y_present && !$x_present )
 		{
 			if ($a_y < $b_y)
 			{
@@ -1680,22 +1820,47 @@ function cmp( $a, $b )
 				return -1;
 			}
 		}
-		else if ($a_x < $b_x)
-		{
-			return 1;
-		}
-		else if ($a_x > $b_x)
-		{
-			return -1;
-		}
 	}
 	else if ( $SORT_ORDER == "asc" )
 	{
 
-		// 1  = a > b
-		// -1 = a < b
-		//
-		if ($a_x == $b_x)
+		if( $x_present && $y_present )
+		{
+			// 1  = a > b
+			// -1 = a < b
+			//
+			if ($a_x == $b_x)
+			{
+				if ($a_y > $b_y)
+				{
+					return 1;
+				}
+				else if ($a_y < $b_y)
+				{
+					return -1;
+				}
+			}
+			else if ($a_x > $b_x)
+			{
+				return 1;
+			}
+			else if ($a_x < $b_x)
+			{
+				return -1;
+			}
+		}
+		else if( $x_present && !$y_present )
+		{
+			if ($a_x > $b_x)
+			{
+				return 1;
+			}
+			else if ($a_x < $b_x)
+			{
+				return -1;
+			}
+		}
+		else if( $y_present && !$x_present )
 		{
 			if ($a_y > $b_y)
 			{
@@ -1705,14 +1870,6 @@ function cmp( $a, $b )
 			{
 				return -1;
 			}
-		}
-		else if ($a_x > $b_x)
-		{
-			return 1;
-		}
-		else if ($a_x < $b_x)
-		{
-			return -1;
 		}
 	}
 }
