@@ -1,6 +1,6 @@
 <?php
 
-$CLUSTER_CONFS["LISA Cluster"]	= "./clusterconf/lisa.php";
+$CLUSTER_CONFS["LISA Cluster"]	= "./clusterconf/lisa-example.php";
 
 // Sort nodes in clusterimage by
 //
