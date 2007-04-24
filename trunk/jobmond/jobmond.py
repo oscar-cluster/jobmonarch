@@ -220,6 +220,8 @@ class DataProcessor:
 
 		global METRIC_MAX_VAL_LEN
 
+		incompatible	= 0
+
 		for line in os.popen( self.binary + ' --version' ).readlines():
 
 			line = line.split( ' ' )
