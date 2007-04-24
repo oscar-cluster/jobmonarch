@@ -7,6 +7,9 @@
 		a:	clusterimage can now draw nodes at x,y position parsed from hostname
 		a:	clusterimage nodes are now clickable: has link to all jobs from that host
 		a:	clusterimage nodes now have a tooltip
+		a:	jobmonarch logo image
+			thank to: Robin Day
+			for the design
 
 	jobmond)
 
