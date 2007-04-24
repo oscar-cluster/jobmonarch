@@ -1,13 +1,4 @@
 <?php
-
-// Sort nodes in clusterimage by
-//
-//$SORTBY_HOSTNAME = "gb-r{x}n{y}.irc.sara.nl";
-//$SORT_ORDER = "asc";
-
-//$SORT_XLABEL = "rack";
-//$SORT_YLABEL = "node";
-
 // Show hosts in a jobview by default?
 //
 $default_showhosts = 1;
