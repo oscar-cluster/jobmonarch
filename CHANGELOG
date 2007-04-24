@@ -1,84 +1,100 @@
-0.2:
+		f: fixed - c: changed - a: added
+
+0.2.1:
 
 	web)
-		- fixed: misc. optimization and bugfixes
-		- fixed: now fully compatible with latest PHP5 and PHP4
-
-		- changed: cluster image now incorporates small text descr.
-		- changed: monarch (cluster/host) images no longer displayed
-			   for clusters that are not jobmond enabled
-		- changed: pie chart percentages are now cpu-based instead of node-based
-
-		- added: host template for Ganglia
-			 adds a extra monarch host image to Ganglia's host overview
-			 which displays/links to the jobs on that host
-			 NOTE!: be sure to copy/install new template from addons/templates
-		- added: (optional) nodes hostnames column
-			 thanks to: Daniel Barthel - daniel(d.o.t)barthel(a.t)nottingham(d.o.t)ac(d.o.t)uk
-			 for the suggestion
+		a:	allow per-cluster settings/override options: see CLUSTER_CONFS option
+		a:	clusterimage can now draw nodes at x,y position parsed from hostname
+		a:	clusterimage nodes are now clickable: has link to all jobs from that host
+		a:	clusterimage nodes now have a tooltip
 
 	jobmond)
 
-		- fixed: when a job metric is longer than maximum metric length,
-			 the info is split up amongst multiple metrics
-		- fixed: no longer exit when batch server is unavailable
-			 thanks to: Peter Kruse - pk(a.t)q-leap(d.o.t)com
-			 for the patch
-		- fixed: fd closure bug causing stderr/stdout to remain open after daemonizing
+		f:	uninitialized variable in checkGmetricVersion()
+			thanks to: Peter Kruse - pk(a.t)q-leap(d.o.t)com
+			for the patch
 
-		- changed: rearranged code to allow support for other batch systems
+0.2:
 
-		- added: (experimental) SGE (Sun Grid Engine) support as batch server
-			 thanks to: Babu Sundaram - babu(a.t)cs(d.o.t)uh(d.o.t)edu
-			 who developed it for a OSCAR's Google-SoC project
-		- added: pidfile support 
-			 thanks to: Michael Jeanson - michael(a.t)ccs(d.o.t)usherbrooke(d.o.t)ca
-			 for the patch
-		- added: usage display
-			 thanks to: Michael Jeanson - michael(a.t)ccs(d.o.t)usherbrooke(d.o.t)ca
-			 for the patch
-		- added: queue selection support: ability to specify which QUEUE's to get jobinfo from
-			 thanks to: Michael Jeanson - michael(a.t)ccs(d.o.t)usherbrooke(d.o.t)ca
-			 for the patch
+	web)
+		f:	misc. optimization and bugfixes
+		f:	now fully compatible with latest PHP5 and PHP4
+
+		c:	cluster image now incorporates small text descr.
+		c:	monarch (cluster/host) images no longer displayed
+			for clusters that are not jobmond enabled
+		c:	pie chart percentages are now cpu-based instead of node-based
+
+		a:	host template for Ganglia
+			adds a extra monarch host image to Ganglia's host overview
+			which displays/links to the jobs on that host
+			NOTE!: be sure to copy/install new template from addons/templates
+		a:	(optional) nodes hostnames column
+			thanks to: Daniel Barthel - daniel(d.o.t)barthel(a.t)nottingham(d.o.t)ac(d.o.t)uk
+			for the suggestion
+
+	jobmond)
+
+		f:	when a job metric is longer than maximum metric length,
+			the info is split up amongst multiple metrics
+		f: 	no longer exit when batch server is unavailable
+			thanks to: Peter Kruse - pk(a.t)q-leap(d.o.t)com
+			for the patch
+		f:	fd closure bug causing stderr/stdout to remain open after daemonizing
+
+		c:	rearranged code to allow support for other batch systems
+
+		a:	(experimental) SGE (Sun Grid Engine) support as batch server
+			thanks to: Babu Sundaram - babu(a.t)cs(d.o.t)uh(d.o.t)edu
+			who developed it for a OSCAR's Google-SoC project
+		a:	pidfile support 
+			thanks to: Michael Jeanson - michael(a.t)ccs(d.o.t)usherbrooke(d.o.t)ca
+			for the patch
+		a:	usage display
+			thanks to: Michael Jeanson - michael(a.t)ccs(d.o.t)usherbrooke(d.o.t)ca
+			for the patch
+		a:	queue selection support: ability to specify which QUEUE's to get jobinfo from
+			thanks to: Michael Jeanson - michael(a.t)ccs(d.o.t)usherbrooke(d.o.t)ca
+			for the patch
 
 	jobarchived)
 
-		- fixed: XML retrieval for Ganglia version >= 3.0.3 working properly again
-		- fixed: database storing for Ganglia version >= 3.0.3 working properly again
-		- fixed: fd closure bug causing stderr/stdout to remain open after daemonizing
+		f:	XML retrieval for Ganglia version >= 3.0.3 working properly again
+		f:	database storing for Ganglia version >= 3.0.3 working properly again
+		f:	fd closure bug causing stderr/stdout to remain open after daemonizing
 
-		- changed: misc. bugfixes to optimize XML connections
-		- changed: misc. bugfixes for misc. minor issues
+		c:	misc. bugfixes to optimize XML connections
+		c:	misc. bugfixes for misc. minor issues
 
-		- added: cleaning of stale jobs in dbase: see JOB_TIMEOUT option
+		a:	cleaning of stale jobs in dbase: see JOB_TIMEOUT option
 
 0.1.1: 
 
 	web)
 
-		- fixed: misc. layout bugs for overview & search
-		- fixed: bug that occured when calculating the number of nodes when there
-		         was more than one job running on a machine
+		f:	misc. layout bugs for overview & search
+		f:	bug that occured when calculating the number of nodes when there
+			was more than one job running on a machine
 
-		- changed: column requested memory is now optional through conf.php
-		- changed: search and overview tables are now full screen (100%)
-		- changed: overview jobnames are now cutoff at max 9 characters
-		           to prevent (layout) scews in the tables
-		- changed: overview graphs are no longer downsized
+		c:	column requested memory is now optional through conf.php
+		c:	search and overview tables are now full screen (100%)
+		c:	overview jobnames are now cutoff at max 9 characters
+			to prevent (layout) scews in the tables
+		c:	overview graphs are no longer downsized
 
-		- added: (optional) column 'queued' (since) in overview
-		- added: search results (can) now have a SEARCH_RESULT_LIMIT
-		         this increases performance of the query's significantly!
-		- added: date/time format as displayed is now configurable through conf.php
+		a:	(optional) column 'queued' (since) in overview
+		a:	search results (can) now have a SEARCH_RESULT_LIMIT
+			this increases performance of the query's significantly!
+		a:	date/time format as displayed is now configurable through conf.php
 
 	jobmond)
 
-		- added: now reports 'queued since' (or creation time) of jobs
+		a:	now reports 'queued since' (or creation time) of jobs
 
 	documentation)
 
-		- fixed: wrong e-mail adress in INSTALL (doh!)
+		f:	wrong e-mail adress in INSTALL (doh!)
 
-0.1.0:
+0.1:
 
 	- First public release
