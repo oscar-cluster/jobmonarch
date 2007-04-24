@@ -1,9 +1,5 @@
 <?php
 
-$CLUSTER_CONFS["LISA Cluster"]		= "./clusterconf/lisa-example.php";
-$CLUSTER_CONFS["GINA Cluster"]		= "./clusterconf/gina-example.php";
-$CLUSTER_CONFS["MATRIX Cluster"]	= "./clusterconf/matrix-example.php";
-
 // Sort nodes in clusterimage by
 //
 //$SORTBY_HOSTNAME = "gb-r{x}n{y}.irc.sara.nl";
@@ -30,7 +26,7 @@ $COLUMN_QUEUED = 1;
 
 // Show the column job attribute 'nodes' hostnames?
 //
-$COLUMN_NODES = 1;
+$COLUMN_NODES = 0;
 
 // Path to Ganglia's web frontend root
 //
@@ -88,4 +84,14 @@ $JOB_ARCHIVE_DBASE = "127.0.0.1/jobarch";
 // Path to rrdtool binary
 //
 $RRDTOOL = "/usr/bin/rrdtool";
+
+// Include cluster specific settings here, 
+// they will override any (global) settings above
+// on a per-cluster basis, where available.
+//
+//$CLUSTER_CONFS["Example Cluster"]	= "./clusterconf/example.php";
+//
+$CLUSTER_CONFS["LISA Cluster"]		= "./clusterconf/lisa-example.php";
+$CLUSTER_CONFS["GINA Cluster"]		= "./clusterconf/gina-example.php";
+$CLUSTER_CONFS["MATRIX Cluster"]	= "./clusterconf/matrix-example.php";
 ?>
