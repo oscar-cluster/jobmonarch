@@ -411,6 +411,7 @@ class SgeQstatXMLParser(xml.sax.handler.ContentHandler):
 class SgeDataGatherer(DataGatherer):
 
 	jobs = { }
+	SGE_QSTAT_XML_FILE	= '/tmp/.jobmonarch.sge.qstat'
 
 	def __init__( self ):
 		"""Setup appropriate variables"""
@@ -425,7 +426,7 @@ class SgeDataGatherer(DataGatherer):
 		"""This is a hack because we cant get info about jobs beyond"""
 		"""those in the current DRMAA session"""
 
-		self.qstatparser = SgeQstatXMLParser( SGE_QSTAT_XML_FILE )
+		self.qstatparser = SgeQstatXMLParser( self.SGE_QSTAT_XML_FILE )
 
 		# Obtain the qstat information from SGE in XML format
 		# This would change to DRMAA-specific calls from 6.0u9
@@ -435,7 +436,7 @@ class SgeDataGatherer(DataGatherer):
 
 		# Get the information about the current jobs in the SGE queue
 		info = os.popen("qstat -ext -xml").readlines()
-		f = open(SGE_QSTAT_XML_FILE,'w')
+		f = open(self.SGE_QSTAT_XML_FILE,'w')
 		for lines in info:
 			f.write(lines)
 		f.close()
@@ -795,18 +796,7 @@ def main():
 
 	elif BATCH_API == 'sge':
 
-		pass
-		# import Babu's code here
-		#
-		#try:
-		#	import sge_drmaa
-		#
-		#except ImportError:
-		#
-		#	debug_msg( 0, "fatal error: BATCH_API set to 'sge' but python module 'sge_drmaa' is not installed' )
-		#	sys.exit( 1 )
-		#
-		#gather = SgeDataGatherer()
+		gather = SgeDataGatherer()
 
 	else:
 		debug_msg( 0, "fatal error: unknown BATCH_API '" + BATCH_API + "' is not supported" )
