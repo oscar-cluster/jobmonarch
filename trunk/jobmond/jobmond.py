@@ -520,11 +520,13 @@ class PbsDataGatherer(DataGatherer):
 		#print self.pq.getnodes()
 	
 		joblist = {}
+
 		while len(joblist) == 0:
 			try:
 				joblist = self.pq.getjobs()
-			except PBSError:
-				time.sleep( TORQUE_POLL_INTERVAL )
+			except PBSError, detail:
+				debug_msg( 10, "Caught PBS unavaible, skipping until next polling interval: " + str( detail ) )
+				return None
 
 		self.cur_time = time.time()
 
