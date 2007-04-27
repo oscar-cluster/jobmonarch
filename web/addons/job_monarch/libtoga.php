@@ -1657,14 +1657,14 @@ class HostImage {
 
 		$xoffset	= 5;
 
-		foreach( $this->headerstrlen as $headername => &$headerlen ) {
+		foreach( $this->headerstrlen as $headername => $headerlen ) {
 
 			$colorgreen	= imageColorAllocate( $this->image, 0, 200, 0 );
 
 			imageString( $this->image, $this->font, $xoffset, $this->y_offset, ucfirst( $headername ), $colorgreen );
 		
 			if( $headerlen < strlen( $headername ) )
-				$headerlen	= strlen( $headername );
+				$this->headerstrlen[$headername]	= strlen( $headername );
 
 			$xoffset	= $xoffset + ($this->fontwidth * ( $headerlen + 1 ) );
 
