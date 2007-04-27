@@ -338,8 +338,8 @@ class DataGatherer:
 
                 while ( 1 ):
 		
-			self.jobs = self.getJobData( self.jobs )
-			self.submitJobData( self.jobs )
+			self.getJobData()
+			self.submitJobData()
 			time.sleep( BATCH_POLL_INTERVAL )	
 
 class SgeQstatXMLParser(xml.sax.handler.ContentHandler):
@@ -512,13 +512,8 @@ class PbsDataGatherer(DataGatherer):
 
 		return 0
 
-	def getJobData( self, known_jobs ):
+	def getJobData( self ):
 		"""Gather all data on current jobs in Torque"""
-
-		if len( known_jobs ) > 0:
-			jobs = known_jobs
-		else:
-			jobs = { }
 
 		#self.initPbsQuery()
 	
@@ -655,29 +650,27 @@ class PbsDataGatherer(DataGatherer):
 			myAttrs['domain'] = string.join( socket.getfqdn().split( '.' )[1:], '.' )
 			myAttrs['poll_interval'] = str( BATCH_POLL_INTERVAL )
 
-			if self.jobDataChanged( jobs, job_id, myAttrs ) and myAttrs['status'] in [ 'R', 'Q' ]:
-				jobs[ job_id ] = myAttrs
+			if self.jobDataChanged( self.jobs, job_id, myAttrs ) and myAttrs['status'] in [ 'R', 'Q' ]:
+				self.jobs[ job_id ] = myAttrs
 
 				#debug_msg( 10, printTime() + ' job %s state changed' %(job_id) )
 
-		for id, attrs in jobs.items():
+		for id, attrs in self.jobs.items():
 
 			if id not in jobs_processed:
 
 				# This one isn't there anymore; toedeledoki!
 				#
-				del jobs[ id ]
+				del self.jobs[ id ]
 
-		return jobs
-
-	def submitJobData( self, jobs ):
+	def submitJobData( self ):
 		"""Submit job info list"""
 
 		self.dp.multicastGmetric( 'MONARCH-HEARTBEAT', str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
 
 		# Now let's spread the knowledge
 		#
-		for jobid, jobattrs in jobs.items():
+		for jobid, jobattrs in self.jobs.items():
 
 			gmetric_val = self.compileGmetricVal( jobid, jobattrs )
 
