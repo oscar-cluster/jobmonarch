@@ -272,7 +272,7 @@ function makeHeader( $page_call ) {
 
 		//print_r( $context_metrics );
 
-		if( !isset( $hostname ) ) {
+		if( isset( $hostname ) ) {
 
 			if (is_array($context_metrics) ) {
 				$metric_menu = "<B>Metric</B>&nbsp;&nbsp;"
