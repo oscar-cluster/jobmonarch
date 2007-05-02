@@ -772,7 +772,7 @@ def write_pidfile():
 def main():
 	"""Application start"""
 
-	global PBSQuery
+	global PBSQuery, PBSError
 
 	if not processArgs( sys.argv[1:] ):
 		sys.exit( 1 )
