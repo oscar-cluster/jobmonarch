@@ -340,7 +340,7 @@ function makeSearchPage() {
 			}
 			if( $COLUMN_NODES) {
 
-				$jobs	= array();
+				$job_nodes	= array();
 
 				foreach( $nodes[$foundid] as $mynode )
 					$job_nodes[] = $mynode[hostname];
