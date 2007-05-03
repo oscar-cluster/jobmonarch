@@ -199,11 +199,13 @@ def loadConfig( filename ):
 METRIC_MAX_VAL_LEN = 900
 
 class DataProcessor:
+
 	"""Class for processing of data"""
 
 	binary = '/usr/bin/gmetric'
 
 	def __init__( self, binary=None ):
+
 		"""Remember alternate binary location if supplied"""
 
 		if binary:
@@ -233,10 +235,12 @@ class DataProcessor:
 			incompatible = self.checkGmetricVersion()
 
 			if incompatible:
-				debug_msg( 0, 'Gmetric version not compatible, pls upgrade to at least 3.0.1' )
+
+				debug_msg( 0, 'Gmetric version not compatible, please upgrade to at least 3.0.1' )
 				sys.exit( 1 )
 
 	def checkGmetricVersion( self ):
+
 		"""
 		Check version of gmetric is at least 3.0.1
 		for the syntax we use
@@ -246,19 +250,24 @@ class DataProcessor:
 
 		incompatible	= 0
 
-		for line in os.popen( self.binary + ' --version' ).readlines():
+		gfp		= os.popen( self.binary + ' --version' )
+		lines		= gfp.readlines()
+
+		gfp.close()
+
+		for line in lines:
 
 			line = line.split( ' ' )
 
-			if len( line ) == 2 and str(line).find( 'gmetric' ) != -1:
+			if len( line ) == 2 and str( line ).find( 'gmetric' ) != -1:
 			
-				gmetric_version = line[1].split( '\n' )[0]
+				gmetric_version	= line[1].split( '\n' )[0]
 
-				version_major = int( gmetric_version.split( '.' )[0] )
-				version_minor = int( gmetric_version.split( '.' )[1] )
-				version_patch = int( gmetric_version.split( '.' )[2] )
+				version_major	= int( gmetric_version.split( '.' )[0] )
+				version_minor	= int( gmetric_version.split( '.' )[1] )
+				version_patch	= int( gmetric_version.split( '.' )[2] )
 
-				incompatible = 0
+				incompatible	= 0
 
 				if version_major < 3:
 
@@ -283,6 +292,7 @@ class DataProcessor:
 		return incompatible
 
 	def multicastGmetric( self, metricname, metricval, valtype='string' ):
+
 		"""Call gmetric binary and multicast"""
 
 		cmd = self.binary
@@ -323,6 +333,7 @@ class DataGatherer:
 	"""Skeleton class for batch system DataGatherer"""
 
 	def printJobs( self, jobs ):
+
 		"""Print a jobinfo overview"""
 
 		for name, attrs in self.jobs.items():
@@ -334,6 +345,7 @@ class DataGatherer:
 				print '\t%s = %s' %( name, val )
 
 	def printJob( self, jobs, job_id ):
+
 		"""Print job with job_id from jobs"""
 
 		print 'job %s' %(job_id)
@@ -343,6 +355,7 @@ class DataGatherer:
 			print '\t%s = %s' %( name, val )
 
         def daemon( self ):
+
                 """Run as daemon forever"""
 
                 # Fork the first child
@@ -379,6 +392,7 @@ class DataGatherer:
                 self.run()
 
         def run( self ):
+
                 """Main thread"""
 
                 while ( 1 ):
@@ -506,7 +520,7 @@ class SgeDataGatherer(DataGatherer):
 
 			self.dp.multicastGmetric( 'MONARCH-JOB-' + jobid + '-' + str(metric_increment), jobattrs)
 
-class PbsDataGatherer(DataGatherer):
+class PbsDataGatherer( DataGatherer ):
 
 	"""This is the DataGatherer for PBS and Torque"""
 
