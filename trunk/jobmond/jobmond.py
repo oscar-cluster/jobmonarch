@@ -113,7 +113,7 @@ def loadConfig( filename ):
 
 	cfg.read( filename )
 
-	global DEBUG_LEVEL, DAEMONIZE, BATCH_SERVER, BATCH_POLL_INTERVAL, GMOND_CONF, DETECT_TIME_DIFFS, BATCH_HOST_TRANSLATE, BATCH_API, QUEUE
+	global DEBUG_LEVEL, DAEMONIZE, BATCH_SERVER, BATCH_POLL_INTERVAL, GMOND_CONF, DETECT_TIME_DIFFS, BATCH_HOST_TRANSLATE, BATCH_API, QUEUE, GMETRIC_TARGET
 
 	DEBUG_LEVEL = cfg.getint( 'DEFAULT', 'DEBUG_LEVEL' )
 
@@ -142,8 +142,14 @@ def loadConfig( filename ):
 
 		BATCH_POLL_INTERVAL = cfg.getint( 'DEFAULT', 'TORQUE_POLL_INTERVAL' )
 		api_guess = 'pbs'
-		
-	GMOND_CONF = cfg.get( 'DEFAULT', 'GMOND_CONF' )
+	
+	try:
+
+		GMOND_CONF = cfg.get( 'DEFAULT', 'GMOND_CONF' )
+
+	except ConfigParser.NoOptionError:
+
+		GMOND_CONF = None
 
 	DETECT_TIME_DIFFS = cfg.getboolean( 'DEFAULT', 'DETECT_TIME_DIFFS' )
 
@@ -168,7 +174,23 @@ def loadConfig( filename ):
 	except ConfigParser.NoOptionError, detail:
 
 		QUEUE = None
-	
+
+	try:
+
+		GMETRIC_TARGET = cfg.get( 'DEFAULT', 'GMETRIC_TARGET' )
+
+	except ConfigParser.NoOptionError:
+
+		GMETRIC_TARGET = None
+
+		if not GMOND_CONF:
+
+			debug_msg( 0, "fatal error: GMETRIC_TARGET or GMOND_CONF both not set!" )
+			sys.exit( 1 )
+		else:
+
+			debug_msg( 0, "error: GMETRIC_TARGET not set: internel Gmetric handling aborted. Failing back to DEPRECATED use of gmond.conf/gmetric binary. This will slow down jobmond significantly!" )
+
 	return True
 
 
@@ -196,21 +218,22 @@ class DataProcessor:
 
 		self.dmax = str( int( int( BATCH_POLL_INTERVAL ) * 2 ) )
 
-		try:
-			gmond_file = GMOND_CONF
+		if GMOND_CONF:
+			try:
+				gmond_file = GMOND_CONF
 
-		except NameError:
-			gmond_file = '/etc/gmond.conf'
+			except NameError:
+				gmond_file = '/etc/gmond.conf'
 
-		if not os.path.exists( gmond_file ):
-			debug_msg( 0, gmond_file + ' does not exist' )
-			sys.exit( 1 )
+			if not os.path.exists( gmond_file ):
+				debug_msg( 0, 'fatal error: ' + gmond_file + ' does not exist' )
+				sys.exit( 1 )
 
-		incompatible = self.checkGmetricVersion()
+			incompatible = self.checkGmetricVersion()
 
-		if incompatible:
-			debug_msg( 0, 'Gmetric version not compatible, pls upgrade to at least 3.0.1' )
-			sys.exit( 1 )
+			if incompatible:
+				debug_msg( 0, 'Gmetric version not compatible, pls upgrade to at least 3.0.1' )
+				sys.exit( 1 )
 
 	def checkGmetricVersion( self ):
 		"""
@@ -263,15 +286,36 @@ class DataProcessor:
 
 		cmd = self.binary
 
-		try:
-			cmd = cmd + ' -c' + GMOND_CONF
-		except NameError:
-			debug_msg( 10, 'Assuming /etc/gmond.conf for gmetric cmd (ommitting)' )
+		if GMETRIC_TARGET:
 
-		cmd = cmd + ' -n' + str( metricname )+ ' -v"' + str( metricval )+ '" -t' + str( valtype ) + ' -d' + str( self.dmax )
+			from gmetric import Gmetric
 
-		debug_msg( 10, printTime() + ' ' + cmd )
-		os.system( cmd )
+		if GMETRIC_TARGET:
+
+			GMETRIC_TARGET_HOST	= GMETRIC_TARGET.split( ':' )[0]
+			GMETRIC_TARGET_PORT	= GMETRIC_TARGET.split( ':' )[1]
+
+			metric_debug		= "[gmetric] name: %s - val: %s - dmax: %s" %( str( metricname ), str( metricval ), str( self.dmax ) )
+
+			debug_msg( 10, printTime() + ' ' + metric_debug)
+
+			gm = Gmetric( GMETRIC_TARGET_HOST, GMETRIC_TARGET_PORT )
+
+			gm.send( str( metricname ), str( metricval ), str( self.dmax ) )
+
+		else:
+			try:
+				cmd = cmd + ' -c' + GMOND_CONF
+
+			except NameError:
+
+				debug_msg( 10, 'Assuming /etc/gmond.conf for gmetric cmd (ommitting)' )
+
+			cmd = cmd + ' -n' + str( metricname )+ ' -v"' + str( metricval )+ '" -t' + str( valtype ) + ' -d' + str( self.dmax )
+
+			debug_msg( 10, printTime() + ' ' + cmd )
+
+			os.system( cmd )
 
 class DataGatherer:
 
