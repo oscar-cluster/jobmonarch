@@ -22,7 +22,7 @@
 #
 
 import sys, getopt, ConfigParser
-
+import time, os, socket, string, re
 import xml, xml.sax
 from xml.sax import saxutils, make_parser
 from xml.sax import make_parser
@@ -38,40 +38,40 @@ def usage():
 	print '      --help, -h        help'
 	print
 
-
 def processArgs( args ):
 
-	SHORT_L = 'c:'
-	LONG_L = 'config='
+	SHORT_L		= 'hc:'
+	LONG_L		= [ 'help', 'config=' ]
 
 	global PIDFILE
-	PIDFILE = None
-	config_filename = '/etc/jobmond.conf'
+	PIDFILE		= None
+
+	config_filename	= '/etc/jobmond.conf'
 
 	try:
 
-		opts, args = getopt.getopt( args, SHORT_L, LONG_L )
+		opts, args	= getopt.getopt( args, SHORT_L, LONG_L )
 
 	except getopt.GetoptError, detail:
 
 		print detail
 		usage()
-		sys.exit(1)
+		sys.exit( 1 )
 
 	for opt, value in opts:
 
 		if opt in [ '--config', '-c' ]:
 		
-			config_filename = value
+			config_filename	= value
 
 		if opt in [ '--pidfile', '-p' ]:
 
-			PIDFILE = value
+			PIDFILE		= value
 		
 		if opt in [ '--help', '-h' ]:
  
 			usage()
-			sys.exit(1)
+			sys.exit( 0 )
 
 	return loadConfig( config_filename )
 
@@ -109,79 +109,82 @@ def loadConfig( filename ):
 
                 return my_list
 
-	cfg = ConfigParser.ConfigParser()
+	cfg		= ConfigParser.ConfigParser()
 
 	cfg.read( filename )
 
-	global DEBUG_LEVEL, DAEMONIZE, BATCH_SERVER, BATCH_POLL_INTERVAL, GMOND_CONF, DETECT_TIME_DIFFS, BATCH_HOST_TRANSLATE, BATCH_API, QUEUE, GMETRIC_TARGET
+	global DEBUG_LEVEL, DAEMONIZE, BATCH_SERVER, BATCH_POLL_INTERVAL
+	global GMOND_CONF, DETECT_TIME_DIFFS, BATCH_HOST_TRANSLATE
+	global BATCH_API, QUEUE, GMETRIC_TARGET
 
-	DEBUG_LEVEL = cfg.getint( 'DEFAULT', 'DEBUG_LEVEL' )
+	DEBUG_LEVEL	= cfg.getint( 'DEFAULT', 'DEBUG_LEVEL' )
 
-	DAEMONIZE = cfg.getboolean( 'DEFAULT', 'DAEMONIZE' )
+	DAEMONIZE	= cfg.getboolean( 'DEFAULT', 'DAEMONIZE' )
 
 	try:
 
-		BATCH_SERVER = cfg.get( 'DEFAULT', 'BATCH_SERVER' )
+		BATCH_SERVER		= cfg.get( 'DEFAULT', 'BATCH_SERVER' )
 
 	except ConfigParser.NoOptionError:
 
 		# Backwards compatibility for old configs
 		#
 
-		BATCH_SERVER = cfg.get( 'DEFAULT', 'TORQUE_SERVER' )
-		api_guess = 'pbs'
+		BATCH_SERVER		= cfg.get( 'DEFAULT', 'TORQUE_SERVER' )
+		api_guess		= 'pbs'
 	
 	try:
 	
-		BATCH_POLL_INTERVAL = cfg.getint( 'DEFAULT', 'BATCH_POLL_INTERVAL' )
+		BATCH_POLL_INTERVAL	= cfg.getint( 'DEFAULT', 'BATCH_POLL_INTERVAL' )
 
 	except ConfigParser.NoOptionError:
 
 		# Backwards compatibility for old configs
 		#
 
-		BATCH_POLL_INTERVAL = cfg.getint( 'DEFAULT', 'TORQUE_POLL_INTERVAL' )
-		api_guess = 'pbs'
+		BATCH_POLL_INTERVAL	= cfg.getint( 'DEFAULT', 'TORQUE_POLL_INTERVAL' )
+		api_guess		= 'pbs'
 	
 	try:
 
-		GMOND_CONF = cfg.get( 'DEFAULT', 'GMOND_CONF' )
+		GMOND_CONF		= cfg.get( 'DEFAULT', 'GMOND_CONF' )
 
 	except ConfigParser.NoOptionError:
 
-		GMOND_CONF = None
+		GMOND_CONF		= None
 
-	DETECT_TIME_DIFFS = cfg.getboolean( 'DEFAULT', 'DETECT_TIME_DIFFS' )
+	DETECT_TIME_DIFFS	= cfg.getboolean( 'DEFAULT', 'DETECT_TIME_DIFFS' )
 
-	BATCH_HOST_TRANSLATE = getlist( cfg.get( 'DEFAULT', 'BATCH_HOST_TRANSLATE' ) )
+	BATCH_HOST_TRANSLATE	= getlist( cfg.get( 'DEFAULT', 'BATCH_HOST_TRANSLATE' ) )
 
 	try:
 
-		BATCH_API = cfg.get( 'DEFAULT', 'BATCH_API' )
+		BATCH_API	= cfg.get( 'DEFAULT', 'BATCH_API' )
 
 	except ConfigParser.NoOptionError, detail:
 
 		if BATCH_SERVER and api_guess:
-			BATCH_API = api_guess
+
+			BATCH_API	= api_guess
 		else:
 			debug_msg( 0, "fatal error: BATCH_API not set and can't make guess" )
 			sys.exit( 1 )
 
 	try:
 
-		QUEUE = getlist( cfg.get( 'DEFAULT', 'QUEUE' ) )
+		QUEUE		= getlist( cfg.get( 'DEFAULT', 'QUEUE' ) )
 
 	except ConfigParser.NoOptionError, detail:
 
-		QUEUE = None
+		QUEUE		= None
 
 	try:
 
-		GMETRIC_TARGET = cfg.get( 'DEFAULT', 'GMETRIC_TARGET' )
+		GMETRIC_TARGET	= cfg.get( 'DEFAULT', 'GMETRIC_TARGET' )
 
 	except ConfigParser.NoOptionError:
 
-		GMETRIC_TARGET = None
+		GMETRIC_TARGET	= None
 
 		if not GMOND_CONF:
 
@@ -192,9 +195,6 @@ def loadConfig( filename ):
 			debug_msg( 0, "error: GMETRIC_TARGET not set: internel Gmetric handling aborted. Failing back to DEPRECATED use of gmond.conf/gmetric binary. This will slow down jobmond significantly!" )
 
 	return True
-
-
-import time, os, socket, string, re
 
 METRIC_MAX_VAL_LEN = 900
 
@@ -219,6 +219,7 @@ class DataProcessor:
 		self.dmax = str( int( int( BATCH_POLL_INTERVAL ) * 2 ) )
 
 		if GMOND_CONF:
+
 			try:
 				gmond_file = GMOND_CONF
 
@@ -512,33 +513,41 @@ class PbsDataGatherer(DataGatherer):
 	global PBSQuery
 
 	def __init__( self ):
+
 		"""Setup appropriate variables"""
 
-		self.jobs = { }
-		self.timeoffset = 0
-		self.dp = DataProcessor()
+		self.jobs	= { }
+		self.timeoffset	= 0
+		self.dp		= DataProcessor()
+
 		self.initPbsQuery()
 
 	def initPbsQuery( self ):
 
-		self.pq = None
+		self.pq		= None
+
 		if( BATCH_SERVER ):
-			self.pq = PBSQuery( BATCH_SERVER )
+
+			self.pq		= PBSQuery( BATCH_SERVER )
 		else:
-			self.pq = PBSQuery()
+			self.pq		= PBSQuery()
 
 	def getAttr( self, attrs, name ):
+
 		"""Return certain attribute from dictionary, if exists"""
 
 		if attrs.has_key( name ):
-			return attrs[name]
+
+			return attrs[ name ]
 		else:
 			return ''
 
 	def jobDataChanged( self, jobs, job_id, attrs ):
+
 		"""Check if job with attrs and job_id in jobs has changed"""
 
 		if jobs.has_key( job_id ):
+
 			oldData = jobs[ job_id ]	
 		else:
 			return 1
@@ -557,35 +566,33 @@ class PbsDataGatherer(DataGatherer):
 		return 0
 
 	def getJobData( self ):
+
 		"""Gather all data on current jobs in Torque"""
 
-		#self.initPbsQuery()
-	
-		#print self.pq.getnodes()
-	
-		joblist = {}
+		joblist		= {}
 
-		while len(joblist) == 0:
+		while len( joblist ) == 0:
+
 			try:
 				joblist = self.pq.getjobs()
+
 			except PBSError, detail:
-				debug_msg( 10, "Caught PBS unavaible, skipping until next polling interval: " + str( detail ) )
+
+				debug_msg( 10, "Caught PBS unavailable, skipping until next polling interval: " + str( detail ) )
 				return None
 
-		self.cur_time = time.time()
+		self.cur_time	= time.time()
 
-		jobs_processed = [ ]
-
-		#self.printJobs( joblist )
+		jobs_processed	= [ ]
 
 		for name, attrs in joblist.items():
 
-			job_id = name.split( '.' )[0]
+			job_id			= name.split( '.' )[0]
 
 			jobs_processed.append( job_id )
 
-			name = self.getAttr( attrs, 'Job_Name' )
-			queue = self.getAttr( attrs, 'queue' )
+			name			= self.getAttr( attrs, 'Job_Name' )
+			queue			= self.getAttr( attrs, 'queue' )
 
 			if QUEUE:
 
@@ -593,36 +600,38 @@ class PbsDataGatherer(DataGatherer):
 
 					continue
 
-			owner = self.getAttr( attrs, 'Job_Owner' ).split( '@' )[0]
-			requested_time = self.getAttr( attrs, 'Resource_List.walltime' )
-			requested_memory = self.getAttr( attrs, 'Resource_List.mem' )
+			owner			= self.getAttr( attrs, 'Job_Owner' ).split( '@' )[0]
+			requested_time		= self.getAttr( attrs, 'Resource_List.walltime' )
+			requested_memory	= self.getAttr( attrs, 'Resource_List.mem' )
 
-			mynoderequest = self.getAttr( attrs, 'Resource_List.nodes' )
+			mynoderequest		= self.getAttr( attrs, 'Resource_List.nodes' )
 
-			ppn = ''
+			ppn			= ''
 
 			if mynoderequest.find( ':' ) != -1 and mynoderequest.find( 'ppn' ) != -1:
 
-				mynoderequest_fields = mynoderequest.split( ':' )
+				mynoderequest_fields	= mynoderequest.split( ':' )
 
 				for mynoderequest_field in mynoderequest_fields:
 
 					if mynoderequest_field.find( 'ppn' ) != -1:
 
-						ppn = mynoderequest_field.split( 'ppn=' )[1]
+						ppn	= mynoderequest_field.split( 'ppn=' )[1]
 
-			status = self.getAttr( attrs, 'job_state' )
+			status			= self.getAttr( attrs, 'job_state' )
 
-			queued_timestamp = self.getAttr( attrs, 'ctime' )
+			queued_timestamp	= self.getAttr( attrs, 'ctime' )
 
 			if status == 'R':
-				start_timestamp = self.getAttr( attrs, 'mtime' )
-				nodes = self.getAttr( attrs, 'exec_host' ).split( '+' )
 
-				nodeslist = [ ]
+				start_timestamp		= self.getAttr( attrs, 'mtime' )
+				nodes			= self.getAttr( attrs, 'exec_host' ).split( '+' )
+
+				nodeslist		= [ ]
 
 				for node in nodes:
-					host = node.split( '/' )[0]
+
+					host		= node.split( '/' )[0]
 
 					if nodeslist.count( host ) == 0:
 
@@ -630,10 +639,10 @@ class PbsDataGatherer(DataGatherer):
 
 							if translate_pattern.find( '/' ) != -1:
 
-								translate_orig = translate_pattern.split( '/' )[1]
-								translate_new = translate_pattern.split( '/' )[2]
+								translate_orig	= translate_pattern.split( '/' )[1]
+								translate_new	= translate_pattern.split( '/' )[2]
 
-								host = re.sub( translate_orig, translate_new, host )
+								host		= re.sub( translate_orig, translate_new, host )
 				
 						if not host in nodeslist:
 				
@@ -645,61 +654,65 @@ class PbsDataGatherer(DataGatherer):
 					# that must mean the Torque server's time is later
 					# than our local time.
 				
-					if int(start_timestamp) > int( int(self.cur_time) + int(self.timeoffset) ):
+					if int( start_timestamp ) > int( int( self.cur_time ) + int( self.timeoffset ) ):
 
-						self.timeoffset = int( int(start_timestamp) - int(self.cur_time) )
+						self.timeoffset	= int( int(start_timestamp) - int(self.cur_time) )
 
 			elif status == 'Q':
-				start_timestamp = ''
-				count_mynodes = 0
-				numeric_node = 1
+
+				start_timestamp		= ''
+				count_mynodes		= 0
+				numeric_node		= 1
 
 				for node in mynoderequest.split( '+' ):
 
-					nodepart = node.split( ':' )[0]
+					nodepart	= node.split( ':' )[0]
 
 					for letter in nodepart:
 
 						if letter not in string.digits:
 
-							numeric_node = 0
+							numeric_node	= 0
 
 					if not numeric_node:
-						count_mynodes = count_mynodes + 1
+
+						count_mynodes	= count_mynodes + 1
 					else:
 						try:
-							count_mynodes = count_mynodes + int( nodepart )
+							count_mynodes	= count_mynodes + int( nodepart )
+
 						except ValueError, detail:
+
 							debug_msg( 10, str( detail ) )
 							debug_msg( 10, "Encountered weird node in Resources_List?!" )
 							debug_msg( 10, 'nodepart = ' + str( nodepart ) )
 							debug_msg( 10, 'job = ' + str( name ) )
 							debug_msg( 10, 'attrs = ' + str( attrs ) )
 						
-				nodeslist = str( count_mynodes )
+				nodeslist	= str( count_mynodes )
 			else:
-				start_timestamp = ''
-				nodeslist = ''
+				start_timestamp	= ''
+				nodeslist	= ''
 
-			myAttrs = { }
-			myAttrs['name'] = str( name )
-			myAttrs['queue'] = str( queue )
-			myAttrs['owner'] = str( owner )
-			myAttrs['requested_time'] = str( requested_time )
-			myAttrs['requested_memory'] = str( requested_memory )
-			myAttrs['ppn'] = str( ppn )
-			myAttrs['status'] = str( status )
-			myAttrs['start_timestamp'] = str( start_timestamp )
-			myAttrs['queued_timestamp'] = str( queued_timestamp )
-			myAttrs['reported'] = str( int( int( self.cur_time ) + int( self.timeoffset ) ) )
-			myAttrs['nodes'] = nodeslist
-			myAttrs['domain'] = string.join( socket.getfqdn().split( '.' )[1:], '.' )
-			myAttrs['poll_interval'] = str( BATCH_POLL_INTERVAL )
+			myAttrs				= { }
+
+			myAttrs[ 'name' ]			= str( name )
+			myAttrs[ 'queue' ]		= str( queue )
+			myAttrs[ 'owner' ]		= str( owner )
+			myAttrs[ 'requested_time' ]	= str( requested_time )
+			myAttrs[ 'requested_memory' ]	= str( requested_memory )
+			myAttrs[ 'ppn' ]		= str( ppn )
+			myAttrs[ 'status' ]		= str( status )
+			myAttrs[ 'start_timestamp' ]	= str( start_timestamp )
+			myAttrs[ 'queued_timestamp' ]	= str( queued_timestamp )
+			myAttrs[ 'reported' ]		= str( int( int( self.cur_time ) + int( self.timeoffset ) ) )
+			myAttrs[ 'nodes' ]		= nodeslist
+			myAttrs[ 'domain' ]		= string.join( socket.getfqdn().split( '.' )[1:], '.' )
+			myAttrs[ 'poll_interval' ]	= str( BATCH_POLL_INTERVAL )
 
 			if self.jobDataChanged( self.jobs, job_id, myAttrs ) and myAttrs['status'] in [ 'R', 'Q' ]:
-				self.jobs[ job_id ] = myAttrs
 
-				#debug_msg( 10, printTime() + ' job %s state changed' %(job_id) )
+				self.jobs[ job_id ]	= myAttrs
 
 		for id, attrs in self.jobs.items():
 
@@ -710,6 +723,7 @@ class PbsDataGatherer(DataGatherer):
 				del self.jobs[ id ]
 
 	def submitJobData( self ):
+
 		"""Submit job info list"""
 
 		self.dp.multicastGmetric( 'MONARCH-HEARTBEAT', str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
@@ -718,22 +732,22 @@ class PbsDataGatherer(DataGatherer):
 		#
 		for jobid, jobattrs in self.jobs.items():
 
-			gmetric_val = self.compileGmetricVal( jobid, jobattrs )
-
-			metric_increment = 0
+			gmetric_val		= self.compileGmetricVal( jobid, jobattrs )
+			metric_increment	= 0
 
 			for val in gmetric_val:
+
 				self.dp.multicastGmetric( 'MONARCH-JOB-' + jobid + '-' + str(metric_increment), val )
-				metric_increment = metric_increment + 1
+
+				metric_increment	= metric_increment + 1
 
 	def compileGmetricVal( self, jobid, jobattrs ):
+
 		"""Create a val string for gmetric of jobinfo"""
 
-		gval_lists = [ ]
-
-		mystr = None
-
-		val_list = { }
+		gval_lists	= [ ]
+		mystr		= None
+		val_list	= { }
 
 		for val_name, val_value in jobattrs.items():
 
@@ -747,38 +761,45 @@ class PbsDataGatherer(DataGatherer):
 				for node in val_value:
 
 					if node_str:
+
 						node_str = node_str + ';' + node
 					else:
 						node_str = node
 
 					if (val_list_names_len + len(val_name) ) + (val_list_vals_len + len(node_str) ) > METRIC_MAX_VAL_LEN:
 
-						val_list[ val_name ] = node_str
-						gval_lists.append( val_list )
-						val_list = { }
-						node_str = None
+						val_list[ val_name ]	= node_str
 
-				val_list[ val_name ] = node_str
+						gval_lists.append( val_list )
+
+						val_list		= { }
+						node_str		= None
+
+				val_list[ val_name ]	= node_str
+
 				gval_lists.append( val_list )
-				val_list = { }
+
+				val_list		= { }
 
 			elif val_value != '':
 
 				if (val_list_names_len + len(val_name) ) + (val_list_vals_len + len(str(val_value)) ) > METRIC_MAX_VAL_LEN:
 
 					gval_lists.append( val_list )
-					val_list = { }
 
-				val_list[ val_name ] = val_value
+					val_list		= { }
 
-		if len(val_list) > 0:
+				val_list[ val_name ]	= val_value
+
+		if len( val_list ) > 0:
+
 			gval_lists.append( val_list )
 
-		str_list = [ ]
+		str_list	= [ ]
 
 		for val_list in gval_lists:
 
-			my_val_str = None
+			my_val_str	= None
 
 			for val_name, val_value in val_list.items():
 
@@ -793,11 +814,13 @@ class PbsDataGatherer(DataGatherer):
 		return str_list
 
 def printTime( ):
+
 	"""Print current time/date in human readable format for log/debug"""
 
 	return time.strftime("%a, %d %b %Y %H:%M:%S")
 
 def debug_msg( level, msg ):
+
 	"""Print msg if at or above current debug level"""
 
         if (DEBUG_LEVEL >= level):
@@ -807,18 +830,22 @@ def write_pidfile():
 
 	# Write pidfile if PIDFILE exists
 	if PIDFILE:
-		pid = os.getpid()
 
-		pidfile = open(PIDFILE, 'w')
-		pidfile.write(str(pid))
+		pid	= os.getpid()
+
+		pidfile	= open(PIDFILE, 'w')
+
+		pidfile.write( str( pid ) )
 		pidfile.close()
 
 def main():
+
 	"""Application start"""
 
 	global PBSQuery, PBSError
 
 	if not processArgs( sys.argv[1:] ):
+
 		sys.exit( 1 )
 
 	if BATCH_API == 'pbs':
@@ -839,9 +866,11 @@ def main():
 
 	else:
 		debug_msg( 0, "fatal error: unknown BATCH_API '" + BATCH_API + "' is not supported" )
+
 		sys.exit( 1 )
 
 	if DAEMONIZE:
+
 		gather.daemon()
 	else:
 		gather.run()
