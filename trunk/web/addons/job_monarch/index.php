@@ -272,23 +272,20 @@ function makeHeader( $page_call ) {
 
 		//print_r( $context_metrics );
 
-		if( isset( $hostname ) ) {
+		if (is_array($context_metrics) ) {
+			$metric_menu = "<B>Metric</B>&nbsp;&nbsp;"
+				."<SELECT NAME=\"m\" OnChange=\"".$form_name.".submit();\">\n";
 
-			if (is_array($context_metrics) ) {
-				$metric_menu = "<B>Metric</B>&nbsp;&nbsp;"
-					."<SELECT NAME=\"m\" OnChange=\"".$form_name.".submit();\">\n";
-
-				sort($context_metrics);
-				foreach( $context_metrics as $k ) {
-					$url = rawurlencode($k);
-					$metric_menu .= "<OPTION VALUE=\"$url\" ";
-					if ($k == $metricname )
-						$metric_menu .= "SELECTED";
-					$metric_menu .= ">$k\n";
-				}
-				$metric_menu .= "</SELECT>\n";
-
+			sort($context_metrics);
+			foreach( $context_metrics as $k ) {
+				$url = rawurlencode($k);
+				$metric_menu .= "<OPTION VALUE=\"$url\" ";
+				if ($k == $metricname )
+					$metric_menu .= "SELECTED";
+				$metric_menu .= ">$k\n";
 			}
+			$metric_menu .= "</SELECT>\n";
+
 		}
 
 		$tpl->assign("metric_menu", $metric_menu );
