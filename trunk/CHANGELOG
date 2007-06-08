@@ -12,6 +12,10 @@
 			thank to: Robin Day
 			for the design
 
+		f:	archive search not properly resetting nodes list
+			thanks to: Alexis Michon - alexis(d.o.t)michon(a.t)ibcp(d.o.t)fr
+			for the patch 
+
 	jobmond)
 
 		a:	native gmetric support, much faster and cleaner!
@@ -28,6 +32,9 @@
 		f:	uninitialized variable in checkGmetricVersion()
 			thanks to: Peter Kruse - pk(a.t)q-leap(d.o.t)com
 			for the patch
+		f:	undefined PBSError
+			thanks to: Peter Kruse - pk(a.t)q-leap(d.o.t)com
+			for reporting it
 
 		r:	SGE support broken
 
