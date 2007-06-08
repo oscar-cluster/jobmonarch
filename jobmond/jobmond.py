@@ -584,18 +584,16 @@ class PbsDataGatherer( DataGatherer ):
 		"""Gather all data on current jobs in Torque"""
 
 		joblist		= {}
+		self.cur_time	= 0
 
-		while len( joblist ) == 0:
+		try:
+			joblist		= self.pq.getjobs()
+			self.cur_time	= time.time()
 
-			try:
-				joblist = self.pq.getjobs()
+		except PBSError, detail:
 
-			except PBSError, detail:
-
-				debug_msg( 10, "Caught PBS unavailable, skipping until next polling interval: " + str( detail ) )
-				return None
-
-		self.cur_time	= time.time()
+			debug_msg( 10, "Caught PBS unavailable, skipping until next polling interval: " + str( detail ) )
+			return None
 
 		jobs_processed	= [ ]
 
