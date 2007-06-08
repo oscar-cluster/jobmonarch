@@ -1,4 +1,5 @@
-		f: fixed - c: changed - a: added
+
+	LEGEND	f: fixed - c: changed - a: added
 
 0.2.1:
 
@@ -13,9 +14,26 @@
 
 	jobmond)
 
+		a:	native gmetric support, much faster and cleaner!
+			thanks to: Nick Galbreath - nickg(a.t)modp(d.o.t)com
+			for writing it and allowing inclusion in jobmond
+
+		f:	hanging/blocked, increased cpu usage and halted reporting
+			thanks to: Bas van der Vlies - basv(a.t)sara(d.o.t)nl
+			for discovering the origin of the bug
+			thanks to: Mickael Gastineau - gastineau(a.t)imcce(d.o.t)fr
+			for reporting it and testing the fix
+			thanks to: Craig West - cwest(a.t)astro(d.o.t)umass(d.o.t)edu
+			for reporting it and testing the fix
 		f:	uninitialized variable in checkGmetricVersion()
 			thanks to: Peter Kruse - pk(a.t)q-leap(d.o.t)com
 			for the patch
+
+	jobarchived)
+
+		f:	incorrect stop_timestamping when jobs finished
+			thanks to: Alexis Michon - alexis(d.o.t)michon(a.t)ibcp(d.o.t)fr
+			for finding it and debugging/testing
 
 0.2:
 
