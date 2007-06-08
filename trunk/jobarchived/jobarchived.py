@@ -648,7 +648,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 						self.jobs_processed.append( jobid )
 
 					self.jobAttrs[ jobid ]['status'] = 'F'
-					self.jobAttrs[ jobid ]['stop_timestamp'] = str( mytime )
+					self.jobAttrs[ jobid ]['stop_timestamp'] = str( self.heartbeat )
 
 					if not jobid in self.jobs_to_store:
 						self.jobs_to_store.append( jobid )
@@ -700,12 +700,12 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 						if value != jobattrs[ jobid ][ valname ]:
 
 							if jobinfo['reported'] > jobattrs[ jobid ][ 'reported' ] and jobinfo['reported'] == self.heartbeat:
-								return 1
+								return True
 
 					else:
-						return 1
+						return True
 
-		return 0
+		return False
 
 class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 	"""Parse Ganglia's XML"""
