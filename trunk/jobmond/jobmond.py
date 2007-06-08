@@ -2,7 +2,7 @@
 #
 # This file is part of Jobmonarch
 #
-# Copyright (C) 2006  Ramon Bastiaans
+# Copyright (C) 2006-2007  Ramon Bastiaans
 # 
 # Jobmonarch is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -825,6 +825,20 @@ class PbsDataGatherer( DataGatherer ):
 			str_list.append( my_val_str )
 
 		return str_list
+
+#
+# Gmetric by Nick Galbreath - nickg(a.t)modp(d.o.t)com
+# Version 1.0 - 21-April2-2007
+# http://code.google.com/p/embeddedgmetric/
+#
+# Modified by: Ramon Bastiaans
+# For the Job Monarch Project, see: https://subtrac.sara.nl/oss/jobmonarch/
+#
+# added: DEFAULT_TYPE for Gmetric's
+# added: checkHostProtocol to determine if target is multicast or not
+# changed: allow default for Gmetric constructor
+# changed: allow defaults for all send() values except dmax
+#
 
 GMETRIC_DEFAULT_TYPE    = 'string'
 GMETRIC_DEFAULT_HOST    = '127.0.0.1'
