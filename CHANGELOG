@@ -1,5 +1,5 @@
 
-	LEGEND	f: fixed - c: changed - a: added
+	LEGEND	f: fixed - c: changed - a: added - r: removed
 
 0.2.1:
 
@@ -28,6 +28,8 @@
 		f:	uninitialized variable in checkGmetricVersion()
 			thanks to: Peter Kruse - pk(a.t)q-leap(d.o.t)com
 			for the patch
+
+		r:	SGE support broken
 
 	jobarchived)
 
