@@ -583,19 +583,19 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
 		if name == 'CLUSTER':
 
-			self.clustername = attrs.get( 'NAME', "" )
+			self.clustername = str( attrs.get( 'NAME', "" ) )
 
 		elif name == 'METRIC' and self.clustername in ARCHIVE_DATASOURCES:
 
-			metricname = attrs.get( 'NAME', "" )
+			metricname = str( attrs.get( 'NAME', "" ) )
 
 			if metricname == 'MONARCH-HEARTBEAT':
-				self.heartbeat = attrs.get( 'VAL', "" )
+				self.heartbeat = str( attrs.get( 'VAL', "" ) )
 
 			elif metricname.find( 'MONARCH-JOB' ) != -1:
 
 				job_id	= metricname.split( 'MONARCH-JOB-' )[1].split( '-' )[0]
-				val	= attrs.get( 'VAL', "" )
+				val	= str( attrs.get( 'VAL', "" ) )
 
 				if not job_id in self.jobs_processed:
 
@@ -776,22 +776,22 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 
 		if name == 'GANGLIA_XML':
 
-			self.XMLSource		= attrs.get( 'SOURCE', "" )
-			self.gangliaVersion	= attrs.get( 'VERSION', "" )
+			self.XMLSource		= str( attrs.get( 'SOURCE', "" ) )
+			self.gangliaVersion	= str( attrs.get( 'VERSION', "" ) )
 
 			debug_msg( 10, 'Found XML data: source %s version %s' %( self.XMLSource, self.gangliaVersion ) )
 
 		elif name == 'GRID':
 
-			self.gridName	= attrs.get( 'NAME', "" )
-			self.time	= attrs.get( 'LOCALTIME', "" )
+			self.gridName	= str( attrs.get( 'NAME', "" ) )
+			self.time	= str( attrs.get( 'LOCALTIME', "" ) )
 
 			debug_msg( 10, '`-Grid found: %s' %( self.gridName ) )
 
 		elif name == 'CLUSTER':
 
-			self.clusterName	= attrs.get( 'NAME', "" )
-			self.time		= attrs.get( 'LOCALTIME', "" )
+			self.clusterName	= str( attrs.get( 'NAME', "" ) )
+			self.time		= str( attrs.get( 'LOCALTIME', "" ) )
 
 			if not self.clusters.has_key( self.clusterName ) and self.clusterName in ARCHIVE_DATASOURCES:
 
@@ -801,21 +801,21 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 
 		elif name == 'HOST' and self.clusterName in ARCHIVE_DATASOURCES:     
 
-			self.hostName		= attrs.get( 'NAME', "" )
-			self.hostIp		= attrs.get( 'IP', "" )
-			self.hostReported	= attrs.get( 'REPORTED', "" )
+			self.hostName		= str( attrs.get( 'NAME', "" ) )
+			self.hostIp		= str( attrs.get( 'IP', "" ) )
+			self.hostReported	= str( attrs.get( 'REPORTED', "" ) )
 
 			debug_msg( 10, ' | |-Host found: %s - ip %s reported %s' %( self.hostName, self.hostIp, self.hostReported ) )
 
 		elif name == 'METRIC' and self.clusterName in ARCHIVE_DATASOURCES:
 
-			type = attrs.get( 'TYPE', "" )
+			type = str( attrs.get( 'TYPE', "" ) )
 			
 			exclude_metric = False
 			
 			for ex_metricstr in ARCHIVE_EXCLUDE_METRICS:
 
-				orig_name = attrs.get( 'NAME', "" )	
+				orig_name = str( attrs.get( 'NAME', "" ) )
 
 				if string.lower( orig_name ) == string.lower( ex_metricstr ):
 				
@@ -828,8 +828,8 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 			if type not in UNSUPPORTED_ARCHIVE_TYPES and not exclude_metric:
 
 				myMetric		= { }
-				myMetric['name']	= attrs.get( 'NAME', "" )
-				myMetric['val']		= attrs.get( 'VAL', "" )
+				myMetric['name']	= str( attrs.get( 'NAME', "" ) )
+				myMetric['val']		= str( attrs.get( 'VAL', "" ) )
 				myMetric['time']	= self.hostReported
 
 				self.clusters[ self.clusterName ].memMetric( self.hostName, myMetric )
