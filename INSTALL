@@ -76,24 +76,27 @@ REQUIREMENTS
 	jobmond:
 
 		- pbs_python v2.8.2 or higher
-		  ftp://ftp.sara.nl/pub/outgoing/pbs_python.tar.gz
+		  https://subtrac.sara.nl/oss/pbs_python/
 
 		- gmond v3.0.1 or higher
-		  http://www.ganglia.info
+		  http://www.ganglia.info/
 
 	jobarchived:
 
 		- Postgres SQL v7.xx
-		  http://www.postgres.org
+		  http://www.postgres.org/
 
 		- rrdtool v1.xx
 		  http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/
+
+		- py-rrdtool
+		  http://sourceforge.net/projects/py-rrdtool/
 
 		- python-pgsql v4.x.x
 		  http://sourceforge.net/projects/pypgsql/
 
 		- gmetad v3.x.x
-		  http://www.ganglia.info
+		  http://www.ganglia.info/
 
 	web:
 
