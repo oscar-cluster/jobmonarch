@@ -18,6 +18,8 @@
 
 	jobmond)
 
+		a:	syslog support
+
 		c:	native gmetric support, much faster and cleaner!
 			thanks to: Nick Galbreath - nickg(a.t)modp(d.o.t)com
 			for writing it and allowing inclusion in jobmond
@@ -41,10 +43,16 @@
 	jobarchived)
 
 		c:	now use py-rrdtool api instead of pipes, much faster!
+			install py-rrdtool to use this
+			backwards compatible fails back to pipes if module not installed
 
+		f:	autocreate clusterdirs in archivedir
+		f:	unhandled gather exception
+		f:	all XML input was uniencoded, which could cause errors
+			now all properly converted to normal strings
 		f:	incorrect stop_timestamping when jobs finished
 			thanks to: Alexis Michon - alexis(d.o.t)michon(a.t)ibcp(d.o.t)fr
-			for finding it and debugging/testing
+			for finding and debugging/testing it
 
 0.2:
 
