@@ -640,7 +640,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 	def endDocument( self ):
 		"""When all metrics have gone, check if any jobs have finished"""
 
-		debug_msg( 1, "XML: Processed "+str(self.elementct)+ " elements - found "+str(len(self.jobs_to_store))+" jobs" )
+		debug_msg( 1, "XML: Processed "+str(self.elementct)+ " elements - found "+str(len(self.jobs_to_store))+" (updated) jobs" )
 
 		if self.heartbeat:
 			for jobid, jobinfo in self.jobAttrs.items():
