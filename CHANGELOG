@@ -18,7 +18,7 @@
 
 	jobmond)
 
-		a:	native gmetric support, much faster and cleaner!
+		c:	native gmetric support, much faster and cleaner!
 			thanks to: Nick Galbreath - nickg(a.t)modp(d.o.t)com
 			for writing it and allowing inclusion in jobmond
 
@@ -39,6 +39,8 @@
 		r:	SGE support broken
 
 	jobarchived)
+
+		c:	now use py-rrdtool api instead of pipes, much faster!
 
 		f:	incorrect stop_timestamping when jobs finished
 			thanks to: Alexis Michon - alexis(d.o.t)michon(a.t)ibcp(d.o.t)fr
