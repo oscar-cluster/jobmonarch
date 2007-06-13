@@ -968,6 +968,10 @@ def main():
 
 	elif BATCH_API == 'sge':
 
+		debug_msg( 0, "fatal error: BATCH_API 'sge' implementation is currently broken, check future releases" )
+
+		sys.exit( 1 )
+
 		gather = SgeDataGatherer()
 
 	else:
