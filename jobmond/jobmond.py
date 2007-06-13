@@ -23,7 +23,7 @@
 
 import sys, getopt, ConfigParser
 import time, os, socket, string, re
-import xdrlib, socket
+import xdrlib, socket, syslog
 import xml, xml.sax
 from xml.sax import saxutils, make_parser
 from xml.sax import make_parser
@@ -116,11 +116,41 @@ def loadConfig( filename ):
 
 	global DEBUG_LEVEL, DAEMONIZE, BATCH_SERVER, BATCH_POLL_INTERVAL
 	global GMOND_CONF, DETECT_TIME_DIFFS, BATCH_HOST_TRANSLATE
-	global BATCH_API, QUEUE, GMETRIC_TARGET
+	global BATCH_API, QUEUE, GMETRIC_TARGET, USE_SYSLOG
+	global SYSLOG_LEVEL, SYSLOG_FACILITY
 
 	DEBUG_LEVEL	= cfg.getint( 'DEFAULT', 'DEBUG_LEVEL' )
 
 	DAEMONIZE	= cfg.getboolean( 'DEFAULT', 'DAEMONIZE' )
+
+	try:
+		USE_SYSLOG	= cfg.getboolean( 'DEFAULT', 'USE_SYSLOG' )
+
+	except ConfigParser.NoOptionError:
+
+		USE_SYSLOG	= True
+
+		debug_msg( 0, 'ERROR: no option USE_SYSLOG found: assuming yes' )
+
+	if USE_SYSLOG:
+
+		try:
+			SYSLOG_LEVEL	= cfg.getint( 'DEFAULT', 'SYSLOG_LEVEL' )
+
+		except ConfigParser.NoOptionError:
+
+			debug_msg( 0, 'ERROR: no option SYSLOG_LEVEL found: assuming level 0' )
+			SYSLOG_LEVEL	= 0
+
+		try:
+
+			SYSLOG_FACILITY = eval( 'syslog.LOG_' + cfg.get( 'DEFAULT', 'SYSLOG_FACILITY' ) )
+
+		except AttributeError, detail:
+
+			SYSLOG_FACILITY = syslog.LOG_DAEMON
+
+			debug_msg( 0, 'ERROR: no option SYSLOG_FACILITY found: assuming facility DAEMON' )
 
 	try:
 
@@ -168,7 +198,7 @@ def loadConfig( filename ):
 
 			BATCH_API	= api_guess
 		else:
-			debug_msg( 0, "fatal error: BATCH_API not set and can't make guess" )
+			debug_msg( 0, "FATAL ERROR: BATCH_API not set and can't make guess" )
 			sys.exit( 1 )
 
 	try:
@@ -189,11 +219,11 @@ def loadConfig( filename ):
 
 		if not GMOND_CONF:
 
-			debug_msg( 0, "fatal error: GMETRIC_TARGET or GMOND_CONF both not set!" )
+			debug_msg( 0, "FATAL ERROR: GMETRIC_TARGET and GMOND_CONF both not set! Set at least one!" )
 			sys.exit( 1 )
 		else:
 
-			debug_msg( 0, "error: GMETRIC_TARGET not set: internel Gmetric handling aborted. Failing back to DEPRECATED use of gmond.conf/gmetric binary. This will slow down jobmond significantly!" )
+			debug_msg( 0, "ERROR: GMETRIC_TARGET not set: internel Gmetric handling aborted. Failing back to DEPRECATED use of gmond.conf/gmetric binary. This will slow down jobmond significantly!" )
 
 	return True
 
@@ -230,7 +260,7 @@ class DataProcessor:
 				gmond_file = '/etc/gmond.conf'
 
 			if not os.path.exists( gmond_file ):
-				debug_msg( 0, 'fatal error: ' + gmond_file + ' does not exist' )
+				debug_msg( 0, 'FATAL ERROR: ' + gmond_file + ' does not exist' )
 				sys.exit( 1 )
 
 			incompatible = self.checkGmetricVersion()
@@ -929,8 +959,11 @@ def debug_msg( level, msg ):
 
 	"""Print msg if at or above current debug level"""
 
-        if (DEBUG_LEVEL >= level):
-	                sys.stderr.write( msg + '\n' )
+        if (not DAEMONIZE and DEBUG_LEVEL >= level):
+		sys.stderr.write( msg + '\n' )
+
+	if (DAEMONIZE and USE_SYSLOG and SYSLOG_LEVEL >= level):
+		syslog.syslog( msg )
 
 def write_pidfile():
 
@@ -949,6 +982,7 @@ def main():
 	"""Application start"""
 
 	global PBSQuery, PBSError
+	global SYSLOG_FACILITY, USE_SYSLOG, BATCH_API, DAEMONIZE
 
 	if not processArgs( sys.argv[1:] ):
 
@@ -961,23 +995,28 @@ def main():
 
 		except ImportError:
 
-			debug_msg( 0, "fatal error: BATCH_API set to 'pbs' but python module 'pbs_python' is not installed" )
+			debug_msg( 0, "FATAL ERROR: BATCH_API set to 'pbs' but python module 'pbs_python' is not installed" )
 			sys.exit( 1 )
 
 		gather = PbsDataGatherer()
 
 	elif BATCH_API == 'sge':
 
-		debug_msg( 0, "fatal error: BATCH_API 'sge' implementation is currently broken, check future releases" )
+		debug_msg( 0, "FATAL ERROR: BATCH_API 'sge' implementation is currently broken, check future releases" )
 
 		sys.exit( 1 )
 
 		gather = SgeDataGatherer()
 
 	else:
-		debug_msg( 0, "fatal error: unknown BATCH_API '" + BATCH_API + "' is not supported" )
+		debug_msg( 0, "FATAL ERROR: unknown BATCH_API '" + BATCH_API + "' is not supported" )
 
 		sys.exit( 1 )
+
+	if( DAEMONIZE and USE_SYSLOG ):
+
+		syslog.openlog( 'jobmond', syslog.LOG_NOWAIT, SYSLOG_FACILITY )
+
 
 	if DAEMONIZE:
 
