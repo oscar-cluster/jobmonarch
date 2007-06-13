@@ -123,6 +123,9 @@ def loadConfig( filename ):
 
 	DAEMONIZE	= cfg.getboolean( 'DEFAULT', 'DAEMONIZE' )
 
+	SYSLOG_LEVEL	= -1
+	SYSLOG_FACILITY	= None
+
 	try:
 		USE_SYSLOG	= cfg.getboolean( 'DEFAULT', 'USE_SYSLOG' )
 
@@ -131,6 +134,7 @@ def loadConfig( filename ):
 		USE_SYSLOG	= True
 
 		debug_msg( 0, 'ERROR: no option USE_SYSLOG found: assuming yes' )
+
 
 	if USE_SYSLOG:
 
@@ -146,7 +150,7 @@ def loadConfig( filename ):
 
 			SYSLOG_FACILITY = eval( 'syslog.LOG_' + cfg.get( 'DEFAULT', 'SYSLOG_FACILITY' ) )
 
-		except AttributeError, detail:
+		except ConfigParser.NoOptionError:
 
 			SYSLOG_FACILITY = syslog.LOG_DAEMON
 
@@ -958,6 +962,8 @@ def printTime( ):
 def debug_msg( level, msg ):
 
 	"""Print msg if at or above current debug level"""
+
+	global DAEMONIZE, DEBUG_LEVEL, SYSLOG_LEVEL
 
         if (not DAEMONIZE and DEBUG_LEVEL >= level):
 		sys.stderr.write( msg + '\n' )
