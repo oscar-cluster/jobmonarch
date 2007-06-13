@@ -759,6 +759,8 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 
 					os.mkdir( cluster_dir )
 
+					dirlist.append( cfgcluster )
+
 			for item in dirlist:
 
 				clustername = item
