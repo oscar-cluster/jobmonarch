@@ -103,7 +103,7 @@ def loadConfig( filename ):
 
 	cfg.read( filename )
 
-	global DEBUG_LEVEL, USE_SYSLOG, SYSLOG_LEVEL, SYSLOG_FACILITY, GMETAD_CONF, ARCHIVE_XMLSOURCE, ARCHIVE_DATASOURCES, ARCHIVE_PATH, ARCHIVE_HOURS_PER_RRD, ARCHIVE_EXCLUDE_METRICS, JOB_SQL_DBASE, DAEMONIZE, RRDTOOL, JOB_TIMEOUT
+	global DEBUG_LEVEL, USE_SYSLOG, SYSLOG_LEVEL, SYSLOG_FACILITY, GMETAD_CONF, ARCHIVE_XMLSOURCE, ARCHIVE_DATASOURCES, ARCHIVE_PATH, ARCHIVE_HOURS_PER_RRD, ARCHIVE_EXCLUDE_METRICS, JOB_SQL_DBASE, DAEMONIZE, RRDTOOL, JOB_TIMEOUT, MODRRDTOOL
 
 	ARCHIVE_PATH		= cfg.get( 'DEFAULT', 'ARCHIVE_PATH' )
 
@@ -114,6 +114,19 @@ def loadConfig( filename ):
 	USE_SYSLOG		= cfg.getboolean( 'DEFAULT', 'USE_SYSLOG' )
 
 	SYSLOG_LEVEL		= cfg.getint( 'DEFAULT', 'SYSLOG_LEVEL' )
+
+	MODRRDTOOL		= False
+
+	try:
+		import rrdtool
+
+		MODRRDTOOL		= True
+
+	except ImportError:
+
+		MODRRDTOOL		= False
+
+		debug_msg( 0, "ERROR: py-rrdtool import FAILED: failing back to DEPRECATED use of rrdtool binary. This will slow down jobmond significantly!" )
 
 	try:
 
@@ -444,36 +457,71 @@ class RRDMutator:
 	def create( self, filename, args ):
 		"""Create a new rrd with args"""
 
-		#return self.perform( 'create', '"' + filename + '"', args )
-		return self.perform( 'create', filename, args )
+		global MODRRDTOOL
+
+		if MODRRDTOOL:
+			return self.perform( 'create', filename, args )
+		else:
+			return self.perform( 'create', '"' + filename + '"', args )
 
 	def update( self, filename, args ):
 		"""Update a rrd with args"""
 
-		#return self.perform( 'update', '"' + filename + '"', args )
-		return self.perform( 'update', filename, args )
+		global MODRRDTOOL
+
+		if MODRRDTOOL:
+			return self.perform( 'update', filename, args )
+		else:
+			return self.perform( 'update', '"' + filename + '"', args )
 
 	def grabLastUpdate( self, filename ):
 		"""Determine the last update time of filename rrd"""
 
+		global MODRRDTOOL
+
 		last_update = 0
 
-		debug_msg( 8, 'rrdtool.info( ' + filename + ' )' )
+		if MODRRDTOOL:
 
-		rrd_header 	= { }
+			debug_msg( 8, 'rrdtool.info( ' + filename + ' )' )
 
-		try:
-			rrd_header	= rrdtool.info( filename )
-		except rrdtool.error, msg:
-			debug_msg( 8, str( msg ) )
+			rrd_header 	= { }
 
-		if rrd_header.has_key( 'last_update' ):
-			return last_update
+			try:
+				rrd_header	= rrdtool.info( filename )
+			except rrdtool.error, msg:
+				debug_msg( 8, str( msg ) )
+
+			if rrd_header.has_key( 'last_update' ):
+				return last_update
+			else:
+				return 0
+
 		else:
-			return 0
+			debug_msg( 8, self.binary + ' info ' + filename )
+
+			my_pipe		= os.popen( self.binary + ' info "' + filename + '"' )
+
+			for line in my_pipe.readlines():
+
+				if line.find( 'last_update') != -1:
+
+					last_update = line.split( ' = ' )[1]
+
+			if my_pipe:
+
+				my_pipe.close()
+
+			if last_update:
+				return last_update
+			else:
+				return 0
+
 
 	def perform( self, action, filename, args ):
 		"""Perform action on rrd filename with args"""
+
+		global MODRRDTOOL
 
 		arg_string = None
 
@@ -489,24 +537,43 @@ class RRDMutator:
 			else:
 				arg_string = arg_string + ' ' + arg
 
-		debug_msg( 8, 'rrdtool.' + action + "( " + filename + ' ' + arg_string + ")" )
+		if MODRRDTOOL:
 
-		try:
-			debug_msg( 8, "filename '" + str(filename) + "' type "+ str(type(filename)) + " args " + str( args ) )
+			debug_msg( 8, 'rrdtool.' + action + "( " + filename + ' ' + arg_string + ")" )
 
-			if action == 'create':
+			try:
+				debug_msg( 8, "filename '" + str(filename) + "' type "+ str(type(filename)) + " args " + str( args ) )
 
-				rrdtool.create( str( filename ), *args )
+				if action == 'create':
 
-			elif action == 'update':
+					rrdtool.create( str( filename ), *args )
 
-				rrdtool.update( str( filename ), *args )
+				elif action == 'update':
 
-		except rrdtool.error, msg:
+					rrdtool.update( str( filename ), *args )
 
-			error_msg = str( msg )
-			debug_msg( 8, error_msg )
-			return 1
+			except rrdtool.error, msg:
+
+				error_msg = str( msg )
+				debug_msg( 8, error_msg )
+				return 1
+
+		else:
+
+			debug_msg( 8, self.binary + ' ' + action + ' ' + filename + ' ' + arg_string  )
+
+			cmd     = os.popen( self.binary + ' ' + action + ' ' + filename + ' ' + arg_string )
+			lines   = cmd.readlines()
+
+			cmd.close()
+
+			for line in lines:
+
+				if line.find( 'ERROR' ) != -1:
+
+					error_msg = string.join( line.split( ' ' )[1:] )
+					debug_msg( 8, error_msg )
+					return 1
 
 		return 0
 
@@ -1723,6 +1790,8 @@ def run():
 
 def main():
 	"""Program startup"""
+
+	global DAEMONIZE, USE_SYSLOG
 
 	if not processArgs( sys.argv[1:] ):
 		sys.exit( 1 )
