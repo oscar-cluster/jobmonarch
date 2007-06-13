@@ -162,6 +162,7 @@ from types import *
 
 import DBClass
 import xml.sax, xml.sax.handler, socket, string, os, os.path, time, thread, threading, random, re
+import rrdtool
 
 class DataSQLStore:
 
@@ -192,7 +193,7 @@ class DataSQLStore:
 
 	def doDatabase(self, type, statement):
 
-		debug_msg( 6, 'doDatabase(): %s: %s' %(type, statement) )
+		debug_msg( 10, 'doDatabase(): %s: %s' %(type, statement) )
 		try:
 			if type == 'set':
 				result = self.dbc.Set( statement )
@@ -205,7 +206,7 @@ class DataSQLStore:
 			debug_msg( 0, 'FATAL ERROR: ' +operation+ ' on database failed while doing ['+statement+'] full msg: '+str(detail) )
 			sys.exit(1)
 
-		debug_msg( 6, 'doDatabase(): result: %s' %(result) )
+		debug_msg( 10, 'doDatabase(): result: %s' %(result) )
 		return result
 
 	def getJobNodeId( self, job_id, node_id ):
@@ -271,7 +272,7 @@ class DataSQLStore:
 		insert_val_str	= "'%s'" %job_id
 		update_str	= None
 
-		debug_msg( 6, 'mutateJob(): %s %s' %(action,job_id))
+		debug_msg( 10, 'mutateJob(): %s %s' %(action,job_id))
 
 		ids = [ ]
 
@@ -433,6 +434,7 @@ class RRDMutator:
 
 	binary = None
 
+
 	def __init__( self, binary=None ):
 		"""Set alternate binary if supplied"""
 
@@ -442,33 +444,30 @@ class RRDMutator:
 	def create( self, filename, args ):
 		"""Create a new rrd with args"""
 
-		return self.perform( 'create', '"' + filename + '"', args )
+		#return self.perform( 'create', '"' + filename + '"', args )
+		return self.perform( 'create', filename, args )
 
 	def update( self, filename, args ):
 		"""Update a rrd with args"""
 
-		return self.perform( 'update', '"' + filename + '"', args )
+		#return self.perform( 'update', '"' + filename + '"', args )
+		return self.perform( 'update', filename, args )
 
 	def grabLastUpdate( self, filename ):
 		"""Determine the last update time of filename rrd"""
 
 		last_update = 0
 
-		debug_msg( 8, self.binary + ' info "' + filename + '"' )
+		debug_msg( 8, 'rrdtool.info( ' + filename + ' )' )
 
-		my_pipe		= os.popen( self.binary + ' info "' + filename + '"' )
+		rrd_header 	= { }
 
-		for line in my_pipe.readlines():
+		try:
+			rrd_header	= rrdtool.info( filename )
+		except rrdtool.error, msg:
+			debug_msg( 8, str( msg ) )
 
-			if line.find( 'last_update') != -1:
-
-				last_update = line.split( ' = ' )[1]
-
-		if my_pipe:
-
-			my_pipe.close()
-
-		if last_update:
+		if rrd_header.has_key( 'last_update' ):
 			return last_update
 		else:
 			return 0
@@ -490,20 +489,24 @@ class RRDMutator:
 			else:
 				arg_string = arg_string + ' ' + arg
 
-		debug_msg( 8, self.binary + ' ' + action + ' ' + filename + ' ' + arg_string  )
+		debug_msg( 8, 'rrdtool.' + action + "( " + filename + ' ' + arg_string + ")" )
 
-		cmd	= os.popen( self.binary + ' ' + action + ' ' + filename + ' ' + arg_string )
-		lines	= cmd.readlines()
+		try:
+			debug_msg( 8, "filename '" + str(filename) + "' type "+ str(type(filename)) + " args " + str( args ) )
 
-		cmd.close()
+			if action == 'create':
 
-		for line in lines:
+				rrdtool.create( str( filename ), *args )
 
-			if line.find( 'ERROR' ) != -1:
+			elif action == 'update':
 
-				error_msg = string.join( line.split( ' ' )[1:] )
-				debug_msg( 8, error_msg )
-				return 1
+				rrdtool.update( str( filename ), *args )
+
+		except rrdtool.error, msg:
+
+			error_msg = str( msg )
+			debug_msg( 8, error_msg )
+			return 1
 
 		return 0
 
@@ -565,6 +568,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 	def startDocument( self ):
 
 		self.heartbeat	= 0
+		self.elementct	= 0
 
 	def startElement( self, name, attrs ):
 		"""
@@ -574,6 +578,8 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 		"""
 		
 		jobinfo = { }
+
+		self.elementct	+= 1
 
 		if name == 'CLUSTER':
 
@@ -622,17 +628,19 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 						if not job_id in self.jobs_to_store:
 							self.jobs_to_store.append( job_id )
 
-						debug_msg( 6, 'jobinfo for job %s has changed' %job_id )
+						debug_msg( 10, 'jobinfo for job %s has changed' %job_id )
 				else:
 					self.jobAttrs[ job_id ] = jobinfo
 
 					if not job_id in self.jobs_to_store:
 						self.jobs_to_store.append( job_id )
 
-					debug_msg( 6, 'jobinfo for job %s has changed' %job_id )
+					debug_msg( 10, 'jobinfo for job %s has changed' %job_id )
 					
 	def endDocument( self ):
 		"""When all metrics have gone, check if any jobs have finished"""
+
+		debug_msg( 1, "XML: Processed "+str(self.elementct)+ " elements - found "+str(len(self.jobs_to_store))+" jobs" )
 
 		if self.heartbeat:
 			for jobid, jobinfo in self.jobAttrs.items():
@@ -718,7 +726,12 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 		self.ds		= datastore
 
 		debug_msg( 1, 'Checking database..' )
-		self.ds.checkStaleJobs()
+
+		global DEBUG_LEVEL
+
+		if DEBUG_LEVEL <= 2:
+			self.ds.checkStaleJobs()
+
 		debug_msg( 1, 'Check done.' )
 		debug_msg( 1, 'Checking rrd archive..' )
 		self.gatherClusters()
@@ -742,6 +755,8 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 				if not self.clusters.has_key( clustername ) and clustername in ARCHIVE_DATASOURCES:
 
 					self.clusters[ clustername ] = RRDHandler( self.config, clustername )
+
+		debug_msg( 9, "Found "+str(len(self.clusters.keys()))+" clusters" )
 
 	def startElement( self, name, attrs ):
 		"""Memorize appropriate data from xml start tags"""
@@ -1047,9 +1062,15 @@ class GangliaXMLProcessor( XMLProcessor ):
 	def storeMetrics( self ):
 		"""Store metrics retained in memory to disk"""
 
+		global DEBUG_LEVEL
+
 		# Store metrics somewhere between every 360 and 640 seconds
 		#
-		STORE_INTERVAL = random.randint( 360, 640 )
+		if DEBUG_LEVEL > 2:
+			#STORE_INTERVAL = 60
+			STORE_INTERVAL = random.randint( 360, 640 )
+		else:
+			STORE_INTERVAL = random.randint( 360, 640 )
 
 		try:
 			store_metric_thread = threading.Thread( None, self.storeThread, 'store_metric_thread' )
@@ -1226,7 +1247,10 @@ class RRDHandler:
 		self.slot	= threading.Lock()
 		self.rrdm	= RRDMutator( RRDTOOL )
 
-		self.gatherLastUpdates()
+		global DEBUG_LEVEL
+
+		if DEBUG_LEVEL <= 2:
+			self.gatherLastUpdates()
 
 	def gatherLastUpdates( self ):
 		"""Populate the lastStored list, containing timestamps of all last updates"""
@@ -1329,7 +1353,9 @@ class RRDHandler:
 
 			if self.checkStoreMetric( host, metric ):
 
-				update_list.append( '%s:%s' %( metric['time'], metric['val'] ) )
+				u_val	= str( metric['time'] ) + ':' + str( metric['val'] )
+				#update_list.append( str('%s:%s') %( metric['time'], metric['val'] ) )
+				update_list.append( u_val )
 
 		return update_list
 
@@ -1378,6 +1404,32 @@ class RRDHandler:
 		Store all metrics from memory to disk
 		and do it to the RRD's in appropriate timeperiod directory
 		"""
+
+		debug_msg( 5, "Entering storeMetrics()")
+
+		count_values	= 0
+		count_metrics	= 0
+		count_bits	= 0
+
+		for hostname, mymetrics in self.myMetrics.items():	
+
+			for metricname, mymetric in mymetrics.items():
+
+				count_metrics += 1
+
+				for dmetric in mymetric:
+
+					count_values += 1
+
+					count_bits	+= len( dmetric['time'] )
+					count_bits	+= len( dmetric['val'] )
+
+		count_bytes	= count_bits / 8
+
+		debug_msg( 5, "size of cluster '" + self.cluster + "': " + 
+			str( len( self.myMetrics.keys() ) ) + " hosts " + 
+			str( count_metrics ) + " metrics " + str( count_values ) + " values " +
+			str( count_bits ) + " bits " + str( count_bytes ) + " bytes " )
 
 		for hostname, mymetrics in self.myMetrics.items():	
 
@@ -1436,6 +1488,8 @@ class RRDHandler:
 				#if not (1) in update_rets:
 
 				self.memLastUpdate( hostname, metricname, metrics_to_store )
+
+		debug_msg( 5, "Leaving storeMetrics()")
 
 	def makeTimeSerial( self ):
 		"""Generate a time serial. Seconds since epoch"""
