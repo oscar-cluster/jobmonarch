@@ -748,6 +748,17 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 
 			dirlist	= os.listdir( archive_dir )
 
+			for cfgcluster in ARCHIVE_DATASOURCES:
+
+				if cfgcluster not in dirlist:
+
+					# Autocreate a directory for this cluster
+					# assume it is new
+					#
+					cluster_dir = '%s/%s' %( check_dir(ARCHIVE_PATH), cfgcluster )
+
+					os.mkdir( cluster_dir )
+
 			for item in dirlist:
 
 				clustername = item
