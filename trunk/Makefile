@@ -124,5 +124,23 @@ rpm-jobarchived:	${REQUIRED}
 	fakeroot rpmbuild -bb jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec )
 	cp ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}.*.rpm .
 
+rpm-webfrontend:	${REQUIRED}
+	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}/${WEBDIR} >/dev/null
+	( cd web; \
+	rsync -a --exclude=.svn . ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}/${WEBDIR} )
+	cp pkg/rpm/jobmonarch-webfrontend.spec \
+	${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}/jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec
+	( cd ${TMPDIR}/.monarch_buildroot/; \
+	cat jobmonarch-webfrontend-${VERSION}-${RELEASE}/jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec \
+	| sed "s/^Buildroot:.*$//Buildroot: \${TMPDIR}\/\.monarch_buildroot\/jobmonarch-webfrontend-${VERSION}-${RELEASE}/g" \
+	| sed "s/^Version:.*$//Version: ${VERSION}/g" \
+	| sed "s/^Release:.*$//Release: ${RELEASE}/g" \
+	>jobmonarch-webfrontend-${VERSION}-${RELEASE}/jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec.new; \
+	mv jobmonarch-webfrontend-${VERSION}-${RELEASE}/jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec.new \
+	jobmonarch-webfrontend-${VERSION}-${RELEASE}/jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec )
+	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}; \
+	fakeroot rpmbuild -bb jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec )
+	cp ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}.*.rpm .
+
 clean:	${TMPDIR}/.monarch_buildroot
 	rm -rf ${TMPDIR}/.monarch_buildroot
