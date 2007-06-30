@@ -55,10 +55,9 @@ chkconfig jobarchived off
 Job MonArch's archive daemon
 
 %files
-"/usr/sbin/jobarchived.py"
+"/usr/bin/jobarchived.py"
 "/etc/init.d/jobarchived"
-"/etc/jobarchived.conf-dist"
-"/usr/sbin/jobarchived"
+"/etc/jobarchived.conf"
+"/usr/bin/jobarchived"
 %dir "/usr/share/jobarchived/"
-"/usr/share/jobarchived/DBClass.py"
 "/usr/share/jobarchived/job_dbase.sql"
