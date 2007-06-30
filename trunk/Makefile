@@ -10,9 +10,9 @@ REQUIRED = ./jobarchived ./jobmond ./web
 
 debian:	deb-jobmond deb-jobarchived deb-webfrontend
 
-#rpm-binary:
+rpm: rpm-jobmond
 
-#all:	tarball debian-binary rpm-binary
+all:	tarball debian rpm
 
 tarball:	tarball-gzip tarball-bzip
 
@@ -63,6 +63,28 @@ deb-jobmond:	${REQUIRED}
 	( cd ${TMPDIR}/.monarch_buildroot/; cat jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control | sed "s/^Version:.*$//Version: 0.2.1-1/g" >jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control.new; mv jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control.new jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control )
 	( cd ${TMPDIR}/.monarch_buildroot/; fakeroot dpkg -b jobmonarch-jobmond_${VERSION}-${RELEASE} )
 	cp ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}.deb .
+
+rpm-jobmond:	${REQUIRED}
+	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}>/dev/null >/dev/null
+	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/etc/init.d >/dev/null
+	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/usr/bin >/dev/null
+	install -m 755 jobmond/jobmond.py ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/usr/bin
+	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/usr/bin; ln -s jobmond.py jobmond || true)
+	install jobmond/jobmond.conf ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/etc
+	install pkg/init.d/jobmond ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/etc/init.d
+	cp pkg/rpm/jobmonarch-jobmond.spec \
+	${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/jobmonarch-jobmond-${VERSION}-${RELEASE}.spec
+	( cd ${TMPDIR}/.monarch_buildroot/; \
+	cat jobmonarch-jobmond-${VERSION}-${RELEASE}/jobmonarch-jobmond-${VERSION}-${RELEASE}.spec \
+	| sed "s/^Buildroot:.*$//Buildroot: \${TMPDIR}\/\.monarch_buildroot\/jobmonarch-jobmond-${VERSION}-${RELEASE}/g" \
+	| sed "s/^Version:.*$//Version: ${VERSION}/g" \
+	| sed "s/^Release:.*$//Release: ${RELEASE}/g" \
+	>jobmonarch-jobmond-${VERSION}-${RELEASE}/jobmonarch-jobmond-${VERSION}-${RELEASE}.spec.new; \
+	mv jobmonarch-jobmond-${VERSION}-${RELEASE}/jobmonarch-jobmond-${VERSION}-${RELEASE}.spec.new \
+	jobmonarch-jobmond-${VERSION}-${RELEASE}/jobmonarch-jobmond-${VERSION}-${RELEASE}.spec )
+	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}; \
+	fakeroot rpmbuild -bb jobmonarch-jobmond-${VERSION}-${RELEASE}.spec )
+	cp ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}.*.rpm .
 
 clean:	${TMPDIR}/.monarch_buildroot
 	rm -rf ${TMPDIR}/.monarch_buildroot
