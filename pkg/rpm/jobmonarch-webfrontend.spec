@@ -65,4 +65,5 @@ Job Monarch's web frontend.
 "/var/www/ganglia/addons/job_monarch/styles.css"
 "/var/www/ganglia/addons/job_monarch/index.php"
 "/var/www/ganglia/addons/job_monarch/overview.php"
+"/var/www/ganglia/addons/job_monarch/jobmonarch.gif"
 "/var/www/ganglia/templates/job_monarch/images/logo.jpg"
