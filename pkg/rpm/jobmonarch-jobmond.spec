@@ -47,6 +47,6 @@ Job MonArch's monitoring daemon.
 
 %files
 "/etc/init.d/jobmond"
-"/usr/sbin/jobmond.py"
-"/usr/sbin/jobmond"
+"/usr/bin/jobmond.py"
+"/usr/bin/jobmond"
 %config "/etc/jobmond.conf"
