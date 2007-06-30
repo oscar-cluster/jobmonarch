@@ -1,5 +1,5 @@
 TMPDIR = /tmp
-WEBDIR = /var/www/ganglia
+WEBDIR = var/www/ganglia
 
 VERSION = 0.2.1
 RELEASE = 1
@@ -8,7 +8,7 @@ OPWD = `pwd`
 
 REQUIRED = ./jobarchived ./jobmond ./web
 
-debian:	deb-jobmond deb-jobarchived
+debian:	deb-jobmond deb-jobarchived deb-webfrontend
 
 #rpm-binary:
 
@@ -27,6 +27,14 @@ tarball-bzip:	${REQUIRED}
 	( rsync -a --exclude=.svn . ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION} )
 	( cd ${TMPDIR}/.monarch_buildroot; tar jcvf ganglia_jobmonarch-${VERSION}.tar.bz2 ./ganglia_jobmonarch-${VERSION} )
 	cp ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}.tar.bz2 .
+
+deb-webfrontend:	${REQUIRED}
+	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/${WEBDIR}>/dev/null >/dev/null
+	( cd web; rsync -a --exclude=.svn . ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/${WEBDIR} )
+	( cp -a pkg/deb/web/DEBIAN ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/ )
+	( cd ${TMPDIR}/.monarch_buildroot/; cat jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control | sed "s/^Version:.*$//Version: 0.2.1-1/g" >jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control.new; mv jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control.new jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control )
+	( cd ${TMPDIR}/.monarch_buildroot/; fakeroot dpkg -b jobmonarch-webfrontend_${VERSION}-${RELEASE} )
+	cp ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}.deb .
 
 deb-jobarchived:	${REQUIRED}
 	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}>/dev/null >/dev/null
