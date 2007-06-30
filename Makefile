@@ -8,7 +8,7 @@ REQUIRED = ./jobarchived ./jobmond ./web
 
 debian:	deb-jobmond deb-jobarchived deb-webfrontend
 
-rpm: rpm-jobmond
+rpm: rpm-jobmond rpm-jobarchived
 
 all:	tarball debian rpm
 
@@ -78,7 +78,6 @@ deb-jobmond:	${REQUIRED}
 	cp ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}.deb .
 
 rpm-jobmond:	${REQUIRED}
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}>/dev/null >/dev/null
 	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/etc/init.d >/dev/null
 	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/usr/bin >/dev/null
 	install -m 755 jobmond/jobmond.py ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/usr/bin
@@ -99,6 +98,31 @@ rpm-jobmond:	${REQUIRED}
 	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}; \
 	fakeroot rpmbuild -bb jobmonarch-jobmond-${VERSION}-${RELEASE}.spec )
 	cp ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}.*.rpm .
+
+rpm-jobarchived:	${REQUIRED}
+	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/etc/init.d >/dev/null
+	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/usr/bin >/dev/null
+	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/usr/share/jobarchived >/dev/null
+	install -m 755 jobarchived/jobarchived.py ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/usr/bin
+	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/usr/bin; \
+	ln -s jobarchived.py jobarchived || true)
+	install jobarchived/jobarchived.conf ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/etc
+	install pkg/init.d/jobarchived ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/etc/init.d
+	install jobarchived/job_dbase.sql \
+	${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/usr/share/jobarchived
+	cp pkg/rpm/jobmonarch-jobarchived.spec \
+	${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec
+	( cd ${TMPDIR}/.monarch_buildroot/; \
+	cat jobmonarch-jobarchived-${VERSION}-${RELEASE}/jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec \
+	| sed "s/^Buildroot:.*$//Buildroot: \${TMPDIR}\/\.monarch_buildroot\/jobmonarch-jobarchived-${VERSION}-${RELEASE}/g" \
+	| sed "s/^Version:.*$//Version: ${VERSION}/g" \
+	| sed "s/^Release:.*$//Release: ${RELEASE}/g" \
+	>jobmonarch-jobarchived-${VERSION}-${RELEASE}/jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec.new; \
+	mv jobmonarch-jobarchived-${VERSION}-${RELEASE}/jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec.new \
+	jobmonarch-jobarchived-${VERSION}-${RELEASE}/jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec )
+	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}; \
+	fakeroot rpmbuild -bb jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec )
+	cp ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}.*.rpm .
 
 clean:	${TMPDIR}/.monarch_buildroot
 	rm -rf ${TMPDIR}/.monarch_buildroot
