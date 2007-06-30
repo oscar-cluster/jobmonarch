@@ -173,9 +173,145 @@ The Job Archiving Daemon
 
 from types import *
 
-import DBClass
 import xml.sax, xml.sax.handler, socket, string, os, os.path, time, thread, threading, random, re
 import rrdtool
+from pyPgSQL import PgSQL
+
+# Orginal from Andre van der Vlies <andre@vandervlies.xs4all.nl> for MySQL. Changed
+# and added some more functions for postgres.
+#       
+#
+# Changed by: Bas van der Vlies <basv@sara.nl>
+#       
+# SARA API for Postgres Database
+#
+# Changed by: Ramon Bastiaans for Job Monarch
+#
+
+class InitVars:
+        Vars = {}
+        
+        def __init__(self, **key_arg):
+                for (key, value) in key_arg.items():
+                        if value:
+                                self.Vars[key] = value
+                        else:   
+                                self.Vars[key] = None
+                                
+        def __call__(self, *key):
+                key = "%s" % key
+                return self.Vars[key]
+                
+        def __getitem__(self, key):
+                return self.Vars[key]
+                
+        def __repr__(self):
+                return repr(self.Vars)
+                
+        def keys(self):
+                barf =  map(None, self.Vars.keys())
+                return barf
+                
+        def values(self):
+                barf =  map(None, self.Vars.values())
+                return barf
+                
+        def has_key(self, key):
+                if self.Vars.has_key(key):
+                        return 1
+                else:   
+                        return 0
+                        
+class DBError(Exception):
+        def __init__(self, msg=''):
+                self.msg = msg
+                Exception.__init__(self, msg)
+        def __repr__(self):
+                return self.msg
+        __str__ = __repr__
+
+#
+# Class to connect to a database
+# and return the queury in a list or dictionairy.
+#
+class DB:
+        def __init__(self, db_vars):
+
+                self.dict = db_vars
+
+                if self.dict.has_key('User'):
+                        self.user = self.dict['User']
+                else:
+                        self.user = 'postgres'
+
+                if self.dict.has_key('Host'):
+                        self.host = self.dict['Host']
+                else:
+                        self.host = 'localhost'
+
+                if self.dict.has_key('Password'):
+                        self.passwd = self.dict['Password']
+                else:
+                        self.passwd = ''
+
+                if self.dict.has_key('DataBaseName'):
+                        self.db = self.dict['DataBaseName']
+                else:
+                        self.db = 'uva_cluster_db'
+
+                # connect_string = 'host:port:database:user:password:
+                dsn = "%s::%s:%s:%s" %(self.host, self.db, self.user, self.passwd)
+
+                try:
+                        self.SQL = PgSQL.connect(dsn)
+                except PgSQL.Error, details:
+                        str = "%s" %details
+                        raise DBError(str)
+
+        def __repr__(self):
+                return repr(self.result)
+
+        def __nonzero__(self):
+                return not(self.result == None)
+
+        def __len__(self):
+                return len(self.result)
+
+        def __getitem__(self,i):
+                return self.result[i]
+
+        def __getslice__(self,i,j):
+                return self.result[i:j]
+
+        def Get(self, q_str):
+                c = self.SQL.cursor()
+                try:
+                        c.execute(q_str)
+                        result = c.fetchall()
+                except PgSQL.Error, details:
+                        c.close()
+                        str = "%s" %details
+                        raise DBError(str)
+
+                c.close()
+                return result
+
+        def Set(self, q_str):
+                c = self.SQL.cursor()
+                try:
+                        c.execute(q_str)
+                        result = c.oidValue
+
+                except PgSQL.Error, details:
+                        c.close()
+                        str = "%s" %details
+                        raise DBError(str)
+
+                c.close()
+                return result
+
+        def Commit(self):
+                self.SQL.commit()
 
 class DataSQLStore:
 
@@ -184,15 +320,15 @@ class DataSQLStore:
 
 	def __init__( self, hostname, database ):
 
-		self.db_vars = DBClass.InitVars(DataBaseName=database,
+		self.db_vars = InitVars(DataBaseName=database,
 				User='root',
 				Host=hostname,
 				Password='',
 				Dictionary='true')
 
 		try:
-			self.dbc     = DBClass.DB(self.db_vars)
-		except DBClass.DBError, details:
+			self.dbc     = DB(self.db_vars)
+		except DBError, details:
 			debug_msg( 0, 'FATAL ERROR: Unable to connect to database!: ' +str(details) )
 			sys.exit(1)
 
@@ -214,7 +350,7 @@ class DataSQLStore:
 			elif type == 'get':
 				result = self.dbc.Get( statement )
 				
-		except DBClass.DBError, detail:
+		except DBError, detail:
 			operation = statement.split(' ')[0]
 			debug_msg( 0, 'FATAL ERROR: ' +operation+ ' on database failed while doing ['+statement+'] full msg: '+str(detail) )
 			sys.exit(1)
