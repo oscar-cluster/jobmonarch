@@ -1,0 +1,5 @@
+#!/bin/sh
+
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
+update-rc.d -f jobarchived remove

@@ -1,0 +1,26 @@
+#!/bin/sh
+
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
+if [ -x /etc/init.d/jobarchived ] && [ -x /usr/sbin/jobarchived ]
+	then
+
+		if [ -d /usr/sara ]
+			then
+				update-rc.d -f jobarchived start 99 3 . stop 99 0 1 2 6 .
+			else
+				update-rc.d -f jobarchived defaults
+		fi
+
+fi
+
+echo ""
+echo "Additional manual changes are required to setup jobarchived:"
+echo ""
+echo "1) Edit /etc/jobarchived.conf to reflect your local settings and setup:"
+echo "   - ARCHIVE_DATASOURCES and ARCHIVE_PATH"
+echo ""
+echo "2) Create a 'jobarchive' database and create jobarchived's tables:" 
+echo "   - createdb jobarchive"
+echo "   - psql -f /usr/share/jobarchived/job_dbase.sql jobarchive"
+echo ""
