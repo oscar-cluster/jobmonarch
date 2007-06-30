@@ -4,8 +4,6 @@ WEBDIR = var/www/ganglia
 VERSION = 0.2.1
 RELEASE = 1
 
-OPWD = `pwd`
-
 REQUIRED = ./jobarchived ./jobmond ./web
 
 debian:	deb-jobmond deb-jobarchived deb-webfrontend
@@ -32,7 +30,10 @@ deb-webfrontend:	${REQUIRED}
 	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/${WEBDIR}>/dev/null >/dev/null
 	( cd web; rsync -a --exclude=.svn . ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/${WEBDIR} )
 	( cp -a pkg/deb/web/DEBIAN ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/ )
-	( cd ${TMPDIR}/.monarch_buildroot/; cat jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control | sed "s/^Version:.*$//Version: 0.2.1-1/g" >jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control.new; mv jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control.new jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control )
+	( cd ${TMPDIR}/.monarch_buildroot/; cat jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control \
+	| sed "s/^Version:.*$//Version: 0.2.1-1/g" >jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control.new; \
+	mv jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control.new \
+	jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control )
 	( cd ${TMPDIR}/.monarch_buildroot/; fakeroot dpkg -b jobmonarch-webfrontend_${VERSION}-${RELEASE} )
 	cp ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}.deb .
 
@@ -47,7 +48,10 @@ deb-jobarchived:	${REQUIRED}
 	install pkg/init.d/jobarchived ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/etc/init.d
 	install jobarchived/job_dbase.sql ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/usr/share/jobarchived
 	( cp -a pkg/deb/jobarchived/DEBIAN ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/ )
-	( cd ${TMPDIR}/.monarch_buildroot/; cat jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control | sed "s/^Version:.*$//Version: 0.2.1-1/g" >jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control.new; mv jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control.new jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control )
+	( cd ${TMPDIR}/.monarch_buildroot/; cat jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control \
+	| sed "s/^Version:.*$//Version: ${VERSION}-${RELEASE}/g" >jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control.new; \
+	mv jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control.new \
+	jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control )
 	( cd ${TMPDIR}/.monarch_buildroot/; fakeroot dpkg -b jobmonarch-jobarchived_${VERSION}-${RELEASE} )
 	cp ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}.deb .
 
@@ -60,7 +64,9 @@ deb-jobmond:	${REQUIRED}
 	install jobmond/jobmond.conf ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/etc
 	install pkg/init.d/jobmond ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/etc/init.d
 	( cp -a pkg/deb/jobmond/DEBIAN ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/ )
-	( cd ${TMPDIR}/.monarch_buildroot/; cat jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control | sed "s/^Version:.*$//Version: 0.2.1-1/g" >jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control.new; mv jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control.new jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control )
+	( cd ${TMPDIR}/.monarch_buildroot/; cat jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control \
+	| sed "s/^Version:.*$//Version: ${VERSION}-${RELEASE}/g" >jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control.new; \
+	mv jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control.new jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control )
 	( cd ${TMPDIR}/.monarch_buildroot/; fakeroot dpkg -b jobmonarch-jobmond_${VERSION}-${RELEASE} )
 	cp ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}.deb .
 
