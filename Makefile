@@ -8,7 +8,7 @@ REQUIRED = ./jobarchived ./jobmond ./web
 
 debian:	deb-jobmond deb-jobarchived deb-webfrontend
 
-rpm: rpm-jobmond rpm-jobarchived
+rpm: rpm-jobmond rpm-jobarchived rpm-webfrontend
 
 all:	tarball debian rpm
 
