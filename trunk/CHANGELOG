@@ -12,9 +12,17 @@
 			thank to: Robin Day
 			for the design
 
+		c:	host view available metric list is now compiled from disk,
+			so that the detailed archive host view works even when it is currently down.
+		c:	removed size restrictions from detailed host archive view
+
 		f:	archive search not properly resetting nodes list
 			thanks to: Alexis Michon - alexis(d.o.t)michon(a.t)ibcp(d.o.t)fr
 			for the patch 
+		f:	detailed host view from jobarchive was broken since hostbased support of 0.2
+			now host view is properly set and parsed again
+			thanks to: Alexis Michon - alexis(d.o.t)michon(a.t)ibcp(d.o.t)fr
+			for reporting the bug and suggesting a patch
 
 	jobmond)
 
