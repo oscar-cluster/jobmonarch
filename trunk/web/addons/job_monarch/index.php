@@ -403,10 +403,10 @@ switch( $view ) {
 		includeSearchPage();
 		break;
 
-	//case "host":
+	case "host":
 
-	//	includeHostPage();
-	//	break;
+		includeHostPage();
+		break;
 
 	default:
 
@@ -437,11 +437,11 @@ switch( $view ) {
 		makeSearchPage();
 		break;
 
-	//case "host":
+	case "host":
 
-	//	include "./host_view.php";
-	//	makeHostView();
-	//	break;
+		include "./host_view.php";
+		makeHostView();
+		break;
 
 	default:
 
