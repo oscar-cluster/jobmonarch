@@ -1,7 +1,7 @@
 TMPDIR = /tmp
 WEBDIR = var/www/ganglia
 
-VERSION = 0.2.1
+VERSION = 0.2.1.SVN
 RELEASE = 1
 
 REQUIRED = ./jobarchived ./jobmond ./web
