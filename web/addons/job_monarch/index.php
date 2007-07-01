@@ -22,6 +22,9 @@
  * SVN $Id$
  */
 
+ini_set("memory_limit","80M");
+set_time_limit(0);
+
 if ( !empty( $_GET ) ) {
 	extract( $_GET );
 }
