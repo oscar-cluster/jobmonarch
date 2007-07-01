@@ -66,8 +66,33 @@ function makeHostView() {
 	global $cluster, $period_start, $period_stop;
 	global $job_start, $job_stop;
 
-	$metrics = $metrics[$hostname];
 	//print_r( $metrics );
+
+	//printf( "c %s\n", $clustername );
+
+	$trd = new TarchRrdGraph( $clustername, $hostname );
+	$rrdirs = $trd->getRrdDirs( $period_start, $period_stop );
+
+	$metrics = $metrics[$hostname];
+	$mymetrics = array();
+
+	foreach( $rrdirs as $rrdir ) 
+	{
+		$ml	= $trd->dirList( $rrdir );
+
+		foreach( $ml as $lmetr )
+		{
+			$metrn_fields	= explode( '.', $lmetr );
+
+			$metrn		= $metrn_fields[0];
+
+			if( !in_array( $metrn, $mymetrics ) )
+			{
+				$mymetrics[$metrn]	= $metrics[$metrn];
+			}
+		}
+	}
+
 	$hosts_up = $hosts_up[$hostname];
 	//print_r( $hosts_up );
 
@@ -105,7 +130,7 @@ function makeHostView() {
 
 	$tpl->assign("ip", $hosts_up[IP]);
 
-	foreach ($metrics as $name => $v)
+	foreach ($mymetrics as $name => $v)
 	   {
 	       if ($v[TYPE] == "string" or $v[TYPE]=="timestamp" or $always_timestamp[$name])
 		  {
