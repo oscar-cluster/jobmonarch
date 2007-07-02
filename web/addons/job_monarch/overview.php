@@ -807,7 +807,8 @@ function makeOverview()
 				if( $start_time ) 
 				{
 					$runningtime 		= makeTime( $report_time - $start_time );
-					$job_runningtime	= $report_time - $start_time;
+					//$job_runningtime	= $report_time - $start_time;
+					$job_runningtime	= $heartbeat - $start_time;
 
 					$tpl->assign( "started", makeDate( $start_time ) );
 					$tpl->assign( "runningtime", $runningtime );
@@ -916,10 +917,17 @@ function makeOverview()
 			$sorted_hosts 	= array();
 			$hosts_up 	= $jobs[$filter[id]][nodes];
 
-			$r 		= intval($job_runningtime * 1.25);
+			//printf( "r %s\n", $job_runningtime );
 
-			$jobrange 	= ($job_runningtime < 3600) ? -3600 : -$r ;
-			$jobstart 	= $report_time - $job_runningtime;
+			$r 		= intval($job_runningtime * 1.2);
+
+			//$jobrange 	= ($job_runningtime < 3600) ? -3600 : -$r ;
+			$jobrange 	= -$r ;
+			//$jobstart 	= $report_time - $job_runningtime;
+			$jobstart 	= $start_time;
+
+			//printf( "jr %s\n", $jobrange );
+			//printf( "js %s\n", $jobstart);
 
 			if ( $reports[$metricname] )
 			{
