@@ -23,6 +23,8 @@
 			now host view is properly set and parsed again
 			thanks to: Alexis Michon - alexis(d.o.t)michon(a.t)ibcp(d.o.t)fr
 			for reporting the bug and suggesting a patch
+		f:	bug where jobstart redline indicator in host detail graphs was set incorrectly
+			due to a miscalculation in job times
 
 	jobmond)
 
