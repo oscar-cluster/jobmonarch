@@ -1209,8 +1209,8 @@ class ClusterImage {
 
 			foreach( $nodes as $hostname => $node )
 			{
-				$x	= 0;
-				$y	= 0;
+				$x	= null;
+				$y	= null;
 
 				if( $x_present && $y_present )
 				{
@@ -1227,6 +1227,7 @@ class ClusterImage {
 					//
 					if( $n < 2 )
 					{
+						//printf( "removing node %s - x present & y present + <2 x,y matches\n", $hostname );
 						unset( $nodes[$hostname] );
 					}
 				}
@@ -1237,6 +1238,7 @@ class ClusterImage {
 					//
 					if( $n < 1 )
 					{
+						//printf( "removing node %s - x present & !y present + <1 x match\n", $hostname );
 						unset( $nodes[$hostname] );
 					}
 					$y	= 1;
@@ -1248,6 +1250,7 @@ class ClusterImage {
 					//
 					if( $n < 1 )
 					{
+						//printf( "removing node %s - y present & !x present + <1 y match\n", $hostname );
 						unset( $nodes[$hostname] );
 					}
 					$x	= 1;
@@ -1257,35 +1260,37 @@ class ClusterImage {
 				//printf( "n %s\n", $n );
 
 
-				if( !$x_min )
+				//printf( "node %s x_min %s x %s\n", $hostname, $x_min, $x );
+
+				if( !$x_min && $x != null )
 				{
 					$x_min	= $x;
 				}
-				else if( $x < $x_min )
+				else if( $x < $x_min && $x != null )
 				{
 					$x_min	= $x;
 				}
-				if( !$x_max )
+				if( !$x_max && $x != null )
 				{
 					$x_max	= $x;
 				}
-				else if( $x > $x_max )
+				else if( $x > $x_max && $x != null )
 				{
 					$x_max	= $x;
 				}
-				if( !$y_min )
+				if( !$y_min && $y != null )
 				{
 					$y_min	= $y;
 				}
-				else if( $y < $y_min )
+				else if( $y < $y_min && $y != null )
 				{
 					$y_min	= $y;
 				}
-				if( !$y_max )
+				if( !$y_max && $y != null )
 				{
 					$y_max	= $y;
 				}
-				else if( $y > $y_max )
+				else if( $y > $y_max && $y != null )
 				{
 					$y_max	= $y;
 				}
@@ -1367,6 +1372,7 @@ class ClusterImage {
 					imageStringDown( $image, $font, $fontspaceing, $y_offset, $SORT_YLABEL, $colorblue );
 				}
 			}
+			//print_r( $nodes );
 
 			for( $n = $x_min; $n <= $x_max; $n++ )
 			{
@@ -1397,11 +1403,18 @@ class ClusterImage {
 							}
 							if ( $nn < 2 )
 							{
+								//printf( "skipping node %s - y present & x present + <2 x,y matchs\n", $host);
 								continue;
 							}
-							if( ( $rx ) > $n )
+							if( intval( $rx ) > $n )
 							{
 								$m	= $y_max + 1;
+								//printf( "skipping node %s - y present & x present + rx %s > n %s\n", $rx, $n);
+								continue;
+							}
+							if( intval( $ry ) > $m )
+							{
+								//printf( "skipping node %s - y present & x present + ry %s > m %s\n", $ry, $m);
 								continue;
 							}
 						}
@@ -1415,7 +1428,10 @@ class ClusterImage {
 						}
 
 						if( !in_array( $host, $filtered_nodes ) )
+						{
+							printf( "setting node %s showinfo to 0 - not found in filtered_nodes", $host);
 							$nodes[$cur_node]->setShowinfo( 0 );
+						}
 
 						$nodes[$cur_node]->setCoords( $x, $y );
 						$nodes[$cur_node]->setImage( $image );
@@ -1426,6 +1442,8 @@ class ClusterImage {
 							$nodes[$cur_node]->drawSmall();
 						else if( $this->isBig() )
 							$nodes[$cur_node]->drawBig();
+
+						$cur_node++;
 					}
 					if( $this->isBig() ) 
 					{
@@ -1447,7 +1465,6 @@ class ClusterImage {
 						}
 					}
 
-					$cur_node++;
 				}
 			}
 
@@ -1482,7 +1499,9 @@ class ClusterImage {
 						$nodes[$host]->setImage( $image );
 
 						if( !in_array( $host, $filtered_nodes ) )
+						{
 							$nodes[$host]->setShowinfo( 0 );
+						}
 
 						if( $this->isSmall() )
 							$nodes[$host]->drawSmall();
