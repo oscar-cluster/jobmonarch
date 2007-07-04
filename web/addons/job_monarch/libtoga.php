@@ -1429,7 +1429,7 @@ class ClusterImage {
 
 						if( !in_array( $host, $filtered_nodes ) )
 						{
-							printf( "setting node %s showinfo to 0 - not found in filtered_nodes", $host);
+							//printf( "setting node %s showinfo to 0 - not found in filtered_nodes", $host);
 							$nodes[$cur_node]->setShowinfo( 0 );
 						}
 
