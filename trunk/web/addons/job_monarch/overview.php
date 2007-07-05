@@ -24,6 +24,7 @@
 
 global $GANGLIA_PATH, $clustername, $tpl, $filter, $cluster, $get_metric_string, $cluster_url, $sh;
 global $hosts_up, $m, $start, $end, $filterorder, $COLUMN_REQUESTED_MEMORY, $COLUMN_QUEUED, $COLUMN_NODES, $hostname, $piefilter;
+global $longtitle, $title;
 
 $tpl->assign( "clustername", $clustername );
 
@@ -61,6 +62,7 @@ function setupFilterSettings()
 
 	session_start();
 
+	unset( $_SESSION["data"] );
 	$_SESSION["data"]	= &$myxml_data;
 
 	$ic			= new ClusterImage( $myxml_data, $clustername );
@@ -564,6 +566,19 @@ function makeOverview()
 
 	$last_displayed_job 	= null;
 
+	foreach( $metrics as $bhost => $bmetric )
+	{
+		foreach( $bmetric as $mname => $mval )
+		{
+			if( ( $mname == 'MONARCH-RJ' ) || ($mname == 'MONARCH-QJ') )
+			{
+				$rjqj_host	= $bhost;
+			}
+		}
+	}
+	//$rjqj_str =  "<IMG SRC=\"../../graph.php?z=small&c=$cluster_url&h=$rjqj_host&m=MONARCH-QJ&r=job&jr=$jobrange&js=$jobstart\">";
+	//printf( $rjqj_str, '' );
+
 	foreach( $sorted_jobs as $jobid => $sortdec ) 
 	{
 		$report_time 	= $jobs[$jobid][reported];
@@ -868,7 +883,14 @@ function makeOverview()
 		}
 	}
 
-	makeHeader( 'overview' );
+	//print_r( $metrics );
+
+	global $longtitle, $title;
+
+	$longtitle = "Batch Report :: Powered by Job Monarch!";
+	$title = "Batch Report";
+
+	makeHeader( 'overview', $title, $longtitle );
 
 	setupFilterSettings();
 

@@ -91,10 +91,10 @@ function epochToDatetime( $epoch ) {
         return strftime( "%d-%m-%Y %H:%M:%S", $epoch );
 }
 
-function makeHeader( $page_call ) {
+function makeHeader( $page_call, $title, $longtitle ) {
 
 	global $tpl, $grid, $context, $initgrid;
-	global $jobrange, $jobstart, $title, $longtitle;
+	global $jobrange, $jobstart;
 	global $page, $gridwalk, $clustername;
 	global $parentgrid, $physical, $hostname;
 	global $self, $filter, $cluster_url, $get_metric_string;
@@ -153,11 +153,14 @@ function makeHeader( $page_call ) {
 		$tpl->printToScreen();
 		exit;
 	}
+	$tpl->gotoBlock( "_ROOT" );
 
 	if( $view != "search" )
 		$tpl->assign( "refresh", $default_refresh );
 
 	$tpl->assign( "date", date("r") );
+	//printf("lg %s\n", $longtitle );
+	//printf("title %s\n", $title );
 	$tpl->assign( "longpage_title", $longtitle );
 	$tpl->assign( "page_title", $title );
 
@@ -206,15 +209,27 @@ function makeHeader( $page_call ) {
 	}
 
 	if (!count($metrics)) {
-		echo "<h4>Cannot find any metrics for selected cluster \"$clustername\", exiting.</h4>\n";       echo "Check ganglia XML tree (telnet $ganglia_ip $ganglia_port)\n";
+		echo "<h4>Cannot find any metrics for selected cluster \"$clustername\", exiting.</h4>\n";
+		echo "Check ganglia XML tree (telnet $ganglia_ip $ganglia_port)\n";
 		exit;
 	}
+	reset($metrics);
 	$firsthost = key($metrics);
-	foreach ($metrics[$firsthost] as $m => $foo)
-		$context_metrics[] = $m;
 
-	foreach ($reports as $r => $foo)
-		$context_metrics[] = $r;
+	$mmfh	= array();
+
+	$mmfh	= $metrics[$firsthost];
+
+	$context_metrics	= array();
+
+	//foreach ($mmfh as $mm => $mfoo)
+	foreach( $mmfh as $mm => $bla )
+	{
+		$context_metrics[] = $mm;
+	}
+
+	foreach ($reports as $mr => $mfoo)
+		$context_metrics[] = $mr;
 
 	$node_menu .= "<B><A HREF=\"./?c=".rawurlencode($clustername)."\">Joblist</A></B> ";
 
@@ -328,7 +343,7 @@ function makeHeader( $page_call ) {
 		$tpl->assignGlobal("form_name", $form_name );
 	}
 
-	if( $JOB_ARCHIVE && $page_call == 'index' ) {
+	if( $JOB_ARCHIVE && $page_call == 'overview' ) {
 		$tpl->newBlock( "search" );
 		$tpl->assignGlobal( "cluster_url", rawurlencode($clustername) );
 		$tpl->assignGlobal( "cluster", $clustername );
@@ -419,7 +434,7 @@ $tpl->prepare();
 
 $longtitle = "Batch Report :: Powered by Job Monarch!";
 $title = "Batch Report";
-makeHeader( 'index' );
+//makeHeader( 'index' );
 $tpl->assign("cluster_url", rawurlencode($clustername) );
 $tpl->assign("cluster", $clustername );
 
