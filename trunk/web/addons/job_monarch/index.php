@@ -339,24 +339,28 @@ function makeHeader( $page_call, $title, $longtitle ) {
 
 	//$ex_fn = $tpl->getVarValue( "_ROOT", "form_name" );
 
-	$context_ranges[]="hour";
-	$context_ranges[]="day";
-	$context_ranges[]="week";
-	$context_ranges[]="month";
-	$context_ranges[]="year";
-	$context_ranges[]="job";
+	if( $view != "search" )
+	{
+		$context_ranges[]="hour";
+		$context_ranges[]="day";
+		$context_ranges[]="week";
+		$context_ranges[]="month";
+		$context_ranges[]="year";
+		$context_ranges[]="job";
 
-	$range_menu = "<B>Last</B>&nbsp;&nbsp;" ."<SELECT NAME=\"r\" OnChange=\"toga_form.submit();\">\n";
-	foreach ($context_ranges as $v) {
-		$url=rawurlencode($v);
-		$range_menu .= "<OPTION VALUE=\"$url\" ";
-		if ($v == $range)
-			$range_menu .= "SELECTED";
-		$range_menu .= ">$v\n";
+		$range_menu = "<B>Last</B>&nbsp;&nbsp;" ."<SELECT NAME=\"r\" OnChange=\"toga_form.submit();\">\n";
+		foreach ($context_ranges as $v) {
+			$url=rawurlencode($v);
+			$range_menu .= "<OPTION VALUE=\"$url\" ";
+			if ($v == $range)
+				$range_menu .= "SELECTED";
+			$range_menu .= ">$v\n";
+		}
+		$range_menu .= "</SELECT>\n";
+
+		$tpl->assign("range_menu", $range_menu);
+
 	}
-	$range_menu .= "</SELECT>\n";
-
-	$tpl->assign("range_menu", $range_menu);
 
 	if( $view == "search" or $view == "host" ) {
 

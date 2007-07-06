@@ -260,6 +260,11 @@ function makeSearchPage() {
 	//printf("job_start = %s job_stop = %s\n", $job_start, $job_stop );
 	//printf("start = %s stop = %s\n", $start, $stop );
 
+	$longtitle = "Batch Archive Search :: Powered by Job Monarch!";
+	$title = "Batch Archive Search";
+
+	makeHeader( 'search', $title, $longtitle );
+
 	$tpl->assign( "cluster", $clustername );
 	$tpl->assign( "id_value", $id );
 	$tpl->assign( "user_value", $user );
