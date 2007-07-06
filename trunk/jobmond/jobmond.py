@@ -343,7 +343,7 @@ class DataProcessor:
 
 			gm = Gmetric( GMETRIC_TARGET_HOST, GMETRIC_TARGET_PORT )
 
-			gm.send( str( metricname ), str( metricval ), str( self.dmax ), units )
+			gm.send( str( metricname ), str( metricval ), str( self.dmax ), units, valtype )
 
 		else:
 			try:
@@ -937,12 +937,14 @@ class Gmetric:
 		else:
 			return 'udp'
 
-	def send( self, name, value, dmax, units = '' ):
+	def send( self, name, value, dmax, type = '', units = '' ):
 
 		if len( units ) == 0:
 			units		= self.unitstr
+		if len( type ) == 0:
+			typestr		= self.type
 
-		msg             = self.makexdr( name, value, self.type, units, self.slopestr, self.tmax, dmax )
+		msg             = self.makexdr( name, value, typestr, units, self.slopestr, self.tmax, dmax )
 
 		return self.socket.sendto( msg, self.hostport )
 
