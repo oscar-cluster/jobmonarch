@@ -1,6 +1,6 @@
 <?php
 //
-$SORTBY_HOSTNAME = "rack{x}node{y}.mydomain.mysite.com";
+$SORTBY_HOSTNAME = "rack{x}node{y}.mydomain.mytld";
 $SORT_ORDER = "asc";
 
 $SORT_XLABEL = "rack";
