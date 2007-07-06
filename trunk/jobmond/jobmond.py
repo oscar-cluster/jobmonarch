@@ -343,7 +343,7 @@ class DataProcessor:
 
 			gm = Gmetric( GMETRIC_TARGET_HOST, GMETRIC_TARGET_PORT )
 
-			gm.send( str( metricname ), str( metricval ), str( self.dmax ), units, valtype )
+			gm.send( str( metricname ), str( metricval ), str( self.dmax ), valtype, units )
 
 		else:
 			try:
