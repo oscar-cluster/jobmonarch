@@ -238,7 +238,7 @@ function makeHeader( $page_call, $title, $longtitle ) {
 
 	$node_menu .= "<B><A HREF=\"./?c=".rawurlencode($clustername)."\">Joblist</A></B> ";
 
-	if( isset( $hostname ) ) {
+	if( isset( $hostname ) && ( $view != 'host' ) ) {
 
 		$node_menu .= "<B>&gt;</B>\n";
 		$href = "<A HREF=\"./?c=".rawurlencode($clustername)."&h=".$hostname."\">";
@@ -298,19 +298,23 @@ function makeHeader( $page_call, $title, $longtitle ) {
 
 		//print_r( $context_metrics );
 
-		if (is_array($context_metrics) ) {
-			$metric_menu = "<B>Metric</B>&nbsp;&nbsp;"
-				."<SELECT NAME=\"m\" OnChange=\"toga_form.submit();\">\n";
+		if( $page_call != "host_view" )
+		{
 
-			sort($context_metrics);
-			foreach( $context_metrics as $k ) {
-				$url = rawurlencode($k);
-				$metric_menu .= "<OPTION VALUE=\"$url\" ";
-				if ($k == $metricname )
-					$metric_menu .= "SELECTED";
-				$metric_menu .= ">$k\n";
+			if (is_array($context_metrics) ) {
+				$metric_menu = "<B>Metric</B>&nbsp;&nbsp;"
+					."<SELECT NAME=\"m\" OnChange=\"toga_form.submit();\">\n";
+
+				sort($context_metrics);
+				foreach( $context_metrics as $k ) {
+					$url = rawurlencode($k);
+					$metric_menu .= "<OPTION VALUE=\"$url\" ";
+					if ($k == $metricname )
+						$metric_menu .= "SELECTED";
+					$metric_menu .= ">$k\n";
+				}
+				$metric_menu .= "</SELECT>\n";
 			}
-			$metric_menu .= "</SELECT>\n";
 
 		}
 
