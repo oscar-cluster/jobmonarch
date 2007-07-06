@@ -1,0 +1,94 @@
+Most Job Monarch releases (and their configs) should be backwards compatible with
+previous version. However, should there be any changes that has significant effect on the
+operation, tips and suggestions will be given here.
+
+0.2 -> 0.2.1
+============
+
+web)
+	* Now supports per-cluster specific settings
+
+	This enables you to override any setting of the webfrontend's conf.php on a per-cluster basis.
+
+	You can do this by including separate conf files as follows:
+
+	$CLUSTER_CONFS["My Cluster"]          = "/path/to/clusterconf/mycluster.php";
+
+
+	* Now supports parsing hostname location for building the ClusterImage as seen on the overview
+
+	This enables you to graphically display your cluster as it might be physically located in the racks
+	or computer floor, assuming that this is part of the hostname somehow.
+
+	If for example, your hosts are named: r<racknumber>n<nodenumber>
+
+	You can configure the webfrontend to parse racknumber as a X coordinate and nodenumber as Y coordinate.
+
+	Since your Grid/Cluster hostnames will probably be different per-cluster, you will probably only want to
+	configure this using a cluster-specific config file, as mentioned above.
+
+	Then you can create the following configuration options that will specify from which position in the hostname
+	the X and Y coordinate will be parsed:
+
+	<?php
+	//
+	$SORTBY_HOSTNAME = "r{x}n{y}.mydomain.tld";
+	$SORT_ORDER = "asc";
+
+	$SORT_XLABEL = "rack";
+	$SORT_YLABEL = "node";
+	?>
+
+jobmond)
+	* Now supports native Gmetric support, without the use of any external libraries or binaries.
+
+	This enables jobmond to transmit it's data much faster and efficient. To make use of this, you
+	have to set where jobmond should send it's metric's to. This is defined in jobmond.conf:
+
+	# Target of Gmetric's: where should we report to
+	# (usually: your udp_send_channel from gmond)
+	#
+	# Syntax: <ip>:<port>
+	#
+	GMETRIC_TARGET          : 239.2.11.71:8649
+
+	Should you choose not to configure this, jobmond will fail back to it's old binary style submission
+	of Gmetric's using Ganglia.
+
+	* Now supports the use of syslog for errors.
+
+	Should jobmond by freak accident crash, you can find in the syslog why this happened.
+
+	To configure this you have to enable it in your jobmond.conf:
+
+	 
+	# Enable logging to syslog? 
+	# 
+	USE_SYSLOG                      : 1 
+
+	# What level msg'es should be logged to syslog? 
+	# 
+	# usually: lvl 0 (errors) 
+	# 
+	SYSLOG_LEVEL                    : 0 
+
+	# Which facility to use in syslog 
+	# 
+	# Known: 
+	#       KERN, USER, MAIL, DAEMON, AUTH, LPR, 
+	#       NEWS, UUCP, CRON and LOCAL0 through LOCAL7 
+	# 
+	SYSLOG_FACILITY                 : DAEMON 
+
+jobarchived)
+
+	- Now supports the py-rrdtool library, in stead of rrd pipes.
+
+	This enables Jobarchived to write it's archive to disk MUCH MUCH faster and efficient than before.
+	It's HIGHLY RECOMMENDED to do this, since this will increase performance significantly!
+
+	To make use of this, simply install the 'py-rrdtool' Python module as mentioned in the README.
+	Jobarchived will automatically detect that py-rrdtool is available and make use of it.
+
+	Should you choose not to install it, Jobarchived fails back to it's old rrd pipe based writing of data.
+

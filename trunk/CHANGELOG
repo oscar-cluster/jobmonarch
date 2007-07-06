@@ -11,7 +11,10 @@
 		a:	jobmonarch logo image
 			thank to: Robin Day
 			for the design
+		a:	rrd graph of running/queued jobs to overview
 
+		c:	host archive view is now more complete and detailed in the same manner as
+			Ganglia's own host view
 		c:	host view available metric list is now compiled from disk,
 			so that the detailed archive host view works even when it is currently down.
 		c:	removed size restrictions from detailed host archive view
@@ -24,11 +27,12 @@
 			thanks to: Alexis Michon - alexis(d.o.t)michon(a.t)ibcp(d.o.t)fr
 			for reporting the bug and suggesting a patch
 		f:	bug where jobstart redline indicator in host detail graphs was set incorrectly
-			due to a miscalculation in job times
+			or not at all due to a miscalculation in job times
 
 	jobmond)
 
 		a:	syslog support
+		a:	report number of running/queued jobs as seperate metric
 
 		c:	native gmetric support, much faster and cleaner!
 			thanks to: Nick Galbreath - nickg(a.t)modp(d.o.t)com
