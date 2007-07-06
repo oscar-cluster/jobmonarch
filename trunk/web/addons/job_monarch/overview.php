@@ -24,7 +24,7 @@
 
 global $GANGLIA_PATH, $clustername, $tpl, $filter, $cluster, $get_metric_string, $cluster_url, $sh;
 global $hosts_up, $m, $start, $end, $filterorder, $COLUMN_REQUESTED_MEMORY, $COLUMN_QUEUED, $COLUMN_NODES, $hostname, $piefilter;
-global $longtitle, $title;
+global $longtitle, $title, $range;
 
 $tpl->assign( "clustername", $clustername );
 
@@ -501,10 +501,11 @@ function sortJobs( $jobs, $sortby, $sortorder )
 function makeOverview() 
 {
 	global $jobs, $nodes, $heartbeat, $clustername, $tpl;
-	global $sortorder, $sortby, $filter, $sh, $hc, $m;
+	global $sortorder, $sortby, $filter, $sh, $hc, $m, $range;
 	global $cluster_url, $get_metric_string, $host_url, $metrics;
 	global $start, $end, $reports, $gnodes, $default_showhosts;
 	global $COLUMN_QUEUED, $COLUMN_REQUESTED_MEMORY, $COLUMN_NODES, $hostname;
+	global $cluster;
 
 	$metricname		= $m;
 
@@ -566,18 +567,11 @@ function makeOverview()
 
 	$last_displayed_job 	= null;
 
-	foreach( $metrics as $bhost => $bmetric )
-	{
-		foreach( $bmetric as $mname => $mval )
-		{
-			if( ( $mname == 'MONARCH-RJ' ) || ($mname == 'MONARCH-QJ') )
-			{
-				$rjqj_host	= $bhost;
-			}
-		}
-	}
-	//$rjqj_str =  "<IMG SRC=\"../../graph.php?z=small&c=$cluster_url&h=$rjqj_host&m=MONARCH-QJ&r=job&jr=$jobrange&js=$jobstart\">";
-	//printf( $rjqj_str, '' );
+	$rjqj_str =  "<IMG SRC=\"./graph.php?z=small&c=$clustername&g=job_report&r=$range&st=$cluster[LOCALTIME]\">";
+
+	$tpl->gotoBlock( "_ROOT" );
+
+	$tpl->assign( "rjqj_graph", $rjqj_str );
 
 	foreach( $sorted_jobs as $jobid => $sortdec ) 
 	{

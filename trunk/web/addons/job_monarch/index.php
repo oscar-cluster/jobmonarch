@@ -25,13 +25,18 @@
 ini_set("memory_limit","80M");
 set_time_limit(0);
 
+
+$my_dir = getcwd();
+
+global $r, $range;
+
+include_once "./libtoga.php";
+
 if ( !empty( $_GET ) ) {
 	extract( $_GET );
 }
 
-$my_dir = getcwd();
-
-include_once "./libtoga.php";
+//printf( "r2%s\n", $range );
 
 global $GANGLIA_PATH;
 chdir( $GANGLIA_PATH );
@@ -101,7 +106,7 @@ function makeHeader( $page_call, $title, $longtitle ) {
 	global $metrics, $reports, $m, $default_metric;
 	global $default_refresh, $filterorder, $view;
 	global $JOB_ARCHIVE, $period_start, $period_stop, $h, $id;
-	global $job_start, $job_stop;
+	global $job_start, $job_stop, $range, $r;
 	
 	if( isset($default_metric) and !isset($m) )
 		$metricname = $default_metric;
@@ -286,13 +291,16 @@ function makeHeader( $page_call, $title, $longtitle ) {
 	$tpl->gotoBlock( "_ROOT" );
 	$tpl->assignGlobal("view", $view);
 
+
 	if( array_key_exists( "id", $filter ) or isset($hostname) ) {
+
+		$range = "job";
 
 		//print_r( $context_metrics );
 
 		if (is_array($context_metrics) ) {
 			$metric_menu = "<B>Metric</B>&nbsp;&nbsp;"
-				."<SELECT NAME=\"m\" OnChange=\"".$form_name.".submit();\">\n";
+				."<SELECT NAME=\"m\" OnChange=\"toga_form.submit();\">\n";
 
 			sort($context_metrics);
 			foreach( $context_metrics as $k ) {
@@ -330,6 +338,25 @@ function makeHeader( $page_call, $title, $longtitle ) {
 	}
 
 	//$ex_fn = $tpl->getVarValue( "_ROOT", "form_name" );
+
+	$context_ranges[]="hour";
+	$context_ranges[]="day";
+	$context_ranges[]="week";
+	$context_ranges[]="month";
+	$context_ranges[]="year";
+	$context_ranges[]="job";
+
+	$range_menu = "<B>Last</B>&nbsp;&nbsp;" ."<SELECT NAME=\"r\" OnChange=\"toga_form.submit();\">\n";
+	foreach ($context_ranges as $v) {
+		$url=rawurlencode($v);
+		$range_menu .= "<OPTION VALUE=\"$url\" ";
+		if ($v == $range)
+			$range_menu .= "SELECTED";
+		$range_menu .= ">$v\n";
+	}
+	$range_menu .= "</SELECT>\n";
+
+	$tpl->assign("range_menu", $range_menu);
 
 	if( $view == "search" or $view == "host" ) {
 

@@ -326,7 +326,7 @@ class DataProcessor:
 
 		return incompatible
 
-	def multicastGmetric( self, metricname, metricval, valtype='string' ):
+	def multicastGmetric( self, metricname, metricval, valtype='string', units='' ):
 
 		"""Call gmetric binary and multicast"""
 
@@ -347,7 +347,7 @@ class DataProcessor:
 
 			gm = Gmetric( GMETRIC_TARGET_HOST, GMETRIC_TARGET_PORT )
 
-			gm.send( str( metricname ), str( metricval ), str( self.dmax ) )
+			gm.send( str( metricname ), str( metricval ), str( self.dmax ), units )
 
 		else:
 			try:
@@ -358,6 +358,10 @@ class DataProcessor:
 				debug_msg( 10, 'Assuming /etc/gmond.conf for gmetric cmd (ommitting)' )
 
 			cmd = cmd + ' -n' + str( metricname )+ ' -v"' + str( metricval )+ '" -t' + str( valtype ) + ' -d' + str( self.dmax )
+
+			if len( units ) > 0:
+
+				cmd = cmd + ' -u"' + units + '"'
 
 			debug_msg( 10, printTime() + ' ' + cmd )
 
@@ -775,6 +779,22 @@ class PbsDataGatherer( DataGatherer ):
 
 		self.dp.multicastGmetric( 'MONARCH-HEARTBEAT', str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
 
+		running_jobs	= 0
+		queued_jobs	= 0
+
+		for jobid, jobattrs in self.jobs.items():
+
+			if jobattrs[ 'status' ] == 'Q':
+
+				queued_jobs += 1
+
+			elif jobattrs[ 'status' ] == 'R':
+
+				running_jobs += 1
+
+		self.dp.multicastGmetric( 'MONARCH-RJ', str( running_jobs ), 'uint32', 'jobs' )
+		self.dp.multicastGmetric( 'MONARCH-QJ', str( queued_jobs ), 'uint32', 'jobs' )
+
 		# Now let's spread the knowledge
 		#
 		for jobid, jobattrs in self.jobs.items():
@@ -921,9 +941,12 @@ class Gmetric:
 		else:
 			return 'udp'
 
-	def send( self, name, value, dmax ):
+	def send( self, name, value, dmax, units = '' ):
 
-		msg             = self.makexdr( name, value, self.type, self.unitstr, self.slopestr, self.tmax, dmax )
+		if len( units ) == 0:
+			units		= self.unitrs
+
+		msg             = self.makexdr( name, value, self.type, units, self.slopestr, self.tmax, dmax )
 
 		return self.socket.sendto( msg, self.hostport )
 
