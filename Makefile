@@ -16,22 +16,26 @@ tarball:	tarball-gzip tarball-bzip
 
 tarball-gzip:	${REQUIRED}
 	mkdir -p ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}
-	( rsync -a --exclude=.svn . ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION} )
+	( rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
+	. ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION} )
 	( cd ${TMPDIR}/.monarch_buildroot; tar zcvf ganglia_jobmonarch-${VERSION}.tar.gz ./ganglia_jobmonarch-${VERSION} )
 	mv ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}.tar.gz ..
 
 tarball-bzip:	${REQUIRED}
 	mkdir -p ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}
-	( rsync -a --exclude=.svn . ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION} )
+	( rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
+	. ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION} )
 	( cd ${TMPDIR}/.monarch_buildroot; tar jcvf ganglia_jobmonarch-${VERSION}.tar.bz2 ./ganglia_jobmonarch-${VERSION} )
 	mv ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}.tar.bz2 ..
 
 deb-webfrontend:	${REQUIRED}
 	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN >/dev/null
 	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/${WEBDIR} >/dev/null
-	( cd web; rsync -a --exclude=.svn . ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/${WEBDIR} )
+	( cd web; rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
+	. ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/${WEBDIR} )
 	( cd pkg/deb/web/DEBIAN; \
-	rsync -a --exclude=.svn . ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN )
+	rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
+	. ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN )
 	( cd ${TMPDIR}/.monarch_buildroot/; cat jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control \
 	| sed "s/^Version:.*$//Version: ${VERSION}-${RELEASE}/g" >jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control.new; \
 	mv jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control.new \
@@ -52,7 +56,8 @@ deb-jobarchived:	${REQUIRED}
 	install jobarchived/job_dbase.sql \
 	${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/usr/share/jobarchived
 	( cd pkg/deb/jobarchived/DEBIAN; \
-	rsync -a --exclude=.svn . ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN )
+	rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
+	. ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN )
 	( cd ${TMPDIR}/.monarch_buildroot/; cat jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control \
 	| sed "s/^Version:.*$//Version: ${VERSION}-${RELEASE}/g" >jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control.new; \
 	mv jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control.new \
@@ -70,7 +75,8 @@ deb-jobmond:	${REQUIRED}
 	install jobmond/jobmond.conf ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/etc
 	install pkg/init.d/jobmond ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/etc/init.d
 	( cd pkg/deb/jobmond/DEBIAN; \
-	rsync -a --exclude=.svn . ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN )
+	rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
+	. ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN )
 	( cd ${TMPDIR}/.monarch_buildroot/; cat jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control \
 	| sed "s/^Version:.*$//Version: ${VERSION}-${RELEASE}/g" >jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control.new; \
 	mv jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control.new jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control )
@@ -127,7 +133,8 @@ rpm-jobarchived:	${REQUIRED}
 rpm-webfrontend:	${REQUIRED}
 	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}/${WEBDIR} >/dev/null
 	( cd web; \
-	rsync -a --exclude=.svn . ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}/${WEBDIR} )
+	rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
+	. ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}/${WEBDIR} )
 	cp pkg/rpm/jobmonarch-webfrontend.spec \
 	${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}/jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec
 	( cd ${TMPDIR}/.monarch_buildroot/; \
