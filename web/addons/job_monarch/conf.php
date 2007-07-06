@@ -82,7 +82,4 @@ $RRDTOOL = "/usr/bin/rrdtool";
 //
 //$CLUSTER_CONFS["Example Cluster"]	= "./clusterconf/example.php";
 //
-$CLUSTER_CONFS["LISA Cluster"]		= "./clusterconf/lisa-example.php";
-$CLUSTER_CONFS["GINA Cluster"]		= "./clusterconf/gina-example.php";
-$CLUSTER_CONFS["MATRIX Cluster"]	= "./clusterconf/matrix-example.php";
 ?>
