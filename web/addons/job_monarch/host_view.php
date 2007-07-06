@@ -73,13 +73,13 @@ function makeHostView() {
 	$trd = new TarchRrdGraph( $clustername, $hostname );
 	$rrdirs = $trd->getRrdDirs( $period_start, $period_stop );
 
-	$metrics = $metrics[$hostname];
-	$mymetrics = array();
-
 	$longtitle = "Batch Archive Node Report :: Powered by Job Monarch!";
 	$title = "Batch Archive Node Report";
 
 	makeHeader( 'host_view', $title, $longtitle );
+
+	$metrics = $metrics[$hostname];
+	$mymetrics = array();
 
 	foreach( $rrdirs as $rrdir ) 
 	{
@@ -121,7 +121,8 @@ function makeHostView() {
 
 	$cluster_url=rawurlencode($clustername);
 	$tpl->assign("cluster_url", $cluster_url);
-	$tpl->assign("graphargs", "h=$hostname&$get_metric_string&st=$cluster[LOCALTIME]&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop");
+	//$tpl->assign("graphargs", "h=$hostname&$get_metric_string&st=$cluster[LOCALTIME]&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop");
+	$tpl->assign("graphargs", "h=$hostname&$get_metric_string&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop");
 
 	# For the node view link.
 	$tpl->assign("node_view","./?p=2&c=$cluster_url&h=$hostname");
@@ -150,8 +151,10 @@ function makeHostView() {
 		  continue;
 	       else
 		  {
-		     $graphargs = "c=$cluster_url&h=$hostname&v=$v[VAL]&m=$name"
-		       ."&z=medium&st=$cluster[LOCALTIME]&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop";
+		     //$graphargs = "c=$cluster_url&h=$hostname&v=$v[VAL]&m=$name"
+		     //  ."&z=medium&st=$cluster[LOCALTIME]&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop";
+		     $graphargs = "c=$cluster_url&h=$hostname&m=$name"
+		       ."&z=medium&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop";
 		     # Adding units to graph 2003 by Jason Smith <smithj4@bnl.gov>.
 		     if ($v[UNITS]) {
 			$encodeUnits = rawurlencode($v[UNITS]);
