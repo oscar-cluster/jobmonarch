@@ -567,11 +567,28 @@ function makeOverview()
 
 	$last_displayed_job 	= null;
 
-	$rjqj_str =  "<IMG SRC=\"./graph.php?z=small&c=$clustername&g=job_report&r=$range&st=$cluster[LOCALTIME]\">";
+	$rjqj_host		= null;
 
-	$tpl->gotoBlock( "_ROOT" );
+	foreach( $metrics as $bhost => $bmetric )
+	{
+		foreach( $bmetric as $mname => $mval )
+		{
+			if( ( $mname == 'MONARCH-RJ' ) || ($mname == 'MONARCH-QJ') )
+			{
+				$rjqj_host      = $bhost;
+			}
+		}
+	}
 
-	$tpl->assign( "rjqj_graph", $rjqj_str );
+	if( $rjqj_host != null )
+	{
+
+		$rjqj_str =  "<IMG SRC=\"./graph.php?z=small&c=$clustername&g=job_report&r=$range&st=$cluster[LOCALTIME]\">";
+
+		$tpl->gotoBlock( "_ROOT" );
+
+		$tpl->assign( "rjqj_graph", $rjqj_str );
+	}
 
 	foreach( $sorted_jobs as $jobid => $sortdec ) 
 	{
