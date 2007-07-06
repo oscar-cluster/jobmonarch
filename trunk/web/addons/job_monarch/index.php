@@ -106,7 +106,7 @@ function makeHeader( $page_call, $title, $longtitle ) {
 	global $metrics, $reports, $m, $default_metric;
 	global $default_refresh, $filterorder, $view;
 	global $JOB_ARCHIVE, $period_start, $period_stop, $h, $id;
-	global $job_start, $job_stop, $range, $r;
+	global $job_start, $job_stop, $range, $r, $metricname;
 	
 	if( isset($default_metric) and !isset($m) )
 		$metricname = $default_metric;
@@ -285,7 +285,7 @@ function makeHeader( $page_call, $title, $longtitle ) {
 		}
 	}
 
-	$m = $metricname;
+	//$m = $metricname;
 
 
 	$tpl->gotoBlock( "_ROOT" );

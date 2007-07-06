@@ -22,7 +22,7 @@
  * SVN $Id$
  */
 
-global $clustername, $tpl;
+global $clustername, $tpl, $m, $metric;
 
 function validateFormInput() {
 	global $clustername, $tpl, $id, $user, $name, $start_from_time, $start_to_time, $queue;
@@ -254,11 +254,12 @@ function makeSearchPage() {
 	global $clustername, $tpl, $id, $user, $name, $start_from_time, $start_to_time, $queue;
 	global $end_from_time, $end_to_time, $filter, $default_showhosts, $m, $hosts_up, $hc;
 	global $period_start, $period_stop, $sortby, $sortorder, $COLUMN_REQUESTED_MEMORY;
-	global $SEARCH_RESULT_LIMIT, $COLUMN_NODES;
+	global $SEARCH_RESULT_LIMIT, $COLUMN_NODES, $metricname;
 
-	$metricname = $m;
+	//$metricname = $m;
 	//printf("job_start = %s job_stop = %s\n", $job_start, $job_stop );
 	//printf("start = %s stop = %s\n", $start, $stop );
+	//printf("m %s\n", $metricname );
 
 	$longtitle = "Batch Archive Search :: Powered by Job Monarch!";
 	$title = "Batch Archive Search";

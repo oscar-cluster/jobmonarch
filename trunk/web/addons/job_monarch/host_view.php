@@ -76,6 +76,11 @@ function makeHostView() {
 	$metrics = $metrics[$hostname];
 	$mymetrics = array();
 
+	$longtitle = "Batch Archive Node Report :: Powered by Job Monarch!";
+	$title = "Batch Archive Node Report";
+
+	makeHeader( 'host_view', $title, $longtitle );
+
 	foreach( $rrdirs as $rrdir ) 
 	{
 		$ml	= $trd->dirList( $rrdir );
