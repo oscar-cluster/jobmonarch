@@ -334,10 +334,6 @@ class DataProcessor:
 
 		if GMETRIC_TARGET:
 
-			from gmetric import Gmetric
-
-		if GMETRIC_TARGET:
-
 			GMETRIC_TARGET_HOST	= GMETRIC_TARGET.split( ':' )[0]
 			GMETRIC_TARGET_PORT	= GMETRIC_TARGET.split( ':' )[1]
 
@@ -944,7 +940,7 @@ class Gmetric:
 	def send( self, name, value, dmax, units = '' ):
 
 		if len( units ) == 0:
-			units		= self.unitrs
+			units		= self.unitstr
 
 		msg             = self.makexdr( name, value, self.type, units, self.slopestr, self.tmax, dmax )
 
