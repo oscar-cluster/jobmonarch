@@ -94,7 +94,7 @@ include_once "./conf.php";
 include_once "./functions.php";
 include_once "./ganglia.php";
 include_once "./get_context.php";
-unset( $start );
+//unset( $start );
 $context = 'cluster';
 include_once "./get_ganglia.php";
 
@@ -116,6 +116,7 @@ global $default_metric;
 // Ganglia's array of host metrics
 //
 global $metrics, $hosts_up;
+global $range, $start;
 
 global $DATETIME_FORMAT;
 

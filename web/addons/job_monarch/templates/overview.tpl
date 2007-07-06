@@ -6,6 +6,7 @@
 
   <TD>
 
+
 <TABLE ALIGN=CENTER class="overview" cellpadding="5">
 
 <COL id="kol1">
@@ -110,6 +111,9 @@ View
 </TR>
 
 </TABLE>
+
+<BR>
+{rjqj_graph}
 
   <TD ALIGN="CENTER"><CENTER>
 <!-- INCLUDESCRIPT BLOCK : ci_script -->

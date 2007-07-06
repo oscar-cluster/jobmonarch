@@ -22,11 +22,23 @@
  * SVN $Id$
  */
 
-include_once "./libtoga.php";
+global $metrics, $rrds, $range, $start, $r;
+$range = $r;
+
+include "./libtoga.php";
 
 if ( !empty( $_GET ) ) {
         extract( $_GET );
 }
+
+//printf( "st%s\n", $st);
+$sourcetime = $st;
+//printf( "st%s\n", $sourcetime);
+
+//printf( "%s\n", $rrds );
+//printf( "r%s\n", $range);
+//printf( "s %s\n", $start);
+//printf( "e %s\n", $end);
 
 # Graph specific variables
 $size = escapeshellcmd( rawurldecode( $HTTP_GET_VARS["z"] ));
@@ -38,7 +50,7 @@ $min = escapeshellcmd( rawurldecode( $HTTP_GET_VARS["n"] ));
 $value = escapeshellcmd( rawurldecode( $HTTP_GET_VARS["v"] ));
 $load_color = escapeshellcmd( rawurldecode( $HTTP_GET_VARS["l"] ));
 $vlabel = escapeshellcmd( rawurldecode( $HTTP_GET_VARS["vl"] ));
-$sourcetime = escapeshellcmd($HTTP_GET_VARS["st"]);
+//$sourcetime = escapeshellcmd($HTTP_GET_VARS["st"]);
 
 $cluster = $c;
 $metricname = ($g) ? $g : $m;
@@ -119,6 +131,48 @@ if (isset($graph)) {
 
 			$def_nr++;
 		}
+
+	} else if ($graph == "job_report") {
+		$style = "Jobs";
+
+		//$upper_limit = "--upper-limit 100 --rigid";
+		$lower_limit = "--lower-limit 0 --rigid";
+		$vertical_label = "--vertical-label Jobs";
+
+		$def_nr = 0;
+
+		foreach( $metrics as $bhost => $bmetric )
+		{
+			foreach( $bmetric as $mname => $mval )
+			{
+				if( ( $mname == 'MONARCH-RJ' ) || ($mname == 'MONARCH-QJ') )
+				{
+					$rjqj_host      = $bhost;
+				}
+			}
+		}
+
+		$rrd_dir = "$rrds/$clustername/$rjqj_host/";
+
+		$rj_rrd	= $rrd_dir . "MONARCH-RJ.rrd";
+		$qj_rrd	= $rrd_dir . "MONARCH-QJ.rrd";
+
+		$sorted_hosts	= array();
+		$sorted_hosts[]	= $rjqj_host;
+
+		//printf( "rjqjh %s\n", $rjqj_host);
+
+		//printf( "rrdd %s\n", $rrd_dir );
+
+		$rj_str = ":'Running Jobs'";
+		$qj_str = ":'Queued Jobs'";
+
+		$series .= "DEF:'running_jobs'='${rj_rrd}':'sum':AVERAGE "
+			."DEF:'queued_jobs'='${qj_rrd}':'sum':AVERAGE "
+
+		
+			."LINE3:'running_jobs'#ff0000${rj_str} "
+			."LINE3:'queued_jobs'#999999${qj_str} ";
 
 	} else if ($graph == "mem_report") {
 		$style = "Memory";
@@ -434,6 +488,25 @@ function determineXGrid( $p_start, $p_stop ) {
 
 $lower_limit = "--lower-limit 0";
 
+# Calculate time range.
+if( isset($sourcetime) )
+{
+	//printf("yay");
+
+	$end = $sourcetime;
+	# Get_context makes start negative.
+	$start = $sourcetime + $start;
+
+	# Fix from Phil Radden, but step is not always 15 anymore.
+	if ($range=="month")
+		$end = floor($end / 672) * 672;
+
+	$command = RRDTOOL . " graph - --start $start --end $end ".
+		"--width $width --height $height $lower_limit ".
+		"--title '$title' $extras $background ".
+		$series;
+}
+
 #
 # Generate the rrdtool graph command.
 #
@@ -441,10 +514,13 @@ $lower_limit = "--lower-limit 0";
 #	"--width $width --height $height $upper_limit $lower_limit ".
 #	"--title '$title' $vertical_label $extras $background $xgrid ".
 #	$series;
-$command = RRDTOOL . " graph - --start $period_start --end $period_stop ".
-	"--width $width --height $height $lower_limit ".
-	"--title '$title' $extras $background ".
-	$series;
+
+else {
+	$command = RRDTOOL . " graph - --start $period_start --end $period_stop ".
+		"--width $width --height $height $lower_limit ".
+		"--title '$title' $extras $background ".
+		$series;
+}
 
 $debug=0;
 
