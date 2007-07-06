@@ -37,6 +37,8 @@ Job Monarch's web frontend.
 "/var/www/ganglia/templates/job_monarch/cluster_extra.tpl"
 "/var/www/ganglia/templates/job_monarch/host_extra.tpl"
 %dir "/var/www/ganglia/addons/job_monarch/"
+%dir "/var/www/ganglia/addons/job_monarch/clusterconf/"
+"/var/www/ganglia/addons/job_monarch/clusterconf/example.php"
 %dir "/var/www/ganglia/addons/job_monarch/templates/"
 "/var/www/ganglia/addons/job_monarch/templates/overview.tpl"
 "/var/www/ganglia/addons/job_monarch/templates/search.tpl"
