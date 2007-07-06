@@ -2,7 +2,7 @@
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
-if [ -x /etc/init.d/jobarchived ] && [ -x /usr/sbin/jobarchived ]
+if [ -x /etc/init.d/jobarchived ] && [ -x /usr/bin/jobarchived ]
 	then
 
 		if [ -d /usr/sara ]
