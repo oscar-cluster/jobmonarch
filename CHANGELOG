@@ -6,8 +6,9 @@
 	web)
 		a:	allow per-cluster settings/override options: see CLUSTER_CONFS option
 		a:	clusterimage can now draw nodes at x,y position parsed from hostname
+			see SORTBY_HOSTNAME for this in clusterconf/example.php
 		a:	clusterimage nodes are now clickable: has link to all jobs from that host
-		a:	clusterimage nodes now have a tooltip
+		a:	clusterimage nodes now have a tooltip: displays hostname and jobids for now
 		a:	jobmonarch logo image
 			thank to: Robin Day
 			for the design
@@ -15,8 +16,8 @@
 
 		c:	host archive view is now more complete and detailed in the same manner as
 			Ganglia's own host view
-		c:	host view available metric list is now compiled from disk,
-			so that the detailed archive host view works even when it is currently down.
+		c:	host archive view available metric list is now compiled from disk,
+			so that the detailed archive host view works even when the node is currently down.
 		c:	removed size restrictions from detailed host archive view
 
 		f:	archive search not properly resetting nodes list
@@ -28,13 +29,14 @@
 			for reporting the bug and suggesting a patch
 		f:	bug where jobstart redline indicator in host detail graphs was set incorrectly
 			or not at all due to a miscalculation in job times
+		f:	bug where hostimage headertext xoffset was miscalculated, causing the column names
+			to overlap their position when the columnname was longer than the columnvalues
 
 	jobmond)
 
 		a:	syslog support
-		a:	report number of running/queued jobs as seperate metric
-
-		c:	native gmetric support, much faster and cleaner!
+		a:	report number of running/queued jobs as seperate metrics
+		a:	native gmetric support, much faster and cleaner!
 			thanks to: Nick Galbreath - nickg(a.t)modp(d.o.t)com
 			for writing it and allowing inclusion in jobmond
 
@@ -56,14 +58,15 @@
 
 	jobarchived)
 
-		c:	now use py-rrdtool api instead of pipes, much faster!
+		a:	can now use py-rrdtool api instead of pipes, much faster!
 			install py-rrdtool to use this
 			backwards compatible fails back to pipes if module not installed
 
+		c:	all XML input was uniencoded, which could cause errors,
+			now all properly converted to normal strings
+
 		f:	autocreate clusterdirs in archivedir
 		f:	unhandled gather exception
-		f:	all XML input was uniencoded, which could cause errors
-			now all properly converted to normal strings
 		f:	incorrect stop_timestamping when jobs finished
 			thanks to: Alexis Michon - alexis(d.o.t)michon(a.t)ibcp(d.o.t)fr
 			for finding and debugging/testing it
