@@ -1681,12 +1681,12 @@ class HostImage {
 
 			$colorgreen	= imageColorAllocate( $this->image, 0, 200, 0 );
 
-			imageString( $this->image, $this->font, $xoffset, $this->y_offset, ucfirst( $headername ), $colorgreen );
-		
 			if( $headerlen < strlen( $headername ) )
 				$this->headerstrlen[$headername]	= strlen( $headername );
 
-			$xoffset	= $xoffset + ($this->fontwidth * ( $headerlen + 1 ) );
+			imageString( $this->image, $this->font, $xoffset, $this->y_offset, ucfirst( $headername ), $colorgreen );
+
+			$xoffset	= $xoffset + ($this->fontwidth * ( $this->headerstrlen[$headername] + 1 ) );
 
 		}
 		$this->newLineOffset();
