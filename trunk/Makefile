@@ -85,12 +85,14 @@ deb-jobmond:	${REQUIRED}
 
 rpm-jobmond:	${REQUIRED}
 	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/etc/init.d >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/usr/bin >/dev/null
-	install -m 755 jobmond/jobmond.py ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/usr/bin
-	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/usr/bin; \
+	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/etc/sysconfig >/dev/null
+	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/usr/sbin >/dev/null
+	install -m 755 jobmond/jobmond.py ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/usr/sbin
+	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/usr/sbin; \
 	ln -s jobmond.py jobmond || true)
 	install jobmond/jobmond.conf ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/etc
-	install pkg/init.d/jobmond ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/etc/init.d
+	install pkg/rpm/init.d/jobmond ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/etc/init.d
+	install pkg/rpm/sysconfig/jobmond ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/etc/sysconfig
 	cp pkg/rpm/jobmonarch-jobmond.spec \
 	${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/jobmonarch-jobmond-${VERSION}-${RELEASE}.spec
 	( cd ${TMPDIR}/.monarch_buildroot/; \
