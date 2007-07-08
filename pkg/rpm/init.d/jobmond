@@ -24,7 +24,7 @@ fi
 
 start() {
 	echo -n $"Starting $desc: "
-	daemon $prog $OPTIONS
+	daemon $prog -p /var/run/$name.pid $OPTIONS
 	RETVAL=$?
 	echo
 	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$name
