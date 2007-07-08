@@ -82,10 +82,14 @@ $trd = new TarchRrdGraph( $cluster, $hostname );
 $graph = $metricname;
 
 if (isset($graph)) {
-	$rrd_dirs = $trd->getRrdDirs( $period_start, $period_stop );
 	$series = '';
+	if( isset( $period_start ) && isset( $period_stop ) )
+	{
+		$rrd_dirs = $trd->getRrdDirs( $period_start, $period_stop );
+	}
 
 	if($graph == "cpu_report") {
+
 		$style = "CPU";
 		//printf("ik doe die shit!\n");
 
