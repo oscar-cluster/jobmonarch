@@ -30,13 +30,6 @@ fi
 #!/bin/sh
 
 /etc/init.d/jobmond stop
-
-
-%postun
-#!/bin/sh
-
-PATH=/bin:/sbin:/usr/bin:/usr/sbin
-
 chkconfig jobmond off
 
 
@@ -47,6 +40,7 @@ Job MonArch's monitoring daemon.
 
 %files
 "/etc/init.d/jobmond"
-"/usr/bin/jobmond.py"
-"/usr/bin/jobmond"
+%config "/etc/sysconfig/jobmond"
+"/usr/sbin/jobmond.py"
+"/usr/sbin/jobmond"
 %config "/etc/jobmond.conf"

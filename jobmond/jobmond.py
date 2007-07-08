@@ -41,8 +41,8 @@ def usage():
 
 def processArgs( args ):
 
-	SHORT_L		= 'hc:'
-	LONG_L		= [ 'help', 'config=' ]
+	SHORT_L		= 'p:hc:'
+	LONG_L		= [ 'help', 'config=', 'pidfile=' ]
 
 	global PIDFILE
 	PIDFILE		= None
@@ -893,6 +893,7 @@ class PbsDataGatherer( DataGatherer ):
 GMETRIC_DEFAULT_TYPE    = 'string'
 GMETRIC_DEFAULT_HOST    = '127.0.0.1'
 GMETRIC_DEFAULT_PORT    = '8649'
+GMETRIC_DEFAULT_UNITS	= ''
 
 class Gmetric:
 
@@ -919,8 +920,6 @@ class Gmetric:
 			self.socket.setsockopt( socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 20 )
 
 		self.hostport   = ( host, int( port ) )
-		self.type       = GMETRIC_DEFAULT_TYPE
-		self.unitstr    = ''
 		self.slopestr   = 'both'
 		self.tmax       = 60
 
@@ -937,12 +936,12 @@ class Gmetric:
 		else:
 			return 'udp'
 
-	def send( self, name, value, dmax, type = '', units = '' ):
+	def send( self, name, value, dmax, typestr = '', units = '' ):
 
 		if len( units ) == 0:
-			units		= self.unitstr
-		if len( type ) == 0:
-			typestr		= self.type
+			units		= GMETRIC_DEFAULT_UNITS
+		if len( typestr ) == 0:
+			typestr		= GMETRIC_DEFAULT_TYPE
 
 		msg             = self.makexdr( name, value, typestr, units, self.slopestr, self.tmax, dmax )
 
