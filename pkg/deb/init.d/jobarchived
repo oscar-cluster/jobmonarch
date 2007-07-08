@@ -1,0 +1,42 @@
+#! /bin/sh
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/bin/jobarchived
+NAME=jobarchived
+DESC="Job Archive Daemon"
+
+export PYTHONPATH=/usr/share/jobarchived:$PYTHONPATH
+
+test -x $DAEMON || exit 0
+
+set -e
+
+case "$1" in
+  start)
+	echo -n "Starting $DESC: "
+	start-stop-daemon --start --quiet -m --pidfile /var/run/$NAME.pid \
+		--exec $DAEMON 
+	sleep 1
+	ps -ef | grep jobarchived$ | awk '{ print $2 }' >/var/run/$NAME.pid
+	echo "$NAME."
+	;;
+  stop)
+	echo -n "Stopping $DESC: "
+        start-stop-daemon --stop  --quiet --oknodo --name $DAEMON \
+                2>&1 > /dev/null
+	sleep 1
+	test -f /var/run/$NAME.pid && MYPID=`cat /var/run/$NAME.pid`
+	test ! -z $MYPID && ps $MYPID 2>&1 > /dev/null && kill -9 $MYPID 2>&1 > /dev/null
+	echo "$NAME."
+	;;
+  restart|force-reload)
+	$0 stop
+	$0 start
+	;;
+  *)
+	echo "Usage: $N {start|stop|restart}" >&2
+	exit 1
+	;;
+esac
+
+exit 0
