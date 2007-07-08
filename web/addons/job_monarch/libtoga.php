@@ -1332,14 +1332,18 @@ class ClusterImage {
 			//print_r( $nodes );
 
 			$image_width	= $x_offset + ($node_width * ($x_max-$x_min+2));
-			if( $this->isBig() ) 
+
+			if( $this->isSmall() ) 
 			{
-				$image_width	= ($image_width < $this->width) ? $image_width : $this->width;
-			}
-			else if( $this->isSmall() )
+				$image_width	= $max_width;
+			} else if( $this->isBig() ) 
 			{
-				$image_width	= $this->width;
+				$image_width	= ($image_width < $max_width) ? $image_width : $max_width;
 			}
+			//else if( $this->isSmall() )
+			//{
+			//	$image_width	= $this->width;
+			//}
 			$image_height	= $y_offset + ($node_width * ($y_max-$y_min+2));
 
 			$this->width	= $image_width;
@@ -1472,7 +1476,13 @@ class ClusterImage {
 		}
 		else
 		{
-			$image		= imageCreateTrueColor( $max_width, ($y_offset + (($node_rows*$node_width)+1) ) );
+			if( $this->isSmall() ) {
+				$image		= imageCreateTrueColor( $max_width, ($y_offset + (($node_rows*$node_width)+1) ) );
+			} else if( $this->isBig() ) {
+				$image_width	= ($node_width * $nodes_nr) + 2;
+				$image_width	= ($image_width < $max_width) ? $image_width : $max_width;
+				$image		= imageCreateTrueColor( $image_width, ($y_offset + (($node_rows*$node_width)+1) ) );
+			}
 			$colorwhite	= imageColorAllocate( $image, 255, 255, 255 );
 
 			imageFill( $image, 0, 0, $colorwhite );
