@@ -39,13 +39,6 @@ echo ""
 #!/bin/sh
 
 /etc/init.d/jobarchived stop
-
-
-%postun
-#!/bin/sh
-
-PATH=/bin:/sbin:/usr/bin:/usr/sbin
-
 chkconfig jobarchived off
 
 
@@ -55,9 +48,10 @@ chkconfig jobarchived off
 Job MonArch's archive daemon
 
 %files
-"/usr/bin/jobarchived.py"
+"/usr/sbin/jobarchived.py"
+"/usr/sbin/jobarchived"
 "/etc/init.d/jobarchived"
-"/etc/jobarchived.conf"
-"/usr/bin/jobarchived"
+%config "/etc/jobarchived.conf"
+%config "/etc/sysconfig/jobarchived"
 %dir "/usr/share/jobarchived/"
 "/usr/share/jobarchived/job_dbase.sql"
