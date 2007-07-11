@@ -31,12 +31,26 @@ if DEFAULT_SEARCH_PATH not in sys.path:
 
 import getopt, syslog, ConfigParser
 
+def usage():
+
+	print
+	print 'usage: jobarchived [options]'
+	print 'options:'
+	print '      --config, -c      configuration file'
+	print '      --pidfile, -p     pid file'
+	print '      --help, -h        help'
+	print
+
 def processArgs( args ):
 
-        SHORT_L	= 'c:'
-        LONG_L	= 'config='
+        SHORT_L	= 'p:hc:'
+        LONG_L	= [ 'help', 'config=', 'pidfile=' ]
 
         config_filename = None
+
+	global PIDFILE
+
+	PIDFILE	= None
 
         try:
 
@@ -52,6 +66,15 @@ def processArgs( args ):
                 if opt in [ '--config', '-c' ]:
 
                         config_filename = value
+
+		if opt in [ '--pidfile', '-p' ]:
+
+			PIDFILE         = value
+
+		if opt in [ '--help', '-h' ]:
+
+			usage()
+			sys.exit( 0 )
 
         if not config_filename:
 
@@ -1886,6 +1909,8 @@ def daemon():
 
 		sys.exit(0)  # end parent
 
+	write_pidfile()
+
 	# Go to the root directory and set the umask
 	#
 	os.chdir('/')
@@ -1975,6 +2000,18 @@ def printTime( ):
 	"""Print current time in human readable format"""
 
 	return time.strftime("%a %d %b %Y %H:%M:%S")
+
+def write_pidfile():
+
+	# Write pidfile if PIDFILE exists
+	if PIDFILE:
+
+		pid     = os.getpid()
+
+		pidfile = open(PIDFILE, 'w')
+
+		pidfile.write( str( pid ) )
+		pidfile.close()
 
 # Ooohh, someone started me! Let's go..
 if __name__ == '__main__':

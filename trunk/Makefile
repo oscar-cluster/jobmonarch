@@ -109,13 +109,15 @@ rpm-jobmond:	${REQUIRED}
 
 rpm-jobarchived:	${REQUIRED}
 	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/etc/init.d >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/usr/bin >/dev/null
+	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/etc/sysconfig >/dev/null
+	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/usr/sbin >/dev/null
 	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/usr/share/jobarchived >/dev/null
-	install -m 755 jobarchived/jobarchived.py ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/usr/bin
-	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/usr/bin; \
+	install -m 755 jobarchived/jobarchived.py ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/usr/sbin
+	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/usr/sbin; \
 	ln -s jobarchived.py jobarchived || true)
 	install jobarchived/jobarchived.conf ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/etc
-	install pkg/init.d/jobarchived ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/etc/init.d
+	install pkg/rpm/init.d/jobarchived ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/etc/init.d
+	install pkg/rpm/sysconfig/jobarchived ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/etc/sysconfig
 	install jobarchived/job_dbase.sql \
 	${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/usr/share/jobarchived
 	cp pkg/rpm/jobmonarch-jobarchived.spec \
