@@ -16,7 +16,7 @@ Group: Converted/misc
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
-if [ -x /etc/init.d/jobmond ] && [ -x /usr/sbin/jobmond ]
+if [ -x /etc/init.d/jobmond ]
 	then
 
 		chkconfig jobmond on

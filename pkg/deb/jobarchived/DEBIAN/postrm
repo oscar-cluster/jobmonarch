@@ -2,4 +2,5 @@
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
+/etc/init.d/jobarchived stop
 update-rc.d -f jobarchived remove
