@@ -18,6 +18,8 @@ name=jobarchived
 prog=/usr/sbin/jobarchived
 desc="Job Archiving Daemon"
 
+OPTIONS=""
+
 if [ -r /etc/sysconfig/$name ]; then
 	source /etc/sysconfig/$name
 fi

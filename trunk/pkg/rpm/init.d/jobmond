@@ -18,6 +18,8 @@ name=jobmond
 prog=/usr/sbin/jobmond
 desc="Job Monitoring Daemon"
 
+OPTIONS=""
+
 if [ -r /etc/sysconfig/$name ]; then
 	source /etc/sysconfig/$name
 fi
