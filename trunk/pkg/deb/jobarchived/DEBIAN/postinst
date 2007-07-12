@@ -2,16 +2,10 @@
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
-if [ -x /etc/init.d/jobarchived ] && [ -x /usr/bin/jobarchived ]
+if [ -x /etc/init.d/jobarchived ]
 	then
 
-		if [ -d /usr/sara ]
-			then
-				update-rc.d -f jobarchived start 99 3 . stop 99 0 1 2 6 .
-			else
-				update-rc.d -f jobarchived defaults
-		fi
-
+		update-rc.d -f jobarchived defaults
 fi
 
 echo ""

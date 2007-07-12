@@ -16,7 +16,7 @@ Group: Converted/misc
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
-if [ -x /etc/init.d/jobarchived ] && [ -x /usr/sbin/jobarchived ]
+if [ -x /etc/init.d/jobarchived ]
 	then
 
 		chkconfig jobarchived on
