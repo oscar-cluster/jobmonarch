@@ -1,33 +1,31 @@
 #! /bin/sh
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-DAEMON=/usr/bin/jobarchived
+DAEMON=/usr/sbin/jobarchived
 NAME=jobarchived
-DESC="Job Archive Daemon"
+DESC="Job Archiving Daemon"
 
-export PYTHONPATH=/usr/share/jobarchived:$PYTHONPATH
+PIDFILE="/var/run/jobarchived.pid"
+OPTIONS=""
 
 test -x $DAEMON || exit 0
 
-set -e
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
 
 case "$1" in
   start)
 	echo -n "Starting $DESC: "
-	start-stop-daemon --start --quiet -m --pidfile /var/run/$NAME.pid \
-		--exec $DAEMON 
-	sleep 1
-	ps -ef | grep jobarchived$ | awk '{ print $2 }' >/var/run/$NAME.pid
+	start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid \
+		--exec $DAEMON -- --pidfile "$PIDFILE" $OPTIONS || { echo " start failed."; exit 1; }
 	echo "$NAME."
 	;;
   stop)
 	echo -n "Stopping $DESC: "
-        start-stop-daemon --stop  --quiet --oknodo --name $DAEMON \
-                2>&1 > /dev/null
-	sleep 1
-	test -f /var/run/$NAME.pid && MYPID=`cat /var/run/$NAME.pid`
-	test ! -z $MYPID && ps $MYPID 2>&1 > /dev/null && kill -9 $MYPID 2>&1 > /dev/null
+        start-stop-daemon --stop  --quiet --pidfile /var/run/$NAME.pid \
+                --signal 9 2>&1 > /dev/null || { rm -f "$PIDFILE"; echo " not running."; exit 1; }
 	echo "$NAME."
+	rm -f "$PIDFILE"
+	exit 0
 	;;
   restart|force-reload)
 	$0 stop
