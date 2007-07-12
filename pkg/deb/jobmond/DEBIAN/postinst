@@ -2,7 +2,7 @@
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
-if [ -x /etc/init.d/jobmond ] && [ -x /usr/bin/jobmond ]
+if [ -x /etc/init.d/jobmond ] 
 	then
 
 		update-rc.d -f jobmond defaults
