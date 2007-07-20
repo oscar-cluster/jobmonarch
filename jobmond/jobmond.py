@@ -117,7 +117,7 @@ def loadConfig( filename ):
 	global DEBUG_LEVEL, DAEMONIZE, BATCH_SERVER, BATCH_POLL_INTERVAL
 	global GMOND_CONF, DETECT_TIME_DIFFS, BATCH_HOST_TRANSLATE
 	global BATCH_API, QUEUE, GMETRIC_TARGET, USE_SYSLOG
-	global SYSLOG_LEVEL, SYSLOG_FACILITY
+	global SYSLOG_LEVEL, SYSLOG_FACILITY, GMETRIC_BINARY
 
 	DEBUG_LEVEL	= cfg.getint( 'DEFAULT', 'DEBUG_LEVEL' )
 
@@ -134,6 +134,7 @@ def loadConfig( filename ):
 		USE_SYSLOG	= True
 
 		debug_msg( 0, 'ERROR: no option USE_SYSLOG found: assuming yes' )
+
 
 
 	if USE_SYSLOG:
@@ -188,6 +189,14 @@ def loadConfig( filename ):
 
 		GMOND_CONF		= None
 
+	try:
+
+		GMETRIC_BINARY		= cfg.get( 'DEFAULT', 'GMETRIC_BINARY' )
+
+	except ConfigParser.NoOptionError:
+
+		GMETRIC_BINARY		= '/usr/bin/gmetric'
+
 	DETECT_TIME_DIFFS	= cfg.getboolean( 'DEFAULT', 'DETECT_TIME_DIFFS' )
 
 	BATCH_HOST_TRANSLATE	= getlist( cfg.get( 'DEFAULT', 'BATCH_HOST_TRANSLATE' ) )
@@ -237,14 +246,19 @@ class DataProcessor:
 
 	"""Class for processing of data"""
 
-	binary = '/usr/bin/gmetric'
+	binary = None
 
 	def __init__( self, binary=None ):
 
 		"""Remember alternate binary location if supplied"""
 
+		global GMETRIC_BINARY
+
 		if binary:
 			self.binary = binary
+
+		if not self.binary:
+			self.binary = GMETRIC_BINARY
 
 		# Timeout for XML
 		#
