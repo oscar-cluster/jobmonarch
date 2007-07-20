@@ -632,6 +632,8 @@ class PbsDataGatherer( DataGatherer ):
 
 		jobs_processed	= [ ]
 
+		my_domain		= string.join( socket.getfqdn().split( '.' )[1:], '.' )
+
 		for name, attrs in joblist.items():
 
 			job_id			= name.split( '.' )[0]
@@ -679,6 +681,12 @@ class PbsDataGatherer( DataGatherer ):
 				for node in nodes:
 
 					host		= node.split( '/' )[0]
+
+					host_domain	= string.join( host.split( '.' )[1:], '.' )
+
+					if host_domain == my_domain:
+
+						host		= host.split( '.' )[0]
 
 					if nodeslist.count( host ) == 0:
 
