@@ -652,8 +652,6 @@ class PbsDataGatherer( DataGatherer ):
 
 			job_id			= name.split( '.' )[0]
 
-			jobs_processed.append( job_id )
-
 			name			= self.getAttr( attrs, 'Job_Name' )
 			queue			= self.getAttr( attrs, 'queue' )
 
@@ -682,6 +680,10 @@ class PbsDataGatherer( DataGatherer ):
 						ppn	= mynoderequest_field.split( 'ppn=' )[1]
 
 			status			= self.getAttr( attrs, 'job_state' )
+
+			if status in [ 'Q', 'R' ]:
+
+				jobs_processed.append( job_id )
 
 			queued_timestamp	= self.getAttr( attrs, 'ctime' )
 
