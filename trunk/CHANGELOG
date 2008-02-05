@@ -1,7 +1,7 @@
 
 	LEGEND	f: fixed - c: changed - a: added - r: removed
 
-0.2.1:
+0.3:
 
 	web)
 		a:	allow per-cluster settings/override options: see CLUSTER_CONFS option
@@ -40,6 +40,11 @@
 			thanks to: Nick Galbreath - nickg(a.t)modp(d.o.t)com
 			for writing it and allowing inclusion in jobmond
 
+		f:	crashing jobmond when multiple nodes amounts are requested in
+			a queued job: numeric_node variable not initialized properly
+			thanks to: aloga(a.t)ifca(d.o.t)unican(d.o.t)es
+			for supplying the patch
+			and many others for reporting and helping debug this
 		f:	hanging/blocked, increased cpu usage and halted reporting
 			thanks to: Bas van der Vlies - basv(a.t)sara(d.o.t)nl
 			for discovering the origin of the bug
