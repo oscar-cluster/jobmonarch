@@ -731,29 +731,59 @@ class PbsDataGatherer( DataGatherer ):
 
 			elif status == 'Q':
 
+				# 'mynodequest' can be a string in the following syntax according to the
+				# Torque Administator's manual:
+				# 
+				# {<node_count> | <hostname>}[:ppn=<ppn>][:<property>[:<property>]...][+ ...]
+				# {<node_count> | <hostname>}[:ppn=<ppn>][:<property>[:<property>]...][+ ...]
+				# etc
+				#
+
+				#
+				# For now we only count the amount of nodes request and ignore properties
+				#
+
 				start_timestamp		= ''
 				count_mynodes		= 0
-				numeric_node		= 1
 
 				for node in mynoderequest.split( '+' ):
 
+					# Just grab the {node_count|hostname} part and ignore properties
+					#
 					nodepart	= node.split( ':' )[0]
 
+					# Let's assume a node_count value
+					#
+					numeric_node	= 1
+
+					# Chop the value up into characters
+					#
 					for letter in nodepart:
 
+						# If this char is not a digit (0-9), this must be a hostname
+						#
 						if letter not in string.digits:
 
 							numeric_node	= 0
 
+					# If this is a hostname, just count this as one (1) node
+					#
 					if not numeric_node:
 
 						count_mynodes	= count_mynodes + 1
 					else:
+
+						# If this a number, it must be the node_count
+						# and increase our count with it's value
+						#
 						try:
 							count_mynodes	= count_mynodes + int( nodepart )
 
 						except ValueError, detail:
 
+							# When we arrive here I must be bugged or very confused
+							# THIS SHOULD NOT HAPPEN!
+							#
 							debug_msg( 10, str( detail ) )
 							debug_msg( 10, "Encountered weird node in Resources_List?!" )
 							debug_msg( 10, 'nodepart = ' + str( nodepart ) )
