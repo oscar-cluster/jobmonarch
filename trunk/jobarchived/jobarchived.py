@@ -151,6 +151,8 @@ def loadConfig( filename ):
 
 		debug_msg( 0, "ERROR: py-rrdtool import FAILED: failing back to DEPRECATED use of rrdtool binary. This will slow down jobmond significantly!" )
 
+		RRDTOOL			= cfg.get( 'DEFAULT', 'RRDTOOL' )
+
 	try:
 
 		SYSLOG_FACILITY	= eval( 'syslog.LOG_' + cfg.get( 'DEFAULT', 'SYSLOG_FACILITY' ) )
@@ -174,7 +176,6 @@ def loadConfig( filename ):
 
 	DAEMONIZE		= cfg.getboolean( 'DEFAULT', 'DAEMONIZE' )
 
-	RRDTOOL			= cfg.get( 'DEFAULT', 'RRDTOOL' )
 
 	return True
 
@@ -1480,11 +1481,18 @@ class RRDHandler:
 	def __init__( self, config, cluster ):
 		"""Setup initial variables"""
 
+		global MODRRDTOOL
+
 		self.block	= 0
 		self.cluster	= cluster
 		self.config	= config
 		self.slot	= threading.Lock()
-		self.rrdm	= RRDMutator( RRDTOOL )
+
+		if MODRRDTOOL:
+
+			self.rrdm	= RRDMutator()
+		else:
+			self.rrdm	= RRDMutator( RRDTOOL )
 
 		global DEBUG_LEVEL
 
