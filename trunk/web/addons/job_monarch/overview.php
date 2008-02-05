@@ -266,6 +266,7 @@ function drawPie()
 		$empty_cpus	+= $node_freecpu;
 	}
 
+	$empty_cpus		= ( $empty_cpus >= 0 ) ? $empy_cpus : 0;
 	$used_cpus		= $nr_cpus - $empty_cpus;
 
 	$empty_percentage 	= ($empty_cpus / $nr_cpus) * 100;
@@ -856,7 +857,9 @@ function makeOverview()
 	$total_jobs 		= $queued_jobs + $running_jobs;
 
 	$free_nodes 		= $avail_nodes - $running_nodes;
+	$free_nodes		= ( $free_nodes >= 0 ) ? $free_nodes : 0;
 	$free_cpus 		= $avail_cpus - $running_cpus;
+	$free_cpus		= ( $free_cpus >= 0 ) ? $free_cpus : 0;
 
 	$tpl->assignGlobal( "avail_nodes", $avail_nodes );
 	$tpl->assignGlobal( "avail_cpus", $avail_cpus );
