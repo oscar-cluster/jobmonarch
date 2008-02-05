@@ -47,7 +47,7 @@ $cpus		= $data_gatherer->getCpus();
 function setupFilterSettings() 
 {
 
-	global $tpl, $filter, $clustername, $piefilter, $data_gatherer, $myxml_data;
+	global $tpl, $filter, $clustername, $piefilter, $data_gatherer, $myxml_data, $filterorder;
 
 	$filter_image_url = "";
 
