@@ -20,6 +20,9 @@
 			so that the detailed archive host view works even when the node is currently down.
 		c:	removed size restrictions from detailed host archive view
 
+		f:	prevent negative cpu/node calculation
+			thanks to: aloga(a.t)ifca(d.o.t)unican(d.o.t)es
+			for the patch
 		f:	archive search not properly resetting nodes list
 			thanks to: Alexis Michon - alexis(d.o.t)michon(a.t)ibcp(d.o.t)fr
 			for the patch 
