@@ -125,19 +125,78 @@ function makeDate( $time ) {
 	return strftime( $DATETIME_FORMAT, $time );
 }
 
+/**
+ * Replace stripos()
+ *
+ * @category    PHP
+ * @package     PHP_Compat
+ * @link        http://php.net/function.stripos
+ * @author      Aidan Lister <aidan@php.net>
+ * @version     $Revision: 1.1.1.1 $
+ * @since       PHP 5
+ * @require     PHP 4.0.1 (trigger_error)
+ */
+if (!function_exists('stripos'))
+{
+    function stripos ($haystack, $needle, $offset = null)
+    {
+        if (!is_scalar($haystack)) {
+            trigger_error('stripos() expects parameter 1 to be string, ' . gettype($haystack) . ' given', E_USER_WARNING);
+            return false;
+        }
+
+        if (!is_scalar($needle)) {
+            trigger_error('stripos() needle is not a string or an integer.', E_USER_WARNING);
+            return false;
+        }
+
+        if (!is_null($offset) && !is_numeric($offset)) {
+            trigger_error('stripos() expects parameter 3 to be long, ' . gettype($offset) . ' given', E_USER_WARNING);
+            return false;
+        }
+
+        // Manipulate the string if there is an offset                   
+        $fix = 0;
+        if (!is_null($offset))
+        {
+            if ($offset > 0)
+            {
+                $haystack = substr($haystack, $offset, strlen($haystack) - $offset);
+                $fix = $offset;
+            }
+        }
+
+        $segments = explode (strtolower($needle), strtolower($haystack), 2);
+        $position = strlen($segments[0]) + $fix;
+
+        return $position;
+    }
+}
+
 class TarchDbase {
 
 	var $ip, $dbase, $conn;
 
 	function TarchDbase( $ip = null, $dbase = null ) {
 
+		global $CLUSTER_CONFS, $clustername;
 		global $JOB_ARCHIVE_DBASE;
+
+		// Import cluster specific settings
+		//
+		foreach( $CLUSTER_CONFS as $confcluster => $conffile )
+		{
+			if( strtolower( trim($this->clustername) ) == strtolower(trim($confcluster)) )
+			{
+				include_once $conffile;
+			}
+		}
 
 		$db_fields = explode( '/', $JOB_ARCHIVE_DBASE );
 
-		$this->ip = $db_fields[0];
-		$this->dbase = $db_fields[1];
-		$this->conn = null;
+		$this->ip	= $db_fields[0];
+		$this->dbase	= $db_fields[1];
+		$this->conn	= null;
 	}
 
 	function connect() {
@@ -193,7 +252,7 @@ class TarchDbase {
 			$count_result = $this->queryDbase( $count_query );
 			$this->resultcount = (int) $count_result[0][count];
 
-			$select_query = "SELECT " . $select_result_idname . " " . $query . " ORDER BY job_id LIMIT " . $SEARCH_RESULT_LIMIT;
+			$select_query = "SELECT " . $select_result_idname . " " . $query . " ORDER BY job_id DESC LIMIT " . $SEARCH_RESULT_LIMIT;
 		}
 
 		$ids = $this->queryDbase( $select_query );
@@ -1064,16 +1123,12 @@ class ClusterImage {
 		global $CLUSTER_CONFS, $confcluster;
 
 		global $SORTBY_HOSTNAME, $SORT_ORDER, $skan_str;
-		//global $skan_str;
 		global $x_first, $y_first;
 
 		foreach( $CLUSTER_CONFS as $confcluster => $conffile )
 		{
-			//printf( "cf %s cc %s\n", $this->clustername, $confcluster);
-			//printf( "cf %s cc %s\n", strtolower( trim($this->clustername)), trim($confcluster) );
 			if( strtolower( trim($this->clustername) ) == strtolower(trim($confcluster)) )
 			{
-				//printf( "cf %s cc %s\n", $conffile, $confcluster);
 				include_once $conffile;
 			}
 		}
