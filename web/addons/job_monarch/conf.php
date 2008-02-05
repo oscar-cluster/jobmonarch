@@ -17,7 +17,7 @@ $COLUMN_QUEUED = 1;
 
 // Show the column job attribute 'nodes' hostnames?
 //
-$COLUMN_NODES = 0;
+$COLUMN_NODES = 1;
 
 // Path to Ganglia's web frontend root
 //
