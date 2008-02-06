@@ -732,6 +732,9 @@ class TorqueXMLHandler {
 		
 					if( $jobs[$jobid][status] == 'R' ) {
 
+						$domain		= $jobs[$jobid][domain];
+						$domain_len	= 0 - strlen( $domain );
+
 						// Let's see if Ganglia use's FQDN or short hostnames
 						//
 						foreach( $nodes as $hostname => $nimage ) {
@@ -744,9 +747,8 @@ class TorqueXMLHandler {
 
 						foreach( $jobs[$jobid][nodes] as $node ) {
 
-							$domain = $jobs[$jobid][domain];
-							$domain_len = 0 - strlen( $domain );
-
+							// Only add domain name to the hostname if Ganglia is doing that too
+							//
 							if( $this->fqdn )
 							{
 								if( substr( $node, $domain_len ) != $domain ) {
@@ -760,8 +762,6 @@ class TorqueXMLHandler {
 								$host	= $node;
 							}
 
-							//$host = $node.'.'.$jobs[$jobid][domain];
-				
 							if( !isset( $nodes[$host] ) )
 								$my_node = new NodeImage( $this->proc_cluster, $host );
 							else
