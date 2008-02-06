@@ -604,12 +604,12 @@ class TorqueXMLHandler {
 	var $clusters, $heartbeat, $nodes, $jobs, $clustername, $proc_cluster;
 
 	function TorqueXMLHandler( $clustername ) {
-		$jobs = array();
-		$clusters = array();
-		$this->nodes = array();
-		$heartbeat = array();
-		$this->clustername = $clustername;
-		//printf(" cluster set to %s \n", $this->clustername );
+		$jobs			= array();
+		$clusters 		= array();
+		$this->nodes 		= array();
+		$heartbeat 		= array();
+		$this->clustername	= $clustername;
+		$this->fqdn		= 1;
 	}
 
 	function getCpus() {
@@ -667,6 +667,8 @@ class TorqueXMLHandler {
 		} else if( $name == 'HOST' and $this->proc_cluster == $this->clustername) {
 
 			$hostname = $attrs[NAME];
+
+
 			$location = $attrs[LOCATION];
 			//printf( "Found node %s\n", $hostname );
 
@@ -684,8 +686,6 @@ class TorqueXMLHandler {
 
 				sscanf( $attrs[NAME], 'MONARCH-JOB-%d-%d', $jobid, $monincr );
 
-				//printf( "jobid %s\n", $jobid );
-
 				if( !isset( $jobs[$jobid] ) )
 					$jobs[$jobid] = array();
 
@@ -696,8 +696,6 @@ class TorqueXMLHandler {
 
 					$toganame = $togavalues[0];
 					$togavalue = $togavalues[1];
-
-					//printf( "\t%s\t= %s\n", $toganame, $togavalue );
 
 					if( $toganame == 'nodes' ) {
 
@@ -734,15 +732,32 @@ class TorqueXMLHandler {
 		
 					if( $jobs[$jobid][status] == 'R' ) {
 
+						// Let's see if Ganglia use's FQDN or short hostnames
+						//
+						foreach( $nodes as $hostname => $nimage ) {
+					
+							if( substr( $hostname, $domain_len ) != $domain )
+							{
+								$this->fqdn	= 0;
+							}
+						}
+
 						foreach( $jobs[$jobid][nodes] as $node ) {
 
 							$domain = $jobs[$jobid][domain];
 							$domain_len = 0 - strlen( $domain );
 
-							if( substr( $node, $domain_len ) != $domain ) {
-								$host = $node. '.'.$domain;
-							} else {
-								$host = $node;
+							if( $this->fqdn )
+							{
+								if( substr( $node, $domain_len ) != $domain ) {
+									$host = $node. '.'.$domain;
+								} else {
+									$host = $node;
+								}
+							}
+							else
+							{
+								$host	= $node;
 							}
 
 							//$host = $node.'.'.$jobs[$jobid][domain];
