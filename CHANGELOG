@@ -13,6 +13,9 @@
 			thank to: Robin Day
 			for the design
 		a:	rrd graph of running/queued jobs to overview
+		a:	per-cluster settings for archive database
+			thanks to: Alexis Michon - alexis(d.o.t)michon(a.t)ibcp(d.o.t)fr
+			for the patch
 
 		c:	host archive view is now more complete and detailed in the same manner as
 			Ganglia's own host view
@@ -20,6 +23,9 @@
 			so that the detailed archive host view works even when the node is currently down.
 		c:	removed size restrictions from detailed host archive view
 
+		f:	compatibility: added php4 version of strpos()
+			thanks to: Alexis Michon - alexis(d.o.t)michon(a.t)ibcp(d.o.t)fr
+			for the patch
 		f:	prevent negative cpu/node calculation
 			thanks to: aloga(a.t)ifca(d.o.t)unican(d.o.t)es
 			for the patch
