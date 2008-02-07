@@ -640,10 +640,10 @@ function makeOverview()
 						$domain_len 	= 0 - strlen( $jobs[$jobid][domain] );
 						$hostnode 	= $tempnode;
 
-						if( substr( $hostnode, $domain_len ) != $jobs[$jobid][domain] ) 
-						{
-							$hostnode = $hostnode. '.'. $jobs[$jobid][domain];
-						}
+						//if( substr( $hostnode, $domain_len ) != $jobs[$jobid][domain] ) 
+						//{
+						//	$hostnode = $hostnode. '.'. $jobs[$jobid][domain];
+						//}
 
 						if( $hostname == $hostnode ) 
 						{
@@ -803,7 +803,8 @@ function makeOverview()
 
 						foreach( $jobs[$jobid][nodes] as $mynode ) 
 						{
-							$myhost_href 	= "./?c=".$clustername."&h=".$mynode.".".$jobs[$jobid][domain];
+							//$myhost_href 	= "./?c=".$clustername."&h=".$mynode.".".$jobs[$jobid][domain];
+							$myhost_href 	= "./?c=".$clustername."&h=".$mynode;
 							$mynodehosts[] 	= "<A HREF=\"".$myhost_href."\">".$mynode."</A>";
 						}
 
@@ -976,12 +977,12 @@ function makeOverview()
 				
 			foreach ( $hosts_up as $host ) 
 			{
-				$domain_len 		= 0 - strlen( $domain );
+				//$domain_len 		= 0 - strlen( $domain );
 
-				if( substr( $host, $domain_len ) != $domain ) 
-				{
-					$host 		= $host . '.' . $domain;
-				}
+				//if( substr( $host, $domain_len ) != $domain ) 
+				//{
+				//	$host 		= $host . '.' . $domain;
+				//}
 
 				$cpus 			= $metrics[$host]["cpu_num"]["VAL"];
 
