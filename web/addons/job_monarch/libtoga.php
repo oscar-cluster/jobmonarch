@@ -563,6 +563,11 @@ class DataGatherer {
 		$handler->printInfo();
 	}
 
+	function getUsingFQDN() {
+		$handler = $this->xmlhandler;
+		return $handler->getUsingFQDN();
+	}
+
 	function getNodes() {
 		$handler = $this->xmlhandler;
 		return $handler->getNodes();
@@ -610,6 +615,11 @@ class TorqueXMLHandler {
 		$heartbeat 		= array();
 		$this->clustername	= $clustername;
 		$this->fqdn		= 1;
+	}
+
+	function getUsingFQDN() {
+
+		return $this->fqdn;
 	}
 
 	function getCpus() {
@@ -1262,7 +1272,6 @@ class ClusterImage {
 			{
 				$skan_str	= str_replace( "{x}", "%d", $skan_str );
 				$skan_str	= str_replace( "{y}", "%d", $skan_str );
-				//printf("ppoep = %s\n", $skan_str);
 			} 
 			else if( $x_present)
 			{
@@ -1285,7 +1294,6 @@ class ClusterImage {
 
 				if( $x_present && $y_present )
 				{
-					//$n	= sscanf( $hostname, $skan_str, $i, $j );
 					if( $x_first )
 					{
 						$n = sscanf( $hostname, $skan_str, $x, $y );
@@ -1294,22 +1302,26 @@ class ClusterImage {
 					{
 						$n = sscanf( $hostname, $skan_str, $y, $x );
 					}
+
 					// Remove nodes that don't match
 					//
 					if( $n < 2 )
 					{
-						//printf( "removing node %s - x present & y present + <2 x,y matches\n", $hostname );
+						// This node hostname has no match for: {x} and {y}
+						//
 						unset( $nodes[$hostname] );
 					}
 				}
 				else if( $x_present && !$y_present )
 				{
 					$n = sscanf( $hostname, $skan_str, $x );
+
 					// Remove nodes that don't match
 					//
 					if( $n < 1 )
 					{
-						//printf( "removing node %s - x present & !y present + <1 x match\n", $hostname );
+						// This node hostname has no match for: {x}
+						//
 						unset( $nodes[$hostname] );
 					}
 					$y	= 1;
@@ -1317,22 +1329,20 @@ class ClusterImage {
 				else if( $y_present && !$x_present )
 				{
 					$n = sscanf( $hostname, $skan_str, $y );
+
 					// Remove nodes that don't match
 					//
 					if( $n < 1 )
 					{
-						//printf( "removing node %s - y present & !x present + <1 y match\n", $hostname );
+						// This node hostname has no match for: {y}
+						//
 						unset( $nodes[$hostname] );
 					}
 					$x	= 1;
 				}
-				//printf( "xfirst %s yfirst %s\n", $x_first, $y_first );
 
-				//printf( "n %s\n", $n );
-
-
-				//printf( "node %s x_min %s x %s\n", $hostname, $x_min, $x );
-
+				// Determine the lowest value of {x} that exists in all node hostnames
+				//
 				if( !$x_min && $x != null )
 				{
 					$x_min	= $x;
@@ -1341,6 +1351,9 @@ class ClusterImage {
 				{
 					$x_min	= $x;
 				}
+
+				// Determine the highest value of {x} that exists in all node hostnames
+				//
 				if( !$x_max && $x != null )
 				{
 					$x_max	= $x;
@@ -1349,6 +1362,9 @@ class ClusterImage {
 				{
 					$x_max	= $x;
 				}
+
+				// Determine the lowest value of {y} that exists in all node hostnames
+				//
 				if( !$y_min && $y != null )
 				{
 					$y_min	= $y;
@@ -1357,6 +1373,9 @@ class ClusterImage {
 				{
 					$y_min	= $y;
 				}
+
+				// Determine the highest value of {y} that exists in all node hostnames
+				//
 				if( !$y_max && $y != null )
 				{
 					$y_max	= $y;
@@ -1367,10 +1386,10 @@ class ClusterImage {
 				}
 			}
 
-			//printf( "ss %s\n", $skan_str);
+			// Sort all the nodes (alpha and numerically)
+			// 1: gb-r1n1, 2: gb-r1n2, 3: gb-r2n1, etc
+			//
 			$sorted_nodes	= usort( $nodes, "cmp" );
-
-			//print_r( $nodes );
 
 			$cur_node	= 0;
 
@@ -1426,6 +1445,8 @@ class ClusterImage {
 
 			if( $this->isSmall() ) {
 
+				// Draw a fancy little header text to explain what it is
+				//
 				$colorblue	= imageColorAllocate( $image, 0, 0, 255 );
 
 				imageString( $image, $font, 2, 2, "Monarch Joblist - cluster: ".$this->clustername, $colorblue );
@@ -1437,22 +1458,27 @@ class ClusterImage {
 
 				if( isset( $SORT_XLABEL ) )
 				{
+					// Print the {x} label: rack
+					//
 					imageString( $image, $font, $x_offset, $fontspaceing, $SORT_XLABEL, $colorblue );
 				}
 
 				if( isset( $SORT_YLABEL ) )
 				{
-					// Stupid php without imageStringDown function
+					// Stupid php without imageStringDown function... we'll make one ourself
+					//
+
+					// Print the {y} label: node
 					//
 					imageStringDown( $image, $font, $fontspaceing, $y_offset, $SORT_YLABEL, $colorblue );
 				}
 			}
-			//print_r( $nodes );
 
 			for( $n = $x_min; $n <= $x_max; $n++ )
 			{
 				for( $m = $y_min; $m <= $y_max; $m++ )
 				{
+
 					if( $x_min > 0 )
 					{
 						$x	= $x_offset + ( ($n-$x_min) * $node_width );
@@ -1460,6 +1486,34 @@ class ClusterImage {
 					if( $y_min > 0 )
 					{
 						$y	= $y_offset + ( ($m-$y_min) * $node_width );
+					}
+
+					if( $this->isBig() ) 
+					{
+						// Draw y(node) column number header
+						//
+						if(( $n == $x_min ) && ( isset($SORT_YLABEL) ) )
+						{
+							$mfontspacing	= 1;
+
+							$ylabel_x	= $x - ( $fontwidth * strlen( $y_max ) ) - $mfontspacing;
+							$ylabel_y	= $y;
+
+							imageString( $image, $font, $ylabel_x, $ylabel_y, strval( $m ), $colorblue );
+
+							$xmin_hit[$n]	= true;
+						}
+
+						// Draw x(rack) column number header
+						//
+						if(( $m == $y_min ) && ( isset($SORT_XLABEL) ) )
+						{
+							$mfontspacing	= 2;
+							$xlabel_y	= $y - ( $fontheight * strlen( $x_max ) );
+							$xlabel_x	= $x + $mfontspacing; 
+
+							imageStringDown( $image, $font, $xlabel_x, $xlabel_y, strval( $n ), $colorblue );
+						}
 					}
 
 					if( isset( $nodes[$cur_node] ) ) 
@@ -1483,13 +1537,16 @@ class ClusterImage {
 							}
 							if( intval( $rx ) > $n )
 							{
-								$m	= $y_max + 1;
-								//printf( "skipping node %s - y present & x present + rx %s > n %s\n", $rx, $n);
+								// If x(rack) is higher than current x, skip to next x(rack)
+								//
+								$m		= $y_max + 1;
+
 								continue;
 							}
 							if( intval( $ry ) > $m )
 							{
-								//printf( "skipping node %s - y present & x present + ry %s > m %s\n", $ry, $m);
+								// If y(node) is higher than current y, skip to next y(node)
+								//
 								continue;
 							}
 						}
@@ -1504,7 +1561,8 @@ class ClusterImage {
 
 						if( !in_array( $host, $filtered_nodes ) )
 						{
-							//printf( "setting node %s showinfo to 0 - not found in filtered_nodes", $host);
+							// This node has been filtered out: we only want to see certain nodes
+							//
 							$nodes[$cur_node]->setShowinfo( 0 );
 						}
 
@@ -1520,26 +1578,6 @@ class ClusterImage {
 
 						$cur_node++;
 					}
-					if( $this->isBig() ) 
-					{
-						if(( $n == $x_min ) && ( isset($SORT_YLABEL) ) )
-						{
-							$mfontspacing	= 1;
-							$ylabel_x	= $x - ( $fontwidth * strlen( $y_max ) ) - $mfontspacing;
-							$ylabel_y	= $y;
-
-							imageString( $image, $font, $ylabel_x, $ylabel_y, strval( $m ), $colorblue );
-						}
-						if(( $m == $y_min ) && ( isset($SORT_XLABEL) ) )
-						{
-							$mfontspacing	= 2;
-							$xlabel_y	= $y - ( $fontheight * strlen( $x_max ) );
-							$xlabel_x	= $x + $mfontspacing; 
-
-							imageStringDown( $image, $font, $xlabel_x, $xlabel_y, strval( $n ), $colorblue );
-						}
-					}
-
 				}
 			}
 

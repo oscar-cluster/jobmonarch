@@ -43,6 +43,7 @@ $heartbeat	= $data_gatherer->getHeartbeat();
 $jobs		= $data_gatherer->getJobs();
 $gnodes		= $data_gatherer->getNodes();
 $cpus		= $data_gatherer->getCpus();
+$use_fqdn	= $data_gatherer->getUsingFQDN();
 
 function setupFilterSettings() 
 {
@@ -506,7 +507,7 @@ function makeOverview()
 	global $cluster_url, $get_metric_string, $host_url, $metrics;
 	global $start, $end, $reports, $gnodes, $default_showhosts;
 	global $COLUMN_QUEUED, $COLUMN_REQUESTED_MEMORY, $COLUMN_NODES, $hostname;
-	global $cluster;
+	global $cluster, $use_fqdn;
 
 	$metricname		= $m;
 
@@ -551,16 +552,22 @@ function makeOverview()
 
 	$view_name_nodes 	= array();
 
+	// Is the "requested memory" column enabled in the config
+	//
 	if( $COLUMN_REQUESTED_MEMORY ) 
 	{
 		$tpl->newBlock( "column_header_req_mem" );
 	}
 
+	// Is the "nodes hostnames" column enabled in the config
+	//
 	if( $COLUMN_NODES ) 
 	{
 		$tpl->newBlock( "column_header_nodes" );
 	}
 
+	// Is the "queued time" column enabled in the config
+	//
 	if( $COLUMN_QUEUED ) 
 	{
 		$tpl->newBlock( "column_header_queued" );
@@ -581,6 +588,8 @@ function makeOverview()
 		}
 	}
 
+	// Running / queued amount jobs graph
+	//
 	if( $rjqj_host != null )
 	{
 
@@ -640,10 +649,13 @@ function makeOverview()
 						$domain_len 	= 0 - strlen( $jobs[$jobid][domain] );
 						$hostnode 	= $tempnode;
 
-						//if( substr( $hostnode, $domain_len ) != $jobs[$jobid][domain] ) 
-						//{
-						//	$hostnode = $hostnode. '.'. $jobs[$jobid][domain];
-						//}
+						if( $use_fqdn == 1)
+						{
+							if( substr( $hostnode, $domain_len ) != $jobs[$jobid][domain] ) 
+							{
+								$hostnode = $hostnode. '.'. $jobs[$jobid][domain];
+							}
+						}
 
 						if( $hostname == $hostnode ) 
 						{
@@ -803,7 +815,10 @@ function makeOverview()
 
 						foreach( $jobs[$jobid][nodes] as $mynode ) 
 						{
-							//$myhost_href 	= "./?c=".$clustername."&h=".$mynode.".".$jobs[$jobid][domain];
+							if( $use_fqdn == 1)
+							{
+								$mynode	= $mynode.".".$jobs[$jobid][domain];
+							}
 							$myhost_href 	= "./?c=".$clustername."&h=".$mynode;
 							$mynodehosts[] 	= "<A HREF=\"".$myhost_href."\">".$mynode."</A>";
 						}
@@ -977,12 +992,15 @@ function makeOverview()
 				
 			foreach ( $hosts_up as $host ) 
 			{
-				//$domain_len 		= 0 - strlen( $domain );
+				$domain_len 		= 0 - strlen( $domain );
 
-				//if( substr( $host, $domain_len ) != $domain ) 
-				//{
-				//	$host 		= $host . '.' . $domain;
-				//}
+				if( $use_fqdn )
+				{
+					if( substr( $host, $domain_len ) != $domain ) 
+					{
+						$host 		= $host . '.' . $domain;
+					}
+				}
 
 				$cpus 			= $metrics[$host]["cpu_num"]["VAL"];
 
@@ -1006,6 +1024,7 @@ function makeOverview()
 					$sorted_hosts[$host] 	= $metrics[$host][$metricname][VAL];
 				}
 			}
+
 			switch ( $sort ) 
 			{
 				case "descending":
