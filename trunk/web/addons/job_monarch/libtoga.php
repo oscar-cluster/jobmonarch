@@ -125,54 +125,6 @@ function makeDate( $time ) {
 	return strftime( $DATETIME_FORMAT, $time );
 }
 
-/**
- * Replace stripos()
- *
- * @category    PHP
- * @package     PHP_Compat
- * @link        http://php.net/function.stripos
- * @author      Aidan Lister <aidan@php.net>
- * @version     $Revision: 1.1.1.1 $
- * @since       PHP 5
- * @require     PHP 4.0.1 (trigger_error)
- */
-if (!function_exists('stripos'))
-{
-    function stripos ($haystack, $needle, $offset = null)
-    {
-        if (!is_scalar($haystack)) {
-            trigger_error('stripos() expects parameter 1 to be string, ' . gettype($haystack) . ' given', E_USER_WARNING);
-            return false;
-        }
-
-        if (!is_scalar($needle)) {
-            trigger_error('stripos() needle is not a string or an integer.', E_USER_WARNING);
-            return false;
-        }
-
-        if (!is_null($offset) && !is_numeric($offset)) {
-            trigger_error('stripos() expects parameter 3 to be long, ' . gettype($offset) . ' given', E_USER_WARNING);
-            return false;
-        }
-
-        // Manipulate the string if there is an offset                   
-        $fix = 0;
-        if (!is_null($offset))
-        {
-            if ($offset > 0)
-            {
-                $haystack = substr($haystack, $offset, strlen($haystack) - $offset);
-                $fix = $offset;
-            }
-        }
-
-        $segments = explode (strtolower($needle), strtolower($haystack), 2);
-        $position = strlen($segments[0]) + $fix;
-
-        return $position;
-    }
-}
-
 class TarchDbase {
 
 	var $ip, $dbase, $conn;
@@ -1240,21 +1192,37 @@ class ClusterImage {
 			$x_present	= false;
 			$y_present	= false;
 
-			if(stripos( $SORTBY_HOSTNAME, "{x}" ) != false )
+			// Should we scan by X, Y or both
+			//
+			if(strpos( $SORTBY_HOSTNAME, "{x}" ) != false )
 			{
+				$x_str		= "{x}";
 				$x_present	= true;
 			}
-			if(stripos( $SORTBY_HOSTNAME, "{y}" ) != false )
+			else if(strpos( $SORTBY_HOSTNAME, "{X}" ) != false )
 			{
+				$x_str		= "{X}";
+				$x_present	= true;
+			}
+			if(strpos( $SORTBY_HOSTNAME, "{y}" ) != false )
+			{
+				$y_str		= "{y}";
+				$y_present	= true;
+			}
+			else if(strpos( $SORTBY_HOSTNAME, "{Y}" ) != false )
+			{
+				$y_str		= "{Y}";
 				$y_present	= true;
 			}
 
-			if(( strpos( $SORTBY_HOSTNAME, "{x}" ) < strpos( $SORTBY_HOSTNAME, "{y}" ) ) && ( $x_present && $y_present ))
+			// If we should scan for both X and Y: see which one is first
+			//
+			if(( strpos( $SORTBY_HOSTNAME, $x_str ) < strpos( $SORTBY_HOSTNAME, $y_str ) ) && ( $x_present && $y_present ))
 			{
 			
 				$x_first	= 1;
 			}
-			else if(( strpos( $SORTBY_HOSTNAME, "{x}" ) > strpos( $SORTBY_HOSTNAME, "{y}" ) ) && ( $x_present && $y_present ))
+			else if(( strpos( $SORTBY_HOSTNAME, $x_str ) > strpos( $SORTBY_HOSTNAME, $y_str ) ) && ( $x_present && $y_present ))
 			{
 				$y_first	= 1;
 		
@@ -1268,18 +1236,20 @@ class ClusterImage {
 				$y_first	= 1;
 			}
 
+			// Now replace our {x} and {y} with %d for sscanf parsing 
+			//
 			if(( $x_first ) && ( $x_present && $y_present ) )
 			{
-				$skan_str	= str_replace( "{x}", "%d", $skan_str );
-				$skan_str	= str_replace( "{y}", "%d", $skan_str );
+				$skan_str	= str_replace( $x_str, "%d", $skan_str );
+				$skan_str	= str_replace( $y_str, "%d", $skan_str );
 			} 
 			else if( $x_present)
 			{
-				$skan_str	= str_replace( "{x}", "%d", $skan_str );
+				$skan_str	= str_replace( $x_str, "%d", $skan_str );
 			}
 			else if( $y_present)
 			{
-				$skan_str	= str_replace( "{y}", "%d", $skan_str );
+				$skan_str	= str_replace( $y_str, "%d", $skan_str );
 			}
 
 			$x_min		= null;
@@ -1287,6 +1257,8 @@ class ClusterImage {
 			$y_min		= null;
 			$y_max		= null;
 
+			// Now let's walk through all our nodes and see which one are valid for our scan pattern
+			//
 			foreach( $nodes as $hostname => $node )
 			{
 				$x	= null;
