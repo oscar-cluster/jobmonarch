@@ -23,7 +23,7 @@
 			so that the detailed archive host view works even when the node is currently down.
 		c:	removed size restrictions from detailed host archive view
 
-		f:	compatibility: added php4 version of strpos()
+		f:	compatibility: removed php5 call
 			thanks to: Alexis Michon - alexis(d.o.t)michon(a.t)ibcp(d.o.t)fr
 			for the patch
 		f:	prevent negative cpu/node calculation
