@@ -77,12 +77,12 @@ def processArgs( args ):
 
 		if opt in [ '--help', '-h' ]:
 
-			usage( false )
+			usage( False )
 			sys.exit( 0 )
 
 		if opt in [ '--version', '-v' ]:
 
-			usage( true )
+			usage( True )
 			sys.exit( 0 )
 
 	try:
@@ -148,6 +148,7 @@ def loadConfig( filename ):
 	MODRRDTOOL		= False
 
 	try:
+		global rrdtool
 		import rrdtool
 
 		MODRRDTOOL		= True
@@ -627,7 +628,6 @@ class RRDMutator:
 
 	binary = None
 
-
 	def __init__( self, binary=None ):
 		"""Set alternate binary if supplied"""
 
@@ -790,16 +790,19 @@ class TorqueXMLProcessor( XMLProcessor ):
 		while( 1 ):
 
 			#self.myXMLSource = self.mXMLGatherer.getFileObject()
-			debug_msg( 1, 'torque_xml_thread(): Parsing..' )
+			debug_msg( 1, 'torque_xml_thread(): Retrieving XML data..' )
 
 			my_data	= self.myXMLSource.getData()
 
-			try:
+			debug_msg( 1, 'torque_xml_thread(): Done retrieving.' )
+
+			if my_data:
+				debug_msg( 1, 'ganglia_parse_thread(): Parsing XML..' )
+
 				xml.sax.parseString( my_data, self.myXMLHandler, self.myXMLError )
-			except socket.error, msg:
-				debug_msg( 0, 'ERROR: Socket error in connect to datasource!: %s' %msg )
+
+				debug_msg( 1, 'ganglia_parse_thread(): Done parsing.' )
 				
-			debug_msg( 1, 'torque_xml_thread(): Done parsing.' )
 			debug_msg( 1, 'torque_xml_thread(): Sleeping.. (%ss)' %(str( self.config.getLowestInterval() ) ) )
 			time.sleep( self.config.getLowestInterval() )
 
@@ -1160,6 +1163,8 @@ class XMLGatherer:
 
 		self.slot.acquire()
 
+		self.data	= None
+
 		for res in socket.getaddrinfo( self.host, self.port, socket.AF_UNSPEC, socket.SOCK_STREAM ):
 
 			af, socktype, proto, canonname, sa = res
@@ -1168,7 +1173,7 @@ class XMLGatherer:
 
 				self.s = socket.socket( af, socktype, proto )
 
-			except socket.error, msg:
+			except ( socket.error, socket.gaierror, socket.herror, socket.timeout ), msg:
 
 				self.s = None
 				continue
@@ -1177,7 +1182,7 @@ class XMLGatherer:
 
 				self.s.connect( sa )
 
-		    	except socket.error, msg:
+		    	except ( socket.error, socket.gaierror, socket.herror, socket.timeout ), msg:
 
 				self.disconnect()
 				continue
@@ -1188,7 +1193,7 @@ class XMLGatherer:
 
 			debug_msg( 0, 'FATAL ERROR: Could not open socket or unable to connect to datasource!' )
 			self.update_now	= False
-			sys.exit( 1 )
+			#sys.exit( 1 )
 
 		else:
 			#self.s.send( '\n' )
@@ -1401,19 +1406,17 @@ class GangliaXMLProcessor( XMLProcessor ):
 		"""Actual parsing thread"""
 
 		debug_msg( 1, 'ganglia_parse_thread(): started.' )
-		debug_msg( 1, 'ganglia_parse_thread(): Parsing XML..' )
-		#self.myXMLSource = self.myXMLGatherer.getFileObject()
+		debug_msg( 1, 'ganglia_parse_thread(): Retrieving XML data..' )
 		
 		my_data	= self.myXMLSource.getData()
 
-		#print my_data
+		debug_msg( 1, 'ganglia_parse_thread(): Done retrieving.' )
 
-		try:
+		if my_data:
+			debug_msg( 1, 'ganglia_parse_thread(): Parsing XML..' )
 			xml.sax.parseString( my_data, self.myXMLHandler, self.myXMLError )
-		except socket.error, msg:
-			debug_msg( 0, 'ERROR: Socket error in connect to datasource!: %s' %msg )
+			debug_msg( 1, 'ganglia_parse_thread(): Done parsing.' )
 
-		debug_msg( 1, 'ganglia_parse_thread(): Done parsing.' )
 		debug_msg( 1, 'ganglia_parse_thread(): finished.' )
 
 		return 0
@@ -1960,6 +1963,11 @@ def daemon():
 def run():
 	"""Threading start"""
 
+	config		= GangliaConfigParser( GMETAD_CONF )
+	s_timeout	= int( config.getLowestInterval() - 1 )
+
+	socket.setdefaulttimeout( s_timeout )
+
 	myXMLSource		= XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] )
 	myDataStore		= DataSQLStore( JOB_SQL_DBASE.split( '/' )[0], JOB_SQL_DBASE.split( '/' )[1] )
 
@@ -2045,5 +2053,6 @@ def write_pidfile():
 		pidfile.close()
 
 # Ooohh, someone started me! Let's go..
+#
 if __name__ == '__main__':
 	main()
