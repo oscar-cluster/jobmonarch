@@ -79,6 +79,8 @@
 		c:	all XML input was uniencoded, which could cause errors,
 			now all properly converted to normal strings
 
+		f:	when XML data source (gmetad) is unavailable parsethread didn't return correctly
+			which caused a large number of threads to spawn while consuming large amounts of memory
 		f:	autocreate clusterdirs in archivedir
 		f:	unhandled gather exception
 		f:	incorrect stop_timestamping when jobs finished
