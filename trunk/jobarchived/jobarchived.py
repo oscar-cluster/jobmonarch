@@ -47,8 +47,8 @@ def usage( ver ):
 
 def processArgs( args ):
 
-        SHORT_L	= 'p:hc:'
-        LONG_L	= [ 'help', 'config=', 'pidfile=' ]
+        SHORT_L	= 'p:hvc:'
+        LONG_L	= [ 'help', 'config=', 'pidfile=', 'version' ]
 
         config_filename = '/etc/jobarchived.conf'
 
