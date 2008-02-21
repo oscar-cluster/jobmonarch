@@ -21,24 +21,28 @@
 # SVN $Id$
 #
 
-DEFAULT_SEARCH_PATH     = '/usr/share/jobarchived'
+import getopt, syslog, ConfigParser, sys
 
-import sys
+VERSION='0.3SVN'
 
-if DEFAULT_SEARCH_PATH not in sys.path:
+def usage( ver ):
 
-        sys.path.append( DEFAULT_SEARCH_PATH )
+	print 'jobarchived %s' %VERSION
 
-import getopt, syslog, ConfigParser
-
-def usage():
+	if ver:
+		return 0
 
 	print
-	print 'usage: jobarchived [options]'
-	print 'options:'
-	print '      --config, -c      configuration file'
-	print '      --pidfile, -p     pid file'
-	print '      --help, -h        help'
+	print 'Purpose:'
+	print '  The Job Archive Daemon (jobarchived) stores batch job information in a SQL database'
+	print '  and node statistics in a RRD archive'
+	print
+	print 'Usage:	jobarchived [OPTIONS]'
+	print
+	print '  -c, --config=FILE	The configuration file to use (default: /etc/jobarchived.conf)'
+	print '  -p, --pidfile=FILE	Use pid file to store the process id'
+	print '  -h, --help		Print help and exit'
+	print '  -v, --version		Print version and exit'
 	print
 
 def processArgs( args ):
@@ -46,7 +50,7 @@ def processArgs( args ):
         SHORT_L	= 'p:hc:'
         LONG_L	= [ 'help', 'config=', 'pidfile=' ]
 
-        config_filename = None
+        config_filename = '/etc/jobarchived.conf'
 
 	global PIDFILE
 
@@ -73,12 +77,13 @@ def processArgs( args ):
 
 		if opt in [ '--help', '-h' ]:
 
-			usage()
+			usage( false )
 			sys.exit( 0 )
 
-        if not config_filename:
+		if opt in [ '--version', '-v' ]:
 
-                config_filename = '/etc/jobarchived.conf'
+			usage( true )
+			sys.exit( 0 )
 
 	try:
 		return loadConfig( config_filename )
@@ -126,7 +131,9 @@ def loadConfig( filename ):
 
 	cfg.read( filename )
 
-	global DEBUG_LEVEL, USE_SYSLOG, SYSLOG_LEVEL, SYSLOG_FACILITY, GMETAD_CONF, ARCHIVE_XMLSOURCE, ARCHIVE_DATASOURCES, ARCHIVE_PATH, ARCHIVE_HOURS_PER_RRD, ARCHIVE_EXCLUDE_METRICS, JOB_SQL_DBASE, DAEMONIZE, RRDTOOL, JOB_TIMEOUT, MODRRDTOOL
+	global DEBUG_LEVEL, USE_SYSLOG, SYSLOG_LEVEL, SYSLOG_FACILITY, GMETAD_CONF, ARCHIVE_XMLSOURCE
+	global ARCHIVE_DATASOURCES, ARCHIVE_PATH, ARCHIVE_HOURS_PER_RRD, ARCHIVE_EXCLUDE_METRICS
+	global JOB_SQL_DBASE, DAEMONIZE, RRDTOOL, JOB_TIMEOUT, MODRRDTOOL
 
 	ARCHIVE_PATH		= cfg.get( 'DEFAULT', 'ARCHIVE_PATH' )
 
@@ -149,7 +156,7 @@ def loadConfig( filename ):
 
 		MODRRDTOOL		= False
 
-		debug_msg( 0, "ERROR: py-rrdtool import FAILED: failing back to DEPRECATED use of rrdtool binary. This will slow down jobmond significantly!" )
+		debug_msg( 0, "ERROR: py-rrdtool import FAILED: failing back to DEPRECATED use of rrdtool binary. This will slow down jobarchived significantly!" )
 
 		RRDTOOL			= cfg.get( 'DEFAULT', 'RRDTOOL' )
 
@@ -198,7 +205,6 @@ The Job Archiving Daemon
 from types import *
 
 import xml.sax, xml.sax.handler, socket, string, os, os.path, time, thread, threading, random, re
-import rrdtool
 from pyPgSQL import PgSQL
 
 # Orginal from Andre van der Vlies <andre@vandervlies.xs4all.nl> for MySQL. Changed
@@ -544,6 +550,8 @@ class DataSQLStore:
 
 	def checkStaleJobs( self ):
 
+		# Locate all jobs in the database that are not set to finished
+		#
 		q = "SELECT * from jobs WHERE job_status != 'F'"
 
 		r = self.getDatabase( q )
@@ -565,6 +573,9 @@ class DataSQLStore:
 			job_status		= row[7]
 			job_start_timestamp	= row[8]
 
+			# If it was set to queued and we didn't see it started
+			# there's not point in keeping it around
+			#
 			if job_status == 'Q' or not job_start_timestamp:
 
 				cleanjobs.append( job_id )
@@ -573,6 +584,9 @@ class DataSQLStore:
 
 				start_timestamp = int( job_start_timestamp )
 
+				# If it was set to running longer than JOB_TIMEOUT 
+				# close the job: it probably finished while we were not running
+				#
 				if ( cur_time - start_timestamp ) > jobtimeout_sec:
 
 					if job_requested_time:
@@ -585,6 +599,8 @@ class DataSQLStore:
 
 		debug_msg( 1, 'Found ' + str( len( cleanjobs ) ) + ' stale jobs in database: deleting entries' )
 
+		# Purge these from database
+		#
 		for j in cleanjobs:
 
 			q = "DELETE FROM jobs WHERE job_id = '" + str( j ) + "'"
@@ -592,6 +608,10 @@ class DataSQLStore:
 
 		debug_msg( 1, 'Found ' + str( len( timeoutjobs ) ) + ' timed out jobs in database: closing entries' )
 
+		# Close these jobs in the database
+		# update the stop_timestamp to: start_timestamp + requested wallclock
+		# and set state: finished
+		#
 		for j in timeoutjobs:
 
 			( i, s, r )		= j
@@ -641,6 +661,8 @@ class RRDMutator:
 
 		last_update = 0
 
+		# Use the py-rrdtool module if it's available on this system
+		#
 		if MODRRDTOOL:
 
 			debug_msg( 8, 'rrdtool.info( ' + filename + ' )' )
@@ -657,6 +679,9 @@ class RRDMutator:
 			else:
 				return 0
 
+		# For backwards compatiblity: use the rrdtool binary if py-rrdtool is unavailable
+		# DEPRECATED (slow!)
+		#
 		else:
 			debug_msg( 8, self.binary + ' info ' + filename )
 
@@ -751,8 +776,6 @@ class TorqueXMLProcessor( XMLProcessor ):
 	def __init__( self, XMLSource, DataStore ):
 		"""Setup initial XML connection and handlers"""
 
-		#self.myXMLGatherer	= XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
-		#self.myXMLSource	= self.myXMLGatherer.getFileObject()
 		self.myXMLSource	= XMLSource
 		self.myXMLHandler	= TorqueXMLHandler( DataStore )
 		self.myXMLError		= XMLErrorHandler()
