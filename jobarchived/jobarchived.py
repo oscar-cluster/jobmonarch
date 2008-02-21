@@ -619,7 +619,7 @@ class DataSQLStore:
 			if r:
 				new_end_timestamp	= int( s ) + r
 
-			q = "UPDATE jobs SET job_stop_timestamp = '" + str( new_end_timestamp ) + "' WHERE job_id = '" + str(i) + "'"
+			q = "UPDATE jobs SET job_status='F',job_stop_timestamp = '" + str( new_end_timestamp ) + "' WHERE job_id = '" + str(i) + "'"
 			self.setDatabase( q )
 
 class RRDMutator:
