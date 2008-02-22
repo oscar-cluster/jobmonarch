@@ -1,16 +1,21 @@
+# Where to build
+#
 TMPDIR = /tmp
-WEBDIR = var/www/ganglia
 
-VERSION = 0.2.1
+# What is the location of the Ganglia web frontend
+# i.e.: where to we install Job Monarch's web frontend addon
+# 
+WEBDIR = /var/www/ganglia
+
+VERSION = 0.3
 RELEASE = 1
 
 REQUIRED = ./jobarchived ./jobmond ./web
 
-debian:	deb-jobmond deb-jobarchived deb-webfrontend
+deb:	deb-jobmond deb-jobarchived deb-webfrontend
+rpm:	rpm-jobmond rpm-jobarchived rpm-webfrontend
 
-rpm: rpm-jobmond rpm-jobarchived rpm-webfrontend
-
-all:	tarball debian rpm
+all:	tarball deb rpm
 
 tarball:	tarball-gzip tarball-bzip
 
