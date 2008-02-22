@@ -1,11 +1,11 @@
-#! /bin/sh
+#!/bin/sh
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/sbin/jobmond
 NAME=jobmond
 DESC="Job Monitor Daemon"
 
-PIDFILE="/var/run/jobmond.pid"
+PIDFILE="/var/run/$NAME.pid"
 
 test -x $DAEMON || return 0
 
@@ -16,14 +16,14 @@ OPTIONS=""
 case "$1" in
   start)
 	echo -n "Starting $DESC: "
-	start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid \
-		--exec $DAEMON -- --pidfile "$PIDFILE" $OPTIONS || { rm -f "$PIDFILE"; echo "start failed."; exit 0; }
+	start-stop-daemon --start --quiet --startas "$DAEMON" --pidfile "$PIDFILE" -- \
+		--pidfile="$PIDFILE" $OPTIONS || { echo "start failed."; exit 0; }
 	echo "$NAME."
 	exit 0
 	;;
   stop)
 	echo -n "Stopping $DESC: "
-        start-stop-daemon --stop  --quiet --pidfile /var/run/$NAME.pid \
+        start-stop-daemon --stop  --quiet --pidfile "$PIDFILE" \
                 --signal 9 2>&1 > /dev/null || { rm -f "$PIDFILE"; echo "not running."; exit 0; }
 	echo "$NAME."
 	rm -f "$PIDFILE"
