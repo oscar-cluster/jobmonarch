@@ -23,7 +23,7 @@ case "$1" in
 	;;
   stop)
 	echo -n "Stopping $DESC: "
-        start-stop-daemon --stop  --quiet --pidfile "$PIDFILE" \
+        start-stop-daemon --stop --quiet --pidfile "$PIDFILE" \
                 --signal 9 2>&1 > /dev/null || { rm -f "$PIDFILE"; echo "not running."; exit 0; }
 	echo "$NAME."
 	rm -f "$PIDFILE"
