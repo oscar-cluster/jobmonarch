@@ -84,9 +84,9 @@ def processArgs( args ):
 			usage( False )
 			sys.exit( 0 )
 
-		 if opt in [ '--version', '-v' ]:
+		if opt in [ '--version', '-v' ]:
 
-		 	usage( True )
+			usage( True )
 			sys.exit( 0 )
 
 	return loadConfig( config_filename )
