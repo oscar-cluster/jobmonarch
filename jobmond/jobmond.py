@@ -21,28 +21,38 @@
 # SVN $Id$
 #
 
-import sys, getopt, ConfigParser
-import time, os, socket, string, re
-import xdrlib, socket, syslog
-import xml, xml.sax
+import sys, getopt, ConfigParser, time, os, socket, string, re
+import xdrlib, socket, syslog, xml, xml.sax
 from xml.sax import saxutils, make_parser
 from xml.sax import make_parser
 from xml.sax.handler import feature_namespaces
 
-def usage():
+VERSION='0.3'
+
+def usage( ver ):
+
+	print 'jobmond %s' %VERSION
+
+	if ver:
+		return 0
 
 	print
-	print 'usage: jobmond [options]'
-	print 'options:'
-	print '      --config, -c      configuration file'
-	print '      --pidfile, -p     pid file'
-	print '      --help, -h        help'
+	print 'Purpose:'
+	print '  The Job Monitoring Daemon (jobmond) reports batch jobs information and statistics'
+	print '  to Ganglia, which can be viewed with Job Monarch web frontend'
+	print
+	print 'Usage:	jobmond [OPTIONS]'
+	print
+	print '  -c, --config=FILE	The configuration file to use (default: /etc/jobmond.conf)'
+	print '  -p, --pidfile=FILE	Use pid file to store the process id'
+	print '  -h, --help		Print help and exit'
+	print '  -v, --version          Print version and exit'
 	print
 
 def processArgs( args ):
 
-	SHORT_L		= 'p:hc:'
-	LONG_L		= [ 'help', 'config=', 'pidfile=' ]
+	SHORT_L		= 'p:hvc:'
+	LONG_L		= [ 'help', 'config=', 'pidfile=', 'version' ]
 
 	global PIDFILE
 	PIDFILE		= None
@@ -71,7 +81,12 @@ def processArgs( args ):
 		
 		if opt in [ '--help', '-h' ]:
  
-			usage()
+			usage( False )
+			sys.exit( 0 )
+
+		 if opt in [ '--version', '-v' ]:
+
+		 	usage( True )
 			sys.exit( 0 )
 
 	return loadConfig( config_filename )
@@ -330,6 +345,8 @@ class DataProcessor:
 						
 							incompatible = 1
 
+						# Gmetric 3.0.1 >< 3.0.3 had a bug in the max metric length
+						#
 						if version_patch < 3:
 
 							METRIC_MAX_VAL_LEN = 900
@@ -797,7 +814,7 @@ class PbsDataGatherer( DataGatherer ):
 
 			myAttrs				= { }
 
-			myAttrs[ 'name' ]			= str( name )
+			myAttrs[ 'name' ]		= str( name )
 			myAttrs[ 'queue' ]		= str( queue )
 			myAttrs[ 'owner' ]		= str( owner )
 			myAttrs[ 'requested_time' ]	= str( requested_time )
@@ -832,6 +849,8 @@ class PbsDataGatherer( DataGatherer ):
 		running_jobs	= 0
 		queued_jobs	= 0
 
+		# Count how many running/queued jobs we found
+		#
 		for jobid, jobattrs in self.jobs.items():
 
 			if jobattrs[ 'status' ] == 'Q':
@@ -842,6 +861,8 @@ class PbsDataGatherer( DataGatherer ):
 
 				running_jobs += 1
 
+		# Report running/queued jobs as seperate metric for a nice RRD graph
+		#
 		self.dp.multicastGmetric( 'MONARCH-RJ', str( running_jobs ), 'uint32', 'jobs' )
 		self.dp.multicastGmetric( 'MONARCH-QJ', str( queued_jobs ), 'uint32', 'jobs' )
 
@@ -849,13 +870,20 @@ class PbsDataGatherer( DataGatherer ):
 		#
 		for jobid, jobattrs in self.jobs.items():
 
+			# Make gmetric values for each job: respect max gmetric value length
+			#
 			gmetric_val		= self.compileGmetricVal( jobid, jobattrs )
 			metric_increment	= 0
 
+			# If we have more job info than max gmetric value length allows, split it up
+			# amongst multiple metrics
+			#
 			for val in gmetric_val:
 
 				self.dp.multicastGmetric( 'MONARCH-JOB-' + jobid + '-' + str(metric_increment), val )
 
+				# Increase follow number if this jobinfo is split up amongst more than 1 gmetric
+				#
 				metric_increment	= metric_increment + 1
 
 	def compileGmetricVal( self, jobid, jobattrs ):
@@ -868,7 +896,12 @@ class PbsDataGatherer( DataGatherer ):
 
 		for val_name, val_value in jobattrs.items():
 
+			# These are our own metric names, i.e.: status, start_timestamp, etc
+			#
 			val_list_names_len	= len( string.join( val_list.keys() ) ) + len(val_list.keys())
+
+			# These are their corresponding values
+			#
 			val_list_vals_len	= len( string.join( val_list.values() ) ) + len(val_list.values())
 
 			if val_name == 'nodes' and jobattrs['status'] == 'R':
@@ -883,8 +916,12 @@ class PbsDataGatherer( DataGatherer ):
 					else:
 						node_str = node
 
+					# Make sure if we add this new info, that the total metric's value length does not exceed METRIC_MAX_VAL_LEN
+					#
 					if (val_list_names_len + len(val_name) ) + (val_list_vals_len + len(node_str) ) > METRIC_MAX_VAL_LEN:
 
+						# It's too big, we need to make a new gmetric for the additional info
+						#
 						val_list[ val_name ]	= node_str
 
 						gval_lists.append( val_list )
@@ -900,8 +937,12 @@ class PbsDataGatherer( DataGatherer ):
 
 			elif val_value != '':
 
+				# Make sure if we add this new info, that the total metric's value length does not exceed METRIC_MAX_VAL_LEN
+				#
 				if (val_list_names_len + len(val_name) ) + (val_list_vals_len + len(str(val_value)) ) > METRIC_MAX_VAL_LEN:
 
+					# It's too big, we need to make a new gmetric for the additional info
+					#
 					gval_lists.append( val_list )
 
 					val_list		= { }
@@ -914,6 +955,8 @@ class PbsDataGatherer( DataGatherer ):
 
 		str_list	= [ ]
 
+		# Now append the value names and values together, i.e.: stop_timestamp=value, etc
+		#
 		for val_list in gval_lists:
 
 			my_val_str	= None
@@ -971,6 +1014,8 @@ class Gmetric:
 
 		if self.prot == 'multicast':
 
+			# Set multicast options
+			#
 			self.socket.setsockopt( socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 20 )
 
 		self.hostport   = ( host, int( port ) )
@@ -978,6 +1023,8 @@ class Gmetric:
 		self.tmax       = 60
 
 	def checkHostProtocol( self, ip ):
+
+		"""Detect if a ip adress is a multicast address"""
 
 		MULTICAST_ADDRESS_MIN   = ( "224", "0", "0", "0" )
 		MULTICAST_ADDRESS_MAX   = ( "239", "255", "255", "255" )
@@ -994,6 +1041,7 @@ class Gmetric:
 
 		if len( units ) == 0:
 			units		= GMETRIC_DEFAULT_UNITS
+
 		if len( typestr ) == 0:
 			typestr		= GMETRIC_DEFAULT_TYPE
 
@@ -1047,12 +1095,13 @@ def debug_msg( level, msg ):
 
 def write_pidfile():
 
-	# Write pidfile if PIDFILE exists
+	# Write pidfile if PIDFILE is set
+	#
 	if PIDFILE:
 
 		pid	= os.getpid()
 
-		pidfile	= open(PIDFILE, 'w')
+		pidfile	= open( PIDFILE, 'w' )
 
 		pidfile.write( str( pid ) )
 		pidfile.close()
@@ -1068,6 +1117,9 @@ def main():
 
 		sys.exit( 1 )
 
+	# Load appropriate DataGatherer depending on which BATCH_API is set
+	# and any required modules for the Gatherer
+	#
 	if BATCH_API == 'pbs':
 
 		try:
