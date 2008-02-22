@@ -14,31 +14,35 @@
 . /etc/rc.d/init.d/functions
 
 RETVAL=0
-name=jobarchived
-prog=/usr/sbin/jobarchived
-desc="Job Archiving Daemon"
+NAME=jobarchived
+DAEMON=/usr/sbin/jobarchived
+DESC="Job Archiving Daemon"
+
+PIDFILE=/var/run/$NAME.pid
 
 OPTIONS=""
 
-if [ -r /etc/sysconfig/$name ]; then
-	source /etc/sysconfig/$name
+if [ -r /etc/sysconfig/$NAME ]
+	then
+		source /etc/sysconfig/$NAME
 fi
 
 start() {
-	echo -n $"Starting $desc: "
-	daemon $prog -p /var/run/$name.pid $OPTIONS
+	echo -n $"Starting $DESC: "
+	daemon $DAEMON --pidfile="$PIDFILE" $OPTIONS
 	RETVAL=$?
 	echo
-	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$name
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$NAME
 	return $RETVAL
 }
 
 stop() {
-	echo -n $"Stopping $desc: "
-	killproc $prog
+	echo -n $"Stopping $DESC: "
+	killproc $DAEMON
 	RETVAL=$?
 	echo
-	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/$name
+	rm -f $PIDFILE
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/$NAME
 	return $RETVAL
 }
 
@@ -58,7 +62,7 @@ case "$1" in
 		restart
 		;;
 	condrestart)
-		[ -e /var/lock/subsys/$name ] && restart
+		[ -e /var/lock/subsys/$NAME ] && restart
 		RETVAL=$?
 		;;
 	status)
