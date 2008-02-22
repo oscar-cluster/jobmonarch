@@ -145,10 +145,9 @@ INSTALLATION
 
 		 > cp jobarchived/jobarchived.conf /etc/jobarchived.conf
 
-		4. Copy jobarchived.py and DBClass.py:
+		4. Copy jobarchived.py:
 
 		 > cp jobarchived/jobarchived.py /usr/local/sbin/jobarchived.py
-		 > cp jobarchived/DBClass.py /usr/local/sbin/DBClass.py
 
 	* web
 
