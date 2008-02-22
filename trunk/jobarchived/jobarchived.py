@@ -157,7 +157,7 @@ def loadConfig( filename ):
 
 		MODRRDTOOL		= False
 
-		debug_msg( 0, "ERROR: py-rrdtool import FAILED: failing back to DEPRECATED use of rrdtool binary. This will slow down jobarchived significantly!" )
+		print "ERROR: py-rrdtool import FAILED: failing back to DEPRECATED use of rrdtool binary. This will slow down jobarchived significantly!"
 
 		RRDTOOL			= cfg.get( 'DEFAULT', 'RRDTOOL' )
 
@@ -206,7 +206,14 @@ The Job Archiving Daemon
 from types import *
 
 import xml.sax, xml.sax.handler, socket, string, os, os.path, time, thread, threading, random, re
-from pyPgSQL import PgSQL
+
+try:
+	from pyPgSQL import PgSQL
+
+except ImportError, details:
+
+	print "FATAL ERROR: pyPgSQL python module not found"
+	sys.exit( 1 )
 
 # Orginal from Andre van der Vlies <andre@vandervlies.xs4all.nl> for MySQL. Changed
 # and added some more functions for postgres.
