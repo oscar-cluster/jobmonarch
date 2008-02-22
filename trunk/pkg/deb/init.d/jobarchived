@@ -5,7 +5,7 @@ DAEMON=/usr/sbin/jobarchived
 NAME=jobarchived
 DESC="Job Archiving Daemon"
 
-PIDFILE="/var/run/jobarchived.pid"
+PIDFILE="/var/run/$NAME.pid"
 OPTIONS=""
 
 test -x $DAEMON || exit 0
@@ -15,14 +15,14 @@ test -x $DAEMON || exit 0
 case "$1" in
   start)
 	echo -n "Starting $DESC: "
-	start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid \
-		--exec $DAEMON -- --pidfile "$PIDFILE" $OPTIONS || { echo "start failed."; exit 0; }
+	start-stop-daemon --start --quiet --startas "$DAEMON" --pidfile "$PIDFILE" -- \
+		--pidfile="$PIDFILE" $OPTIONS || { echo "start failed."; exit 0; }
 	echo "$NAME."
 	exit 0
 	;;
   stop)
 	echo -n "Stopping $DESC: "
-        start-stop-daemon --stop  --quiet --pidfile /var/run/$NAME.pid \
+        start-stop-daemon --stop  --quiet --pidfile "$PIDFILE" \
                 --signal 9 2>&1 > /dev/null || { rm -f "$PIDFILE"; echo "not running."; exit 0; }
 	echo "$NAME."
 	rm -f "$PIDFILE"
