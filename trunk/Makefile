@@ -2,6 +2,10 @@
 #
 TMPDIR = /tmp
 
+# Clear this if you don't want to use ${FAKEROOT}
+#
+FAKEROOT = fakeroot
+
 # What is the location of the Ganglia web frontend
 # i.e.: where to we install Job Monarch's web frontend addon
 # 
@@ -45,7 +49,7 @@ deb-webfrontend:	${REQUIRED}
 	| sed "s/^Version:.*$//Version: ${VERSION}-${RELEASE}/g" >jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control.new; \
 	mv jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control.new \
 	jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control )
-	( cd ${TMPDIR}/.monarch_buildroot/; fakeroot dpkg -b jobmonarch-webfrontend_${VERSION}-${RELEASE} )
+	( cd ${TMPDIR}/.monarch_buildroot/; ${FAKEROOT} dpkg -b jobmonarch-webfrontend_${VERSION}-${RELEASE} )
 	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}.deb ..
 
 deb-jobarchived:	${REQUIRED}
@@ -69,7 +73,7 @@ deb-jobarchived:	${REQUIRED}
 	| sed "s/^Version:.*$//Version: ${VERSION}-${RELEASE}/g" >jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control.new; \
 	mv jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control.new \
 	jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control )
-	( cd ${TMPDIR}/.monarch_buildroot/; fakeroot dpkg -b jobmonarch-jobarchived_${VERSION}-${RELEASE} )
+	( cd ${TMPDIR}/.monarch_buildroot/; ${FAKEROOT} dpkg -b jobmonarch-jobarchived_${VERSION}-${RELEASE} )
 	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}.deb ..
 
 deb-jobmond:	${REQUIRED}
@@ -89,7 +93,7 @@ deb-jobmond:	${REQUIRED}
 	( cd ${TMPDIR}/.monarch_buildroot/; cat jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control \
 	| sed "s/^Version:.*$//Version: ${VERSION}-${RELEASE}/g" >jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control.new; \
 	mv jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control.new jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control )
-	( cd ${TMPDIR}/.monarch_buildroot/; fakeroot dpkg -b jobmonarch-jobmond_${VERSION}-${RELEASE} )
+	( cd ${TMPDIR}/.monarch_buildroot/; ${FAKEROOT} dpkg -b jobmonarch-jobmond_${VERSION}-${RELEASE} )
 	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}.deb ..
 
 rpm-jobmond:	${REQUIRED}
@@ -113,7 +117,7 @@ rpm-jobmond:	${REQUIRED}
 	mv jobmonarch-jobmond-${VERSION}-${RELEASE}/jobmonarch-jobmond-${VERSION}-${RELEASE}.spec.new \
 	jobmonarch-jobmond-${VERSION}-${RELEASE}/jobmonarch-jobmond-${VERSION}-${RELEASE}.spec )
 	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}; \
-	fakeroot rpmbuild -bb jobmonarch-jobmond-${VERSION}-${RELEASE}.spec )
+	${FAKEROOT} rpmbuild -bb jobmonarch-jobmond-${VERSION}-${RELEASE}.spec )
 	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}.*.rpm ..
 
 rpm-jobarchived:	${REQUIRED}
@@ -140,7 +144,7 @@ rpm-jobarchived:	${REQUIRED}
 	mv jobmonarch-jobarchived-${VERSION}-${RELEASE}/jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec.new \
 	jobmonarch-jobarchived-${VERSION}-${RELEASE}/jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec )
 	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}; \
-	fakeroot rpmbuild -bb jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec )
+	${FAKEROOT} rpmbuild -bb jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec )
 	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}.*.rpm ..
 
 rpm-webfrontend:	${REQUIRED}
@@ -159,7 +163,7 @@ rpm-webfrontend:	${REQUIRED}
 	mv jobmonarch-webfrontend-${VERSION}-${RELEASE}/jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec.new \
 	jobmonarch-webfrontend-${VERSION}-${RELEASE}/jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec )
 	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}; \
-	fakeroot rpmbuild -bb jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec )
+	${FAKEROOT} rpmbuild -bb jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec )
 	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}.*.rpm ..
 
 clean:	${TMPDIR}/.monarch_buildroot
