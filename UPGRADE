@@ -2,18 +2,19 @@ Most Job Monarch releases (and their configs) should be backwards compatible wit
 previous version. However, should there be any changes that has significant effect on the
 operation, tips and suggestions will be given here.
 
-0.2 -> 0.2.1
+0.2 -> 0.3
 ============
 
 web)
 	* Now supports per-cluster specific settings
 
 	This enables you to override any setting of the webfrontend's conf.php on a per-cluster basis.
+	You can also specify a different sql database per cluster this way, of specify cluster image
+	hostname parsing (see below).
 
 	You can do this by including separate conf files as follows:
 
 	$CLUSTER_CONFS["My Cluster"]          = "/path/to/clusterconf/mycluster.php";
-
 
 	* Now supports parsing hostname location for building the ClusterImage as seen on the overview
 
