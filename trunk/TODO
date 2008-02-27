@@ -4,20 +4,10 @@ Functionality TODO (wish) list
 	*	Improved config file and arguments usage for daemons
 		(also --help and possibly a man page)
 
-	*	Actual version reporting by daemons
-
 	*	Usage of a node's (Ganglia) location in the ClusterImage
 		construction (placement by x,y,z coordinates)
   
 	*	More advanced and detailed graph's, etc
-
-	*	Clickable nodes in the "big" cluster image,
-		filtering all jobs on that particular node.
-
-	*	Mouse hints on the "big" cluster image,
-		showing node information detail when holding
-		over a node. Information such as jobid(s),
-		queues, users, etc
 
 	*	Usage of regexp's or wildcards at jobsearch
 		i.e. for job name/user/queue
