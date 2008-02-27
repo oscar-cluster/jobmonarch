@@ -157,6 +157,7 @@ INSTALLATION
 
 		2. Copy the web interface files to the addon directory in Ganglia
 
+		 > mkdir -p /var/www/ganglia/addons
 		 > cp -a web/addons/job_monarch /var/www/ganglia/addons
 
 CONFIGURATION
