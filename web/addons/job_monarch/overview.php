@@ -267,7 +267,7 @@ function drawPie()
 		$empty_cpus	+= $node_freecpu;
 	}
 
-	$empty_cpus		= ( $empty_cpus >= 0 ) ? $empy_cpus : 0;
+	$empty_cpus		= ( $empty_cpus >= 0 ) ? $empty_cpus : 0;
 	$used_cpus		= $nr_cpus - $empty_cpus;
 
 	$empty_percentage 	= ($empty_cpus / $nr_cpus) * 100;
