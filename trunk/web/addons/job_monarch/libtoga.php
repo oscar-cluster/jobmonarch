@@ -688,14 +688,14 @@ class TorqueXMLHandler {
 					}
 				}
 
-				if( isset( $jobs[$jobid][domain] ) and isset( $jobs[$jobid][nodes] ) ) {
+				if( isset( $jobs[$jobid][nodes] ) ) {
 			
 					$nr_nodes = count( $jobs[$jobid][nodes] );
 		
 					if( $jobs[$jobid][status] == 'R' )
 					{
 
-						if( isset( $jobs[$jobid][domain] )
+						if( isset( $jobs[$jobid][domain] ) )
 						{
 							$domain		= $jobs[$jobid][domain];
 							$domain_len	= 0 - strlen( $domain );
@@ -712,11 +712,12 @@ class TorqueXMLHandler {
 							}
 						}
 
-						foreach( $jobs[$jobid][nodes] as $node ) {
+						foreach( $jobs[$jobid][nodes] as $node )
+						{
 
 							// Only add domain name to the hostname if Ganglia is doing that too
 							//
-							if( ( $this->fqdn ) && ( isset( $jobs[$jobid][domain] ) )
+							if( $this->fqdn && isset( $jobs[$jobid][domain] ) )
 							{
 								if( substr( $node, $domain_len ) != $domain )
 								{
