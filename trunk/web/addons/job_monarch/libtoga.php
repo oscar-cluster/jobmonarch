@@ -711,6 +711,10 @@ class TorqueXMLHandler {
 								}
 							}
 						}
+						else
+						{
+							$this->fqdn	= 0;
+						}
 
 						foreach( $jobs[$jobid][nodes] as $node )
 						{
