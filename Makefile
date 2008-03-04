@@ -159,6 +159,7 @@ rpm-webfrontend:	${REQUIRED}
 	| sed "s/^Buildroot:.*$//Buildroot: \${TMPDIR}\/\.monarch_buildroot\/jobmonarch-webfrontend-${VERSION}-${RELEASE}/g" \
 	| sed "s/^Version:.*$//Version: ${VERSION}/g" \
 	| sed "s/^Release:.*$//Release: ${RELEASE}/g" \
+	| sed "s+/var/www/ganglia+${WEBDIR}+g" \
 	>jobmonarch-webfrontend-${VERSION}-${RELEASE}/jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec.new; \
 	mv jobmonarch-webfrontend-${VERSION}-${RELEASE}/jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec.new \
 	jobmonarch-webfrontend-${VERSION}-${RELEASE}/jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec )
