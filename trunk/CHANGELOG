@@ -16,10 +16,11 @@
 		f:	typo in empty_cpu variable: causing incorrect 'free cpu' count and similar errors
 			thanks to: Craig West - cwest(a.t)astro(d.o.t)umass(d.o.t)edu
 			for reporting it
-		f:	changed domain detection a little
-			thanks to: Jeffrey Sarlo - JSarlo(a.t)Central(d.o.t)UH(d.o.t)EDU
+		f:	changed erroneous domain detection a little
+			thanks to: Craig West - cwest(a.t)astro(d.o.t)umass(d.o.t)edu
 			for reporting it
 		a:	now properly detects whether or not to use FQDN or short hostnames w/o domain
+			thanks to: Craig West - cwest(a.t)astro(d.o.t)umass(d.o.t)edu
 			thanks to: Jeffrey Sarlo - JSarlo(a.t)Central(d.o.t)UH(d.o.t)EDU
 			for the many testing and reporting it
 
