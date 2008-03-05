@@ -1,6 +1,29 @@
 
 	LEGEND	f: fixed - c: changed - a: added - r: removed
 
+0.3.1:
+
+	other)
+		f:	updated INSTALL since "addons" directory is not included by default anymore in Ganglia
+			thanks to: Steven DuChene linux(d.a.s.h)clusters(a.t)mindspring(d.o.t)com
+			for reporting it
+
+	rpm)
+		f:	add "addons" directory since it's not included by default anymore in Ganglia
+
+	web)
+		f:	typo in empty_cpu variable: causing incorrect 'free cpu' count and similar errors
+			thanks to: Craig West - cwest(a.t)astro(d.o.t)umass(d.o.t)edu
+			for reporting it
+		f:	changed domain detection a little
+			thanks to: Jeffrey Sarlo - JSarlo(a.t)Central(d.o.t)UH(d.o.t)EDU
+			for reporting it
+		a:	now properly detects whether or not to use FQDN or short hostnames w/o domain
+			thanks to: Jeffrey Sarlo - JSarlo(a.t)Central(d.o.t)UH(d.o.t)EDU
+			for the many testing and reporting it
+
+			SPECIAL THANKS to the University of Houston for sending me a shirt!
+
 0.3:
 
 	web)
