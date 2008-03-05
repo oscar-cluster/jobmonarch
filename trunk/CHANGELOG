@@ -24,6 +24,10 @@
 
 			SPECIAL THANKS to the University of Houston for sending me a shirt!
 
+	jobarchived)
+		f:	properly catch postgres exception
+		f:	don't use debug_message while loading config file
+
 0.3:
 
 	web)

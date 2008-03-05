@@ -27,7 +27,7 @@ from xml.sax import saxutils, make_parser
 from xml.sax import make_parser
 from xml.sax.handler import feature_namespaces
 
-VERSION='0.3'
+VERSION='0.3.1'
 
 def usage( ver ):
 
