@@ -10,6 +10,7 @@
 
 	rpm)
 		f:	add "addons" directory since it's not included by default anymore in Ganglia
+		f:	properly rewrite WEBDIR path in %files when rebuilding rpms with Makefile
 
 	web)
 		f:	typo in empty_cpu variable: causing incorrect 'free cpu' count and similar errors
