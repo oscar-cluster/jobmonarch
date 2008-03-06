@@ -8,7 +8,7 @@ Distribution: Debian
 Group: Converted/misc
 
 %define _rpmdir ../
-%define _rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm
+%define _rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.rpm
 %define _unpackaged_files_terminate_build 0
 
 %post
