@@ -118,7 +118,7 @@ rpm-jobmond:	${REQUIRED}
 	jobmonarch-jobmond-${VERSION}-${RELEASE}/jobmonarch-jobmond-${VERSION}-${RELEASE}.spec )
 	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}; \
 	${FAKEROOT} rpmbuild -bb jobmonarch-jobmond-${VERSION}-${RELEASE}.spec )
-	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}.*.rpm ..
+	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}.rpm ..
 
 rpm-jobarchived:	${REQUIRED}
 	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/etc/init.d >/dev/null
@@ -145,7 +145,7 @@ rpm-jobarchived:	${REQUIRED}
 	jobmonarch-jobarchived-${VERSION}-${RELEASE}/jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec )
 	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}; \
 	${FAKEROOT} rpmbuild -bb jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec )
-	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}.*.rpm ..
+	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}.rpm ..
 
 rpm-webfrontend:	${REQUIRED}
 	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}/${WEBDIR} >/dev/null
@@ -165,7 +165,7 @@ rpm-webfrontend:	${REQUIRED}
 	jobmonarch-webfrontend-${VERSION}-${RELEASE}/jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec )
 	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}; \
 	${FAKEROOT} rpmbuild -bb jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec )
-	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}.*.rpm ..
+	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}.rpm ..
 
 clean:	${TMPDIR}/.monarch_buildroot
 	rm -rf ${TMPDIR}/.monarch_buildroot
