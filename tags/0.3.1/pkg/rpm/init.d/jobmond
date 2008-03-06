@@ -1,0 +1,76 @@
+#!/bin/sh
+#
+# Init file for the Job Monitoring Daemon
+#
+# chkconfig: 2345 20 80
+# description: jobmond reports information on batch jobs as Ganglia metrics
+#
+# processname: jobmond
+# config: /etc/jobmond.conf
+# config: /etc/sysconfig/jobmond
+# pidfile: /var/run/jobmond
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+RETVAL=0
+NAME=jobmond
+DAEMON=/usr/sbin/jobmond
+DESC="Job Monitoring Daemon"
+
+PIDFILE=/var/run/$NAME.pid
+OPTIONS=""
+
+if [ -r /etc/sysconfig/$name ]
+	then
+		source /etc/sysconfig/$NAME
+fi
+
+start() {
+	echo -n $"Starting $DESC: "
+	daemon $DAEMON --pidfile="$PIDFILE" $OPTIONS
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$NAME
+	return $RETVAL
+}
+
+stop() {
+	echo -n $"Stopping $DESC: "
+	killproc $DAEMON
+	RETVAL=$?
+	echo
+	rm -f $PIDFILE
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/$NAME
+	return $RETVAL
+}
+
+restart() {
+	stop
+	start
+}
+
+case "$1" in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart)
+		restart
+		;;
+	condrestart)
+		[ -e /var/lock/subsys/$NAME ] && restart
+		RETVAL=$?
+		;;
+	status)
+		status python
+		RETVAL=$?
+		;;
+	*)
+		echo $"Usage: $0 {start|stop|restart|condrestart|status}"
+		RETVAL=1
+esac
+
+exit $RETVAL
