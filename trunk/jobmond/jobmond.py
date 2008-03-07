@@ -951,17 +951,23 @@ class PbsDataGatherer( DataGatherer ):
 		jobs_processed	= [ ]
 
 		for name, attrs in joblist.items():
-
+			display_queue		= 1
 			job_id			= name.split( '.' )[0]
 
 			name			= self.getAttr( attrs, 'Job_Name' )
 			queue			= self.getAttr( attrs, 'queue' )
 
 			if QUEUE:
+				for q in QUEUE:
+					if q == queue:
+						display_queue = 1
+						break
+					else:
+						display_queue = 0
+						continue
+			if display_queue == 0:
+				continue
 
-				if QUEUE != queue:
-
-					continue
 
 			owner			= self.getAttr( attrs, 'Job_Owner' ).split( '@' )[0]
 			requested_time		= self.getAttr( attrs, 'Resource_List.walltime' )
