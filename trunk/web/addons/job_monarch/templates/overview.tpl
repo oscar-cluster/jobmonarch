@@ -84,6 +84,21 @@ Total
 </TR>
 
 <TR class="overview">
+<TD class="gray">
+Unavailable
+</TD>
+<TD class="gray">
+{na_jobs}
+</TD>
+<TD class="gray">
+{na_nodes}
+</TD>
+<TD class="gray">
+{na_cpus}
+</TD>
+</TR>
+
+<TR class="overview">
 <TD class="green">
 Free
 </TD>

@@ -526,6 +526,9 @@ function makeOverview()
 	$queued_nodes 		= 0;
 	$queued_cpus 		= 0;
 
+	$na_nodes 		= 0;
+	$na_cpus 		= 0;
+
 	$total_nodes 		= 0;
 	$total_cpus 		= 0;
 	$total_jobs 		= 0;
@@ -577,6 +580,13 @@ function makeOverview()
 
 	$rjqj_host		= null;
 
+	$nodes_down		= null;
+	$nodes_offline		= null;
+
+	$replacestr = array();
+	$replacestr[] = "'";
+	$replacestr[] = " ";
+	
 	foreach( $metrics as $bhost => $bmetric )
 	{
 		foreach( $bmetric as $mname => $mval )
@@ -585,9 +595,44 @@ function makeOverview()
 			{
 				$rjqj_host      = $bhost;
 			}
+			if( ( $mname == 'MONARCH-DOWN' ) )
+			{
+				$nodes_down = str_replace($replacestr,NULL,split(',',substr($mval['VAL'],1,-1)));
+			}
+			if( ( $mname == 'MONARCH-OFFLINE' ) )
+			{
+				$nodes_offline = str_replace($replacestr,NULL,split(',',substr($mval['VAL'],1,-1)));
+			}
 		}
 	}
 
+	$nodes_counted		= array();
+
+	if($nodes_down != NULL || $nodes_offline!=NULL )
+	{
+		foreach( $metrics as $bh => $bm )
+		{
+			if (in_array($bh,$nodes_offline) && $gnodes[$bh])
+			{
+				$nodes_counted[] = $bh;
+				if(! $gnodes[$bh]->getJobs())
+				{
+					$na_cpus += ($bm['cpu_num'][VAL]);
+					$na_nodes += 1;
+				}
+			}
+			if (in_array($bh,$nodes_down) && !in_array($bh,$nodes_counted) && $gnodes[$bh])
+			{
+				$nodes_counted[] = $bh;
+				if(! $gnodes[$bh]->getJobs())
+				{
+					$na_cpus += ($bm['cpu_num'][VAL]);
+					$na_nodes += 1;
+				}
+			}				
+		}
+	}
+		
 	// Running / queued amount jobs graph
 	//
 	if( $rjqj_host != null )
@@ -874,9 +919,9 @@ function makeOverview()
 	$total_cpus 		= $queued_cpus + $running_cpus;
 	$total_jobs 		= $queued_jobs + $running_jobs;
 
-	$free_nodes 		= $avail_nodes - $running_nodes;
+	$free_nodes 		= $avail_nodes - $running_nodes - $na_nodes;
 	$free_nodes		= ( $free_nodes >= 0 ) ? $free_nodes : 0;
-	$free_cpus 		= $avail_cpus - $running_cpus;
+	$free_cpus 		= $avail_cpus - $running_cpus - $na_cpus;
 	$free_cpus		= ( $free_cpus >= 0 ) ? $free_cpus : 0;
 
 	$tpl->assignGlobal( "avail_nodes", $avail_nodes );
@@ -885,6 +930,9 @@ function makeOverview()
 	$tpl->assignGlobal( "queued_nodes", $queued_nodes );
 	$tpl->assignGlobal( "queued_jobs", $queued_jobs );
 	$tpl->assignGlobal( "queued_cpus", $queued_cpus );
+
+	$tpl->assignGlobal( "na_nodes", $na_nodes );
+	$tpl->assignGlobal( "na_cpus", $na_cpus );
 
 	$tpl->assignGlobal( "total_nodes", $total_nodes );
 	$tpl->assignGlobal( "total_jobs", $total_jobs );

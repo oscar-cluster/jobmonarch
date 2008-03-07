@@ -461,6 +461,8 @@ class DataGatherer:
 
 		"""Submit job info list"""
 
+		global BATCH_API
+
 		self.dp.multicastGmetric( 'MONARCH-HEARTBEAT', str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
 
 		running_jobs	= 0
@@ -482,6 +484,28 @@ class DataGatherer:
                 #
 		self.dp.multicastGmetric( 'MONARCH-RJ', str( running_jobs ), 'uint32', 'jobs' )
 		self.dp.multicastGmetric( 'MONARCH-QJ', str( queued_jobs ), 'uint32', 'jobs' )
+
+		# Report down/offline nodes in batch (PBS only ATM)
+		#
+		if BATCH_API == 'pbs':
+
+			downed_nodes	= list()
+			offline_nodes	= list()
+		
+			l		= ['state']
+		
+			for name, node in self.pq.getnodes().items():
+
+				if ( node[ 'state' ].find( "down" ) != -1 ):
+
+					downed_nodes.append( name )
+
+				if ( node[ 'state' ].find( "offline" ) != -1 ):
+
+					offline_nodes.append( name )
+
+			self.dp.multicastGmetric( 'MONARCH-DOWN'   , str( downed_nodes ),  'uint32', 'jobs' )
+			self.dp.multicastGmetric( 'MONARCH-OFFLINE', str( offline_nodes ), 'uint32', 'jobs' )
 
 		# Now let's spread the knowledge
 		#
