@@ -1,6 +1,19 @@
 
 	LEGEND	f: fixed - c: changed - a: added - r: removed
 
+0.4:
+
+	jobmond)
+		a:	SGE support
+			thanks to: Dave Love - d(d.o.t)love(a.t)liverpool(d.o.t)ac(d.o.t)uk
+			for writing it!
+		f:	queue selection support is now working
+			thanks to: Craig West - cwest(a.t)astro(d.o.t)umass(d.o.t)edu
+			for the patch
+	web)
+		a:	large graphs link for job report
+			thanks to: Craig West - cwest(a.t)astro(d.o.t)umass(d.o.t)edu
+
 0.3.1:
 
 	other)
