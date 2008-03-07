@@ -3,9 +3,9 @@ Name: jobmonarch-jobmond
 Version: 
 Release: 
 Summary: Job Monitoring Daemon
-License: see /usr/share/doc/jobmonarch-jobmond/copyright
-Distribution: Debian
-Group: Converted/misc
+License: GPL
+Distribution: Fedora
+Group: Applications/System
 
 %define _rpmdir ../
 %define _rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.rpm
@@ -19,18 +19,18 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin
 if [ -x /etc/init.d/jobmond ]
 	then
 
+		chkconfig --add jobmond
 		chkconfig jobmond on
+		/etc/init.d/jobmond restart
 
 fi
-
-/etc/init.d/jobmond restart
-
 
 %preun
 #!/bin/sh
 
 /etc/init.d/jobmond stop
 chkconfig jobmond off
+chkconfig --del jobmond
 
 
 %description

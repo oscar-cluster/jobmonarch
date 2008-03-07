@@ -3,6 +3,7 @@
 # This file is part of Jobmonarch
 #
 # Copyright (C) 2006-2007  Ramon Bastiaans
+# Copyright (C) 2007  Dave Love  (SGE code)
 # 
 # Jobmonarch is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,8 +24,6 @@
 
 import sys, getopt, ConfigParser, time, os, socket, string, re
 import xdrlib, socket, syslog, xml, xml.sax
-from xml.sax import saxutils, make_parser
-from xml.sax import make_parser
 from xml.sax.handler import feature_namespaces
 
 VERSION='0.3.1'
@@ -251,9 +250,14 @@ def loadConfig( filename ):
 			sys.exit( 1 )
 		else:
 
-			debug_msg( 0, "ERROR: GMETRIC_TARGET not set: internel Gmetric handling aborted. Failing back to DEPRECATED use of gmond.conf/gmetric binary. This will slow down jobmond significantly!" )
+			debug_msg( 0, "ERROR: GMETRIC_TARGET not set: internal Gmetric handling aborted. Failing back to DEPRECATED use of gmond.conf/gmetric binary. This will slow down jobmond significantly!" )
 
 	return True
+
+def fqdn_parts (fqdn):
+	"""Return pair of host and domain for fully-qualified domain name arg."""
+	parts = fqdn.split (".")
+	return (parts[0], string.join(parts[1:], "."))
 
 METRIC_MAX_VAL_LEN = 900
 
@@ -382,7 +386,7 @@ class DataProcessor:
 
 			except NameError:
 
-				debug_msg( 10, 'Assuming /etc/gmond.conf for gmetric cmd (ommitting)' )
+				debug_msg( 10, 'Assuming /etc/gmond.conf for gmetric cmd (omitting)' )
 
 			cmd = cmd + ' -n' + str( metricname )+ ' -v"' + str( metricval )+ '" -t' + str( valtype ) + ' -d' + str( self.dmax )
 
@@ -419,6 +423,171 @@ class DataGatherer:
 		for name, val in jobs[ job_id ].items():
 
 			print '\t%s = %s' %( name, val )
+
+	def getAttr( self, attrs, name ):
+
+		"""Return certain attribute from dictionary, if exists"""
+
+		if attrs.has_key( name ):
+
+			return attrs[ name ]
+		else:
+			return ''
+
+	def jobDataChanged( self, jobs, job_id, attrs ):
+
+		"""Check if job with attrs and job_id in jobs has changed"""
+
+		if jobs.has_key( job_id ):
+
+			oldData = jobs[ job_id ]	
+		else:
+			return 1
+
+		for name, val in attrs.items():
+
+			if oldData.has_key( name ):
+
+				if oldData[ name ] != attrs[ name ]:
+
+					return 1
+
+			else:
+				return 1
+
+		return 0
+
+	def submitJobData( self ):
+
+		"""Submit job info list"""
+
+		self.dp.multicastGmetric( 'MONARCH-HEARTBEAT', str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
+
+		running_jobs	= 0
+		queued_jobs	= 0
+
+		# Count how many running/queued jobs we found
+                #
+		for jobid, jobattrs in self.jobs.items():
+
+			if jobattrs[ 'status' ] == 'Q':
+
+				queued_jobs += 1
+
+			elif jobattrs[ 'status' ] == 'R':
+
+				running_jobs += 1
+
+		# Report running/queued jobs as seperate metric for a nice RRD graph
+                #
+		self.dp.multicastGmetric( 'MONARCH-RJ', str( running_jobs ), 'uint32', 'jobs' )
+		self.dp.multicastGmetric( 'MONARCH-QJ', str( queued_jobs ), 'uint32', 'jobs' )
+
+		# Now let's spread the knowledge
+		#
+		for jobid, jobattrs in self.jobs.items():
+
+			# Make gmetric values for each job: respect max gmetric value length
+                        #
+			gmetric_val		= self.compileGmetricVal( jobid, jobattrs )
+			metric_increment	= 0
+
+			# If we have more job info than max gmetric value length allows, split it up
+                        # amongst multiple metrics
+			#
+			for val in gmetric_val:
+
+				self.dp.multicastGmetric( 'MONARCH-JOB-' + jobid + '-' + str(metric_increment), val )
+
+				# Increase follow number if this jobinfo is split up amongst more than 1 gmetric
+                                #
+				metric_increment	= metric_increment + 1
+
+	def compileGmetricVal( self, jobid, jobattrs ):
+
+		"""Create a val string for gmetric of jobinfo"""
+
+		gval_lists	= [ ]
+		val_list	= { }
+
+		for val_name, val_value in jobattrs.items():
+
+			# These are our own metric names, i.e.: status, start_timestamp, etc
+                        #
+			val_list_names_len	= len( string.join( val_list.keys() ) ) + len(val_list.keys())
+
+			# These are their corresponding values
+                        #
+			val_list_vals_len	= len( string.join( val_list.values() ) ) + len(val_list.values())
+
+			if val_name == 'nodes' and jobattrs['status'] == 'R':
+
+				node_str = None
+
+				for node in val_value:
+
+					if node_str:
+
+						node_str = node_str + ';' + node
+					else:
+						node_str = node
+
+					# Make sure if we add this new info, that the total metric's value length does not exceed METRIC_MAX_VAL_LEN
+                                        #
+					if (val_list_names_len + len(val_name) ) + (val_list_vals_len + len(node_str) ) > METRIC_MAX_VAL_LEN:
+
+						# It's too big, we need to make a new gmetric for the additional info
+                                                #
+						val_list[ val_name ]	= node_str
+
+						gval_lists.append( val_list )
+
+						val_list		= { }
+						node_str		= None
+
+				val_list[ val_name ]	= node_str
+
+				gval_lists.append( val_list )
+
+				val_list		= { }
+
+			elif val_value != '':
+
+				# Make sure if we add this new info, that the total metric's value length does not exceed METRIC_MAX_VAL_LEN
+                                #
+				if (val_list_names_len + len(val_name) ) + (val_list_vals_len + len(str(val_value)) ) > METRIC_MAX_VAL_LEN:
+
+					# It's too big, we need to make a new gmetric for the additional info
+                                        #
+					gval_lists.append( val_list )
+
+					val_list		= { }
+
+				val_list[ val_name ]	= val_value
+
+		if len( val_list ) > 0:
+
+			gval_lists.append( val_list )
+
+		str_list	= [ ]
+
+		# Now append the value names and values together, i.e.: stop_timestamp=value, etc
+                #
+		for val_list in gval_lists:
+
+			my_val_str	= None
+
+			for val_name, val_value in val_list.items():
+
+				if my_val_str:
+
+					my_val_str = my_val_str + ' ' + val_name + '=' + val_value
+				else:
+					my_val_str = val_name + '=' + val_value
+
+			str_list.append( my_val_str )
+
+		return str_list
 
         def daemon( self ):
 
@@ -467,124 +636,275 @@ class DataGatherer:
 			self.submitJobData()
 			time.sleep( BATCH_POLL_INTERVAL )	
 
+# SGE code by Dave Love <fx@gnu.org>.  Tested with SGE 6.0u8 and 6.0u11.
+# Probably needs modification for SGE 6.1.  See also the fixmes.
+
+class NoJobs (Exception):
+	"""Exception raised by empty job list in qstat output."""
+	pass
+
 class SgeQstatXMLParser(xml.sax.handler.ContentHandler):
+	"""SAX handler for XML output from Sun Grid Engine's `qstat'."""
 
-	"""Babu Sundaram's experimental SGE qstat XML parser"""
+	def __init__(self):
+		self.value = ""
+		self.joblist = []
+		self.job = {}
+		self.queue = ""
+		self.in_joblist = False
+		self.lrequest = False
+		xml.sax.handler.ContentHandler.__init__(self)
 
-	def __init__(self, qstatinxml):
+	# The structure of the output is as follows.  Unfortunately
+	# it's voluminous, and probably doesn't scale to large
+	# clusters/queues.
 
-		self.qstatfile = qstatinxml
-		self.attribs = {}
-		self.value = ''
-		self.jobID = ''
-		self.currentJobInfo = ''
-		self.job_list = []
-		self.EOFFlag = 0
-		self.jobinfoCount = 0
+	# <detailed_job_info  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	#   <djob_info>
+	#     <qmaster_response>  <!-- job -->
+	#       ...
+	#       <JB_ja_template>  
+	#         <ulong_sublist>
+	#         ...             <!-- start_time, state ... -->
+	#         </ulong_sublist>
+	#       </JB_ja_template>  
+	#       <JB_ja_tasks>
+	#         <ulong_sublist>
+	#           ...           <!-- task info
+	#         </ulong_sublist>
+	#         ...
+	#       </JB_ja_tasks>
+	#       ...
+	#     </qmaster_response>
+	#   </djob_info>
+	#   <messages>
+	#   ...
 
+	# NB.  We might treat each task as a separate job, like
+	# straight qstat output, but the web interface expects jobs to
+	# be identified by integers, not, say, <job number>.<task>.
+
+	# So, I lied.  If the job list is empty, we get invalid XML
+	# like this, which we need to defend against:
+
+	# <unknown_jobs  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	#   <>
+	#     <ST_name>*</ST_name>
+	#   </>
+	# </unknown_jobs>
 
 	def startElement(self, name, attrs):
-
-		if name == 'job_list':
-			self.currentJobInfo = 'Status=' + attrs.get('state', None) + ' '
-		elif name == 'job_info':
-			self.job_list = []
-			self.jobinfoCount += 1
+		self.value = ""
+		if name == "djob_info":	# job list
+			self.in_joblist = True
+		elif name == "qmaster_response" and self.in_joblist: # job
+			self.job = {"job_state": "U", "slots": 0,
+				    "nodes": [], "queued_timestamp": "",
+				    "queued_timestamp": "", "queue": "",
+				    "ppn": "0", "RN_max": 0,
+				    # fixme in endElement
+				    "requested_memory": 0, "requested_time": 0
+				    }
+			self.joblist.append(self.job)
+		elif name == "qstat_l_requests": # resource request
+			self.lrequest = True
+		elif name == "unknown_jobs":
+			raise NoJobs
 
 	def characters(self, ch):
+		self.value += ch
 
-		self.value = self.value + ch
+	def endElement(self, name): 
+		"""Snarf job elements contents into job dictionary.
+		   Translate keys if appropriate."""
 
-	def endElement(self, name):
+		name_trans = {
+		  "JB_job_number": "number",
+		  "JB_job_name": "name", "JB_owner": "owner",
+		  "queue_name": "queue", "JAT_start_time": "start_timestamp",
+		  "JB_submission_time": "queued_timestamp"
+		  }
+		value = self.value
 
-		if len(self.value.strip()) > 0 :
+		if name == "djob_info":
+			self.in_joblist = False
+			self.job = {}
+		elif name == "JAT_master_queue":
+			self.job["queue"] = value.split("@")[0]
+		elif name == "JG_qhostname":
+			if not (value in self.job["nodes"]):
+				self.job["nodes"].append(value)
+		elif name == "JG_slots": # slots in use
+			self.job["slots"] += int(value)
+		elif name == "RN_max": # requested slots (tasks or parallel)
+			self.job["RN_max"] = max (self.job["RN_max"],
+						  int(value))
+		elif name == "JAT_state": # job state (bitwise or)
+			value = int (value)
+			# Status values from sge_jobL.h
+			#define JIDLE                   0x00000000
+			#define JHELD                   0x00000010
+			#define JMIGRATING              0x00000020
+			#define JQUEUED                 0x00000040
+			#define JRUNNING                0x00000080
+			#define JSUSPENDED              0x00000100
+			#define JTRANSFERING            0x00000200
+			#define JDELETED                0x00000400
+			#define JWAITING                0x00000800
+			#define JEXITING                0x00001000
+			#define JWRITTEN                0x00002000
+			#define JSUSPENDED_ON_THRESHOLD 0x00010000
+			#define JFINISHED               0x00010000
+			if value & 0x80:
+				self.job["status"] = "R"
+			elif value & 0x40:
+				self.job["status"] = "Q"
+			else:
+				self.job["status"] = "O" # `other'
+		elif name == "CE_name" and self.lrequest and self.value in \
+			    ("h_cpu", "s_cpu", "cpu", "h_core", "s_core"):
+			# We're in a container for an interesting resource
+			# request; record which type.
+			self.lrequest = self.value
+		elif name == "CE_doubleval" and self.lrequest:
+			# if we're in a container for an interesting
+			# resource request, use the maxmimum of the hard
+			# and soft requests to record the requested CPU
+			# or core.  Fixme:  I'm not sure if this logic is
+			# right.
+			if self.lrequest in ("h_core", "s_core"):
+				self.job["requested_memory"] = \
+				    max (float (value),
+					 self.job["requested_memory"])
+			# Fixme:  Check what cpu means, c.f [hs]_cpu.
+			elif self.lrequest in ("h_cpu", "s_cpu", "cpu"):
+				self.job["requested_time"] = \
+				    max (float (value),
+					 self.job["requested_time"])
+		elif name == "qstat_l_requests":
+			self.lrequest = False
+		elif self.job and self.in_joblist:
+			if name in name_trans:
+				name = name_trans[name]
+				self.job[name] = value
 
-			self.currentJobInfo += name + '=' + self.value.strip() + ' '         
-		elif name != 'job_list':
-
-			self.currentJobInfo += name + '=Unknown '
-
-		if name == 'JB_job_number':
-
-			self.jobID = self.value.strip()
-			self.job_list.append(self.jobID)          
-
-		if name == 'job_list':
-
-			if self.attribs.has_key(self.jobID) == False:
-				self.attribs[self.jobID] = self.currentJobInfo
-			elif self.attribs.has_key(self.jobID) and self.attribs[self.jobID] != self.currentJobInfo:
-				self.attribs[self.jobID] = self.currentJobInfo
-			self.currentJobInfo = ''
-			self.jobID = ''
-
-		elif name == 'job_info' and self.jobinfoCount == 2:
-
-			deljobs = []
-			for id in self.attribs:
-				try:
-					self.job_list.index(str(id))
-				except ValueError:
-					deljobs.append(id)
-			for i in deljobs:
-				del self.attribs[i]
-			deljobs = []
-			self.jobinfoCount = 0
-
-		self.value = ''
+# Abstracted from PBS original.
+# Fixme:  Is it worth (or appropriate for PBS) sorting the result?
+def do_nodelist (nodes):
+	"""Translate node list as appropriate."""
+	nodeslist		= [ ]
+	my_domain = fqdn_parts(socket.getfqdn())[1]
+	for node in nodes:
+		host		= node.split( '/' )[0] # not relevant for SGE
+		h, host_domain	= fqdn_parts(host)
+		if host_domain == my_domain:
+			host	= h
+		if nodeslist.count( host ) == 0:
+			for translate_pattern in BATCH_HOST_TRANSLATE:
+				if translate_pattern.find( '/' ) != -1:
+					translate_orig	= \
+					    translate_pattern.split( '/' )[1]
+					translate_new	= \
+					    translate_pattern.split( '/' )[2]
+					host = re.sub( translate_orig,
+						       translate_new, host )
+			if not host in nodeslist:
+				nodeslist.append( host )
+	return nodeslist
 
 class SgeDataGatherer(DataGatherer):
 
-	jobs = { }
-	SGE_QSTAT_XML_FILE	= '/tmp/.jobmonarch.sge.qstat'
+	jobs = {}
 
 	def __init__( self ):
-		"""Setup appropriate variables"""
-
-		self.jobs = { }
+		self.jobs = {}
 		self.timeoffset = 0
 		self.dp = DataProcessor()
-		self.initSgeJobInfo()
 
-	def initSgeJobInfo( self ):
-		"""This is outside the scope of DRMAA; Get the current jobs in SGE"""
-		"""This is a hack because we cant get info about jobs beyond"""
-		"""those in the current DRMAA session"""
-
-		self.qstatparser = SgeQstatXMLParser( self.SGE_QSTAT_XML_FILE )
-
-		# Obtain the qstat information from SGE in XML format
-		# This would change to DRMAA-specific calls from 6.0u9
-
-	def getJobData(self):
+	def getJobData( self ):
 		"""Gather all data on current jobs in SGE"""
 
-		# Get the information about the current jobs in the SGE queue
-		info = os.popen("qstat -ext -xml").readlines()
-		f = open(self.SGE_QSTAT_XML_FILE,'w')
-		for lines in info:
-			f.write(lines)
-		f.close()
+		import popen2
 
-		# Parse the input
-		f = open(self.qstatparser.qstatfile, 'r')
-		xml.sax.parse(f, self.qstatparser)
-		f.close()
-
+		self.cur_time = 0
+		queues = ""
+		if QUEUE:	# only for specific queues
+			# Fixme:  assumes queue names don't contain single
+			# quote or comma.  Don't know what the SGE rules are.
+			queues = " -q '" + string.join (QUEUE, ",") + "'"
+		# Note the comment in SgeQstatXMLParser about scaling with
+		# this method of getting data.  I haven't found better one.
+		# Output with args `-xml -ext -f -r' is easier to parse
+		# in some ways, harder in others, but it doesn't provide
+		# the submission time, at least.
+		piping = popen2.Popen3("qstat -u '*' -j '*' -xml" + queues,
+				       True)
+		qstatparser = SgeQstatXMLParser()
+		parse_err = 0
+		try:
+			xml.sax.parse(piping.fromchild, qstatparser)
+		except NoJobs:
+			pass
+		except:
+			parse_err = 1
+	       	if piping.wait():
+			debug_msg(10,
+				  "qstat error, skipping until next polling interval: "
+				  + piping.childerr.readline())
+			return None
+		elif parse_err:
+			debug_msg(10, "Bad XML output from qstat"())
+			exit (1)
+		for f in piping.fromchild, piping.tochild, piping.childerr:
+			f.close()
 		self.cur_time = time.time()
+		jobs_processed = []
+		for job in qstatparser.joblist:
+			job_id = job["number"]
+			if job["status"] in [ 'Q', 'R' ]:
+				jobs_processed.append(job_id)
+			if job["status"] == "R":
+				job["nodes"] = do_nodelist (job["nodes"])
+				# Fixme: Is this right?
+				job["ppn"] = float(job["slots"]) / \
+				    len(job["nodes"])
+				if DETECT_TIME_DIFFS:
+					# If a job start is later than our
+					# current date, that must mean
+					# the SGE server's time is later
+					# than our local time.
+					start_timestamp = \
+					    int (job["start_timestamp"])
+					if start_timestamp > \
+						    int(self.cur_time) + \
+						    int(self.timeoffset):
 
-		return self.qstatparser.attribs
+						self.timeoffset	= \
+						    start_timestamp - \
+						    int(self.cur_time)
+			else:
+				# fixme: Note sure what this should be:
+				job["ppn"] = job["RN_max"]
+				job["nodes"] = "1"
 
-	def submitJobData(self):
-		"""Submit job info list"""
+			myAttrs = {}
+			for attr in ["name", "queue", "owner",
+				     "requested_time", "status",
+				     "requested_memory", "ppn",
+				     "start_timestamp", "queued_timestamp"]:
+				myAttrs[attr] = str(job[attr])
+			myAttrs["nodes"] = job["nodes"]
+			myAttrs["reported"] = str(int(self.cur_time) + \
+						  int(self.timeoffset))
+			myAttrs["domain"] = fqdn_parts(socket.getfqdn())[1]
+			myAttrs["poll_interval"] = str(BATCH_POLL_INTERVAL)
 
-		self.dp.multicastGmetric( 'MONARCH-HEARTBEAT', str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
-		# Now let's spread the knowledge
-		#
-		metric_increment = 0
-		for jobid, jobattrs in self.qstatparser.attribs.items():
-
-			self.dp.multicastGmetric( 'MONARCH-JOB-' + jobid + '-' + str(metric_increment), jobattrs)
+			if self.jobDataChanged(self.jobs, job_id, myAttrs) \
+				    and myAttrs["status"] in ["R", "Q"]:
+				self.jobs[job_id] = myAttrs
+		for id, attrs in self.jobs.items():
+			if id not in jobs_processed:
+				del self.jobs[id]
 
 class PbsDataGatherer( DataGatherer ):
 
@@ -612,39 +932,6 @@ class PbsDataGatherer( DataGatherer ):
 		else:
 			self.pq		= PBSQuery()
 
-	def getAttr( self, attrs, name ):
-
-		"""Return certain attribute from dictionary, if exists"""
-
-		if attrs.has_key( name ):
-
-			return attrs[ name ]
-		else:
-			return ''
-
-	def jobDataChanged( self, jobs, job_id, attrs ):
-
-		"""Check if job with attrs and job_id in jobs has changed"""
-
-		if jobs.has_key( job_id ):
-
-			oldData = jobs[ job_id ]	
-		else:
-			return 1
-
-		for name, val in attrs.items():
-
-			if oldData.has_key( name ):
-
-				if oldData[ name ] != attrs[ name ]:
-
-					return 1
-
-			else:
-				return 1
-
-		return 0
-
 	def getJobData( self ):
 
 		"""Gather all data on current jobs in Torque"""
@@ -662,8 +949,6 @@ class PbsDataGatherer( DataGatherer ):
 			return None
 
 		jobs_processed	= [ ]
-
-		my_domain		= string.join( socket.getfqdn().split( '.' )[1:], '.' )
 
 		for name, attrs in joblist.items():
 
@@ -709,32 +994,7 @@ class PbsDataGatherer( DataGatherer ):
 				start_timestamp		= self.getAttr( attrs, 'mtime' )
 				nodes			= self.getAttr( attrs, 'exec_host' ).split( '+' )
 
-				nodeslist		= [ ]
-
-				for node in nodes:
-
-					host		= node.split( '/' )[0]
-
-					host_domain	= string.join( host.split( '.' )[1:], '.' )
-
-					if host_domain == my_domain:
-
-						host		= host.split( '.' )[0]
-
-					if nodeslist.count( host ) == 0:
-
-						for translate_pattern in BATCH_HOST_TRANSLATE:
-
-							if translate_pattern.find( '/' ) != -1:
-
-								translate_orig	= translate_pattern.split( '/' )[1]
-								translate_new	= translate_pattern.split( '/' )[2]
-
-								host		= re.sub( translate_orig, translate_new, host )
-				
-						if not host in nodeslist:
-				
-							nodeslist.append( host )
+				nodeslist		= do_nodelist( nodes )
 
 				if DETECT_TIME_DIFFS:
 
@@ -825,7 +1085,7 @@ class PbsDataGatherer( DataGatherer ):
 			myAttrs[ 'queued_timestamp' ]	= str( queued_timestamp )
 			myAttrs[ 'reported' ]		= str( int( int( self.cur_time ) + int( self.timeoffset ) ) )
 			myAttrs[ 'nodes' ]		= nodeslist
-			myAttrs[ 'domain' ]		= string.join( socket.getfqdn().split( '.' )[1:], '.' )
+			myAttrs[ 'domain' ]		= fqdn_parts( socket.getfqdn() )[1]
 			myAttrs[ 'poll_interval' ]	= str( BATCH_POLL_INTERVAL )
 
 			if self.jobDataChanged( self.jobs, job_id, myAttrs ) and myAttrs['status'] in [ 'R', 'Q' ]:
@@ -839,139 +1099,6 @@ class PbsDataGatherer( DataGatherer ):
 				# This one isn't there anymore; toedeledoki!
 				#
 				del self.jobs[ id ]
-
-	def submitJobData( self ):
-
-		"""Submit job info list"""
-
-		self.dp.multicastGmetric( 'MONARCH-HEARTBEAT', str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
-
-		running_jobs	= 0
-		queued_jobs	= 0
-
-		# Count how many running/queued jobs we found
-		#
-		for jobid, jobattrs in self.jobs.items():
-
-			if jobattrs[ 'status' ] == 'Q':
-
-				queued_jobs += 1
-
-			elif jobattrs[ 'status' ] == 'R':
-
-				running_jobs += 1
-
-		# Report running/queued jobs as seperate metric for a nice RRD graph
-		#
-		self.dp.multicastGmetric( 'MONARCH-RJ', str( running_jobs ), 'uint32', 'jobs' )
-		self.dp.multicastGmetric( 'MONARCH-QJ', str( queued_jobs ), 'uint32', 'jobs' )
-
-		# Now let's spread the knowledge
-		#
-		for jobid, jobattrs in self.jobs.items():
-
-			# Make gmetric values for each job: respect max gmetric value length
-			#
-			gmetric_val		= self.compileGmetricVal( jobid, jobattrs )
-			metric_increment	= 0
-
-			# If we have more job info than max gmetric value length allows, split it up
-			# amongst multiple metrics
-			#
-			for val in gmetric_val:
-
-				self.dp.multicastGmetric( 'MONARCH-JOB-' + jobid + '-' + str(metric_increment), val )
-
-				# Increase follow number if this jobinfo is split up amongst more than 1 gmetric
-				#
-				metric_increment	= metric_increment + 1
-
-	def compileGmetricVal( self, jobid, jobattrs ):
-
-		"""Create a val string for gmetric of jobinfo"""
-
-		gval_lists	= [ ]
-		mystr		= None
-		val_list	= { }
-
-		for val_name, val_value in jobattrs.items():
-
-			# These are our own metric names, i.e.: status, start_timestamp, etc
-			#
-			val_list_names_len	= len( string.join( val_list.keys() ) ) + len(val_list.keys())
-
-			# These are their corresponding values
-			#
-			val_list_vals_len	= len( string.join( val_list.values() ) ) + len(val_list.values())
-
-			if val_name == 'nodes' and jobattrs['status'] == 'R':
-
-				node_str = None
-
-				for node in val_value:
-
-					if node_str:
-
-						node_str = node_str + ';' + node
-					else:
-						node_str = node
-
-					# Make sure if we add this new info, that the total metric's value length does not exceed METRIC_MAX_VAL_LEN
-					#
-					if (val_list_names_len + len(val_name) ) + (val_list_vals_len + len(node_str) ) > METRIC_MAX_VAL_LEN:
-
-						# It's too big, we need to make a new gmetric for the additional info
-						#
-						val_list[ val_name ]	= node_str
-
-						gval_lists.append( val_list )
-
-						val_list		= { }
-						node_str		= None
-
-				val_list[ val_name ]	= node_str
-
-				gval_lists.append( val_list )
-
-				val_list		= { }
-
-			elif val_value != '':
-
-				# Make sure if we add this new info, that the total metric's value length does not exceed METRIC_MAX_VAL_LEN
-				#
-				if (val_list_names_len + len(val_name) ) + (val_list_vals_len + len(str(val_value)) ) > METRIC_MAX_VAL_LEN:
-
-					# It's too big, we need to make a new gmetric for the additional info
-					#
-					gval_lists.append( val_list )
-
-					val_list		= { }
-
-				val_list[ val_name ]	= val_value
-
-		if len( val_list ) > 0:
-
-			gval_lists.append( val_list )
-
-		str_list	= [ ]
-
-		# Now append the value names and values together, i.e.: stop_timestamp=value, etc
-		#
-		for val_list in gval_lists:
-
-			my_val_str	= None
-
-			for val_name, val_value in val_list.items():
-
-				if my_val_str:
-
-					my_val_str = my_val_str + ' ' + val_name + '=' + val_value
-				else:
-					my_val_str = val_name + '=' + val_value
-
-			str_list.append( my_val_str )
-
-		return str_list
 
 #
 # Gmetric by Nick Galbreath - nickg(a.t)modp(d.o.t)com
@@ -1134,9 +1261,10 @@ def main():
 
 	elif BATCH_API == 'sge':
 
-		debug_msg( 0, "FATAL ERROR: BATCH_API 'sge' implementation is currently broken, check future releases" )
+		# Tested with SGE 6.0u11.
+# 		debug_msg( 0, "FATAL ERROR: BATCH_API 'sge' implementation is currently broken, check future releases" )
 
-		sys.exit( 1 )
+# 		sys.exit( 1 )
 
 		gather = SgeDataGatherer()
 
