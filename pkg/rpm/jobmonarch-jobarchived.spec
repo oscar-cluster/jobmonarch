@@ -3,9 +3,9 @@ Name: jobmonarch-jobarchived
 Version: 
 Release: 
 Summary: Job Archiving Daemon
-License: see /usr/share/doc/jobmonarch-jobarchived/copyright
-Distribution: Debian
-Group: Converted/misc
+License: GPL
+Distribution: Fedora
+Group: Applications/System
 
 %define _rpmdir ../
 %define _rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.rpm
@@ -19,6 +19,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin
 if [ -x /etc/init.d/jobarchived ]
 	then
 
+                chkconfig --add jobarchived
 		chkconfig jobarchived on
 
 fi
@@ -40,6 +41,7 @@ echo ""
 
 /etc/init.d/jobarchived stop
 chkconfig jobarchived off
+chkconfig --del jobarchived
 
 
 %description

@@ -1,4 +1,6 @@
-<BR><BR>
+<P>
+All tasks of parallel and array jobs appear as a single &lsquo;job&rsquo;.
+<BR></P>
 
 <CENTER>
 <TABLE cellpadding="15">
@@ -137,6 +139,7 @@ View
 <BR>
 
 <SCRIPT TYPE="text/javascript" SRC="libtoga.js"></SCRIPT>
+<NOSCRIPT><P>[Sorting by column header requires JavaScript]<BR><BR></P></NOSCRIPT>
 
 <INPUT TYPE="HIDDEN" NAME="sortby" VALUE="{sortby}">
 <INPUT TYPE="HIDDEN" NAME="sortorder" VALUE="{sortorder}">

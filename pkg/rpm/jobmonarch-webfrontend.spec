@@ -2,10 +2,10 @@ Buildroot:
 Name: jobmonarch-webfrontend
 Version: 
 Release: 
-Summary: Job MonArch's Web Frontend
-License: see /usr/share/doc/jobmonarch-webfrontend/copyright
-Distribution: Debian
-Group: Converted/misc
+Summary: Job MonArch Web Frontend
+License: GPL
+Distribution: Fedora
+Group: Applications/Internet
 
 %define _rpmdir ../
 %define _rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.rpm
