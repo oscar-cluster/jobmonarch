@@ -125,6 +125,7 @@ function makeDate( $time ) {
 	return strftime( $DATETIME_FORMAT, $time );
 }
 
+
 class TarchDbase {
 
 	var $ip, $dbase, $conn;
@@ -565,6 +566,8 @@ class TorqueXMLHandler {
 		$clusters 		= array();
 		$this->nodes 		= array();
 		$heartbeat 		= array();
+		$down_nodes		= array();
+		$offline_nodes		= array();
 		$this->clustername	= $clustername;
 		$this->fqdn		= 1;
 	}
@@ -572,6 +575,8 @@ class TorqueXMLHandler {
 	function getUsingFQDN() {
 
 		return $this->fqdn;
+	
+	
 	}
 
 	function getCpus() {
@@ -597,6 +602,52 @@ class TorqueXMLHandler {
 			return 1;
 		else
 			return 0;
+	}
+
+	function makeHostname( $thostname, $tdomain=null )
+	{
+		// Should hostname be FQDN or short w/o domain
+		//
+		$nodes = &$this->nodes;
+
+		$fqdn = 1;
+
+		//$tdomain = explode( '.', $thostname );
+		// TODO: domain van hostname afhalen: parameter weghalen
+
+		if( $tdomain )
+		{
+			$domain_len	= 0 - strlen( $tdomain );
+
+			// Let's see if Ganglia use's FQDN or short hostnames
+			//
+			foreach( $nodes as $hostname => $nimage )
+			{
+	
+				if( substr( $hostname, $domain_len ) != $tdomain )
+				{
+					$fqdn	= 0;
+				}
+			}
+		}
+		else
+		{
+			$fqdn	= 0;
+		}
+	
+		if( $tdomain && $fqdn )
+		{
+			if( substr( $thostname, $domain_len ) != $tdomain )
+			{
+				$thostname = $thostname . '.'.$tdomain;
+			} 
+			else
+			{
+				$thostname = $thostname;
+			}
+		}
+
+		return $thostname;
 	}
 
 	function startElement( $parser, $name, $attrs ) {
@@ -639,10 +690,81 @@ class TorqueXMLHandler {
 
 		} else if( $name == 'METRIC' and strstr( $attrs[NAME], 'MONARCH' ) and $this->proc_cluster == $this->clustername ) {
 
-			if( strstr( $attrs[NAME], 'MONARCH-HEARTBEAT' ) ) {
-
+			if( strstr( $attrs[NAME], 'MONARCH-HEARTBEAT' ) )
+			{
 				$this->heartbeat['time'] = $attrs[VAL];
-				//printf( "heartbeat %s\n", $heartbeat['time'] );
+			}
+			else if( strstr( $attrs[NAME], 'MONARCH-DOWN' ) )
+			{
+				$fields		= explode( ' ', $attrs[VAL] );
+
+				$nodes_down	= array();
+				$down_domain	= null;
+
+				foreach( $fields as $f )
+				{
+					$togavalues	= explode( '=', $f );
+
+					$toganame	= $togavalues[0];
+					$togavalue	= $togavalues[1];
+
+					if( $toganame == 'nodes' )
+					{
+						$mynodes = explode( ';', $togavalue );
+
+						foreach( $mynodes as $node )
+						{
+							$nodes_down[] = $node;
+						}
+					}
+					else if( $toganame == 'domain' )
+					{
+						$down_domain = $togavalue;
+					}
+					else if( $toganame == 'reported' )
+					{
+						if( !isset( $this->down_nodes['heartbeat'] ) )
+						{
+							$this->down_nodes[$togavalue]	= array( $nodes_down, $down_domain );
+						}
+					}
+				}
+
+			} else if( strstr( $attrs[NAME], 'MONARCH-OFFLINE' ) ) {
+
+				$fields		= explode( ' ', $attrs[VAL] );
+
+				$nodes_offline	= array();
+				$offline_domain	= null;
+
+				foreach( $fields as $f )
+				{
+					$togavalues	= explode( '=', $f );
+
+					$toganame	= $togavalues[0];
+					$togavalue	= $togavalues[1];
+
+					if( $toganame == 'nodes' )
+					{
+						$mynodes = explode( ';', $togavalue );
+
+						foreach( $mynodes as $node )
+						{
+							$nodes_offline[] = $node;
+						}
+					}
+					else if( $toganame == 'domain' )
+					{
+						$offline_domain = $togavalue;
+					}
+					else if( $toganame == 'reported' )
+					{
+						if( !isset( $this->offline_nodes['heartbeat'] ) )
+						{
+							$this->offline_nodes[$togavalue] = array( $nodes_offline, $offline_domain );
+						}
+					}
+				}
 
 			} else if( strstr( $attrs[NAME], 'MONARCH-JOB' ) ) {
 
@@ -761,6 +883,60 @@ class TorqueXMLHandler {
 	}
 
 	function stopElement( $parser, $name ) {
+
+		$nodes	= $this->nodes;
+
+		if( $name == "GANGLIA_XML" )
+		{
+			foreach( $this->down_nodes as $reported => $dnodes )
+			{
+
+				if( $reported == $this->heartbeat['time'] )
+				{
+					$domain = $dnodes[1];
+
+					foreach( $dnodes[0] as $downhost )
+					{
+						$downhost = $this->makeHostname( $downhost, $domain );
+
+						if( isset( $nodes[$downhost] ) )
+						{
+							// OMG PHP4 is fking stupid!
+							// $nodes[$downhost]->setDown( 1 ) won't work here..
+							//
+							$mynode = $nodes[$downhost];
+							$mynode->setDown( 1 );
+							$nodes[$downhost] = $mynode;
+						}
+					}
+				}
+			}
+
+			foreach( $this->offline_nodes as $reported => $onodes )
+			{
+				if( $reported == $this->heartbeat['time'] )
+				{
+					$domain = $onodes[1];
+
+					foreach( $onodes[0] as $offlinehost )
+					{
+						$offlinehost = $this->makeHostname( $offlinehost, $domain );
+
+						if( isset( $nodes[$offlinehost] ) )
+						{
+							// OMG PHP4 is fking stupid!
+							// $nodes[$offlinehost]->setDown( 1 ) won't work here..
+							//
+							$mynode = $nodes[$offlinehost];
+							$mynode->setOffline( 1 );
+							$nodes[$offlinehost] = $mynode;
+						}
+					}
+				}
+			}
+		}
+
+		$this->nodes = $nodes;
 	}
 
 	function printInfo() {
@@ -850,6 +1026,8 @@ class NodeImage {
 		$this->clustername = $cluster;
 		$this->showinfo = 1;
 		$this->size = $SMALL_CLUSTERIMAGE_NODEWIDTH;
+		$this->down = 0;
+		$this->offline = 0;
 	}
 
 	function addJob( $jobid, $cpus ) {
@@ -879,6 +1057,25 @@ class NodeImage {
 		$this->tasks = $this->tasks + $cpus;
 	}
 
+	function setDown( $down ) {
+
+		$this->down = $down;
+	}
+
+	function isDown() {
+
+		return $this->down;
+	}
+	function setOffline( $offline ) {
+
+		$this->offline = $offline;
+	}
+
+	function isOffline() {
+
+		return $this->offline;
+	}
+
 	function setImage( $image ) {
 
 		$this->image = $image;
@@ -897,7 +1094,19 @@ class NodeImage {
 		$area_coords		= $area_topleft . "," . $area_bottomright;
 
 		$area_href		= "./?c=" . $this->clustername . "&h=" . $this->hostname;
-		$area_tooltip		= $this->hostname . ": " . implode( " ", $this->jobs );
+
+		$area_tooltip		= $this->hostname;
+
+		if( $this->down)
+		{
+			$area_tooltip		= $area_tooltip . ": DOWN";
+		}
+		else if( $this->offline )
+		{
+			$area_tooltip		= $area_tooltip . ": OFFLINE";
+		}
+
+		$area_tooltip		= $area_tooltip . ": " . implode( " ", $this->jobs );
 
 		$tag_href		= "HREF=\"" . $area_href . "\"";
 		$tag_coords		= "COORDS=\"" . $area_coords . "\"";
@@ -954,7 +1163,7 @@ class NodeImage {
 
 	function draw() {
 
-		global $JOB_NODE_MARKING;
+		global $JOB_NODE_MARKING, $NODE_DOWN_MARKING, $NODE_OFFLINE_MARKING;
 
 		$black_color = imageColorAllocate( $this->image, 0, 0, 0 );
 		$size = $this->size;
@@ -977,8 +1186,18 @@ class NodeImage {
 			$load = $this->determineLoad();	
 			$usecolor = $this->colorHex( load_color($load) );
 			imageFilledRectangle( $this->image, $this->x+1, $this->y+1, $this->x+($size-1), $this->y+($size-1), $usecolor );
-			if( count( $this->jobs ) > 0 )
+			if( $this->down )
+			{
+				imageString( $this->image, 1, $this->x+(($size/2)-1), $this->y+(($size/2)-4), $NODE_DOWN_MARKING, $black_color );
+			}
+			else if( $this->offline )
+			{
+				imageString( $this->image, 1, $this->x+(($size/2)-1), $this->y+(($size/2)-4), $NODE_OFFLINE_MARKING, $black_color );
+			}
+			else if( count( $this->jobs ) > 0 )
+			{
 				imageString( $this->image, 1, $this->x+(($size/2)-1), $this->y+(($size/2)-4), $JOB_NODE_MARKING, $black_color );
+			}
 
 		} else {
 

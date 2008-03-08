@@ -489,6 +489,8 @@ class DataGatherer:
 		#
 		if BATCH_API == 'pbs':
 
+			domain		= fqdn_parts( socket.getfqdn() )[1]
+
 			downed_nodes	= list()
 			offline_nodes	= list()
 		
@@ -504,8 +506,13 @@ class DataGatherer:
 
 					offline_nodes.append( name )
 
-			self.dp.multicastGmetric( 'MONARCH-DOWN'   , string.join( downed_nodes,  ',' ) )
-			self.dp.multicastGmetric( 'MONARCH-OFFLINE', string.join( offline_nodes, ',' ) )
+			downnodeslist		= do_nodelist( downed_nodes )
+			offlinenodeslist	= do_nodelist( offline_nodes )
+
+			down_str	= 'nodes=%s domain=%s reported=%s' %( string.join( downnodeslist, ';' ), domain, str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
+			offl_str	= 'nodes=%s domain=%s reported=%s' %( string.join( offlinenodeslist, ';' ), domain, str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
+			self.dp.multicastGmetric( 'MONARCH-DOWN'   , down_str )
+			self.dp.multicastGmetric( 'MONARCH-OFFLINE', offl_str )
 
 		# Now let's spread the knowledge
 		#
