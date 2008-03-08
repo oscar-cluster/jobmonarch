@@ -83,6 +83,7 @@ Total
 </TD>
 </TR>
 
+<!-- START BLOCK : na_nodes -->
 <TR class="overview">
 <TD class="gray">
 Unavailable
@@ -97,6 +98,7 @@ Unavailable
 {na_cpus}
 </TD>
 </TR>
+<!-- END BLOCK : na_nodes -->
 
 <TR class="overview">
 <TD class="green">

@@ -526,9 +526,6 @@ function makeOverview()
 	$queued_nodes 		= 0;
 	$queued_cpus 		= 0;
 
-	$na_nodes 		= 0;
-	$na_cpus 		= 0;
-
 	$total_nodes 		= 0;
 	$total_cpus 		= 0;
 	$total_jobs 		= 0;
@@ -901,8 +898,17 @@ function makeOverview()
 	$tpl->assignGlobal( "queued_jobs", $queued_jobs );
 	$tpl->assignGlobal( "queued_cpus", $queued_cpus );
 
-	$tpl->assignGlobal( "na_nodes", $na_nodes );
-	$tpl->assignGlobal( "na_cpus", $na_cpus );
+	// Only display "Unavailable" in count overview there are any
+	//
+	if( $na_nodes > 0 )
+	{
+		$tpl->newBlock( "na_nodes" );
+
+		$tpl->assignGlobal( "na_nodes", $na_nodes );
+		$tpl->assignGlobal( "na_cpus", $na_cpus );
+
+		$tpl->gotoBlock( "_ROOT" );
+	}
 
 	$tpl->assignGlobal( "total_nodes", $total_nodes );
 	$tpl->assignGlobal( "total_jobs", $total_jobs );
