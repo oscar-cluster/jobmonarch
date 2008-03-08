@@ -580,13 +580,9 @@ function makeOverview()
 
 	$rjqj_host		= null;
 
-	$nodes_down		= null;
-	$nodes_offline		= null;
+	$na_nodes		= 0;
+	$na_cpus		= 0;
 
-	$replacestr = array();
-	$replacestr[] = "'";
-	$replacestr[] = " ";
-	
 	foreach( $metrics as $bhost => $bmetric )
 	{
 		foreach( $bmetric as $mname => $mval )
@@ -595,44 +591,18 @@ function makeOverview()
 			{
 				$rjqj_host      = $bhost;
 			}
-			if( ( $mname == 'MONARCH-DOWN' ) )
-			{
-				$nodes_down = str_replace($replacestr,NULL,split(',',substr($mval['VAL'],1,-1)));
-			}
-			if( ( $mname == 'MONARCH-OFFLINE' ) )
-			{
-				$nodes_offline = str_replace($replacestr,NULL,split(',',substr($mval['VAL'],1,-1)));
-			}
 		}
 	}
 
-	$nodes_counted		= array();
-
-	if($nodes_down != NULL || $nodes_offline!=NULL )
+	foreach( $gnodes as $ghost => $gnode )
 	{
-		foreach( $metrics as $bh => $bm )
+		if( $gnode->isDown() || $gnode->isOffline() )
 		{
-			if (in_array($bh,$nodes_offline) && $gnodes[$bh])
-			{
-				$nodes_counted[] = $bh;
-				if(! $gnodes[$bh]->getJobs())
-				{
-					$na_cpus += ($bm['cpu_num'][VAL]);
-					$na_nodes += 1;
-				}
-			}
-			if (in_array($bh,$nodes_down) && !in_array($bh,$nodes_counted) && $gnodes[$bh])
-			{
-				$nodes_counted[] = $bh;
-				if(! $gnodes[$bh]->getJobs())
-				{
-					$na_cpus += ($bm['cpu_num'][VAL]);
-					$na_nodes += 1;
-				}
-			}				
+			$na_nodes	+= 1;
+			$na_cpus	+= $metrics[$ghost]['cpu_num']['VAL'];
 		}
 	}
-		
+
 	// Running / queued amount jobs graph
 	//
 	if( $rjqj_host != null )
