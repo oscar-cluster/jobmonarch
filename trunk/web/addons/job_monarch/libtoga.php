@@ -888,48 +888,54 @@ class TorqueXMLHandler {
 
 		if( $name == "GANGLIA_XML" )
 		{
-			foreach( $this->down_nodes as $reported => $dnodes )
+			if( sizeof( $this->down_nodes ) > 0 )
 			{
-
-				if( $reported == $this->heartbeat['time'] )
+				foreach( $this->down_nodes as $reported => $dnodes )
 				{
-					$domain = $dnodes[1];
 
-					foreach( $dnodes[0] as $downhost )
+					if( $reported == $this->heartbeat['time'] )
 					{
-						$downhost = $this->makeHostname( $downhost, $domain );
+						$domain = $dnodes[1];
 
-						if( isset( $nodes[$downhost] ) )
+						foreach( $dnodes[0] as $downhost )
 						{
-							// OMG PHP4 is fking stupid!
-							// $nodes[$downhost]->setDown( 1 ) won't work here..
-							//
-							$mynode = $nodes[$downhost];
-							$mynode->setDown( 1 );
-							$nodes[$downhost] = $mynode;
+							$downhost = $this->makeHostname( $downhost, $domain );
+
+							if( isset( $nodes[$downhost] ) )
+							{
+								// OMG PHP4 is fking stupid!
+								// $nodes[$downhost]->setDown( 1 ) won't work here..
+								//
+								$mynode = $nodes[$downhost];
+								$mynode->setDown( 1 );
+								$nodes[$downhost] = $mynode;
+							}
 						}
 					}
 				}
 			}
 
-			foreach( $this->offline_nodes as $reported => $onodes )
+			if( sizeof( $this->offline_nodes ) > 0 )
 			{
-				if( $reported == $this->heartbeat['time'] )
+				foreach( $this->offline_nodes as $reported => $onodes )
 				{
-					$domain = $onodes[1];
-
-					foreach( $onodes[0] as $offlinehost )
+					if( $reported == $this->heartbeat['time'] )
 					{
-						$offlinehost = $this->makeHostname( $offlinehost, $domain );
+						$domain = $onodes[1];
 
-						if( isset( $nodes[$offlinehost] ) )
+						foreach( $onodes[0] as $offlinehost )
 						{
-							// OMG PHP4 is fking stupid!
-							// $nodes[$offlinehost]->setDown( 1 ) won't work here..
-							//
-							$mynode = $nodes[$offlinehost];
-							$mynode->setOffline( 1 );
-							$nodes[$offlinehost] = $mynode;
+							$offlinehost = $this->makeHostname( $offlinehost, $domain );
+
+							if( isset( $nodes[$offlinehost] ) )
+							{
+								// OMG PHP4 is fking stupid!
+								// $nodes[$offlinehost]->setDown( 1 ) won't work here..
+								//
+								$mynode = $nodes[$offlinehost];
+								$mynode->setOffline( 1 );
+								$nodes[$offlinehost] = $mynode;
+							}
 						}
 					}
 				}
