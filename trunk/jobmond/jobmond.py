@@ -504,8 +504,8 @@ class DataGatherer:
 
 					offline_nodes.append( name )
 
-			self.dp.multicastGmetric( 'MONARCH-DOWN'   , str( downed_nodes ),  'uint32', 'jobs' )
-			self.dp.multicastGmetric( 'MONARCH-OFFLINE', str( offline_nodes ), 'uint32', 'jobs' )
+			self.dp.multicastGmetric( 'MONARCH-DOWN'   , string.join( downed_nodes,  ',' ) )
+			self.dp.multicastGmetric( 'MONARCH-OFFLINE', string.join( offline_nodes, ',' ) )
 
 		# Now let's spread the knowledge
 		#
