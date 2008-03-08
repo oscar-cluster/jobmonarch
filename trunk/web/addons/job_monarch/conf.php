@@ -21,6 +21,7 @@ $COLUMN_NODES = 1;
 
 // Path to Ganglia's web frontend root
 //
+//$GANGLIA_PATH = "/var/www/test-ganglia";
 $GANGLIA_PATH = "../..";
 
 // Format of how to display a date and time in human readable format
@@ -53,6 +54,14 @@ $SMALL_HOSTIMAGE_MAXWIDTH = 450;
 //
 $JOB_NODE_MARKING = "J";
 
+// How to mark nodes that are 'down' in the batch
+//
+$NODE_DOWN_MARKING = "X";
+
+// How to mark nodes that are 'offline' in the batch
+//
+$NODE_OFFLINE_MARKING = ".";
+
 // XML Datasource for Job Monarch
 // by default localhost's gmetad
 // [syntax: <ip>:<port>]
@@ -82,4 +91,6 @@ $RRDTOOL = "/usr/bin/rrdtool";
 //
 //$CLUSTER_CONFS["Example Cluster"]	= "./clusterconf/example.php";
 //
+//$CLUSTER_CONFS["LISA Cluster"]          = "./clusterconf/lisa-example.php";
+//$CLUSTER_CONFS["GINA Cluster"]          = "./clusterconf/gina-example.php";
 ?>
