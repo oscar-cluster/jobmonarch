@@ -90,6 +90,90 @@ def processArgs( args ):
 
 	return loadConfig( config_filename )
 
+class GangliaConfigParser:
+
+	def __init__( self, config_file ):
+
+		self.config_file	= config_file
+
+		if not os.path.exists( self.config_file ):
+
+			debug_msg( 0, "FATAL ERROR: gmond config '" + self.config_file + "' not found!" )
+			sys.exit( 1 )
+
+	def removeQuotes( self, value ):
+
+		clean_value	= value
+		clean_value	= clean_value.replace( "'", "" )
+		clean_value	= clean_value.replace( '"', '' )
+		clean_value	= clean_value.strip()
+
+		return clean_value
+
+	def getVal( self, section, valname ):
+
+		cfg_fp		= open( self.config_file )
+		section_start	= False
+		section_found	= False
+		value		= None
+
+		for line in cfg_fp.readlines():
+
+			if line.find( section ) != -1:
+
+				section_found	= True
+
+			if line.find( '{' ) != -1 and section_found:
+
+				section_start	= True
+
+			if line.find( '}' ) != -1 and section_found:
+
+				section_start	= False
+				section_found	= False
+
+			if line.find( valname ) != -1 and section_start:
+
+				value 		= string.join( line.split( '=' )[1:], '' ).strip()
+
+		cfg_fp.close()
+
+		return value
+
+	def getInt( self, section, valname ):
+
+		value	= self.getVal( section, valname )
+
+		if not value:
+			return False
+
+		value	= self.removeQuotes( value )
+
+		return int( value )
+
+	def getStr( self, section, valname ):
+
+		value	= self.getVal( section, valname )
+
+		if not value:
+			return False
+
+		value	= self.removeQuotes( value )
+
+		return str( value )
+
+def findGmetric():
+
+	for dir in os.path.expandvars( '$PATH' ).split( ':' ):
+
+		guess	= '%s/%s' %( dir, 'gmetric' )
+
+		if os.path.exists( guess ):
+
+			return guess
+
+	return False
+
 def loadConfig( filename ):
 
         def getlist( cfg_string ):
@@ -149,8 +233,6 @@ def loadConfig( filename ):
 
 		debug_msg( 0, 'ERROR: no option USE_SYSLOG found: assuming yes' )
 
-
-
 	if USE_SYSLOG:
 
 		try:
@@ -201,15 +283,61 @@ def loadConfig( filename ):
 
 	except ConfigParser.NoOptionError:
 
-		GMOND_CONF		= None
+		# Not specified: assume /etc/gmond.conf
+		#
+		GMOND_CONF		= '/etc/gmond.conf'
 
-	try:
+	ganglia_cfg		= GangliaConfigParser( GMOND_CONF )
 
-		GMETRIC_BINARY		= cfg.get( 'DEFAULT', 'GMETRIC_BINARY' )
+	# Let's try to find the GMETRIC_TARGET ourselves first from GMOND_CONF
+	#
+	gmetric_dest_ip		= ganglia_cfg.getStr( 'udp_send_channel', 'mcast_join' )
 
-	except ConfigParser.NoOptionError:
+	if not gmetric_dest_ip:
 
-		GMETRIC_BINARY		= '/usr/bin/gmetric'
+		# Maybe unicast target then
+		#
+		gmetric_dest_ip		= ganglia_cfg.getStr( 'udp_send_channel', 'host' )
+
+	gmetric_dest_port	= gcp.getStr( 'udp_send_channel', 'port' )
+
+	if gmetric_dest_ip and gmetric_dest_port:
+
+		GMETRIC_TARGET	= '%s:%s' %( gmetric_dest_ip, gmetric_dest_port )
+	else:
+
+		debug_msg( 0, "WARNING: Can't parse udp_send_channel from: '%s'" %GMOND_CONF )
+
+		# Couldn't figure it out: let's see if it's in our jobmond.conf
+		#
+		try:
+
+			GMETRIC_TARGET	= cfg.get( 'DEFAULT', 'GMETRIC_TARGET' )
+
+		# Guess not: now just give up
+		#
+		except ConfigParser.NoOptionError:
+
+			GMETRIC_TARGET	= None
+
+			debug_msg( 0, "ERROR: GMETRIC_TARGET not set: internal Gmetric handling aborted. Failing back to DEPRECATED use of gmond.conf/gmetric binary. This will slow down jobmond significantly!" )
+
+	gmetric_bin	= findGmetric()
+
+	if gmetric_bin:
+
+		GMETRIC_BINARY		= gmetric_bin
+	else:
+		debug_msg( 0, "WARNING: Can't find gmetric binary anywhere in $PATH" )
+
+		try:
+
+			GMETRIC_BINARY		= cfg.get( 'DEFAULT', 'GMETRIC_BINARY' )
+
+		except ConfigParser.NoOptionError:
+
+			debug_msg( 0, "FATAL ERROR: GMETRIC_BINARY not set and not in $PATH" )
+			sys.exit( 1 )
 
 	DETECT_TIME_DIFFS	= cfg.getboolean( 'DEFAULT', 'DETECT_TIME_DIFFS' )
 
@@ -236,27 +364,14 @@ def loadConfig( filename ):
 
 		QUEUE		= None
 
-	try:
-
-		GMETRIC_TARGET	= cfg.get( 'DEFAULT', 'GMETRIC_TARGET' )
-
-	except ConfigParser.NoOptionError:
-
-		GMETRIC_TARGET	= None
-
-		if not GMOND_CONF:
-
-			debug_msg( 0, "FATAL ERROR: GMETRIC_TARGET and GMOND_CONF both not set! Set at least one!" )
-			sys.exit( 1 )
-		else:
-
-			debug_msg( 0, "ERROR: GMETRIC_TARGET not set: internal Gmetric handling aborted. Failing back to DEPRECATED use of gmond.conf/gmetric binary. This will slow down jobmond significantly!" )
-
 	return True
 
 def fqdn_parts (fqdn):
+
 	"""Return pair of host and domain for fully-qualified domain name arg."""
+
 	parts = fqdn.split (".")
+
 	return (parts[0], string.join(parts[1:], "."))
 
 METRIC_MAX_VAL_LEN = 900
@@ -289,16 +404,6 @@ class DataProcessor:
 		self.dmax = str( int( int( BATCH_POLL_INTERVAL ) * 2 ) )
 
 		if GMOND_CONF:
-
-			try:
-				gmond_file = GMOND_CONF
-
-			except NameError:
-				gmond_file = '/etc/gmond.conf'
-
-			if not os.path.exists( gmond_file ):
-				debug_msg( 0, 'FATAL ERROR: ' + gmond_file + ' does not exist' )
-				sys.exit( 1 )
 
 			incompatible = self.checkGmetricVersion()
 
@@ -821,18 +926,29 @@ class SgeQstatXMLParser(xml.sax.handler.ContentHandler):
 
 # Abstracted from PBS original.
 # Fixme:  Is it worth (or appropriate for PBS) sorting the result?
-def do_nodelist (nodes):
+#
+def do_nodelist( nodes ):
+
 	"""Translate node list as appropriate."""
+
 	nodeslist		= [ ]
-	my_domain = fqdn_parts(socket.getfqdn())[1]
+	my_domain		= fqdn_parts( socket.getfqdn() )[1]
+
 	for node in nodes:
+
 		host		= node.split( '/' )[0] # not relevant for SGE
 		h, host_domain	= fqdn_parts(host)
+
 		if host_domain == my_domain:
+
 			host	= h
+
 		if nodeslist.count( host ) == 0:
+
 			for translate_pattern in BATCH_HOST_TRANSLATE:
+
 				if translate_pattern.find( '/' ) != -1:
+
 					translate_orig	= \
 					    translate_pattern.split( '/' )[1]
 					translate_new	= \
