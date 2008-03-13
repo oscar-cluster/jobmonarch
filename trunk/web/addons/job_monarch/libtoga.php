@@ -1096,12 +1096,10 @@ class NodeImage
 	{
 		$this->tasks = $this->tasks + $cpus;
 	}
-
 	function setDown( $down )
 	{
 		$this->down = $down;
 	}
-
 	function isDown()
 	{
 		return $this->down;
@@ -1110,21 +1108,26 @@ class NodeImage
 	{
 		$this->offline = $offline;
 	}
-
 	function isOffline()
 	{
 		return $this->offline;
 	}
-
 	function setImage( $image )
 	{
 		$this->image = $image;
 	}
-
 	function setCoords( $x, $y )
 	{
 		$this->x = $x;
 		$this->y = $y;
+	}
+	function getX()
+	{
+		return $this->x;
+	}
+	function getY()
+	{
+		return $this->y;
 	}
 
 	function getImagemapArea()
@@ -1383,7 +1386,7 @@ class ClusterImage
 	{
 		global $SMALL_CLUSTERIMAGE_MAXWIDTH, $SMALL_CLUSTERIMAGE_NODEWIDTH;
 		global $BIG_CLUSTERIMAGE_MAXWIDTH, $BIG_CLUSTERIMAGE_NODEWIDTH;
-		global $CLUSTER_CONFS, $confcluster;
+		global $CLUSTER_CONFS, $confcluster, $SHOW_EMPTY_COLUMN, $SHOW_EMPTY_ROW;
 
 		global $SORTBY_HOSTNAME, $SORT_ORDER, $skan_str;
 		global $x_first, $y_first;
@@ -1454,7 +1457,6 @@ class ClusterImage
 
 		if( $SORTBY_HOSTNAME != "" )
 		{
-
 		        $sorted 	= array();
 
 			$x_first	= 0;
@@ -1493,7 +1495,6 @@ class ClusterImage
 			//
 			if(( strpos( $SORTBY_HOSTNAME, $x_str ) < strpos( $SORTBY_HOSTNAME, $y_str ) ) && ( $x_present && $y_present ))
 			{
-			
 				$x_first	= 1;
 			}
 			else if(( strpos( $SORTBY_HOSTNAME, $x_str ) > strpos( $SORTBY_HOSTNAME, $y_str ) ) && ( $x_present && $y_present ))
@@ -1530,6 +1531,9 @@ class ClusterImage
 			$x_max		= null;
 			$y_min		= null;
 			$y_max		= null;
+
+			$x_columns	= array();
+			$y_rows		= array();
 
 			// Now let's walk through all our nodes and see which one are valid for our scan pattern
 			//
@@ -1630,12 +1634,25 @@ class ClusterImage
 				{
 					$y_max	= $y;
 				}
+
+				// Store which non-empty columns and rows we found
+				//
+				if( !in_array( $x, $x_columns ) )
+				{
+					$x_columns[] = $x;
+				}
+				if( !in_array( $y, $y_rows ) )
+				{
+					$y_rows[] = $y;
+				}
 			}
 
 			// Sort all the nodes (alpha and numerically)
 			// 1: gb-r1n1, 2: gb-r1n2, 3: gb-r2n1, etc
 			//
 			$sorted_nodes	= usort( $nodes, "cmp" );
+
+			//print_r( $x_columns ) ;
 
 			$cur_node	= 0;
 
@@ -1653,10 +1670,8 @@ class ClusterImage
 
 			if( $this->isBig() ) 
 			{
-
 				$y_offset	= ($fontheight * (1 + strlen( $x_max) ) ) + ((2 + strlen( $x_max)) * $fontspaceing);
 				$x_offset	= ($fontwidth * (1 + strlen( $y_max) ) ) + ((2 + strlen( $y_max)) * $fontspaceing);
-
 			}
 
 			$image_width	= $x_offset + ($node_width * ($x_max-$x_min+2));
@@ -1710,18 +1725,50 @@ class ClusterImage
 				}
 			}
 
+			$previous_n	= 0;
+			$previous_m	= 0;
+			$x_empty_count	= 0;
+			$y_empty_count	= 0;
+
+			// Let's start assigning x,y coordinates now
+			//
 			for( $n = $x_min; $n <= $x_max; $n++ )
 			{
 				for( $m = $y_min; $m <= $y_max; $m++ )
 				{
-
 					if( $x_min > 0 )
 					{
-						$x	= $x_offset + ( ($n-$x_min) * $node_width );
+						$x	= $x_offset + ( ($n-$x_min) * $node_width ) - ($x_empty_count * $node_width);
 					}
 					if( $y_min > 0 )
 					{
-						$y	= $y_offset + ( ($m-$y_min) * $node_width );
+						$y	= $y_offset + ( ($m-$y_min) * $node_width ) - ($y_empty_count * $node_width);
+					}
+
+					// Don't show empty rows/columns if option enabled
+					//
+					if( !in_array( $n, $x_columns ) && !$SHOW_EMPTY_COLUMN )
+					{
+						// Skip to next iteration: we don't want a empty column
+						//
+						if( $n > $previous_n )
+						{
+							$previous_n = $n;
+							$x_empty_count++;
+						}
+						continue;
+					}
+					if( !in_array( $m, $y_rows ) && !$SHOW_EMPTY_ROW )
+
+					{
+						// Skip to next iteration: we don't want a empty column
+						//
+						if( $m > $previous_m )
+						{
+							$previous_m = $m;
+							$y_empty_count++;
+						}
+						continue;
 					}
 
 					if( $this->isBig() ) 
