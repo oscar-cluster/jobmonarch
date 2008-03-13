@@ -299,7 +299,7 @@ def loadConfig( filename ):
 		#
 		gmetric_dest_ip		= ganglia_cfg.getStr( 'udp_send_channel', 'host' )
 
-	gmetric_dest_port	= gcp.getStr( 'udp_send_channel', 'port' )
+	gmetric_dest_port	= ganglia_cfg.getStr( 'udp_send_channel', 'port' )
 
 	if gmetric_dest_ip and gmetric_dest_port:
 
@@ -1053,11 +1053,171 @@ class SgeDataGatherer(DataGatherer):
 			if id not in jobs_processed:
 				del self.jobs[id]
 
+# LSF code by Mahmoud Hanafi <hanafim@users.sourceforge.nt>
+# Requres LSFObject http://sourceforge.net/projects/lsfobject
+#
+class LsfDataGatherer(DataGatherer):
+        """This is the DataGatherer for LSf"""
+
+        global lsfObject
+
+        def __init__( self ):
+                self.jobs = { }
+                self.timeoffset = 0
+                self.dp = DataProcessor()
+                self.initLsfQuery()
+
+########################
+## THIS IS TAKEN FROM
+## http://bigbadcode.com/2007/04/04/count-the-duplicates-in-a-python-list/
+        from sets import Set
+#
+        def _countDuplicatesInList(self,dupedList):
+                uniqueSet = self.Set(item for item in dupedList)
+                return [(item, dupedList.count(item)) for item in uniqueSet]
+#
+#lst = ['I1','I2','I1','I3','I4','I4','I7','I7','I7','I7','I7']
+#print _countDuplicatesInList(lst)
+#[('I1', 2), ('I3', 1), ('I2', 1), ('I4', 2), ('I7', 5)]
+########################
+
+        def initLsfQuery( self ):
+                self.pq = None
+                self.pq = lsfObject.jobInfoEntObject()
+
+        def getAttr( self, attrs, name ):
+                """Return certain attribute from dictionary, if exists"""
+                if attrs.has_key( name ):
+                        return attrs[name]
+                else:
+                        return ''
+
+        def getJobData( self, known_jobs="" ):
+                """Gather all data on current jobs in LSF"""
+                if len( known_jobs ) > 0:
+                        jobs = known_jobs
+                else:
+                        jobs = { }
+                joblist = {}
+                joblist = self.pq.getJobInfo()
+                nodelist = ''
+
+                self.cur_time = time.time()
+
+                jobs_processed = [ ]
+
+                for name, attrs in joblist.items():
+                        job_id = str(name)
+                        jobs_processed.append( job_id )
+                        name = self.getAttr( attrs, 'jobName' )
+                        queue = self.getAttr( self.getAttr( attrs, 'submit') , 'queue' )
+                        owner = self.getAttr( attrs, 'user' )
+
+### THIS IS THE rLimit List index values
+#define LSF_RLIMIT_CPU      0            /* cpu time in milliseconds */
+#define LSF_RLIMIT_FSIZE    1            /* maximum file size */
+#define LSF_RLIMIT_DATA     2            /* data size */
+#define LSF_RLIMIT_STACK    3            /* stack size */
+#define LSF_RLIMIT_CORE     4            /* core file size */
+#define LSF_RLIMIT_RSS      5            /* resident set size */
+#define LSF_RLIMIT_NOFILE   6            /* open files */
+#define LSF_RLIMIT_OPEN_MAX 7            /* (from HP-UX) */
+#define LSF_RLIMIT_VMEM     8            /* maximum swap mem */
+#define LSF_RLIMIT_SWAP     8
+#define LSF_RLIMIT_RUN      9            /* max wall-clock time limit */
+#define LSF_RLIMIT_PROCESS  10           /* process number limit */
+#define LSF_RLIMIT_THREAD   11           /* thread number limit (introduced in LSF6.0) */
+#define LSF_RLIM_NLIMITS    12           /* number of resource limits */
+
+                        requested_time = self.getAttr( self.getAttr( attrs, 'submit') , 'rLimits' )[9]
+                        if requested_time == -1: 
+                                requested_time = ""
+                        requested_memory = self.getAttr( self.getAttr( attrs, 'submit') , 'rLimits' )[8]
+                        if requested_memory == -1: 
+                                requested_memory = ""
+# This tries to get proc per node. We don't support this right now
+                        ppn = 0 #self.getAttr( self.getAttr( attrs, 'SubmitList') , 'numProessors' )
+                        requested_cpus = self.getAttr( self.getAttr( attrs, 'submit') , 'numProcessors' )
+                        if requested_cpus == None or requested_cpus == "":
+                                requested_cpus = 1
+
+			if QUEUE:
+				for q in QUEUE:
+					if q == queue:
+						display_queue = 1
+						break
+					else:
+						display_queue = 0
+						continue
+			if display_queue == 0:
+				continue
+
+                        runState = self.getAttr( attrs, 'status' )
+                        if runState == 4:
+                                status = 'R'
+                        else:
+                                status = 'Q'
+                        queued_timestamp = self.getAttr( attrs, 'submitTime' )
+
+                        if status == 'R':
+                                start_timestamp = self.getAttr( attrs, 'startTime' )
+                                nodesCpu =  dict(self._countDuplicatesInList(self.getAttr( attrs, 'exHosts' )))
+                                nodelist = nodesCpu.keys()
+
+                                if DETECT_TIME_DIFFS:
+
+                                        # If a job start if later than our current date,
+                                        # that must mean the Torque server's time is later
+                                        # than our local time.
+
+                                        if int(start_timestamp) > int( int(self.cur_time) + int(self.timeoffset) ):
+
+                                                self.timeoffset = int( int(start_timestamp) - int(self.cur_time) )
+
+                        elif status == 'Q':
+                                start_timestamp = ''
+                                count_mynodes = 0
+                                numeric_node = 1
+                                nodelist = ''
+
+                        myAttrs = { }
+                        if name == "":
+                                myAttrs['name'] = "none"
+                        else:
+                                myAttrs['name'] = name
+
+                        myAttrs[ 'owner' ]		= owner
+                        myAttrs[ 'requested_time' ]	= str(requested_time)
+                        myAttrs[ 'requested_memory' ]	= str(requested_memory)
+                        myAttrs[ 'requested_cpus' ]	= str(requested_cpus)
+                        myAttrs[ 'ppn' ]		= str( ppn )
+                        myAttrs[ 'status' ]		= status
+                        myAttrs[ 'start_timestamp' ]	= str(start_timestamp)
+                        myAttrs[ 'queue' ]		= str(queue)
+                        myAttrs[ 'queued_timestamp' ]	= str(queued_timestamp)
+                        myAttrs[ 'reported' ]		= str( int( int( self.cur_time ) + int( self.timeoffset ) ) )
+                        myAttrs[ 'nodes' ]		= do_nodelist( nodelist )
+			myAttrs[ 'domain' ]		= fqdn_parts( socket.getfqdn() )[1]
+                        myAttrs[ 'poll_interval' ]	= str(BATCH_POLL_INTERVAL)
+
+                        if self.jobDataChanged( jobs, job_id, myAttrs ) and myAttrs['status'] in [ 'R', 'Q' ]:
+                                jobs[ job_id ] = myAttrs
+
+                                #debug_msg( 10, printTime() + ' job %s state changed' %(job_id) )
+
+                for id, attrs in jobs.items():
+                        if id not in jobs_processed:
+                                # This one isn't there anymore; toedeledoki!
+                                #
+                                del jobs[ id ]
+                self.jobs=jobs
+
+
 class PbsDataGatherer( DataGatherer ):
 
 	"""This is the DataGatherer for PBS and Torque"""
 
-	global PBSQuery
+	global PBSQuery, PBSError
 
 	def __init__( self ):
 
@@ -1390,7 +1550,7 @@ def main():
 
 	"""Application start"""
 
-	global PBSQuery, PBSError
+	global PBSQuery, PBSError, lsfObject
 	global SYSLOG_FACILITY, USE_SYSLOG, BATCH_API, DAEMONIZE
 
 	if not processArgs( sys.argv[1:] ):
@@ -1415,11 +1575,18 @@ def main():
 	elif BATCH_API == 'sge':
 
 		# Tested with SGE 6.0u11.
-# 		debug_msg( 0, "FATAL ERROR: BATCH_API 'sge' implementation is currently broken, check future releases" )
-
-# 		sys.exit( 1 )
-
+		#
 		gather = SgeDataGatherer()
+
+	elif BATCH_API == 'lsf':
+
+		try:
+			from lsfObject import lsfObject
+		except:
+			debug_msg(0, "fatal error: BATCH_API set to 'lsf' but python module is not found or installed")
+			sys.exit( 1)
+
+		gather = LsfDataGatherer()
 
 	else:
 		debug_msg( 0, "FATAL ERROR: unknown BATCH_API '" + BATCH_API + "' is not supported" )
@@ -1429,7 +1596,6 @@ def main():
 	if( DAEMONIZE and USE_SYSLOG ):
 
 		syslog.openlog( 'jobmond', syslog.LOG_NOWAIT, SYSLOG_FACILITY )
-
 
 	if DAEMONIZE:
 
