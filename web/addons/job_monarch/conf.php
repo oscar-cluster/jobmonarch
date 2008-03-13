@@ -1,7 +1,7 @@
 <?php
 // Show hosts in a jobview by default?
 //
-$default_showhosts = 1;
+$default_showhosts = true;
 
 // Stop displaying archive search results after SEARCH_RESULT_LIMIT
 //
@@ -9,20 +9,20 @@ $SEARCH_RESULT_LIMIT = 20;
 
 // Show the column job attribute 'requested memory'?
 //
-$COLUMN_REQUESTED_MEMORY = 0;
+$COLUMN_REQUESTED_MEMORY = false;
 
 // Show the column job attribute 'queued' (since)?
 //
-$COLUMN_QUEUED = 1;
+$COLUMN_QUEUED = true;
 
 // Show the column job attribute 'nodes' hostnames?
 //
-$COLUMN_NODES = 1;
+$COLUMN_NODES = true;
 
 // Path to Ganglia's web frontend root
 //
-//$GANGLIA_PATH = "/var/www/test-ganglia";
-$GANGLIA_PATH = "../..";
+$GANGLIA_PATH = "/var/www/test-ganglia";
+//$GANGLIA_PATH = "../..";
 
 // Format of how to display a date and time in human readable format
 //
@@ -62,6 +62,14 @@ $NODE_DOWN_MARKING = "X";
 //
 $NODE_OFFLINE_MARKING = ".";
 
+// Show empty columns in the ClusterImage?
+//
+$SHOW_EMPTY_COLUMN = false;
+
+// Show empty rows in the ClusterImage?
+//
+$SHOW_EMPTY_ROW = true;
+
 // XML Datasource for Job Monarch
 // by default localhost's gmetad
 // [syntax: <ip>:<port>]
@@ -70,7 +78,7 @@ $DATA_SOURCE = '127.0.0.1:8651';
 
 // Is there a jobarchive?
 //
-$JOB_ARCHIVE = 1;
+$JOB_ARCHIVE = true;
 
 // Path to the job archive rrd files
 //
@@ -91,6 +99,6 @@ $RRDTOOL = "/usr/bin/rrdtool";
 //
 //$CLUSTER_CONFS["Example Cluster"]	= "./clusterconf/example.php";
 //
-//$CLUSTER_CONFS["LISA Cluster"]          = "./clusterconf/lisa-example.php";
-//$CLUSTER_CONFS["GINA Cluster"]          = "./clusterconf/gina-example.php";
+$CLUSTER_CONFS["LISA Cluster"]          = "./clusterconf/lisa-example.php";
+$CLUSTER_CONFS["GINA Cluster"]          = "./clusterconf/gina-example.php";
 ?>
