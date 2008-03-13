@@ -15,6 +15,7 @@
 	web)
 		a:	large graphs link for job report
 			thanks to: Craig West - cwest(a.t)astro(d.o.t)umass(d.o.t)edu
+		a:	SHOW_EMPTY_COLUMN, SHOW_EMPTY_ROW options for ClusterImage hostname parsing
 
 0.3.1:
 
