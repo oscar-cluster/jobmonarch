@@ -1057,24 +1057,37 @@ class SgeDataGatherer(DataGatherer):
 # Requres LSFObject http://sourceforge.net/projects/lsfobject
 #
 class LsfDataGatherer(DataGatherer):
+
         """This is the DataGatherer for LSf"""
 
         global lsfObject
 
         def __init__( self ):
+
                 self.jobs = { }
                 self.timeoffset = 0
                 self.dp = DataProcessor()
                 self.initLsfQuery()
 
-########################
-## THIS IS TAKEN FROM
-## http://bigbadcode.com/2007/04/04/count-the-duplicates-in-a-python-list/
-        from sets import Set
-#
-        def _countDuplicatesInList(self,dupedList):
-                uniqueSet = self.Set(item for item in dupedList)
-                return [(item, dupedList.count(item)) for item in uniqueSet]
+        def _countDuplicatesInList( self, dupedList ):
+
+		countDupes	= { }
+
+		for item in dupedList:
+
+			if not countDupes.has_key( item ):
+
+				countDupes[ item ]	= 1
+			else:
+				countDupes[ item ]	= countDupes[ item ] + 1
+
+		dupeCountList	= [ ]
+
+		for item, count in countDupes.items():
+
+			dupeCountList.append( ( item, count ) )
+
+                return dupeCountList
 #
 #lst = ['I1','I2','I1','I3','I4','I4','I7','I7','I7','I7','I7']
 #print _countDuplicatesInList(lst)
@@ -1084,13 +1097,6 @@ class LsfDataGatherer(DataGatherer):
         def initLsfQuery( self ):
                 self.pq = None
                 self.pq = lsfObject.jobInfoEntObject()
-
-        def getAttr( self, attrs, name ):
-                """Return certain attribute from dictionary, if exists"""
-                if attrs.has_key( name ):
-                        return attrs[name]
-                else:
-                        return ''
 
         def getJobData( self, known_jobs="" ):
                 """Gather all data on current jobs in LSF"""
@@ -1203,11 +1209,11 @@ class LsfDataGatherer(DataGatherer):
                         if self.jobDataChanged( jobs, job_id, myAttrs ) and myAttrs['status'] in [ 'R', 'Q' ]:
                                 jobs[ job_id ] = myAttrs
 
-                                #debug_msg( 10, printTime() + ' job %s state changed' %(job_id) )
+                                debug_msg( 10, printTime() + ' job %s state changed' %(job_id) )
 
                 for id, attrs in jobs.items():
                         if id not in jobs_processed:
-                                # This one isn't there anymore; toedeledoki!
+                                # This one isn't there anymore
                                 #
                                 del jobs[ id ]
                 self.jobs=jobs
