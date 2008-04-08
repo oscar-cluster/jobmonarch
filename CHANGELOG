@@ -7,6 +7,9 @@
 		a:	SGE support
 			thanks to: Dave Love - d(d.o.t)love(a.t)liverpool(d.o.t)ac(d.o.t)uk
 			for writing it!
+		a:	LSF support
+			thanks to: Mahmoud Hanafi - mhanafi(a.t)csc(d.o.t)com
+			for writing it!
 		a:	GMETRIC_TARGET is now parsed from gmond.conf
 		a:	GMETRIC_BINARY is now looked for in PATH
 		f:	queue selection support is now working
