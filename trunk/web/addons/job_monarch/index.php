@@ -22,7 +22,7 @@
  * SVN $Id$
  */
 
-ini_set("memory_limit","80M");
+ini_set("memory_limit","100M");
 set_time_limit(0);
 
 
