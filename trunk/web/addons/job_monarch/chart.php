@@ -21,31 +21,45 @@ foreach($_GET as $key=>$val)
 	}
 }
 
-#print_r( $values );
-#print_r( $legend );
-
-// Standard inclusions     
+// Include pChart libs
+//
 include("./lib/pchart/pData.class");  
 include("./lib/pchart/pChart.class");  
 
-// Dataset definition   
+// Dataset definition
+//
 $DataSet = new pData;  
-$DataSet->AddPoint($values,"Serie1");  
-$DataSet->AddPoint($legend,"Serie2");  
+$DataSet->AddPoint( $values, "Pie slices" );  
+$DataSet->AddPoint( $legend, "Legend" );  
 $DataSet->AddAllSeries();  
-$DataSet->SetAbsciseLabelSerie("Serie2");  
+$DataSet->SetAbsciseLabelSerie( "Legend" );  
 
 // Initialise the graph  
-$Test = new pChart(380,200);  
-$Test->drawFilledRoundedRectangle(7,7,373,193,5,240,240,240);  
-$Test->drawRoundedRectangle(5,5,375,195,5,230,230,230);  
+$myChart = new pChart(380,200);  
+$myChart->drawFilledRoundedRectangle(7,7,373,193,5,240,240,240);  
+$myChart->drawRoundedRectangle(5,5,375,195,5,230,230,230);  
 
-// Draw the pie chart  
-$Test->setFontProperties("./lib/pchart/tahoma.ttf",8);  
-$Test->drawPieGraph($DataSet->GetData(),$DataSet->GetDataDescription(),150,90,110,TRUE,TRUE,50,20,20);  
-$Test->drawPieLegend(310,15,$DataSet->GetData(),$DataSet->GetDataDescription(),250,250,250);  
+// Font for slice percentages & legend text
+//
+$myChart->setFontProperties( "./lib/pchart/tahoma.ttf", 8 );  
 
-$Test->drawTitle(60,22,$title,50,50,50,585);
+// Draw the pie slices and percentages text
+//
+$myChart->drawPieGraph( $DataSet->GetData(), $DataSet->GetDataDescription(), 150, 90, 110, TRUE, TRUE, 50, 20, 20 );  
 
-$Test->Stroke();
+// Draw legend text
+//
+$myChart->drawPieLegend( 280, 15, $DataSet->GetData(), $DataSet->GetDataDescription(), 250, 250, 250 );  
+
+// Font for title: a little bigger
+//
+$myChart->setFontProperties( "./lib/pchart/tahoma.ttf", 12 );  
+
+// Draw title text
+//
+$myChart->drawTitle( 0, 5, $title, 50, 50, 50, 380, 20 );
+
+// Draw complete graph embedded inline: output the png
+//
+$myChart->Stroke();
 ?>
