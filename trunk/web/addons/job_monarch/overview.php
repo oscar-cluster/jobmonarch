@@ -273,7 +273,8 @@ function drawPie()
 	$empty_cpus		= ( $empty_cpus >= 0 ) ? $empty_cpus : 0;
 	$used_cpus		= $nr_cpus - $empty_cpus;
 
-	$empty_percentage 	= ($empty_cpus / $nr_cpus) * 100;
+	//$empty_percentage 	= ($empty_cpus / $nr_cpus) * 100;
+	$empty_percentage 	= $empty_cpus;
 
 	$qcolors 		= array();
 	$color 			= randomColor( $qcolors );
@@ -299,8 +300,8 @@ function drawPie()
 			// Determine the weight of this job
 			// - what percentage of the cpus is in use by this job
 			//
-			$job_weight[$myjob]	= ( $job_cpu / $nr_cpus );
-
+			//$job_weight[$myjob]	= ( $job_cpu / $nr_cpus );
+			$job_weight[$myjob]	= $job_cpu;
 
 			if( isset( $piefilter ) ) {
 
@@ -381,9 +382,23 @@ function drawPie()
 		$graphvals = $queues;
 	}
 
+	//$percentage	= 0;
+	//$slice_count	= 0;
+
+	// Find rounding errors: total has to be 100
+	//
+	//foreach( $graphvals as $name => $totalweight) 
+	//{
+	//	$percentage 	= $percentage + $totalweight;
+	//	$slice_count	= $slice_count + 1;
+	//}
+
+	//$round_offset	= ( 100 - $percentage ) / $slice_count;
+
 	foreach( $graphvals as $name => $totalweight) 
 	{
-		$percentage 	= ( $totalweight * 100 );
+		//$percentage 	= ( $totalweight * 100 ) + $round_offset;
+		$percentage 	= $totalweight;
 		
 		$color 		= randomColor( $qcolors );
 		$qcolors[] 	= $color;
