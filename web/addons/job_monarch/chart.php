@@ -45,7 +45,7 @@ $myChart->setFontProperties( "./lib/pchart/tahoma.ttf", 8 );
 
 // Draw the pie slices and percentages text
 //
-$myChart->drawPieGraph( $DataSet->GetData(), $DataSet->GetDataDescription(), 150, 90, 110, TRUE, TRUE, 50, 20, 20 );
+$myChart->drawPieGraph( $DataSet->GetData(), $DataSet->GetDataDescription(), 160, 100, 110, TRUE, TRUE, 50, 20, 20 );
 
 // Draw legend text
 //
