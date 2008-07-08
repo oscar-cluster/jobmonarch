@@ -36,19 +36,25 @@ class HTTPVariables
 		$this->clustername	= $httpvars["c"] ? $httpvars["c"] : $getvars["c"];
 		$this->metricname	= $httpvars["m"] ? $httpvars["m"] : $getvars["m"];
 
-		foreach( $httpvars as $httpvar => $httpval )
+		if( count( $httpvars ) > 0 )
 		{
-			if( $httpval )
+			foreach( $httpvars as $httpvar => $httpval )
 			{
-				$this->restvars[$httpvar] = $httpval;
+				if( $httpval )
+				{
+					$this->restvars[$httpvar] = $httpval;
+				}
 			}
 		}
 
-		foreach( $getvars as $getvar => $getval )
+		if( count( $getvars ) > 0 )
 		{
-			if( $getval )
+			foreach( $getvars as $getvar => $getval )
 			{
-				$this->restvars[$getvar] = $getval;
+				if( $getval )
+				{
+					$this->restvars[$getvar] = $getval;
+				}
 			}
 		}
 	}
