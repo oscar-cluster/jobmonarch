@@ -18,7 +18,7 @@ Ext.onReady( function(){
   JobProxy.on('beforeload', function(p, params) {
         params.c = "{cluster}";
     });
-  JobsDataStore.load();
+  JobsDataStore.load( {params: {start: 0, limit: 30}} );
   JobListingWindow.show();
   });
 </script>

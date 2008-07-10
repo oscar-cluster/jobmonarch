@@ -38,7 +38,8 @@ function initJobGrid() {
         {name: 'start_timestamp', type: 'string', mapping: 'start_timestamp'},
         {name: 'runningtime', type: 'string', mapping: 'runningtime'}
       ]),
-      sortInfo:{field: 'jid', direction: "ASC"}
+      sortInfo: {field: 'jid', direction: "ASC"},
+      remoteSort: true
     });
     
   JobsColumnModel = new Ext.grid.ColumnModel(
@@ -142,7 +143,12 @@ function initJobGrid() {
       cm: JobsColumnModel,
       enableColLock:false,
       clicksToEdit:1,
-      selModel: new Ext.grid.RowSelectionModel({singleSelect:false})
+      selModel: new Ext.grid.RowSelectionModel({singleSelect:false}),
+      bbar: new Ext.PagingToolbar({
+                pageSize: 30,
+                store: JobsDataStore,
+                displayInfo: true
+            })
     });
 
   JobListingWindow = new Ext.Window({
@@ -156,9 +162,3 @@ function initJobGrid() {
       items: JobListingEditorGrid
     });
 }
-  //JobProxy.on('beforeload', function(p, params) {
-  //      params.c = "GINA Cluster";
-  //  });
-  //debug();  
-  //JobsDataStore.load();
-  //JobListingWindow.show();
