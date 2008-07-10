@@ -12,6 +12,16 @@
 <script type="text/javascript" src="./lib/extjs/ext-all-debug.js"></script>
 
 <script type="text/javascript" src="./js/jobgrid.js"></script>
+<script type="text/javascript">
+Ext.onReady( function(){
+  initJobGrid();
+  JobProxy.on('beforeload', function(p, params) {
+        params.c = "{cluster}";
+    });
+  JobsDataStore.load();
+  JobListingWindow.show();
+  });
+</script>
 
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
