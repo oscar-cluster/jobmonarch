@@ -4,8 +4,22 @@ $c			= $_POST["c"];
 $clustername		= $c;
 $cluster		= $c;
 
+// Supplied by ExtJS when DataStore has remoteSort: true
+//
+$sortfield		= $_POST["sort"];
+$sortorder		= $_POST["dir"]; // ASC or DESC
+
 global $c, $clustername, $cluster;
 
+// Grid Paging stuff
+//
+//$pstart	= (int) (isset($_POST['start']) ? $_POST['start'] : $_GET['pstart']);
+$pstart	= (int) $_POST['start'];
+//$pend	= (int) (isset($_POST['limit']) ? $_POST['limit'] : $_GET['plimit']);
+$pend	= (int) $_POST['limit'];
+
+// Need to fool Ganglia here: or it won't parse XML for our cluster
+//
 $HTTP_POST_VARS["c"]	= $c;
 $_GET["c"]		= $c;
 
@@ -15,9 +29,6 @@ include_once "./libtoga.php";
 
 $ds             = new DataSource();
 $myxml_data     = &$ds->getData();
-
-//printf( "d %s\n", strlen( $myxml_data ) );
-//return 0;
 
 global $jobs;
 
@@ -54,9 +65,122 @@ switch($task)
         break;
 }
 
+function sortJobs( $jobs, $sortby, $sortorder )
+{
+        $sorted = array();
+
+        $cmp    = create_function( '$a, $b',
+                "global \$sortby, \$sortorder;".
+
+                "if( \$a == \$b ) return 0;".
+
+                "if (\$sortorder==\"DESC\")".
+                        "return ( \$a < \$b ) ? 1 : -1;".
+                "else if (\$sortorder==\"ASC\")".
+                        "return ( \$a > \$b ) ? 1 : -1;" );
+
+        if( isset( $jobs ) && count( $jobs ) > 0 )
+        {
+                foreach( $jobs as $jobid => $jobattrs )
+                {
+                                $state          = $jobattrs[status];
+                                $user           = $jobattrs[owner];
+                                $queue          = $jobattrs[queue];
+                                $name           = $jobattrs[name];
+                                $req_cpu        = $jobattrs[requested_time];
+                                $req_memory     = $jobattrs[requested_memory];
+
+                                if( $state == 'R' )
+                                {
+                                        $nodes = count( $jobattrs[nodes] );
+                                }
+                                else
+                                {
+                                        $nodes = $jobattrs[nodes];
+                                }
+
+                                $ppn            = (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
+                                $cpus           = $nodes * $ppn;
+                                $queued_time    = (int) $jobattrs[queued_timestamp];
+                                $start_time     = (int) $jobattrs[start_timestamp];
+                                $runningtime    = $report_time - $start_time;
+
+                                switch( $sortby )
+                                {
+                                        case "jid":
+                                                $sorted[$jobid] = $jobid;
+                                                break;
+
+                                        case "status":
+                                                $sorted[$jobid] = $state;
+                                                break;
+
+                                        case "owner":
+                                                $sorted[$jobid] = $user;
+                                                break;
+
+                                        case "queue":
+                                                $sorted[$jobid] = $queue;
+                                                break;
+
+                                        case "name":
+                                                $sorted[$jobid] = $name;
+                                                break;
+
+                                        case "requested_time":
+                                                $sorted[$jobid] = timeToEpoch( $req_cpu );
+                                                break;
+
+                                        case "requested_memory":
+                                                $sorted[$jobid] = $req_memory;
+                                                break;
+
+                                        case "ppn":
+                                                $sorted[$jobid] = $ppn;
+                                                break;
+                                        case "nodesct":
+                                                $sorted[$jobid] = $nodes;
+                                                break;
+                                        case "cpus":
+                                                $sorted[$jobid] = $cpus;
+                                                break;
+
+                                        case "queued_timestamp":
+                                                $sorted[$jobid] = $queued_time;
+                                                break;
+
+                                        case "start_timestamp":
+                                                $sorted[$jobid] = $start_time;
+                                                break;
+
+                                        case "runningtime":
+                                                $sorted[$jobid] = $runningtime;
+                                                break;
+
+                                        default:
+                                                break;
+                                }
+                }
+        }
+
+        if( $sortorder == "ASC" )
+        {
+                asort( $sorted );
+        }
+        else if( $sortorder == "DESC" )
+        {
+                arsort( $sorted );
+        }
+
+        return $sorted;
+}
+
+
+
 function getList() 
 {
-	global $jobs, $hearbeat;
+	global $jobs, $hearbeat, $pstart, $pend;
+	global $sortfield, $sortorder;
 
 	$job_count	= count( $jobs );
 
@@ -68,47 +192,67 @@ function getList()
 
 	$jobresults	= array();
 
-	foreach( $jobs as $jobid => $jobattrs )
+	$cur_job	= 0;
+
+
+	// sorteer jobs op sortorder en sortfield
+
+	//if( $pstart > 0 ) {
+	//echo $pstart;
+	//echo $pend; }
+
+
+	$sorted_jobs            = sortJobs( $jobs, $sortfield, $sortorder );
+
+	$result_count		= count( $sorted_jobs );
+
+	foreach( $sorted_jobs as $jobid => $jobattrs )
 	{
 		//if( $jobattrs['reported'] != $heartbeat )
 		//{
 		//	continue;
 		//}
 
+		if( ( $cur_job < $pstart ) || ( ($cur_job - $pstart) >= $pend ) )
+		{
+			$cur_job = $cur_job + 1;
+			continue;
+		}
+
 		$jr['jid']		= strval( $jobid );
-		$jr['status']		= $jobattrs['status'];
-		$jr['owner']		= $jobattrs['owner'];
-		$jr['queue']		= $jobattrs['queue'];
-		$jr['name']		= $jobattrs['name'];
-		$jr['requested_time']	= makeTime( timeToEpoch( $jobattrs['requested_time'] ) );
+		$jr['status']		= $jobs[$jobid]['status'];
+		$jr['owner']		= $jobs[$jobid]['owner'];
+		$jr['queue']		= $jobs[$jobid]['queue'];
+		$jr['name']		= $jobs[$jobid]['name'];
+		$jr['requested_time']	= makeTime( timeToEpoch( $jobs[$jobid]['requested_time'] ) );
 
 		if( $jr['status'] == 'R' )
 		{
-			$nodes 		= count( $jobattrs[nodes] );
+			$nodes 		= count( $jobs[$jobid][nodes] );
 		}
 		else
 		{
-			$nodes 		= (int) $jobattrs[nodes];
+			$nodes 		= (int) $jobs[$jobid][nodes];
 		}
 
-		$jr['ppn']		= strval( $jobattrs[ppn] ? $jobattrs[ppn] : 1 );
+		$jr['ppn']		= strval( $jobs[$jobid][ppn] ? $jobs[$jobid][ppn] : 1 );
 		$jr['nodect']		= strval( $nodes );
 
 		if( $jr['status'] == 'R' )
 		{
-			$jr['nodes']	= implode( ",", $jobattrs['nodes'] );
+			$jr['nodes']	= implode( ",", $jobs[$jobid]['nodes'] );
 		}
 		else
 		{
 			$jr['nodes']	= "";
 		}
 
-		$jr['queued_timestamp']	= makeDate( $jobattrs['queued_timestamp'] );
-		$jr['start_timestamp']	= ($jobattrs['start_timestamp'] ? makeDate( $jobattrs['start_timestamp'] ) : "");
+		$jr['queued_timestamp']	= makeDate( $jobs[$jobid]['queued_timestamp'] );
+		$jr['start_timestamp']	= ($jobs[$jobid]['start_timestamp'] ? makeDate( $jobs[$jobid]['start_timestamp'] ) : "");
 
 		if( $jr['status'] == 'R' )
 		{
-			$runningtime		= (int) $jobattrs['reported'] - (int) $jobattrs['start_timestamp'];
+			$runningtime		= (int) $jobs[$jobid]['reported'] - (int) $jobs[$jobid]['start_timestamp'];
 			$jr['runningtime']	= makeTime( $runningtime );
 		}
 		else
@@ -116,31 +260,14 @@ function getList()
 			$jr['runningtime']	= "";
 		}
 
+		$cur_job		= $cur_job + 1;
+
 		$jobresults[]		= $jr;
 	}
 
-
-	//$results	= array();
-
-	//foreach( $jobresults as $resid => $jr )
-	//{
-	//	$jr_count	= 0;
-	//	$job_record	= array();
-
-	//	foreach( $jr as $atrname => $atrval )
-	//	{
-	//		$job_record[$jr_count]	= $atrval;
-	//		$job_record[$atrname]	= $atrval;
-
-	//		$jr_count		= $jr_count + 1;
-	//	}
-
-	//	$results[]	= $job_record;
-	//}
-
 	$jsonresults	= JEncode( $jobresults );
 
-	echo '{"total":"'. count( $jobresults) .'","results":'. $jsonresults .'}';
+	echo '{"total":"'. $result_count .'","results":'. $jsonresults .'}';
 
 	return 0;
 }
