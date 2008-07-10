@@ -51,9 +51,8 @@ switch($task)
 
 function getList() 
 {
-	global $jobs;
+	global $jobs, $hearbeat;
 
-	//print_r( $jobs );
 	$job_count	= count( $jobs );
 
 	if( $job_count == 0 )
@@ -66,10 +65,10 @@ function getList()
 
 	foreach( $jobs as $jobid => $jobattrs )
 	{
-		if( $reported != $heartbeat )
-		{ // Old job: skip
-			continue;
-		}
+		//if( $jobattrs['reported'] != $heartbeat )
+		//{
+		//	continue;
+		//}
 
 		$jr['jid']		= strval( $jobid );
 		$jr['status']		= $jobattrs['status'];
@@ -78,7 +77,7 @@ function getList()
 		$jr['name']		= $jobattrs['name'];
 		$jr['requested_time']	= makeTime( timeToEpoch( $jobattrs['requested_time'] ) );
 
-		if( $jobattrs[status] == 'R' )
+		if( $jr['status'] == 'R' )
 		{
 			$nodes 		= count( $jobattrs[nodes] );
 		}
@@ -87,21 +86,30 @@ function getList()
 			$nodes 		= (int) $jobattrs[nodes];
 		}
 
-		//unset( $jr['nodes'] );
-		//unset( $jr['poll_interval'] );
-		//unset( $jr['reported'] );
-
 		$jr['ppn']		= strval( $jobattrs[ppn] ? $jobattrs[ppn] : 1 );
-		$jr['cpu']		= strval( $nodes * (int) $ppn );
+		$jr['nodect']		= strval( $nodes );
 
-
-		if( $jobattrs[status] == 'R' )
+		if( $jr['status'] == 'R' )
 		{
 			$jr['nodes']	= implode( ",", $jobattrs['nodes'] );
+		}
+		else
+		{
+			$jr['nodes']	= "";
 		}
 
 		$jr['queued_timestamp']	= makeDate( $jobattrs['queued_timestamp'] );
 		$jr['start_timestamp']	= ($jobattrs['start_timestamp'] ? makeDate( $jobattrs['start_timestamp'] ) : "");
+
+		if( $jr['status'] == 'R' )
+		{
+			$runningtime		= (int) $jobattrs['reported'] - (int) $jobattrs['start_timestamp'];
+			$jr['runningtime']	= makeTime( $runningtime );
+		}
+		else
+		{
+			$jr['runningtime']	= "";
+		}
 
 		$jobresults[]		= $jr;
 	}
