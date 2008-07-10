@@ -104,36 +104,6 @@ function setupFilterSettings()
 	$tpl->assign("pie", $pie );
 }
 
-function timeToEpoch( $time ) 
-{
-	$time_fields	= explode( ':', $time );
-
-	if( count( $time_fields ) == 3 ) 
-	{
-		$hours		= $time_fields[0];
-		$minutes	= $time_fields[1];
-		$seconds	= $time_fields[2];
-
-	} 
-	else if( count( $time_fields ) == 2 ) 
-	{
-		$hours 		= 0;
-		$minutes 	= $time_fields[0];
-		$seconds 	= $time_fields[1];
-
-	} 
-	else if( count( $time_fields ) == 1 ) 
-	{
-		$hours 		= 0;
-		$minutes 	= 0;
-		$seconds 	= $time_fields[0];
-	}
-
-	$myepoch 	= intval( $seconds + (intval( $minutes * 60 )) + (intval( $hours * 3600 )) );
-
-	return $myepoch;
-}
-
 function colorRed( $color ) 
 {
 	return substr( $color, 0, 2 );

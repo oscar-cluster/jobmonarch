@@ -69,7 +69,7 @@ Ext.onReady(function(){
         width: 100,
         hidden: false
       },{
-        header: 'Requested CPU time',
+        header: 'Requested Time',
         readOnly: true,
         dataIndex: 'requested_time',
         width: 100,
@@ -102,13 +102,13 @@ Ext.onReady(function(){
         header: 'Queued',
         readOnly: true,
         dataIndex: 'queued_timestamp',
-        width: 100,
+        width: 140,
         hidden: false
       },{
         header: 'Started',
         readOnly: true,
         dataIndex: 'start_timestamp',
-        width: 100,
+        width: 140,
         hidden: false
       }]
     );
@@ -1178,7 +1178,8 @@ JobsDataStore.on({
       layout: 'fit',
       items: JobListingEditorGrid
     });
-  
+
+  //debug();  
   JobsDataStore.load();
   //JobListingEditorGrid.render();
   JobListingWindow.show();

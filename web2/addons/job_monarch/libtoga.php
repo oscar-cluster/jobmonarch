@@ -2387,13 +2387,13 @@ function makeTime( $time )
 
         if( $days > 0 )
 	{
-                if( $days > 1 )
+		if( $days > 1 )
 		{
-                        $day_str .= $days . ' days';
+			$date_str .= $days . ' days';
 		}
-                else
+		else
 		{
-                        $day_str .= $days . ' day';
+			$date_str .= $days . ' day';
 		}
         }
 
@@ -2402,8 +2402,23 @@ function makeTime( $time )
 
         if( $hours > 0 )
 	{
-                $date_str .= $hours . ':';
-                $date_unit = 'hours'; 
+		if( $hours > 1 )
+		{
+			$date_unit	= 'hours';
+		}
+		else
+		{
+			$date_unit	= 'hour';
+		}
+
+		if( $date_str != '' )
+		{
+			$date_str .= ' ' . $hours . ' ' . $date_unit;
+		}
+		else
+		{
+			$date_str .= $hours . ' ' . $date_unit;
+		}
         }
 
         $minutes = intval( $time / 60 );
@@ -2411,55 +2426,46 @@ function makeTime( $time )
 
         if( $minutes > 0 )
 	{
-                if( $minutes >= 10 )
+		if( $minutes > 1 )
 		{
-                        $date_str .= $minutes . ':';
+			$date_unit	= 'minutes';
 		}
-                else
+		else
 		{
-                        $date_str .= '0' . $minutes . ':';
+			$date_unit	= 'minute';
 		}
 
-                $date_unit = (!isset($date_unit)) ? 'minutes' : $date_unit;
-        }
-	else
-	{
-                if($hours > 0 )
+		if( $date_str != '' )
 		{
-                        $date_str .= '00:';
-                        $date_unit = (!isset($date_unit)) ? 'minutes' : $date_unit;
-                }
+			$date_str .= ' ' . $minutes . ' ' . $date_unit;
+		}
+		else
+		{
+			$date_str .= $minutes . ' ' . $date_unit;
+		}
         }
-
-        $date_unit = (!isset($date_unit)) ? 'seconds' : $date_unit;
 
         if( $seconds > 0 )
 	{
-                if( $seconds >= 10 )
+		if( $seconds > 1 )
 		{
-                        $date_str .= $seconds . ' ' . $date_unit;
+			$date_unit	= 'seconds';
 		}
-                else
+		else
 		{
-                        $date_str .= '0' . $seconds . ' ' . $date_unit;
+			$date_unit	= 'second';
 		}
-        }
-	else if ( $hours > 0 or $minutes > 0 )
-	{
-                $date_str .= '00 ' . $date_unit;
-	}
 
-        if( $days > 0)
-	{
-                if( $hours > 0 or $minutes > 0 or $seconds > 0 )
+		if( $date_str != '' )
 		{
-                        $date_str = $day_str . ' - ' . $date_str;
+			$date_str .= ' ' . $seconds . ' ' . $date_unit;
 		}
-                else
+		else
 		{
-                        $date_str = $day_str;
+			$date_str .= $seconds . ' ' . $date_unit;
 		}
         }
+
         return $date_str;
 }
 ?>
