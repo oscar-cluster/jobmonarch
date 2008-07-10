@@ -2,6 +2,7 @@ var JobsDataStore;
 var JobsColumnModel;
 var JobListingEditorGrid;
 var JobListingWindow;
+var JobProxy;
 
 Ext.onReady(function(){
 
@@ -29,10 +30,11 @@ Ext.onReady(function(){
         {name: 'requested_time', type: 'string', mapping: 'requested_time'},
         //{name: 'requested_memory', type: 'string', mapping: 'requested_memory'},
         {name: 'ppn', type: 'int', mapping: 'ppn'},
-        {name: 'cpu', type: 'int', mapping: 'cpu'},
+        {name: 'nodect', type: 'int', mapping: 'nodect'},
         {name: 'nodes', type: 'string', mapping: 'nodes'},
         {name: 'queued_timestamp', type: 'string', mapping: 'queued_timestamp'},
-        {name: 'start_timestamp', type: 'string', mapping: 'start_timestamp'}
+        {name: 'start_timestamp', type: 'string', mapping: 'start_timestamp'},
+        {name: 'runningtime', type: 'string', mapping: 'runningtime'}
       ]),
       sortInfo:{field: 'jid', direction: "ASC"}
     });
@@ -40,56 +42,65 @@ Ext.onReady(function(){
   JobsColumnModel = new Ext.grid.ColumnModel(
     [{
         header: '#',
+	tooltip: 'Job id',
         readOnly: true,
         dataIndex: 'jid',
         width: 50,
         hidden: false
       },{
         header: 'S',
+	tooltip: 'Job status',
         readOnly: true,
         dataIndex: 'status',
         width: 20,
         hidden: false
       },{
         header: 'User',
+	tooltip: 'Owner of job',
         readOnly: true,
         dataIndex: 'owner',
         width: 60,
         hidden: false
       },{
         header: 'Queue',
+	tooltip: 'In which queue does this job reside',
         readOnly: true,
         dataIndex: 'queue',
         width: 60,
         hidden: false
       },{
         header: 'Name',
+	tooltip: 'Name of job',
         readOnly: true,
         dataIndex: 'name',
         width: 100,
         hidden: false
       },{
         header: 'Requested Time',
+	tooltip: 'Amount of requested time (wallclock)',
         readOnly: true,
         dataIndex: 'requested_time',
         width: 100,
         hidden: false
       },{
         header: 'Requested Memory',
+	tooltip: 'Amount of requested memory',
         readOnly: true,
         dataIndex: 'requested_memory',
         width: 100,
         hidden: true
       },{
-        header: 'PPN',
+        header: 'P',
+	tooltip: 'Number of processors per node (PPN)',
         readOnly: true,
         dataIndex: 'ppn',
         width: 25,
         hidden: false
       },{
-        header: 'CPU',
+        header: 'N',
+	tooltip: 'Number of nodes (hosts)',
         readOnly: true,
-        dataIndex: 'ppn',
+        dataIndex: 'nodect',
         width: 25,
         hidden: false
       },{
@@ -100,14 +111,23 @@ Ext.onReady(function(){
         hidden: true
       },{
         header: 'Queued',
+	tooltip: 'At what time did this job enter the queue',
         readOnly: true,
         dataIndex: 'queued_timestamp',
         width: 140,
         hidden: false
       },{
         header: 'Started',
+	tooltip: 'At what time did this job enter the running status',
         readOnly: true,
         dataIndex: 'start_timestamp',
+        width: 140,
+        hidden: false
+      },{
+        header: 'Runningtime',
+	tooltip: 'How long has this job been in the running status',
+        readOnly: true,
+        dataIndex: 'runningtime',
         width: 140,
         hidden: false
       }]
@@ -1172,16 +1192,16 @@ JobsDataStore.on({
       id: 'JobListingWindow',
       title: 'Cluster Jobs Overview',
       closable:true,
-      width:700,
-      height:350,
+      width:900,
+      height:500,
       plain:true,
       layout: 'fit',
       items: JobListingEditorGrid
     });
 
   //debug();  
+  //JobListingEditorGrid.store.url='jobstore.php?c=GINA Cluster';
   JobsDataStore.load();
-  //JobListingEditorGrid.render();
   JobListingWindow.show();
   
 });
