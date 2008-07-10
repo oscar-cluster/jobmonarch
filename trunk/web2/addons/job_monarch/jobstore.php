@@ -1,8 +1,13 @@
 <?php
 
-$clustername	= "GINA Cluster";
-$cluster= "GINA Cluster";
-$c= "GINA Cluster";
+$c			= $_POST["c"];
+$clustername		= $c;
+$cluster		= $c;
+
+global $c, $clustername, $cluster;
+
+$HTTP_POST_VARS["c"]	= $c;
+$_GET["c"]		= $c;
 
 global $c, $clustername, $cluster;
 
