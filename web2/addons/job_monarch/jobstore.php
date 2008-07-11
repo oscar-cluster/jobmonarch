@@ -13,6 +13,13 @@ $sortorder		= isset($_POST['dir'] ) ? $_POST["dir"] : "ASC"; // ASC or DESC
 //
 $query			= isset($_POST['query']) ? $_POST['query'] : null;
 
+// Filter values
+//
+$jid			= isset($_POST['jid']) ? $_POST['jid'] : null;
+$owner			= isset($_POST['owner']) ? $_POST['owner'] : null;
+$status			= isset($_POST['status']) ? $_POST['status'] : null;
+$queue			= isset($_POST['queue']) ? $_POST['queue'] : null;
+
 global $c, $clustername, $cluster;
 
 // Grid Paging stuff
@@ -208,12 +215,83 @@ function sortJobs( $jobs, $sortby, $sortorder )
         return $sorted;
 }
 
+function filterJobs( $jobs )
+{
+	global $jid, $owner, $queue,  $status;
 
+	$filtered_jobs	= array();
+
+        if( isset( $jobs ) && count( $jobs ) > 0 )
+        {
+                foreach( $jobs as $jobid => $jobattrs )
+                {
+                                $state          = $jobattrs[status];
+                                $user           = $jobattrs[owner];
+                                $jqueue          = $jobattrs[queue];
+                                $name           = $jobattrs[name];
+                                $req_cpu        = $jobattrs[requested_time];
+                                $req_memory     = $jobattrs[requested_memory];
+
+                                if( $state == 'R' )
+                                {
+                                        $nodes = count( $jobattrs[nodes] );
+                                }
+                                else
+                                {
+                                        $nodes = $jobattrs[nodes];
+                                }
+
+                                $ppn            = (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
+                                $cpus           = $nodes * $ppn;
+                                $queued_time    = (int) $jobattrs[queued_timestamp];
+                                $start_time     = (int) $jobattrs[start_timestamp];
+                                $runningtime    = $report_time - $start_time;
+	
+				$keepjob	= true;
+
+				if( $jid )
+				{
+					if( $jobid != $jid )
+					{
+						$keepjob	= false;
+					}
+				}
+				if( $owner )
+				{
+					if( $user != $owner )
+					{
+						$keepjob	= false;
+					}
+				}
+				if( $queue )
+				{
+					if( $jqueue != $queue )
+					{
+						$keepjob	= false;
+					}
+				}
+				if( $status )
+				{
+					if( $state != $status )
+					{
+						$keepjob	= false;
+					}
+				}
+				if( $keepjob )
+				{
+					$filtered_jobs[$jobid]	= $jobattrs;
+				}
+		}
+	}
+
+	return $filtered_jobs;
+}
 
 function getList() 
 {
 	global $jobs, $hearbeat, $pstart, $pend;
 	global $sortfield, $sortorder, $query;
+	global $jid, $owner, $queue,  $status;
 
 	$job_count		= count( $jobs );
 
@@ -229,9 +307,13 @@ function getList()
 
 	$sorted_jobs            = sortJobs( $jobs, $sortfield, $sortorder );
 
-	if( $query != null )
+	if( $query )
 	{
 		$jobs			= quickSearchJobs( $jobs, $query );
+	}
+	if( $jid || $owner || $queue || $status )
+	{
+		$jobs			= filterJobs( $jobs );
 	}
 	$result_count		= count( $jobs );
 

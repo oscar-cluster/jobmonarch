@@ -1,17 +1,3 @@
-.oddfilter
-{
-   //background: rgb(240,240,240);
-   color: red;
-   cursor: pointer;
-}
-
-.evenfilter
-{
-   //background: rgb(255,255,255);
-   color: red;
-   cursor: pointer;
-}
-
 .filter
 {
    color: blue;
@@ -20,24 +6,9 @@
 
 .filterenabled
 {
-   color: red;
+   background: rgb(0,0,255);
+   color: white;
    cursor: pointer;
-}
-
-.oddfilterenabled
-{
-   //background: rgb(240,240,240);
-   color: red;
-   cursor: pointer;
-   text-decoration: bold;
-}
-
-.evenfilterenabled
-{
-   //background: rgb(255,255,255);
-   color: red;
-   cursor: pointer;
-   text-decoration: bold;
 }
 
 .even
