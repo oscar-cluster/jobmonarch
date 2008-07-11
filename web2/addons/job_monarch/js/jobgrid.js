@@ -195,6 +195,7 @@ function initJobGrid() {
       cm: JobsColumnModel,
       enableColLock:false,
       clicksToEdit:1,
+      loadMask: true,
       selModel: new Ext.grid.RowSelectionModel({singleSelect:false}),
       bbar: new Ext.PagingToolbar({
                 pageSize: 30,
