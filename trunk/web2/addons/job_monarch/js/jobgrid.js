@@ -3,8 +3,7 @@ var JobsColumnModel;
 var JobListingEditorGrid;
 var JobListingWindow;
 var JobProxy;
-
-//Ext.onReady( initJobGrid() );
+var myfilters = { start: 0, limit: 30};
 
 function initJobGrid() {
 
@@ -12,15 +11,32 @@ function initJobGrid() {
 
   function jobCellClick(grid, rowIndex, columnIndex, e)
   {
+    var record = grid.getStore().getAt(rowIndex);  // Get the Record
     var fieldName = grid.getColumnModel().getDataIndex(columnIndex);
-
+    var data = record.get(fieldName);
     var view = grid.getView();
     var cell = view.getCell( rowIndex, columnIndex );
 
     if( fieldName == 'owner' || fieldName == 'jid' || fieldName == 'status' || fieldName == 'queue' )
     {
-      Ext.fly(cell).removeClass( 'filter' );
-      Ext.fly(cell).addClass( 'filterenabled' );
+      if( myfilters[fieldName] != null )
+      {
+        Ext.fly(cell).removeClass( 'filterenabled' );
+        Ext.fly(cell).addClass( 'filter' );
+
+	delete myfilters[fieldName];
+
+        grid.getStore().reload( {params: myfilters} );
+      }
+      else
+      {
+        Ext.fly(cell).removeClass( 'filter' );
+        Ext.fly(cell).addClass( 'filterenabled' );
+
+        myfilters[fieldName] = data;
+
+        grid.getStore().reload( {params: myfilters} );
+      }
     }
   }
 
@@ -30,7 +46,14 @@ function initJobGrid() {
 
     if( fieldName == 'owner' || fieldName == 'jid' || fieldName == 'status' || fieldName == 'queue' )
     {
-      metadata.css = 'filter';
+      if( myfilters[fieldName] != null )
+      {
+        metadata.css = 'filterenabled';
+      }
+      else
+      {
+        metadata.css = 'filter';
+      }
     }
     return value;
   }
