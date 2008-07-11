@@ -147,7 +147,9 @@ function initJobGrid() {
       bbar: new Ext.PagingToolbar({
                 pageSize: 30,
                 store: JobsDataStore,
-                displayInfo: true
+                displayInfo: true,
+	    	displayMsg: 'Displaying jobs {0} - {1} out of {2} jobs total found.',
+    		emptyMsg: 'No jobs found to display'
             }),
       tbar: [ new Ext.app.SearchField({
 		                store: JobsDataStore,
