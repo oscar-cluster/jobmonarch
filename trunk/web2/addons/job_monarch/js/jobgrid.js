@@ -219,7 +219,6 @@ function initJobGrid() {
       collapsible: true,
       animCollapse: true,
       maximizable: true,
-      minimizable: true,
       width:900,
       height:500,
       plain:true,
