@@ -10,6 +10,31 @@ function initJobGrid() {
 
   Ext.QuickTips.init();
 
+  function jobCellClick(grid, rowIndex, columnIndex, e)
+  {
+    var fieldName = grid.getColumnModel().getDataIndex(columnIndex);
+
+    var view = grid.getView();
+    var cell = view.getCell( rowIndex, columnIndex );
+
+    if( fieldName == 'owner' || fieldName == 'name' || fieldName == 'jid' || fieldName == 'status' || fieldName == 'queue' )
+    {
+      Ext.fly(cell).removeClass( 'filter' );
+      Ext.fly(cell).addClass( 'filterenabled' );
+    }
+  }
+
+  function jobCellRender( value, metadata, record, rowindex, colindex, store )
+  {
+    var fieldName = JobsColumnModel.getColumnById( colindex ).dataIndex;
+
+    if( fieldName == 'owner' || fieldName == 'name' || fieldName == 'jid' || fieldName == 'status' || fieldName == 'queue' )
+    {
+      metadata.css = 'filter';
+    }
+    return value;
+  }
+
   JobProxy = new Ext.data.HttpProxy({
                 url: 'jobstore.php',
                 method: 'POST'
@@ -49,28 +74,32 @@ function initJobGrid() {
         readOnly: true,
         dataIndex: 'jid',
         width: 50,
-        hidden: false
+        hidden: false,
+	renderer: jobCellRender
       },{
         header: 'S',
 	tooltip: 'Job status',
         readOnly: true,
         dataIndex: 'status',
         width: 20,
-        hidden: false
+        hidden: false,
+	renderer: jobCellRender
       },{
         header: 'User',
 	tooltip: 'Owner of job',
         readOnly: true,
         dataIndex: 'owner',
         width: 60,
-        hidden: false
+        hidden: false,
+	renderer: jobCellRender
       },{
         header: 'Queue',
 	tooltip: 'In which queue does this job reside',
         readOnly: true,
         dataIndex: 'queue',
         width: 60,
-        hidden: false
+        hidden: false,
+	renderer: jobCellRender
       },{
         header: 'Name',
 	tooltip: 'Name of job',
@@ -175,4 +204,6 @@ function initJobGrid() {
       layout: 'fit',
       items: JobListingEditorGrid
     });
+
+  JobListingEditorGrid.addListener( 'cellclick', jobCellClick );
 }

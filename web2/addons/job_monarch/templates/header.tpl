@@ -6,6 +6,7 @@
 <META http-equiv="refresh" content="{refresh}{redirect}" >
 
 <link rel="stylesheet" type="text/css" href="./lib/extjs/resources/css/ext-all.css" />
+<link rel="stylesheet" type="text/css" href="./css/styles.css" />
 <script type="text/javascript" src="./lib/extjs/adapter/ext/ext-base.js"></script>
 <script type="text/javascript" src="./lib/extjs/adapter/ext/ext-base-debug.js"></script>
 <script type="text/javascript" src="./lib/extjs/ext-all.js"></script>

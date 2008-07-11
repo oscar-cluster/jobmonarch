@@ -1,0 +1,51 @@
+.oddfilter
+{
+   //background: rgb(240,240,240);
+   color: red;
+   cursor: pointer;
+}
+
+.evenfilter
+{
+   //background: rgb(255,255,255);
+   color: red;
+   cursor: pointer;
+}
+
+.filter
+{
+   color: blue;
+   cursor: pointer;
+}
+
+.filterenabled
+{
+   color: red;
+   cursor: pointer;
+}
+
+.oddfilterenabled
+{
+   //background: rgb(240,240,240);
+   color: red;
+   cursor: pointer;
+   text-decoration: bold;
+}
+
+.evenfilterenabled
+{
+   //background: rgb(255,255,255);
+   color: red;
+   cursor: pointer;
+   text-decoration: bold;
+}
+
+.even
+{
+   background: rgb(255,255,255);
+}
+
+.odd
+{
+   background: rgb(240,240,240);
+}
