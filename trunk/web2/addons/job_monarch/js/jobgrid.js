@@ -163,9 +163,15 @@ function initJobGrid() {
       id: 'JobListingWindow',
       title: 'Cluster Jobs Overview',
       closable:true,
+      collapsible: true,
+      animCollapse: true,
+      maximizable: true,
+      minimizable: true,
       width:900,
       height:500,
       plain:true,
+      shadow: true,
+      shadowOffset: 10,
       layout: 'fit',
       items: JobListingEditorGrid
     });
