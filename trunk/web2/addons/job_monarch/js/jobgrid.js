@@ -17,7 +17,7 @@ function initJobGrid() {
     var view = grid.getView();
     var cell = view.getCell( rowIndex, columnIndex );
 
-    if( fieldName == 'owner' || fieldName == 'name' || fieldName == 'jid' || fieldName == 'status' || fieldName == 'queue' )
+    if( fieldName == 'owner' || fieldName == 'jid' || fieldName == 'status' || fieldName == 'queue' )
     {
       Ext.fly(cell).removeClass( 'filter' );
       Ext.fly(cell).addClass( 'filterenabled' );
@@ -28,7 +28,7 @@ function initJobGrid() {
   {
     var fieldName = JobsColumnModel.getColumnById( colindex ).dataIndex;
 
-    if( fieldName == 'owner' || fieldName == 'name' || fieldName == 'jid' || fieldName == 'status' || fieldName == 'queue' )
+    if( fieldName == 'owner' || fieldName == 'jid' || fieldName == 'status' || fieldName == 'queue' )
     {
       metadata.css = 'filter';
     }
