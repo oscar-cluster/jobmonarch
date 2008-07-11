@@ -6,8 +6,12 @@ $cluster		= $c;
 
 // Supplied by ExtJS when DataStore has remoteSort: true
 //
-$sortfield		= $_POST["sort"];
-$sortorder		= $_POST["dir"]; // ASC or DESC
+$sortfield		= isset($_POST['sort'] ) ? $_POST["sort"] : "jid";
+$sortorder		= isset($_POST['dir'] ) ? $_POST["dir"] : "ASC"; // ASC or DESC
+
+// Search query from ext.SearchField
+//
+$query			= isset($_POST['query']) ? $_POST['query'] : null;
 
 global $c, $clustername, $cluster;
 
@@ -18,6 +22,7 @@ $pstart	= (int) $_POST['start'];
 //$pend	= (int) (isset($_POST['limit']) ? $_POST['limit'] : $_GET['plimit']);
 $pend	= (int) $_POST['limit'];
 
+//echo $pend.'p ';
 // Need to fool Ganglia here: or it won't parse XML for our cluster
 //
 $HTTP_POST_VARS["c"]	= $c;
@@ -53,8 +58,6 @@ if( isset( $HTTP_POST_VARS['task' ] ) )
 	$task = $HTTP_POST_VARS['task'];
 }
 
-//getList();
-
 switch($task)
 {
     case "LISTING":
@@ -63,6 +66,36 @@ switch($task)
     default:
         echo "{failure:true}";
         break;
+}
+
+function quickSearchJobs( $jobs, $query )
+{
+	$searchresults	= array();
+
+	foreach( $jobs as $jobid => $jobattrs )
+	{
+		if( $query != null )
+		{
+			if( strpos( $jobattrs['jid'], $query ) !== false )
+			{
+				$searchresults[$jobid]	= $jobattrs;
+			}
+			if( strpos( $jobattrs['owner'], $query ) !== false )
+			{
+				$searchresults[$jobid]	= $jobattrs;
+			}
+			if( strpos( $jobattrs['queue'], $query ) !== false )
+			{
+				$searchresults[$jobid]	= $jobattrs;
+			}
+			if( strpos( $jobattrs['name'], $query ) !== false )
+			{
+				$searchresults[$jobid]	= $jobattrs;
+			}
+		}
+	}
+
+	return $searchresults;
 }
 
 function sortJobs( $jobs, $sortby, $sortorder )
@@ -180,31 +213,27 @@ function sortJobs( $jobs, $sortby, $sortorder )
 function getList() 
 {
 	global $jobs, $hearbeat, $pstart, $pend;
-	global $sortfield, $sortorder;
+	global $sortfield, $sortorder, $query;
 
-	$job_count	= count( $jobs );
+	$job_count		= count( $jobs );
 
 	if( $job_count == 0 )
 	{
-		echo 'crap({"total":"0", "results":""})';
+		echo '({"total":"0", "results":""})';
 		return 0;
 	}
 
-	$jobresults	= array();
+	$jobresults		= array();
 
-	$cur_job	= 0;
-
-
-	// sorteer jobs op sortorder en sortfield
-
-	//if( $pstart > 0 ) {
-	//echo $pstart;
-	//echo $pend; }
-
+	$cur_job		= 0;
 
 	$sorted_jobs            = sortJobs( $jobs, $sortfield, $sortorder );
 
-	$result_count		= count( $sorted_jobs );
+	if( $query != null )
+	{
+		$jobs			= quickSearchJobs( $jobs, $query );
+	}
+	$result_count		= count( $jobs );
 
 	foreach( $sorted_jobs as $jobid => $jobattrs )
 	{
@@ -213,12 +242,12 @@ function getList()
 		//	continue;
 		//}
 
-		if( ( $cur_job < $pstart ) || ( ($cur_job - $pstart) >= $pend ) )
+		if( ! array_key_exists( $jobid, $jobs ) )
 		{
-			$cur_job = $cur_job + 1;
 			continue;
 		}
 
+		$jr			= array();
 		$jr['jid']		= strval( $jobid );
 		$jr['status']		= $jobs[$jobid]['status'];
 		$jr['owner']		= $jobs[$jobid]['owner'];
@@ -260,7 +289,15 @@ function getList()
 			$jr['runningtime']	= "";
 		}
 
-		$cur_job		= $cur_job + 1;
+		if( ( $cur_job < $pstart ) || ( ($cur_job - $pstart) >= $pend ) )
+		{
+			$cur_job	= $cur_job + 1;
+			continue;
+		}
+		else
+		{
+			$cur_job	= $cur_job + 1;
+		}
 
 		$jobresults[]		= $jr;
 	}
@@ -272,19 +309,20 @@ function getList()
 	return 0;
 }
 
-// Encodes a SQL array into a JSON formated string
+// Encodes a SQL array into a JSON formated string: so that Javascript may understand it
+//
 function JEncode( $arr )
 {
-	if (version_compare(PHP_VERSION,"5.2","<"))
+	if( version_compare( PHP_VERSION, "5.2", "<" ) )
 	{    
-		require_once("./JSON.php"); //if php<5.2 need JSON class
+		require_once( "./JSON.php" );		//if php<5.2 need JSON class
 
-		$json	= new Services_JSON();//instantiate new json object
-		$data	= $json->encode($arr);  //encode the data in json format
+		$json	= new Services_JSON();		//instantiate new json object
+		$data	= $json->encode( $arr );	//encode the data in json format
 	} 
 	else
 	{
-		$data	= json_encode($arr);  //encode the data in json format
+		$data	= json_encode( $arr );		//encode the data in json format
 	}
 
 	return $data;

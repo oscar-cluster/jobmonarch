@@ -10,7 +10,7 @@
 <script type="text/javascript" src="./lib/extjs/adapter/ext/ext-base-debug.js"></script>
 <script type="text/javascript" src="./lib/extjs/ext-all.js"></script>
 <script type="text/javascript" src="./lib/extjs/ext-all-debug.js"></script>
-
+<script type="text/javascript" src="./lib/extjs/searchfield.js"></script>
 <script type="text/javascript" src="./js/jobgrid.js"></script>
 <script type="text/javascript">
 Ext.onReady( function(){

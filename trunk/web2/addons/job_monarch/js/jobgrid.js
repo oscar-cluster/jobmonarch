@@ -148,7 +148,13 @@ function initJobGrid() {
                 pageSize: 30,
                 store: JobsDataStore,
                 displayInfo: true
-            })
+            }),
+      tbar: [ new Ext.app.SearchField({
+		                store: JobsDataStore,
+				params: {start: 0, limit: 30},
+		                width: 200
+		    })
+      ]
     });
 
   JobListingWindow = new Ext.Window({
