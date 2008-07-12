@@ -3,7 +3,69 @@ var JobsColumnModel;
 var JobListingEditorGrid;
 var JobListingWindow;
 var JobProxy;
-var myfilters = { start: 0, limit: 30};
+var myfilters = { };
+var myparams = { };
+
+var filterfields = [ "jid", "queue", "name", "owner" ];
+
+function isset( somevar )
+{
+  try
+  {
+    if( eval( somevar ) ) { }
+  }
+  catch( err )
+  {
+    return false;
+  }
+  return true;
+}
+
+function inMyArray( arr, someval )
+{
+  for( arval in arr )
+  {
+    if( arval == someval )
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+function inMyArrayValues( arr, someval )
+{
+  for( arkey in arr )
+  {
+    if( arr[arkey] == someval )
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+function inMyArrayKeys( arr, someval )
+{
+  for( arkey in arr )
+  {
+    if( arkey == someval )
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+function joinMyArray( arr1, arr2 )
+{
+  for( arkey in arr2 )
+  {
+    arr1[arkey] = arr2[arkey];
+  }
+
+  return arr1;
+}
 
 function initJobGrid() {
 
@@ -19,23 +81,39 @@ function initJobGrid() {
 
     if( fieldName == 'owner' || fieldName == 'jid' || fieldName == 'status' || fieldName == 'queue' )
     {
-      if( myfilters[fieldName] != null )
+      if( !isset( myfilters[fieldName] ) )
       {
         Ext.fly(cell).removeClass( 'filterenabled' );
         Ext.fly(cell).addClass( 'filter' );
 
+	// Remove this filter
+	//
 	delete myfilters[fieldName];
+	delete myparams[fieldName];
 
-        grid.getStore().reload( {params: myfilters} );
+	// Respect any other parameters that may have been set outside filters
+	//
+        myparams = joinMyArray( myparams, myfilters );
+
+	// Can't be sure if there are enough pages for new filter: reset to page 1
+	//
+        myparams = joinMyArray( myparams, { start: 0, limit: 30 } );
+
+        grid.getStore().reload( { params: myparams } );
       }
       else
       {
         Ext.fly(cell).removeClass( 'filter' );
         Ext.fly(cell).addClass( 'filterenabled' );
 
+	// Set filter for selected column to selected cell value
+	//
         myfilters[fieldName] = data;
 
-        grid.getStore().reload( {params: myfilters} );
+        myparams = joinMyArray( myparams, myfilters );
+        myparams = joinMyArray( myparams, { start: 0, limit: 30 } );
+
+        grid.getStore().reload( { params: myparams } );
       }
     }
   }
