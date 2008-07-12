@@ -8,9 +8,9 @@
 <link rel="stylesheet" type="text/css" href="./lib/extjs/resources/css/ext-all.css" />
 <link rel="stylesheet" type="text/css" href="./css/styles.css" />
 <script type="text/javascript" src="./lib/extjs/adapter/ext/ext-base.js"></script>
-<script type="text/javascript" src="./lib/extjs/adapter/ext/ext-base-debug.js"></script>
+<!-- <script type="text/javascript" src="./lib/extjs/adapter/ext/ext-base-debug.js"></script> -->
 <script type="text/javascript" src="./lib/extjs/ext-all.js"></script>
-<script type="text/javascript" src="./lib/extjs/ext-all-debug.js"></script>
+<!-- <script type="text/javascript" src="./lib/extjs/ext-all-debug.js"></script> -->
 <script type="text/javascript" src="./lib/extjs/searchfield.js"></script>
 <script type="text/javascript" src="./js/jobgrid.js"></script>
 <script type="text/javascript">
@@ -18,8 +18,12 @@ Ext.onReady( function(){
   initJobGrid();
   JobProxy.on('beforeload', function(p, params) {
         params.c = "{cluster}";
+	newparams = joinMyArray( params, myfilters );
+	myparams = newparams;
+	params = newparams;
     });
   JobsDataStore.load( {params: {start: 0, limit: 30}} );
+  JobListingWindow.setTitle( "{cluster} Jobs Overview" );
   JobListingWindow.show();
   });
 </script>
