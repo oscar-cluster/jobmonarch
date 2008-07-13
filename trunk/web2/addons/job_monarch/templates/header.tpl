@@ -22,7 +22,9 @@ Ext.onReady( function(){
 	myparams = newparams;
 	params = newparams;
     });
-  ClusterImageWindow.html = '<IMG SRC="{clusterimage}" USEMAP="#MONARCH_CLUSTER_BIG" BORDER="0">';
+  ClusterImageArgs['{session_name}'] = '{session_id}';
+  ClusterImageArgs['c'] = '{cluster}';
+  ClusterImageWindow.html = '<IMG ID="clusterimage" SRC="{clusterimage}" USEMAP="#MONARCH_CLUSTER_BIG" BORDER="0">';
   ClusterImageWindow.height = '{clusterimage_height}';
   ClusterImageWindow.width = '{clusterimage_width}';
   ClusterImageWindow.show();

@@ -42,6 +42,10 @@ include_once "./libtoga.php";
 $ds             = new DataSource();
 $myxml_data     = &$ds->getData();
 
+session_start();
+unset( $_SESSION["data"] );
+$_SESSION["data"]       = &$myxml_data;
+
 global $jobs;
 
 $data_gatherer  = new DataGatherer( $clustername );
