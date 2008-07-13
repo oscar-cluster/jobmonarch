@@ -1145,7 +1145,7 @@ class NodeImage
 		$area_href		= "./?c=" . $this->clustername . "&h=" . $this->hostname;
 
 		$area_tooltip		= $this->hostname;
-		$area_onclick		= "return ClusterImageSelectHost( \"" . $this->hostname . "\" )";
+		$area_onclick		= "return ClusterImageSelectHost( '" . $this->hostname . "' )";
 
 		if( $this->down)
 		{
