@@ -22,6 +22,10 @@ Ext.onReady( function(){
 	myparams = newparams;
 	params = newparams;
     });
+  ClusterImageWindow.html = '<IMG SRC="{clusterimage}" USEMAP="#MONARCH_CLUSTER_BIG" BORDER="0">';
+  ClusterImageWindow.height = '{clusterimage_height}';
+  ClusterImageWindow.width = '{clusterimage_width}';
+  ClusterImageWindow.show();
   JobsDataStore.load( {params: {start: 0, limit: 30}} );
   JobListingWindow.setTitle( "{cluster} Jobs Overview" );
   JobListingWindow.show();
@@ -30,6 +34,12 @@ Ext.onReady( function(){
 
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
+
+    <MAP NAME="MONARCH_CLUSTER_BIG">
+    <!-- START BLOCK : node_clustermap -->
+    {node_area_map}
+    <!-- END BLOCK : node_clustermap -->
+    </MAP> 
 
   <A HREF="https://subtrac.sara.nl/oss/jobmonarch/">
   <IMG SRC="./jobmonarch.gif" ALT="Job Monarch" BORDER="0"></IMG>

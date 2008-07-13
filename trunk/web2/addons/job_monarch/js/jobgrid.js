@@ -8,6 +8,11 @@ var myparams = { };
 
 var filterfields = [ "jid", "queue", "name", "owner" ];
 
+function ClusterImageSelectHost( somehost )
+{
+ // reload clusterimage with somehost as arg
+}
+
 function isset( somevar )
 {
   try
@@ -275,6 +280,7 @@ function initJobGrid() {
       clicksToEdit:1,
       loadMask: true,
       selModel: new Ext.grid.RowSelectionModel({singleSelect:false}),
+      stripeRows: true,
       bbar: new Ext.PagingToolbar({
                 pageSize: 30,
                 store: JobsDataStore,
@@ -290,6 +296,22 @@ function initJobGrid() {
       ]
     });
 
+  ClusterImageWindow = new Ext.Window({
+      id: 'ClusterImageWindow',
+      title: 'Cluster Nodes Overview',
+      closable:true,
+      collapsible: true,
+      animCollapse: true,
+      width:100,
+      height:100,
+      y: 50,
+      plain:true,
+      shadow: true,
+      resizable: false,
+      shadowOffset: 10,
+      layout: 'fit'
+    });
+
   JobListingWindow = new Ext.Window({
       id: 'JobListingWindow',
       title: 'Cluster Jobs Overview',
@@ -297,6 +319,7 @@ function initJobGrid() {
       collapsible: true,
       animCollapse: true,
       maximizable: true,
+      y: 400,
       width:900,
       height:500,
       plain:true,

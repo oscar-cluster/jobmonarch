@@ -130,13 +130,6 @@ View
 {rjqj_graph}
 
   <TD ALIGN="CENTER"><CENTER>
-<!-- INCLUDESCRIPT BLOCK : ci_script -->
-    <IMG SRC="{clusterimage}" USEMAP="#MONARCH_CLUSTER_BIG" BORDER="0">
-    <MAP NAME="MONARCH_CLUSTER_BIG">
-<!-- START BLOCK : node_clustermap -->
-{node_area_map}
-<!-- END BLOCK : node_clustermap -->
-    </MAP>
     <BR>
 <FONT class="footer">Last updated: {report_time}</FONT></CENTER>
   </TD>
