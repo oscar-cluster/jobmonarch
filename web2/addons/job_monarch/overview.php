@@ -77,8 +77,8 @@ function setupFilterSettings()
 
 	$tpl->assign( "clusterimage", "./image.php?". session_name() . "=" . session_id() ."&c=".rawurlencode($clustername)."&view=big-clusterimage".$filter_image_url );
 
-	//$tpl->assign( "clusterimage_width", $ic->getWidth() );
-	//$tpl->assign( "clusterimage_height", $ic->getHeight() );
+	$tpl->assign( "clusterimage_width", $ic->getWidth() );
+	$tpl->assign( "clusterimage_height", $ic->getHeight() );
 
 	$tpl->newBlock( "node_clustermap" );
 	$tpl->assign( "node_area_map", $ic->getImagemapArea() );

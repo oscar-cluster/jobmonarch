@@ -1145,6 +1145,7 @@ class NodeImage
 		$area_href		= "./?c=" . $this->clustername . "&h=" . $this->hostname;
 
 		$area_tooltip		= $this->hostname;
+		$area_onclick		= "return ClusterImageSelectHost( \"" . $this->hostname . "\" )";
 
 		if( $this->down)
 		{
@@ -1157,12 +1158,13 @@ class NodeImage
 
 		$area_tooltip		= $area_tooltip . ": " . implode( " ", $this->jobs );
 
+		$tag_onclick		= "ONCLICK=\"" . $area_onclick . "\"";
 		$tag_href		= "HREF=\"" . $area_href . "\"";
 		$tag_coords		= "COORDS=\"" . $area_coords . "\"";
 		$tag_tooltip1		= "ALT=\"" . $area_tooltip . "\"";
 		$tag_tooltip2		= "TITLE=\"" . $area_tooltip . "\"";
 
-		return ("<AREA SHAPE=\"RECT\" " . $tag_coords . " " . $tag_href . " " . $tag_tooltip1 . " " . $tag_tooltip2 . ">");
+		return ("<AREA SHAPE=\"RECT\" " . $tag_coords . " " . $tag_onclick . " " . $tag_href . " " . $tag_tooltip1 . " " . $tag_tooltip2 . ">");
 	}
 
 	function colorHex( $color )
