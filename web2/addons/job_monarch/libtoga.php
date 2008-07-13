@@ -1364,7 +1364,11 @@ class ClusterImage
 								{
 									$addhost = 0;
 								}
-								else if( $filtername != 'jobid' )
+								if( $filtername == 'host' && $hostname != $filtervalue )
+								{
+									$addhost = 0;
+								}
+								if( $filtername != 'jobid' && $filtername != 'host' ) 
 								{
 									if( $jobs[$myjob][$filtername] != $filtervalue )
 									{

@@ -5,13 +5,24 @@ var JobListingWindow;
 var JobProxy;
 var myfilters = { };
 var myparams = { };
+var ClusterImageArgs = { };
 
 var filterfields = [ "jid", "queue", "name", "owner" ];
 
-function ClusterImageSelectHost( somehost )
+function makeArrayURL( somearr )
 {
- // reload clusterimage with somehost as arg
+  filter_url = '';
+  filter_sep = '';
+
+  for( filtername in somearr )
+  {
+    filter_url = filter_url + filter_sep + filtername + '=' + somearr[filtername];
+    filter_sep = '&';
+  }
+
+  return filter_url;
 }
+
 
 function isset( somevar )
 {
@@ -70,6 +81,28 @@ function joinMyArray( arr1, arr2 )
   }
 
   return arr1;
+}
+
+function ClusterImageSelectHost( somehost )
+{
+
+  if( !inMyArrayKeys( myfilters, 'host' ) )
+  {
+    myfilters['host'] = somehost;
+  }
+  else
+  {
+    delete myfilters['host'];
+  }
+
+  ClusterImageArgs['view'] = 'big-clusterimage';
+
+  filt_url = makeArrayURL( myfilters );
+  imag_url = makeArrayURL( ClusterImageArgs );
+
+  document.getElementById( 'clusterimage' ).src = './image.php?' + filt_url + '&' + imag_url;
+
+  return false;
 }
 
 function initJobGrid() {
