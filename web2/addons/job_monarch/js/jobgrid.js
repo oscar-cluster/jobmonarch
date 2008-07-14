@@ -337,14 +337,14 @@ function initJobGrid() {
 	tooltip: 'At what time did this job enter the queue',
         readOnly: true,
         dataIndex: 'queued_timestamp',
-        width: 140,
+        width: 120,
         hidden: false
       },{
         header: 'Started',
 	tooltip: 'At what time did this job enter the running status',
         readOnly: true,
         dataIndex: 'start_timestamp',
-        width: 140,
+        width: 120,
         hidden: false
       },{
         header: 'Runningtime',
@@ -389,7 +389,7 @@ function initJobGrid() {
       animCollapse: true,
       width:100,
       height:100,
-      y: 50,
+      y: 15,
       plain:true,
       shadow: true,
       resizable: false,
@@ -410,8 +410,8 @@ function initJobGrid() {
       collapsible: true,
       animCollapse: true,
       maximizable: true,
-      y: 400,
-      width:900,
+      y: 375,
+      width:860,
       height:500,
       plain:true,
       shadow: true,
