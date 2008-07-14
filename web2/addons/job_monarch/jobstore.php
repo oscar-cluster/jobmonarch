@@ -1,5 +1,8 @@
 <?php
 
+ini_set("memory_limit","100M");
+set_time_limit(0);
+
 $c			= $_POST["c"];
 $clustername		= $c;
 $cluster		= $c;
@@ -19,6 +22,7 @@ $jid			= isset($_POST['jid']) ? $_POST['jid'] : null;
 $owner			= isset($_POST['owner']) ? $_POST['owner'] : null;
 $status			= isset($_POST['status']) ? $_POST['status'] : null;
 $queue			= isset($_POST['queue']) ? $_POST['queue'] : null;
+$host			= isset($_POST['host']) ? $_POST['host'] : null;
 
 global $c, $clustername, $cluster;
 
@@ -221,7 +225,7 @@ function sortJobs( $jobs, $sortby, $sortorder )
 
 function filterJobs( $jobs )
 {
-	global $jid, $owner, $queue,  $status;
+	global $jid, $owner, $queue,  $status, $host, $use_fqdn;
 
 	$filtered_jobs	= array();
 
@@ -239,6 +243,17 @@ function filterJobs( $jobs )
                                 if( $state == 'R' )
                                 {
                                         $nodes = count( $jobattrs[nodes] );
+
+					$mynodehosts = array();
+				        foreach( $jobattrs[nodes] as $mynode )
+					{
+						if( $use_fqdn == 1)
+						{
+							$mynode = $mynode.".".$jobattrs[domain];
+						}
+						$mynodehosts[]  = $mynode;
+					}
+					$jobattrs[nodes] = $mynodehosts;
                                 }
                                 else
                                 {
@@ -250,7 +265,10 @@ function filterJobs( $jobs )
                                 $queued_time    = (int) $jobattrs[queued_timestamp];
                                 $start_time     = (int) $jobattrs[start_timestamp];
                                 $runningtime    = $report_time - $start_time;
-	
+
+				$domain		= $jobattrs[domain];
+				$domain_len 	= 0 - strlen( $domain );
+
 				$keepjob	= true;
 
 				if( $jid )
@@ -258,6 +276,28 @@ function filterJobs( $jobs )
 					if( $jobid != $jid )
 					{
 						$keepjob	= false;
+					}
+				}
+
+				if( $host )
+				{
+					if( $state == 'R' )
+					{
+						$jnodes = $jobattrs['nodes'];
+
+						$keepjob = false;
+
+						foreach( $jnodes as $jnode)
+						{
+							if( $jnode == $host )
+							{
+								$keepjob = true;
+							}
+						}
+					}
+					else
+					{
+						$keepjob = false;
 					}
 				}
 				if( $owner )
@@ -294,7 +334,7 @@ function filterJobs( $jobs )
 function getList() 
 {
 	global $jobs, $hearbeat, $pstart, $pend;
-	global $sortfield, $sortorder, $query;
+	global $sortfield, $sortorder, $query, $host;
 	global $jid, $owner, $queue,  $status;
 
 	$job_count		= count( $jobs );
@@ -315,7 +355,7 @@ function getList()
 	{
 		$jobs			= quickSearchJobs( $jobs, $query );
 	}
-	if( $jid || $owner || $queue || $status )
+	if( $jid || $owner || $queue || $status || $host )
 	{
 		$jobs			= filterJobs( $jobs );
 	}
