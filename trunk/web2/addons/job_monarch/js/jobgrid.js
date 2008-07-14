@@ -93,16 +93,36 @@ function ClusterImageSelectHost( somehost )
   else
   {
     delete myfilters['host'];
+    delete myparams['host'];
   }
 
+  reloadClusterImage();
+  reloadJobStore();
+
+  return false;
+}
+
+function reloadJobStore()
+{
+  // Respect any other parameters that may have been set outside filters
+  //
+  myparams = joinMyArray( myparams, myfilters );
+
+  // Can't be sure if there are enough pages for new filter: reset to page 1
+  //
+  myparams = joinMyArray( myparams, { start: 0, limit: 30 } );
+
+  JobsDataStore.reload( { params: myparams } );
+}
+
+function reloadClusterImage()
+{
   ClusterImageArgs['view'] = 'big-clusterimage';
 
   filt_url = makeArrayURL( myfilters );
   imag_url = makeArrayURL( ClusterImageArgs );
 
   document.getElementById( 'clusterimage' ).src = './image.php?' + filt_url + '&' + imag_url;
-
-  return false;
 }
 
 function initJobGrid() {
@@ -119,7 +139,7 @@ function initJobGrid() {
 
     if( fieldName == 'owner' || fieldName == 'jid' || fieldName == 'status' || fieldName == 'queue' )
     {
-      if( !isset( myfilters[fieldName] ) )
+      if( inMyArrayKeys( myfilters, fieldName ) )
       {
         Ext.fly(cell).removeClass( 'filterenabled' );
         Ext.fly(cell).addClass( 'filter' );
@@ -129,15 +149,8 @@ function initJobGrid() {
 	delete myfilters[fieldName];
 	delete myparams[fieldName];
 
-	// Respect any other parameters that may have been set outside filters
-	//
-        myparams = joinMyArray( myparams, myfilters );
-
-	// Can't be sure if there are enough pages for new filter: reset to page 1
-	//
-        myparams = joinMyArray( myparams, { start: 0, limit: 30 } );
-
-        grid.getStore().reload( { params: myparams } );
+        reloadJobStore();
+	reloadClusterImage();
       }
       else
       {
@@ -148,10 +161,8 @@ function initJobGrid() {
 	//
         myfilters[fieldName] = data;
 
-        myparams = joinMyArray( myparams, myfilters );
-        myparams = joinMyArray( myparams, { start: 0, limit: 30 } );
-
-        grid.getStore().reload( { params: myparams } );
+        reloadJobStore();
+	reloadClusterImage();
       }
     }
   }
