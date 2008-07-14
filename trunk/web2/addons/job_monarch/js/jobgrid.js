@@ -115,14 +115,55 @@ function reloadJobStore()
   JobsDataStore.reload( { params: myparams } );
 }
 
+function addListener(element, type, expression, bubbling)
+{
+  bubbling = bubbling || false;
+  if(window.addEventListener)	{ // Standard
+    element.addEventListener(type, expression, bubbling);
+    return true;
+  } else if(window.attachEvent) { // IE
+    element.attachEvent('on' + type, expression);
+    return true;
+  } else return false;
+}
+
+var ImageLoader = function( id, url )
+{
+  this.url = url;
+  this.image = document.getElementById( id );
+  this.loadEvent = null;
+};
+
+ImageLoader.prototype = {
+  load:function(){
+    var url = this.url;
+    var image = this.image;
+    var loadEvent = this.loadEvent;
+    addListener(this.image, 'load', function(e){
+      if(loadEvent != null){
+        loadEvent(url, image);
+      }
+    }, false);
+    this.image.src = this.url;
+  },
+  getImage:function(){
+    return this.image;
+  }
+};
+
 function reloadClusterImage()
 {
   ClusterImageArgs['view'] = 'big-clusterimage';
 
   filt_url = makeArrayURL( myfilters );
   imag_url = makeArrayURL( ClusterImageArgs );
+  img_url = './image.php?' + filt_url + '&' + imag_url;
 
-  document.getElementById( 'clusterimage' ).src = './image.php?' + filt_url + '&' + imag_url;
+  var newClusterImage = new ImageLoader( 'clusterimage', img_url );
+  newClusterImage.loadEvent = function( url, image ) {ClusterImageWindow.getBottomToolbar().clearStatus({useDefaults:true});}
+
+  ClusterImageWindow.getBottomToolbar().showBusy();
+  newClusterImage.load();
 }
 
 function initJobGrid() {
@@ -353,7 +394,13 @@ function initJobGrid() {
       shadow: true,
       resizable: false,
       shadowOffset: 10,
-      layout: 'fit'
+      layout: 'fit',
+      bbar: new Ext.StatusBar({
+            	defaultText: 'Ready.',
+            	id: 'basic-statusbar',
+            	defaultIconCls: ''
+        })
+
     });
 
   JobListingWindow = new Ext.Window({
