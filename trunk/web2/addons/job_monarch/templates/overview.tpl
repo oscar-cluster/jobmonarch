@@ -1,7 +1,3 @@
-<P>
-All tasks of parallel and array jobs appear as a single &lsquo;job&rsquo;.
-<BR></P>
-
 </FORM>
 
 <TABLE ALIGN=CENTER class="overview" cellpadding="5">
@@ -127,8 +123,6 @@ View
 </TABLE>
 
 <BR>
-{rjqj_graph}
-
   <TD ALIGN="CENTER"><CENTER>
     <BR>
 <FONT class="footer">Last updated: {report_time}</FONT></CENTER>
@@ -136,7 +130,6 @@ View
 
   </TD>
   <TD ALIGN="CENTER">
-    <IMG SRC="{pie}">
   </TD>
 </TR>
 </TABLE>

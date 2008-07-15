@@ -396,14 +396,14 @@ function initJobGrid() {
 
   ClusterImageWindow = new Ext.Window({
       id: 'ClusterImageWindow',
-      title: 'Cluster Nodes Overview',
-      closable:true,
+      title: 'Nodes',
+      closable: true,
       collapsible: true,
       animCollapse: true,
-      width:100,
-      height:100,
+      width: 100,
+      height: 100,
       y: 15,
-      plain:true,
+      plain: true,
       shadow: true,
       resizable: false,
       shadowOffset: 10,
@@ -414,6 +414,45 @@ function initJobGrid() {
             	defaultIconCls: ''
         })
 
+    });
+
+  GraphSummaryWindow = new Ext.Window({
+      id: 'GraphSummaryWindow',
+      title: 'Graph Summary',
+      closable: true,
+      collapsible: true,
+      animCollapse: true,
+      width: 300,
+      height: 500,
+      y: 15,
+      plain: true,
+      shadow: true,
+      resizable: true,
+      shadowOffset: 10,
+      layout: 'table',
+      layoutConfig: {
+		columns: 2
+	},
+      defaults:{border: false},
+      items: [{
+	id: 'monarchlogo',
+	cls: 'monarch',
+	bodyStyle: 'background: transparent',
+	html: '<A HREF="https://subtrac.sara.nl/oss/jobmonarch/" TARGET="_blank"><IMG SRC="./jobmonarch.gif" ALT="Job Monarch" BORDER="0"></A>'
+        //colspan: 2
+       },{
+	id: 'summarycount'
+       },{
+	id: 'rjqjgraph'
+       },{
+	id: 'pie',
+	colspan: 2
+       }],
+      bbar: new Ext.StatusBar({
+            	defaultText: 'Ready.',
+            	id: 'basic-statusbar',
+            	defaultIconCls: ''
+        })
     });
 
   JobListingWindow = new Ext.Window({

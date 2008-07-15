@@ -38,7 +38,12 @@ Ext.onReady( function(){
   JobListingWindow.y = ({clusterimage_height} + 150);
   JobListingWindow.show();
   reloadJobStore();
-  });
+
+  GraphSummaryWindow.show();
+
+  Ext.get( 'rjqjgraph' ).update( '<IMG ID="rjqj_graph" SRC="{rjqj_graph}" BORDER=0>' );
+  Ext.get( 'pie' ).update( '<IMG ID="pie" SRC="{pie}" BORDER=0>' );
+});
 </script>
 
 </HEAD>
@@ -49,7 +54,3 @@ Ext.onReady( function(){
     {node_area_map}
     <!-- END BLOCK : node_clustermap -->
     </MAP> 
-
-  <A HREF="https://subtrac.sara.nl/oss/jobmonarch/">
-  <IMG SRC="./jobmonarch.gif" ALT="Job Monarch" BORDER="0"></IMG>
-  </A>
