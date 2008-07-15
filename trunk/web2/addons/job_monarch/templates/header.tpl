@@ -16,23 +16,28 @@
 <script type="text/javascript">
 Ext.onReady( function(){
   initJobGrid();
-  JobProxy.on('beforeload', function(p, params) {
+  JobProxy.on('beforeload', function(p, params) 
+    {
         params.c = "{cluster}";
 	newparams = joinMyArray( params, myfilters );
 	myparams = newparams;
 	params = newparams;
     });
+
   ClusterImageArgs['{session_name}'] = '{session_id}';
   ClusterImageArgs['c'] = '{cluster}';
+
   ClusterImageWindow.html = '<IMG ID="clusterimage" SRC="{clusterimage}" USEMAP="#MONARCH_CLUSTER_BIG" BORDER="0">';
   ClusterImageWindow.height = '{clusterimage_height}';
   ClusterImageWindow.width = '{clusterimage_width}';
   ClusterImageWindow.x = (window.innerWidth - ClusterImageWindow.width - 25);
   ClusterImageWindow.show();
-  JobsDataStore.load( {params: {start: 0, limit: 30}} );
+  reloadClusterImage();
+
   JobListingWindow.setTitle( "{cluster} Jobs Overview" );
   JobListingWindow.y = ({clusterimage_height} + 150);
   JobListingWindow.show();
+  reloadJobStore();
   });
 </script>
 

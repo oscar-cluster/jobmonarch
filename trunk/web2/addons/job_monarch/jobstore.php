@@ -78,6 +78,9 @@ switch($task)
     case "LISTING":
         getList();
         break;		
+    case "SUMMARY":
+        getSummary();
+        break;		
     default:
         echo "{failure:true}";
         break;
