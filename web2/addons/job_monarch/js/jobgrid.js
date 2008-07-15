@@ -118,13 +118,18 @@ function reloadJobStore()
 function addListener(element, type, expression, bubbling)
 {
   bubbling = bubbling || false;
-  if(window.addEventListener)	{ // Standard
+  if(window.addEventListener)
+  { // Standard
     element.addEventListener(type, expression, bubbling);
     return true;
-  } else if(window.attachEvent) { // IE
+  } 
+  else if(window.attachEvent) 
+  { // IE
     element.attachEvent('on' + type, expression);
     return true;
-  } else return false;
+  } 
+  else 
+    return false;
 }
 
 var ImageLoader = function( id, url )
@@ -134,19 +139,24 @@ var ImageLoader = function( id, url )
   this.loadEvent = null;
 };
 
-ImageLoader.prototype = {
-  load:function(){
+ImageLoader.prototype = 
+{
+  load:function()
+  {
     var url = this.url;
     var image = this.image;
     var loadEvent = this.loadEvent;
-    addListener(this.image, 'load', function(e){
-      if(loadEvent != null){
-        loadEvent(url, image);
+    addListener( this.image, 'load', function(e)
+    {
+      if( loadEvent != null )
+      {
+        loadEvent( url, image );
       }
     }, false);
     this.image.src = this.url;
   },
-  getImage:function(){
+  getImage: function()
+  {
     return this.image;
   }
 };
@@ -160,7 +170,10 @@ function reloadClusterImage()
   img_url = './image.php?' + filt_url + '&' + imag_url;
 
   var newClusterImage = new ImageLoader( 'clusterimage', img_url );
-  newClusterImage.loadEvent = function( url, image ) {ClusterImageWindow.getBottomToolbar().clearStatus({useDefaults:true});}
+  newClusterImage.loadEvent = function( url, image ) 
+    {
+      ClusterImageWindow.getBottomToolbar().clearStatus( { useDefaults:true } );
+    }
 
   ClusterImageWindow.getBottomToolbar().showBusy();
   newClusterImage.load();
@@ -234,7 +247,7 @@ function initJobGrid() {
   JobsDataStore = new Ext.data.Store({
       id: 'JobsDataStore',
       proxy: JobProxy,
-      baseParams:{task: "LISTING"}, // this parameter is passed for any HTTP request
+      baseParams: { task: "LISTING" },
       reader: new Ext.data.JsonReader({
         root: 'results',
         totalProperty: 'total',
@@ -246,7 +259,7 @@ function initJobGrid() {
         {name: 'queue', type: 'string', mapping: 'queue'},
         {name: 'name', type: 'string', mapping: 'name'},
         {name: 'requested_time', type: 'string', mapping: 'requested_time'},
-        //{name: 'requested_memory', type: 'string', mapping: 'requested_memory'},
+        {name: 'requested_memory', type: 'string', mapping: 'requested_memory'},
         {name: 'ppn', type: 'int', mapping: 'ppn'},
         {name: 'nodect', type: 'int', mapping: 'nodect'},
         {name: 'nodes', type: 'string', mapping: 'nodes'},
@@ -254,7 +267,7 @@ function initJobGrid() {
         {name: 'start_timestamp', type: 'string', mapping: 'start_timestamp'},
         {name: 'runningtime', type: 'string', mapping: 'runningtime'}
       ]),
-      sortInfo: {field: 'jid', direction: "ASC"},
+      sortInfo: { field: 'jid', direction: "DESC" },
       remoteSort: true
     });
     
