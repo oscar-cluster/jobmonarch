@@ -595,9 +595,10 @@ function makeOverview()
 	if( $rjqj_host != null )
 	{
 
-		$rjqj_str  = "<A HREF=\"./graph.php?z=large&c=$clustername&g=job_report&r=$range&st=$cluster[LOCALTIME]\">";
-		$rjqj_str .= "<IMG BORDER=0 SRC=\"./graph.php?z=small&c=$clustername&g=job_report&r=$range&st=$cluster[LOCALTIME]\">";
-		$rjqj_str .= "</A>";
+		//$rjqj_str  = "<A HREF=\"./graph.php?z=large&c=$clustername&g=job_report&r=$range&st=$cluster[LOCALTIME]\">";
+		//$rjqj_str .= "<IMG BORDER=0 SRC=\"./graph.php?z=small&c=$clustername&g=job_report&r=$range&st=$cluster[LOCALTIME]\">";
+		$rjqj_str .= "./graph.php?z=small&c=$clustername&g=job_report&r=$range&st=$cluster[LOCALTIME]";
+		//$rjqj_str .= "</A>";
 
 		$tpl->gotoBlock( "_ROOT" );
 
