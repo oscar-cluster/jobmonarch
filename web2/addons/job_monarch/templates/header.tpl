@@ -28,14 +28,11 @@ Ext.onReady( function(){
   ClusterImageArgs['c'] = '{cluster}';
 
   ClusterImageWindow.html = '<IMG ID="clusterimage" SRC="{clusterimage}" USEMAP="#MONARCH_CLUSTER_BIG" BORDER="0">';
-  ClusterImageWindow.height = '{clusterimage_height}';
-  ClusterImageWindow.width = '{clusterimage_width}';
-  ClusterImageWindow.x = (window.innerWidth - ClusterImageWindow.width - 25);
   ClusterImageWindow.show();
   reloadClusterImage();
 
   JobListingWindow.setTitle( "{cluster} Jobs Overview" );
-  JobListingWindow.y = ({clusterimage_height} + 150);
+  JobListingWindow.y = (ClusterImageWindow.getSize()['height'] + 150);
   JobListingWindow.show();
   reloadJobStore();
 

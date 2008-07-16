@@ -22,7 +22,7 @@
  * SVN $Id: index.php 527 2008-06-27 13:37:31Z ramonb $
  */
 
-ini_set("memory_limit","100M");
+ini_set("memory_limit","200M");
 set_time_limit(0);
 
 

@@ -22,6 +22,9 @@
  * SVN $Id: image.php 329 2007-04-22 13:36:26Z bastiaans $
  */
 
+ini_set("memory_limit","200M");
+set_time_limit(0);
+
 include_once "./libtoga.php";
 
 if ( !empty( $_GET ) ) {

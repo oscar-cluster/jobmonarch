@@ -172,6 +172,7 @@ function reloadClusterImage()
   var newClusterImage = new ImageLoader( 'clusterimage', img_url );
   newClusterImage.loadEvent = function( url, image ) 
     {
+      resizeClusterImage();
       ClusterImageWindow.getBottomToolbar().clearStatus( { useDefaults:true } );
     }
 
@@ -179,9 +180,37 @@ function reloadClusterImage()
   newClusterImage.load();
 }
 
+function getCiWindowWidth()
+{
+  return (document.getElementById( "clusterimage" ).width + ClusterImageWindow.getFrameWidth());
+}
+function getCiWindowHeight()
+{
+  return (document.getElementById( "clusterimage" ).height + ClusterImageWindow.getFrameHeight());
+}
+
+function resizeClusterImage()
+{
+  var ci_height = getCiWindowHeight();
+  var ci_width = getCiWindowWidth();
+
+  ClusterImageWindow.setSize( ci_width, ci_height );
+}
+
 function initJobGrid() {
 
   Ext.QuickTips.init();
+
+  function clusterImageResize( window, width, heigth )
+  {
+    var ci_height = getCiWindowHeight();
+    var ci_width = getCiWindowWidth();
+
+    if( ci_height != heigth || ci_width != width )
+    {
+      resizeClusterImage();
+    }
+  }
 
   function jobCellClick(grid, rowIndex, columnIndex, e)
   {
@@ -400,12 +429,13 @@ function initJobGrid() {
       closable: true,
       collapsible: true,
       animCollapse: true,
-      width: 100,
-      height: 100,
+      width: 1,
+      height: 1,
       y: 15,
       plain: true,
       shadow: true,
-      resizable: false,
+      //resizable: false,
+      resizable: true,
       shadowOffset: 10,
       layout: 'fit',
       bbar: new Ext.StatusBar({
@@ -473,4 +503,5 @@ function initJobGrid() {
     });
 
   JobListingEditorGrid.addListener( 'cellclick', jobCellClick );
+  ClusterImageWindow.addListener( 'resize', clusterImageResize );
 }
