@@ -32,7 +32,6 @@ Ext.onReady( function(){
   reloadClusterImage();
 
   JobListingWindow.setTitle( "{cluster} Jobs Overview" );
-  JobListingWindow.y = (ClusterImageWindow.getSize()['height'] + 150);
   JobListingWindow.show();
   reloadJobStore();
 
