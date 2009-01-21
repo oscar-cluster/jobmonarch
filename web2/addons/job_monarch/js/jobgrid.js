@@ -504,9 +504,8 @@ function initJobGrid() {
       bbar: new Ext.StatusBar({
             	defaultText: 'Ready.',
             	id: 'basic-statusbar',
-            	defaultIconCls: '',
+            	defaultIconCls: ''
         })
-
     });
 
   GraphSummaryWindow = new Ext.Window({
@@ -558,7 +557,7 @@ function initJobGrid() {
       maximizable: true,
       y: 375,
       width:860,
-      height:500,
+      height:427,
       plain:true,
       shadow: true,
       shadowOffset: 10,
