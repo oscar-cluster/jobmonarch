@@ -43,8 +43,8 @@ Ext.extend(Ext.ux.PageSizePlugin, Ext.form.ComboBox, {
     },
     
     onPageSizeChanged: function(combo) {
-        this.pageSize = parseInt(combo.getValue());
 	mylimit = parseInt(combo.getValue());
+        this.pageSize = mylimit;
         this.doLoad(0);
     }
 });
@@ -152,8 +152,6 @@ function reloadJobStore()
 
   // Can't be sure if there are enough pages for new filter: reset to page 1
   //
-  //myparams = joinMyArray( myparams, { start: 0, limit: 30 } );
-  //mylimit = JobListingEditorGrid.bbar.pageSize;
   myparams = joinMyArray( myparams, { start: 0, limit: mylimit } );
 
   JobsDataStore.reload( { params: myparams } );
@@ -273,7 +271,6 @@ Ext.apply(Ext.form.VTypes, {
 function initJobGrid() {
 
   Ext.QuickTips.init();
-  Ext.form.Field.prototype.msgTarget = 'side';
 
   function jobCellClick(grid, rowIndex, columnIndex, e)
   {
@@ -362,9 +359,12 @@ function initJobGrid() {
       sortInfo: { field: 'jid', direction: "DESC" },
       remoteSort: true
     });
-    
+   
+  var CheckJobs = new Ext.grid.CheckboxSelectionModel();
+
   JobsColumnModel = new Ext.grid.ColumnModel(
-    [{
+    [ CheckJobs,
+    {
         header: '#',
 	tooltip: 'Job id',
         readOnly: true,
@@ -462,6 +462,8 @@ function initJobGrid() {
     );
     JobsColumnModel.defaultSortable= true;
 
+  var win;
+
   JobListingEditorGrid =  new Ext.grid.EditorGridPanel({
       id: 'JobListingEditorGrid',
       store: JobsDataStore,
@@ -471,6 +473,7 @@ function initJobGrid() {
       loadMask: true,
       selModel: new Ext.grid.RowSelectionModel({singleSelect:false}),
       stripeRows: true,
+      sm: CheckJobs,
       bbar: new Ext.PagingToolbar({
                 pageSize: 15,
                 store: JobsDataStore,
@@ -483,7 +486,27 @@ function initJobGrid() {
 		                store: JobsDataStore,
 				params: {start: 0, limit: mylimit},
 		                width: 200
-		    })
+		    }),
+		new Ext.Button({
+				text: 'Show nodes',
+				tooltip: 'Show nodes for selected jobs',
+				iconCls: 'option',
+				listeners: {
+					'click': {
+						scope: this,
+						fn: function() {
+						        if(!win){
+							            win = new Ext.Window({
+								        width       : 500,
+									height      : 300,
+									closeAction :'hide',
+								    });
+							}
+							win.show( this );
+						}
+					}
+				}
+			})
       ]
     });
 
