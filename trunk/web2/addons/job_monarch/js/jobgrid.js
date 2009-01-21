@@ -16,7 +16,7 @@ Ext.ux.PageSizePlugin = function() {
     Ext.ux.PageSizePlugin.superclass.constructor.call(this, {
         store: new Ext.data.SimpleStore({
             fields: ['text', 'value'],
-            data: [['10', 10], ['15', 15], ['20', 20], ['30', 30], ['50', 50], ['100', 100]]
+            data: [['10', 10], ['15', 15], ['20', 20], ['30', 30], ['50', 50], ['100', 100], ['max', 'max' ]]
         }),
         mode: 'local',
         displayField: 'text',
@@ -43,7 +43,10 @@ Ext.extend(Ext.ux.PageSizePlugin, Ext.form.ComboBox, {
     },
     
     onPageSizeChanged: function(combo) {
-	mylimit = parseInt(combo.getValue());
+        if ( combo.getValue() == 'max' )
+	  mylimit = JobsDataStore.getTotalCount();
+	else
+	  mylimit = parseInt(combo.getValue());
         this.pageSize = mylimit;
         this.doLoad(0);
     }
