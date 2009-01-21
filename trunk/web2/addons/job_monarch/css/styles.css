@@ -9,6 +9,12 @@
    background: none;
 }
 
+.background
+{
+   background-image: url(../bg.gif);
+   background-repeat: repeat;
+}
+
 .filterenabled
 {
    background: rgb(100,100,255);
