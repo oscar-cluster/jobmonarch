@@ -5,9 +5,51 @@ var JobListingWindow;
 var JobProxy;
 var myfilters = { };
 var myparams = { };
+var mylimit = 15;
 var ClusterImageArgs = { };
 
 var filterfields = [ "jid", "queue", "name", "owner" ];
+
+Ext.namespace('Ext.ux');
+
+Ext.ux.PageSizePlugin = function() {
+    Ext.ux.PageSizePlugin.superclass.constructor.call(this, {
+        store: new Ext.data.SimpleStore({
+            fields: ['text', 'value'],
+            data: [['10', 10], ['15', 15], ['20', 20], ['30', 30], ['50', 50], ['100', 100]]
+        }),
+        mode: 'local',
+        displayField: 'text',
+        valueField: 'value',
+        editable: false,
+        allowBlank: false,
+        triggerAction: 'all',
+        width: 40
+    });
+};
+
+Ext.extend(Ext.ux.PageSizePlugin, Ext.form.ComboBox, {
+    init: function(paging) {
+        paging.on('render', this.onInitView, this);
+    },
+    
+    onInitView: function(paging) {
+        paging.add('-',
+            this,
+            'jobs per page'
+        );
+        this.setValue(paging.pageSize);
+        this.on('select', this.onPageSizeChanged, paging);
+    },
+    
+    onPageSizeChanged: function(combo) {
+        this.pageSize = parseInt(combo.getValue());
+	mylimit = parseInt(combo.getValue());
+        this.doLoad(0);
+    }
+});
+
+Ext.namespace( 'Ext' );
 
 function makeArrayURL( somearr )
 {
@@ -110,7 +152,9 @@ function reloadJobStore()
 
   // Can't be sure if there are enough pages for new filter: reset to page 1
   //
-  myparams = joinMyArray( myparams, { start: 0, limit: 30 } );
+  //myparams = joinMyArray( myparams, { start: 0, limit: 30 } );
+  //mylimit = JobListingEditorGrid.bbar.pageSize;
+  myparams = joinMyArray( myparams, { start: 0, limit: mylimit } );
 
   JobsDataStore.reload( { params: myparams } );
 }
@@ -201,9 +245,35 @@ function resizeClusterImage()
   ClusterImageWindow.setSize( ci_width, ci_height );
 }
 
+Ext.apply(Ext.form.VTypes, {
+	num: function(val, field) {
+
+	        if (val) {
+		   var strValidChars = "0123456789";
+		   var blnResult = true;
+
+		   if (val.length == 0) return false;
+
+		   //  test strString consists of valid characters listed above
+		   for (i = 0; i < val.length && blnResult == true; i++)
+		      {
+		      strChar = val.charAt(i);
+		      if (strValidChars.indexOf(strChar) == -1)
+			 {
+			 blnResult = false;
+			 }
+		      }
+		   return blnResult;
+
+		}
+		},
+	numText: 'Must be numeric'
+});
+
 function initJobGrid() {
 
   Ext.QuickTips.init();
+  Ext.form.Field.prototype.msgTarget = 'side';
 
   function jobCellClick(grid, rowIndex, columnIndex, e)
   {
@@ -402,15 +472,16 @@ function initJobGrid() {
       selModel: new Ext.grid.RowSelectionModel({singleSelect:false}),
       stripeRows: true,
       bbar: new Ext.PagingToolbar({
-                pageSize: 30,
+                pageSize: 15,
                 store: JobsDataStore,
                 displayInfo: true,
 	    	displayMsg: 'Displaying jobs {0} - {1} out of {2} jobs total found.',
-    		emptyMsg: 'No jobs found to display'
+    		emptyMsg: 'No jobs found to display',
+		plugins: [new Ext.ux.PageSizePlugin()]
             }),
       tbar: [ new Ext.app.SearchField({
 		                store: JobsDataStore,
-				params: {start: 0, limit: 30},
+				params: {start: 0, limit: mylimit},
 		                width: 200
 		    })
       ]
@@ -433,7 +504,7 @@ function initJobGrid() {
       bbar: new Ext.StatusBar({
             	defaultText: 'Ready.',
             	id: 'basic-statusbar',
-            	defaultIconCls: ''
+            	defaultIconCls: '',
         })
 
     });
