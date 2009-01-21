@@ -3,7 +3,6 @@
 <HEAD>
 <TITLE>Ganglia :: {longpage_title}</TITLE>
 <META http-equiv="Content-type" content="text/html; charset=utf-8">
-<META http-equiv="refresh" content="{refresh}{redirect}" >
 
 <link rel="stylesheet" type="text/css" href="./lib/extjs/resources/css/ext-all.css" />
 <link rel="stylesheet" type="text/css" href="./css/styles.css" />
@@ -43,7 +42,7 @@ Ext.onReady( function(){
 </script>
 
 </HEAD>
-<BODY BGCOLOR="#FFFFFF">
+<BODY CLASS="background">
 
     <MAP NAME="MONARCH_CLUSTER_BIG">
     <!-- START BLOCK : node_clustermap -->
