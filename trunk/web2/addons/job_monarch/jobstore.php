@@ -250,10 +250,10 @@ function filterJobs( $jobs )
 					$mynodehosts = array();
 				        foreach( $jobattrs[nodes] as $mynode )
 					{
-						if( $use_fqdn == 1)
-						{
-							$mynode = $mynode.".".$jobattrs[domain];
-						}
+						//if( $use_fqdn == 1)
+						//{
+						//	$mynode = $mynode.".".$jobattrs[domain];
+						//}
 						$mynodehosts[]  = $mynode;
 					}
 					$jobattrs[nodes] = $mynodehosts;

@@ -506,6 +506,7 @@ function initJobGrid() {
 								    });
 							}
 							win.show( this );
+							alert( CheckJobs.getSelections() );
 						}
 					}
 				}
