@@ -1362,6 +1362,36 @@ class ClusterImage
 									//	printf( "vergeet host\n" );
 									}
 								}
+								if( $filtername == 'query' )
+								{
+									foreach( $jobs[$myjob] as $myj_attr => $myj_val )
+									{
+										if(!is_array( $myj_val ) )
+										{
+											if( strpos( $myj_val, $filtervalue ) !== false )
+											{
+												$addhost = 1;
+												continue;
+											}
+										}
+										else
+										{
+											foreach( $myj_val as $myj_v )
+											{
+												if( strpos( $myj_v, $filtervalue ) !== false )
+												{
+													$addhost = 1;
+													continue;
+												}
+											}
+										}
+										if( strpos( $myjob, $filtervalue ) !== false )
+										{
+											$addhost	= 1;
+											continue;
+										}
+									}
+								}
 							}
 						}
 					}

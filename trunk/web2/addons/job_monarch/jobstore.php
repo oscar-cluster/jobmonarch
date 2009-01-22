@@ -110,6 +110,20 @@ function quickSearchJobs( $jobs, $query )
 			{
 				$searchresults[$jobid]	= $jobattrs;
 			}
+			if( is_array( $jobattrs['nodes'] ) )
+			{
+				foreach( $jobattrs['nodes'] as $jattr )
+				{
+					if( strpos( $jattr, $query ) !== false )
+					{
+						$searchresults[$jobid]  = $jobattrs;
+					}
+				}
+			}
+			if( strpos( $jobid, $query ) !== false )
+			{
+				$searchresults[$jobid]  = $jobattrs;
+			}
 		}
 	}
 
