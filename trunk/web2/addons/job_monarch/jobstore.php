@@ -155,17 +155,18 @@ function sortJobs( $jobs, $sortby, $sortorder )
                                 $req_cpu        = $jobattrs[requested_time];
                                 $req_memory     = $jobattrs[requested_memory];
 
-                                if( $state == 'R' )
-                                {
-                                        $nodes = count( $jobattrs[nodes] );
-                                }
-                                else
-                                {
-                                        $nodes = $jobattrs[nodes];
-                                }
+                                $nodes		= $jobattrs[nodes];
 
                                 $ppn            = (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
-                                $cpus           = $nodes * $ppn;
+
+				if( $state == 'R' )
+				{
+					$cpus           = count( $nodes ) * $ppn;
+				}
+				else
+				{
+					$cpus		= ((int) $nodes ) * $ppn;
+				}
                                 $queued_time    = (int) $jobattrs[queued_timestamp];
                                 $start_time     = (int) $jobattrs[start_timestamp];
                                 $runningtime    = $report_time - $start_time;
@@ -204,7 +205,14 @@ function sortJobs( $jobs, $sortby, $sortorder )
                                                 $sorted[$jobid] = $ppn;
                                                 break;
                                         case "nodesct":
-                                                $sorted[$jobid] = $nodes;
+						if( $state == 'Q' )
+						{
+							$sorted[$jobid] = $nodes;
+						}
+						else
+						{
+							$sorted[$jobid] = count( $nodes );
+						}
                                                 break;
                                         case "cpus":
                                                 $sorted[$jobid] = $cpus;
@@ -221,6 +229,15 @@ function sortJobs( $jobs, $sortby, $sortorder )
                                         case "runningtime":
                                                 $sorted[$jobid] = $runningtime;
                                                 break;
+					case "nodes":
+						if( $state == 'R' )
+						{
+							$sorted[$jobid]	= $nodes[0];
+						}
+						else
+						{
+							$sorted[$jobid] = $nodes;
+						}
 
                                         default:
                                                 break;
