@@ -516,8 +516,8 @@ function initJobGrid() {
             }),
       tbar: [ SearchField,
 		new Ext.Button({
-				text: 'Show nodes',
-				tooltip: 'Show nodes for selected jobs',
+				text: 'Show graphs',
+				tooltip: 'Show node graphs for selected jobs',
 				iconCls: 'option',
 				listeners: {
 					'click': {
