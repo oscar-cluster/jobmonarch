@@ -590,7 +590,8 @@ class TorqueXMLHandler
 		$down_nodes		= array();
 		$offline_nodes		= array();
 		$this->clustername	= $clustername;
-		$this->fqdn		= 1;
+		$this->fqdn		= 0;
+		$this->fqdnFound	= 0;
 	}
 
 	function getUsingFQDN()
@@ -633,41 +634,14 @@ class TorqueXMLHandler
 		//
 		$nodes = &$this->nodes;
 
-		$fqdn = 1;
-
-		//$tdomain = explode( '.', $thostname );
-		//
-		// TODO?: extract domain from hostname or something?
-
-		if( $tdomain )
-		{
-			$domain_len	= 0 - strlen( $tdomain );
-
-			// Let's see if Ganglia use's FQDN or short hostnames
-			//
-			foreach( $nodes as $hostname => $nimage )
-			{
-				if( substr( $hostname, $domain_len ) != $tdomain )
-				{
-					$fqdn	= 0;
-				}
-			}
-		}
-		else
-		{
-			$fqdn	= 0;
-		}
+		$domain_len	= 0 - strlen( $tdomain );
 	
-		if( $tdomain && $fqdn )
+		if( $tdomain && $this->fqdn )
 		{
 			if( substr( $thostname, $domain_len ) != $tdomain )
 			{
 				$thostname = $thostname . '.'.$tdomain;
 			} 
-			else
-			{
-				$thostname = $thostname;
-			}
 		}
 
 		return $thostname;
@@ -696,6 +670,25 @@ class TorqueXMLHandler
 		else if( $name == 'HOST' and $this->proc_cluster == $this->clustername)
 		{
 			$hostname = $attrs[NAME];
+
+			// Assume to use FQDN if we find a '.' in the hostname
+			//
+			if( strpos( $hostname, '.' ) !== false )
+			{
+				if( !$this->fqdnFound )
+				{
+					$this->fqdn		= 1;
+					$this->fqdnFound	= 1;
+				}
+			}
+			else
+			{
+				if( !$this->fqdnFound )
+				{
+					$this->fqdn		= 0;
+					$this->fqdnFound	= 1;
+				}
+			}
 
 			$location = $attrs[LOCATION];
 
@@ -745,6 +738,12 @@ class TorqueXMLHandler
 						}
 					}
 				}
+				$down_nodes	= $nodes_down;
+
+				foreach( $down_nodes as $node )
+				{
+					$nodes_down[] = $this->makeHostname( $node, $down_domain );
+				}
 			}
 			else if( strstr( $attrs[NAME], 'MONARCH-OFFLINE' ) )
 			{
@@ -780,6 +779,12 @@ class TorqueXMLHandler
 							$this->offline_nodes[$togavalue] = array( $nodes_offline, $offline_domain );
 						}
 					}
+				}
+				$offline_nodes	= $nodes_offline;
+
+				foreach( $offline_nodes as $node )
+				{
+					$nodes_offline[] = $this->makeHostname( $node, $offline_domain );
 				}
 			}
 			else if( strstr( $attrs[NAME], 'MONARCH-JOB' ) )
@@ -837,47 +842,17 @@ class TorqueXMLHandler
 		
 					if( $jobs[$jobid][status] == 'R' )
 					{
-
 						if( isset( $jobs[$jobid][domain] ) )
 						{
 							$domain		= $jobs[$jobid][domain];
-							$domain_len	= 0 - strlen( $domain );
-
-							// Let's see if Ganglia use's FQDN or short hostnames
-							//
-							foreach( $nodes as $hostname => $nimage )
-							{
-					
-								if( substr( $hostname, $domain_len ) != $domain )
-								{
-									$this->fqdn	= 0;
-								}
-							}
 						}
-						else
-						{
-							$this->fqdn	= 0;
-						}
+						$job_nodes	= array();
 
 						foreach( $jobs[$jobid][nodes] as $node )
 						{
-
 							// Only add domain name to the hostname if Ganglia is doing that too
 							//
-							if( $this->fqdn && isset( $jobs[$jobid][domain] ) )
-							{
-								if( substr( $node, $domain_len ) != $domain )
-								{
-									$host = $node. '.'.$domain;
-								} else
-								{
-									$host = $node;
-								}
-							}
-							else
-							{
-								$host	= $node;
-							}
+							$host	= $this->makeHostname( $node, $domain );
 
 							if( !isset( $nodes[$host] ) )
 							{
@@ -900,8 +875,10 @@ class TorqueXMLHandler
 								}
 							}
 
-							$nodes[$host] = $my_node;
+							$nodes[$host]	= $my_node;
+							$job_nodes[]	= $host;
 						}
+						$jobs[$jobid][nodes]	= $job_nodes;
 					}
 				}
 			}
@@ -1370,9 +1347,19 @@ class ClusterImage
 								}
 								if( $filtername != 'jobid' && $filtername != 'host' ) 
 								{
-									if( $jobs[$myjob][$filtername] != $filtervalue )
+									//if( $filtername == 'owner' )
+									//{
+									//	printf( "%s ?= %s\n", $jobs[$myjob][$filtername], $filtervalue );
+									//}
+									if( $jobs[$myjob][$filtername] == $filtervalue )
+									{
+										$addhost = 1;
+										continue;
+									}
+									else if( $jobs[$myjob][$filtername] != $filtervalue )
 									{
 										$addhost = 0;
+									//	printf( "vergeet host\n" );
 									}
 								}
 							}
