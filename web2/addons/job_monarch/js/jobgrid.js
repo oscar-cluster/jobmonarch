@@ -336,6 +336,8 @@ function initJobGrid() {
                 method: 'POST'
             });
 
+  var SearchField;
+
   JobsDataStore = new Ext.data.Store({
       id: 'JobsDataStore',
       proxy: JobProxy,
@@ -360,7 +362,28 @@ function initJobGrid() {
         {name: 'runningtime', type: 'string', mapping: 'runningtime'}
       ]),
       sortInfo: { field: 'jid', direction: "DESC" },
-      remoteSort: true
+      remoteSort: true,
+      listeners: { 'load': {
+      			scope: this,
+			fn: function() {
+					if( SearchField ) {
+						search_value = SearchField.getEl().dom.value;
+
+						if( search_value != '' )
+						{
+							myfilters['query']	= search_value;
+						}
+
+						reloadClusterImage();
+
+						if( search_value != '' )
+						{
+							delete myfilters['query'];
+						}
+					}
+				}
+			}
+		}
     });
    
   var CheckJobs = new Ext.grid.CheckboxSelectionModel();
@@ -467,6 +490,12 @@ function initJobGrid() {
 
   var win;
 
+  SearchField	= new Ext.app.SearchField({
+		                store: JobsDataStore,
+				params: {start: 0, limit: mylimit},
+		                width: 200
+		    });
+
   JobListingEditorGrid =  new Ext.grid.EditorGridPanel({
       id: 'JobListingEditorGrid',
       store: JobsDataStore,
@@ -485,11 +514,7 @@ function initJobGrid() {
     		emptyMsg: 'No jobs found to display',
 		plugins: [new Ext.ux.PageSizePlugin()]
             }),
-      tbar: [ new Ext.app.SearchField({
-		                store: JobsDataStore,
-				params: {start: 0, limit: mylimit},
-		                width: 200
-		    }),
+      tbar: [ SearchField,
 		new Ext.Button({
 				text: 'Show nodes',
 				tooltip: 'Show nodes for selected jobs',
@@ -510,8 +535,7 @@ function initJobGrid() {
 						}
 					}
 				}
-			})
-      ]
+			}) ]
     });
 
   ClusterImageWindow = new Ext.Window({

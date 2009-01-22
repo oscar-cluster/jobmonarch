@@ -56,6 +56,7 @@ function checkSessionData() {
 $httpvars = new HTTPVariables( $HTTP_GET_VARS, $_GET );
 $view = $httpvars->getHttpVar( "view" );
 $host = $httpvars->getHttpVar( "host" );
+$query = $httpvars->getHttpVar( "query" );
 $clustername = $httpvars->getClusterName();
 
 if( isset($jid) && ($jid!='')) $filter[jid]=$jid;
@@ -63,6 +64,7 @@ if( isset($state) && ($state!='')) $filter[state]=$state;
 if( isset($owner) && ($owner!='')) $filter[owner]=$owner;
 if( isset($queue) && ($queue!='')) $filter[queue]=$queue;
 if( isset($host) && ($host!='')) $filter[host]=$host;
+if( isset($query) && ($query!='')) $filter[query]=$query;
 //printf("host = %s\n", $filter[host] );
 
 function drawHostImage() {
@@ -133,6 +135,9 @@ function drawBigClusterImage() {
 					break;
 				case "host":
 					$ic->setFilter( 'host', $filtervalue);
+					break;
+				case "query":
+					$ic->setFilter( 'query', $filtervalue);
 					break;
 				default:
 					break;
