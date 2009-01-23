@@ -1337,58 +1337,65 @@ class ClusterImage
 						{
 							if( $filtername!=null && $filtername!='' )
 							{
-								if( $filtername == 'jobid' && !$node->hasJob( $filtervalue) )
+								if( $filtername == 'jobid' )
 								{
-									$addhost = 0;
-								}
-								if( $filtername == 'host' && $hostname != $filtervalue )
-								{
-									$addhost = 0;
-								}
-								if( $filtername != 'jobid' && $filtername != 'host' ) 
-								{
-									//if( $filtername == 'owner' )
-									//{
-									//	printf( "%s ?= %s\n", $jobs[$myjob][$filtername], $filtervalue );
-									//}
-									if( $jobs[$myjob][$filtername] == $filtervalue )
-									{
-										$addhost = 1;
-										continue;
-									}
-									else if( $jobs[$myjob][$filtername] != $filtervalue )
+									if ( $myjob != $filtervalue )
 									{
 										$addhost = 0;
-									//	printf( "vergeet host\n" );
+										break;
+									}
+									else
+									{
+										$addhost = 1;
+										break;
 									}
 								}
-								if( $filtername == 'query' )
+								else
 								{
-									foreach( $jobs[$myjob] as $myj_attr => $myj_val )
+									if( $filtername == 'host' && $hostname == $filtervalue )
 									{
-										if(!is_array( $myj_val ) )
+										$addhost = 0;
+									}
+									else
+									{
+										if( $jobs[$myjob][$filtername] == $filtervalue )
 										{
-											if( strpos( $myj_val, $filtervalue ) !== false )
-											{
-												$addhost = 1;
-												continue;
-											}
+											$addhost = 1;
+											continue;
 										}
-										else
+										else if( $jobs[$myjob][$filtername] != $filtervalue )
 										{
-											foreach( $myj_val as $myj_v )
+											$addhost = 0;
+										}
+									}
+									if( $filtername == 'query' )
+									{
+										foreach( $jobs[$myjob] as $myj_attr => $myj_val )
+										{
+											if(!is_array( $myj_val ) )
 											{
-												if( strpos( $myj_v, $filtervalue ) !== false )
+												if( strpos( $myj_val, $filtervalue ) !== false )
 												{
 													$addhost = 1;
 													continue;
 												}
 											}
-										}
-										if( strpos( $myjob, $filtervalue ) !== false )
-										{
-											$addhost	= 1;
-											continue;
+											else
+											{
+												foreach( $myj_val as $myj_v )
+												{
+													if( strpos( $myj_v, $filtervalue ) !== false )
+													{
+														$addhost = 1;
+														continue;
+													}
+												}
+											}
+											if( strpos( $myjob, $filtervalue ) !== false )
+											{
+												$addhost	= 1;
+												continue;
+											}
 										}
 									}
 								}
