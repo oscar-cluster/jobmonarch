@@ -19,10 +19,20 @@ $query			= isset($_POST['query']) ? $_POST['query'] : null;
 // Filter values
 //
 $jid			= isset($_POST['jid']) ? $_POST['jid'] : null;
+$jids			= isset($_POST['jids']) ? $_POST['jids'] : null;
 $owner			= isset($_POST['owner']) ? $_POST['owner'] : null;
 $status			= isset($_POST['status']) ? $_POST['status'] : null;
 $queue			= isset($_POST['queue']) ? $_POST['queue'] : null;
 $host			= isset($_POST['host']) ? $_POST['host'] : null;
+
+if( $jids != null )
+{
+	$jobids	= explode( ",", $jids );
+}
+else
+{
+	$jobids	= null;
+}
 
 global $c, $clustername, $cluster;
 
@@ -75,11 +85,11 @@ if( isset( $HTTP_POST_VARS['task' ] ) )
 
 switch($task)
 {
-    case "LISTING":
-        getList();
+    case "GETJOBS":
+        getJobs();
         break;		
-    case "SUMMARY":
-        getSummary();
+    case "GETNODES":
+        getNodes();
         break;		
     default:
         echo "{failure:true}";
@@ -365,7 +375,49 @@ function filterJobs( $jobs )
 	return $filtered_jobs;
 }
 
-function getList() 
+function getNodes()
+{
+	global $jobs, $jobids, $clustername;
+
+	$display_nodes	= array();
+
+	if( !$jobids )
+	{
+		return 1;
+	}
+	foreach( $jobs as $jobid => $jobattrs )
+	{
+		if( in_array( $jobid, $jobids ) )
+		{
+			foreach( $jobattrs['nodes'] as $jobnode )
+			{
+				if( !in_array( $jobnode, $display_nodes) )
+				{
+					$display_nodes[]	= $jobnode;
+				}
+			}
+		}
+	}
+	//print_r( $display_nodes );
+	$node_results	= array();
+	$result_count	= count( $display_nodes );
+	foreach( $display_nodes as $dnode )
+	{
+
+		$nr		= array();
+		$nr['c']	= $clustername;
+		$nr['h']	= $dnode;
+		$nr['x']	= '5';
+		$nr['v']	= '0';
+
+		$node_results[]	= $nr;
+	}
+	$jsonresults	= JEncode( $node_results );
+
+	echo '{"total":"'. $result_count .'","results":'. $jsonresults .'}';
+}
+
+function getJobs() 
 {
 	global $jobs, $hearbeat, $pstart, $pend;
 	global $sortfield, $sortorder, $query, $host;

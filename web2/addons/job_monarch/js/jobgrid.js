@@ -341,7 +341,7 @@ function initJobGrid() {
   JobsDataStore = new Ext.data.Store({
       id: 'JobsDataStore',
       proxy: JobProxy,
-      baseParams: { task: "LISTING" },
+      baseParams: { task: "GETJOBS" },
       reader: new Ext.data.JsonReader({
         root: 'results',
         totalProperty: 'total',
@@ -496,6 +496,83 @@ function initJobGrid() {
 		                width: 200
 		    });
 
+  NodesDataStore = new Ext.data.Store({
+      id: 'NodesDataStore',
+      proxy: JobProxy,
+      autoLoad: false,
+      baseParams: { task: "GETNODES" },
+      reader: new Ext.data.JsonReader({
+        root: 'results',
+        totalProperty: 'total',
+        id: 'id'
+      },[
+        {name: 'c', type: 'string', mapping: 'c'},
+        {name: 'h', type: 'string', mapping: 'h'},
+        {name: 'v', type: 'string', mapping: 'v'},
+        {name: 'x', type: 'string', mapping: 'x'},
+      ]),
+      listeners: {
+		'beforeload': {
+      			scope: this,
+			fn: function() {
+					var jids;
+
+					var row_records = CheckJobs.getSelections();
+
+					for(var i=0; i<row_records.length; i++ )
+					{
+						rsel = row_records[i];
+						if( !jids )
+						{
+							jids = rsel.get('jid');
+						}
+						else
+						{
+							jids = jids + ',' + rsel.get('jid');
+						}
+					}
+					NodesDataStore.baseParams.jids	= jids;
+					NodesDataStore.baseParams.c	= myparams.c;
+			}
+		}
+	}
+    });
+
+function ShowGraphs( Button, Event ) {
+   
+    var GraphView = new Ext.DataView({
+        itemSelector: 'thumb',
+        style:'overflow:auto',
+        multiSelect: true,
+        store: NodesDataStore,
+        tpl: new Ext.XTemplate(
+            '<tpl for=".">',
+            '<div class="thumb"><img src="../../graph.php?z=small&h={h}&x={x}&v={v}&c={c}" border="0"></div>',
+            '</tpl>'
+        )
+    });
+
+    var images = new Ext.Panel({
+        id:'images',
+        title:'My Images',
+        region:'center',
+        margins: '5 5 5 0',
+        layout:'fit',
+        items: GraphView
+    });
+
+	if(!win){
+	    win = new Ext.Window({
+			width       : 500,
+			height      : 300,
+			closeAction :'hide',
+			items:	[ images ]
+		    });
+		}
+	NodesDataStore.load();
+	win.show();
+}
+
   JobListingEditorGrid =  new Ext.grid.EditorGridPanel({
       id: 'JobListingEditorGrid',
       store: JobsDataStore,
@@ -522,17 +599,7 @@ function initJobGrid() {
 				listeners: {
 					'click': {
 						scope: this,
-						fn: function() {
-						        if(!win){
-							            win = new Ext.Window({
-								        width       : 500,
-									height      : 300,
-									closeAction :'hide',
-								    });
-							}
-							win.show( this );
-							alert( CheckJobs.getSelections() );
-						}
+						fn: ShowGraphs
 					}
 				}
 			}) ]
