@@ -34,3 +34,11 @@
    color: white;
    cursor: pointer;
 }
+
+.rrd-float
+{ 
+   float: left; 
+   margin: 4px; 
+   margin-right: 0; 
+   padding: 5px;
+} 

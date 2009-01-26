@@ -633,7 +633,7 @@ function ShowGraphs( Button, Event ) {
         store: NodesDataStore,
         tpl: new Ext.XTemplate(
             '<tpl for=".">',
-            '<div class="thumb"><img src="../../graph.php?z=small&h={h}&x={x}&v={v}&c={c}" border="0"></div>',
+            '<div class="rrd-float"><img src="../../graph.php?z=small&h={h}&x={x}&v={v}&c={c}" border="0"></div>',
             '</tpl>'
         )
     });
@@ -642,6 +642,7 @@ function ShowGraphs( Button, Event ) {
         id:'images',
         title:'My Images',
         region:'center',
+	bodyStyle: 'background: transparent',
         margins: '5 5 5 0',
         layout:'fit',
         items: GraphView
@@ -653,6 +654,7 @@ function ShowGraphs( Button, Event ) {
 			width       : 500,
 			height      : 300,
 			closeAction :'hide',
+			layout:	'fit',
 			tbar:	new Ext.form.ComboBox({
 					fieldLabel: 'Metric',
 					//hiddenName:'ID',
