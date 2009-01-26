@@ -60,7 +60,7 @@ session_start();
 unset( $_SESSION["data"] );
 $_SESSION["data"]       = &$myxml_data;
 
-global $jobs;
+global $jobs, $metrics;
 
 $data_gatherer  = new DataGatherer( $clustername );
 $data_gatherer->parseXML( &$myxml_data );
@@ -91,9 +91,53 @@ switch($task)
     case "GETNODES":
         getNodes();
         break;		
+    case "GETMETRICS":
+        getMetrics();
+        break;		
     default:
         echo "{failure:true}";
         break;
+}
+
+function getMetrics( $host=null )
+{
+	global $metrics;
+
+	reset($metrics);
+	if( !$host)
+	{
+          $firsthost = key($metrics);
+	}
+	else
+	{
+          $firsthost = $host;
+	}
+
+	$first_metrics = $metrics[$firsthost];
+
+	$metric_list	= array();
+
+	$metric_count	= 0;
+
+	foreach( $first_metrics as $metricname => $metricval )
+	{
+		$metric		= array();
+		$metric['id']	= $metricname;
+		$metric['name']	= $metricname;
+
+		$metric_list[]	= $metric;
+		$metric_count	= $metric_count + 1;
+	}
+	
+	$results		= array();
+	$results['names']	= $metric_list;
+	$results['total']	= $metric_count;
+
+	$jsonresults    = JEncode( $results );
+
+	echo $jsonresults;
+
+	return 0;
 }
 
 function quickSearchJobs( $jobs, $query )

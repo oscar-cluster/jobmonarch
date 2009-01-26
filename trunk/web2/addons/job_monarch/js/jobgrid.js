@@ -531,7 +531,7 @@ function initJobGrid() {
         readOnly: true,
         dataIndex: 'nodes',
         width: 100,
-        hidden: true,
+        hidden: false,
 	renderer: jobCellRender
       },{
         header: 'Queued',
@@ -559,6 +559,22 @@ function initJobGrid() {
     JobsColumnModel.defaultSortable= true;
 
   var win;
+
+  MetricsDataStore = new Ext.data.Store({
+      id: 'MetricsDataStore',
+      proxy: JobProxy,
+      autoLoad: false,
+      baseParams: { task: "GETMETRICS" },
+      reader: new Ext.data.JsonReader({
+        root: 'names',
+        totalProperty: 'total',
+        id: 'id'
+      },[{
+        name: 'ID'
+      },{
+	name: 'name'
+	}])
+  });
 
   SearchField	= new Ext.app.SearchField({
 		                store: JobsDataStore,
@@ -637,10 +653,23 @@ function ShowGraphs( Button, Event ) {
 			width       : 500,
 			height      : 300,
 			closeAction :'hide',
-			//tbar:	next Ext.
+			tbar:	new Ext.form.ComboBox({
+					fieldLabel: 'Metric',
+					//hiddenName:'ID',
+					store: MetricsDataStore,
+					valueField:'name',
+					displayField:'name',
+					typeAhead: true,
+					mode: 'remote',
+					triggerAction: 'all',
+					emptyText:'Select metric',
+					selectOnFocus:true,
+					xtype: 'combo',
+					width:190
+				}),
 			items:	[ images ]
 		    });
-		}
+	}
 	NodesDataStore.load();
 	win.show(Button);
 }
@@ -704,8 +733,8 @@ function ShowGraphs( Button, Event ) {
       closable: true,
       collapsible: true,
       animCollapse: true,
-      width: 300,
-      height: 500,
+      width: 500,
+      height: 400,
       x: 10,
       y: 10,
       plain: true,
@@ -747,7 +776,7 @@ function ShowGraphs( Button, Event ) {
       maximizable: true,
       y: 375,
       width:860,
-      height:427,
+      height:445,
       plain:true,
       shadow: true,
       shadowOffset: 10,
