@@ -4,6 +4,13 @@
    cursor: pointer;
 }
 
+.filterenabled
+{
+   background: blue;
+   color: white;
+   cursor: pointer;
+}
+
 .monarch
 {
    background: none;
@@ -15,9 +22,15 @@
    background-repeat: repeat;
 }
 
-.filterenabled
+.nodesfilter
 {
-   background: rgb(100,100,255);
+   color: rgb(130,150,255);
+   cursor: pointer;
+}
+
+.nodesfilterenabled
+{
+   background: rgb(130,150,255);
    color: white;
    cursor: pointer;
 }
