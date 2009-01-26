@@ -1354,7 +1354,7 @@ class ClusterImage
 								{
 									if( $filtername == 'host' && $hostname == $filtervalue )
 									{
-										$addhost = 0;
+										$addhost = 1;
 									}
 									else
 									{
