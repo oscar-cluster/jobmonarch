@@ -3,6 +3,7 @@ var JobsColumnModel;
 var JobListingEditorGrid;
 var JobListingWindow;
 var JobProxy;
+var SearchField;
 var myfilters = { };
 var myparams = { };
 var mylimit = 15;
@@ -177,6 +178,18 @@ function addListener(element, type, expression, bubbling)
     return false;
 }
 
+function makeFilterString()
+{
+  var filter_str = '';
+
+  for( arkey in myfilters )
+  {
+    filter_str = filter_str + ' > ' + myfilters[arkey];
+  }
+
+  return filter_str;
+}
+
 var ImageLoader = function( id, url )
 {
   this.url = url;
@@ -235,6 +248,10 @@ function reloadClusterImage()
     }
 
   ClusterImageWindow.getBottomToolbar().showBusy();
+
+  filter_str = 'Nodes Overview' + makeFilterString();
+  ClusterImageWindow.setTitle( filter_str );
+
   newClusterImage.load();
 }
 
@@ -310,6 +327,8 @@ function initJobGrid() {
         reloadJobStore();
 	reloadClusterImage();
       }
+      filter_str = myparams.c + ' Jobs Overview' + makeFilterString();
+      JobListingWindow.setTitle( filter_str );
     }
   }
 
@@ -336,7 +355,6 @@ function initJobGrid() {
                 method: 'POST'
             });
 
-  var SearchField;
 
   JobsDataStore = new Ext.data.Store({
       id: 'JobsDataStore',
@@ -363,27 +381,52 @@ function initJobGrid() {
       ]),
       sortInfo: { field: 'jid', direction: "DESC" },
       remoteSort: true,
-      listeners: { 'load': {
+      listeners:
+      	{ 
+      		'beforeload':
+		{
+			scope: this,
+			fn: function()
+			{
+				if( SearchField )
+				{
+					search_value = SearchField.getEl().dom.value;
+					if( search_value == '' )
+					{
+						delete SearchField.store.baseParams['query'];
+						delete myfilters['query'];
+						delete myparams['query'];
+					}
+				}
+			}
+		},
+      		'load':
+		{
       			scope: this,
-			fn: function() {
-					if( SearchField ) {
-						search_value = SearchField.getEl().dom.value;
+			fn: function()
+			{
+				if( SearchField )
+				{
+					search_value = SearchField.getEl().dom.value;
 
-						if( search_value != '' )
-						{
-							myfilters['query']	= search_value;
-						}
+					if( search_value != '' )
+					{
+						myfilters['query']	= search_value;
+					}
 
-						reloadClusterImage();
+					reloadClusterImage();
 
-						if( search_value != '' )
-						{
-							delete myfilters['query'];
-						}
+					filter_str = myparams.c + ' Jobs Overview' + makeFilterString();
+					JobListingWindow.setTitle( filter_str );
+
+					if( search_value != '' )
+					{
+						delete myfilters['query'];
 					}
 				}
 			}
 		}
+	}
     });
    
   var CheckJobs = new Ext.grid.CheckboxSelectionModel();
@@ -509,7 +552,7 @@ function initJobGrid() {
         {name: 'c', type: 'string', mapping: 'c'},
         {name: 'h', type: 'string', mapping: 'h'},
         {name: 'v', type: 'string', mapping: 'v'},
-        {name: 'x', type: 'string', mapping: 'x'},
+        {name: 'x', type: 'string', mapping: 'x'}
       ]),
       listeners: {
 		'beforeload': {
@@ -563,6 +606,7 @@ function ShowGraphs( Button, Event ) {
 
 	if(!win){
 	    win = new Ext.Window({
+	    		animateTarget: Button,
 			width       : 500,
 			height      : 300,
 			closeAction :'hide',
@@ -570,7 +614,7 @@ function ShowGraphs( Button, Event ) {
 		    });
 		}
 	NodesDataStore.load();
-	win.show();
+	win.show(Button);
 }
 
   JobListingEditorGrid =  new Ext.grid.EditorGridPanel({
