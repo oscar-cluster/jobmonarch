@@ -249,7 +249,7 @@ function reloadClusterImage()
 
   ClusterImageWindow.getBottomToolbar().showBusy();
 
-  filter_str = 'Nodes Overview' + makeFilterString();
+  filter_str = 'Nodes' + makeFilterString();
   ClusterImageWindow.setTitle( filter_str );
 
   newClusterImage.load();
@@ -299,52 +299,78 @@ function initJobGrid() {
     var data = record.get(fieldName);
     var view = grid.getView();
     var cell = view.getCell( rowIndex, columnIndex );
+    var filter_title = false;
+    var fil_dis = 'filter';
+    var fil_ena = 'filterenabled';
+    var filterName = fieldName;
 
-    if( fieldName == 'owner' || fieldName == 'jid' || fieldName == 'status' || fieldName == 'queue' )
+    if( fieldName == 'owner' || fieldName == 'jid' || fieldName == 'status' || fieldName == 'queue' || fieldName == 'nodes')
     {
-      if( inMyArrayKeys( myfilters, fieldName ) )
+      if( fieldName == 'nodes' )
       {
-        Ext.fly(cell).removeClass( 'filterenabled' );
-        Ext.fly(cell).addClass( 'filter' );
+        filterName = 'host';
+        fil_dis = 'nodesfilter';
+	fil_ena = 'nodesfilterenabled';
+      }
+      if( inMyArrayKeys( myfilters, filterName ) )
+      {
+        Ext.fly(cell).removeClass( fil_ena );
+        Ext.fly(cell).addClass( fil_dis );
 
 	// Remove this filter
 	//
-	delete myfilters[fieldName];
-	delete myparams[fieldName];
+	delete myfilters[filterName];
+	delete myparams[filterName];
 
         reloadJobStore();
 	reloadClusterImage();
       }
       else
       {
-        Ext.fly(cell).removeClass( 'filter' );
-        Ext.fly(cell).addClass( 'filterenabled' );
+        Ext.fly(cell).removeClass( fil_dis );
+        Ext.fly(cell).addClass( fil_ena );
+
+	if( fieldName == 'nodes' )
+	{ // Get the first node (master mom) as node filter
+	  new_data = data.split( ',' )[0];
+	  data = new_data;
+	}
 
 	// Set filter for selected column to selected cell value
 	//
-        myfilters[fieldName] = data;
+        myfilters[filterName] = data;
 
         reloadJobStore();
 	reloadClusterImage();
       }
-      filter_str = myparams.c + ' Jobs Overview' + makeFilterString();
       JobListingWindow.setTitle( filter_str );
+      filter_title = true;
+      filter_str = myparams.c + ' Jobs Overview' + makeFilterString();
     }
   }
 
   function jobCellRender( value, metadata, record, rowindex, colindex, store )
   {
     var fieldName = JobsColumnModel.getColumnById( colindex ).dataIndex;
+    var fil_dis = 'filter';
+    var fil_ena = 'filterenabled';
+    var filterName = fieldName;
 
-    if( fieldName == 'owner' || fieldName == 'jid' || fieldName == 'status' || fieldName == 'queue' )
+    if( fieldName == 'owner' || fieldName == 'jid' || fieldName == 'status' || fieldName == 'queue' || fieldName == 'nodes' )
     {
-      if( myfilters[fieldName] != null )
+      if( fieldName == 'nodes' )
       {
-        metadata.css = 'filterenabled';
+        fil_dis = 'nodesfilter';
+	fil_ena = 'nodesfilterenabled';
+	filterName = 'host';
+      }
+      if( myfilters[filterName] != null )
+      {
+        metadata.css = fil_ena;
       }
       else
       {
-        metadata.css = 'filter';
+        metadata.css = fil_dis;
       }
     }
     return value;
@@ -505,7 +531,8 @@ function initJobGrid() {
         readOnly: true,
         dataIndex: 'nodes',
         width: 100,
-        hidden: true
+        hidden: true,
+	renderer: jobCellRender
       },{
         header: 'Queued',
 	tooltip: 'At what time did this job enter the queue',
@@ -610,6 +637,7 @@ function ShowGraphs( Button, Event ) {
 			width       : 500,
 			height      : 300,
 			closeAction :'hide',
+			//tbar:	next Ext.
 			items:	[ images ]
 		    });
 		}
