@@ -594,8 +594,11 @@ function initJobGrid() {
       },[
         {name: 'c', type: 'string', mapping: 'c'},
         {name: 'h', type: 'string', mapping: 'h'},
+        {name: 'x', type: 'string', mapping: 'x'},
         {name: 'v', type: 'string', mapping: 'v'},
-        {name: 'x', type: 'string', mapping: 'x'}
+        {name: 'l', type: 'string', mapping: 'l'},
+        {name: 'jr', type: 'string', mapping: 'jr'},
+        {name: 'js', type: 'string', mapping: 'js'}
       ]),
       listeners: {
 		'beforeload': {
@@ -633,17 +636,17 @@ function ShowGraphs( Button, Event ) {
         store: NodesDataStore,
         tpl: new Ext.XTemplate(
             '<tpl for=".">',
-            '<div class="rrd-float"><img src="../../graph.php?z=small&h={h}&x={x}&v={v}&c={c}" border="0"></div>',
+            '<div class="rrd-float"><img src="../../graph.php?z=small&c={c}&h={h}&l={l}&v={v}&x={x}&r=job&jr={jr}&js={js}" border="0"></div>',
             '</tpl>'
         )
     });
 
     var images = new Ext.Panel({
         id:'images',
-        title:'My Images',
+        //title:'My Images',
         region:'center',
 	bodyStyle: 'background: transparent',
-        margins: '5 5 5 0',
+        //margins: '2 2 2 0',
         layout:'fit',
         items: GraphView
     });
@@ -654,6 +657,7 @@ function ShowGraphs( Button, Event ) {
 			width       : 500,
 			height      : 300,
 			closeAction :'hide',
+			title:	'Node graph details',
 			layout:	'fit',
 			tbar:	new Ext.form.ComboBox({
 					fieldLabel: 'Metric',
@@ -667,7 +671,14 @@ function ShowGraphs( Button, Event ) {
 					emptyText:'Select metric',
 					selectOnFocus:true,
 					xtype: 'combo',
-					width:190
+					width:190,
+					listeners: {
+						select: function(combo, record, index){
+							var metric = record.data.name;
+							// doe iets
+						}
+					}
+					
 				}),
 			items:	[ images ]
 		    });

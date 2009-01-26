@@ -34,7 +34,7 @@ else
 	$jobids	= null;
 }
 
-global $c, $clustername, $cluster;
+global $c, $clustername, $cluster, $metrics;
 
 // Grid Paging stuff
 //
@@ -421,7 +421,7 @@ function filterJobs( $jobs )
 
 function getNodes()
 {
-	global $jobs, $jobids, $clustername;
+	global $jobs, $jobids, $clustername, $metrics;
 
 	$display_nodes	= array();
 
@@ -437,22 +437,40 @@ function getNodes()
 			{
 				if( !in_array( $jobnode, $display_nodes) )
 				{
-					$display_nodes[]	= $jobnode;
+					$display_nodes[$jobid]	= $jobnode;
 				}
 			}
 		}
 	}
-	//print_r( $display_nodes );
+
 	$node_results	= array();
 	$result_count	= count( $display_nodes );
-	foreach( $display_nodes as $dnode )
+	foreach( $display_nodes as $jobid => $host )
 	{
-
 		$nr		= array();
 		$nr['c']	= $clustername;
-		$nr['h']	= $dnode;
+		$nr['h']	= $host ;
 		$nr['x']	= '5';
 		$nr['v']	= '0';
+
+		$cpus		= $metrics[$host]["cpu_num"]["VAL"];
+
+		if ( !$cpus )
+		{
+			$cpus		= 1;
+		}
+
+		$load_one	= $metrics[$host]["load_one"]["VAL"];
+		$load		= ((float) $load_one) / $cpus;
+		$load_color	= load_color($load);
+
+		$nr['l']	= $load_color;
+
+		$job_runtime	= (int) $jobs[$jobid]['reported'] - (int) $jobs[$jobid]['start_timestamp'];
+		$job_window	= intval($job_runtime * 1.2);
+
+		$nr['jr']	= -$job_window;
+		$nr['js']	= (int) $jobs[$jobid]['start_timestamp'];
 
 		$node_results[]	= $nr;
 	}
