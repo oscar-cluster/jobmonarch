@@ -2281,6 +2281,8 @@ class HostImage
 		$this->drawHeader();
 		$this->drawJobs();
 
+		header("Cache-Control: no-cache, must-revalidate");
+		header("Pragma: no-cache");
 		header( 'Content-type: image/png' );
 		imagePNG( $this->image );
 		imageDestroy( $this->image );
