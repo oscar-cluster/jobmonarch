@@ -1046,6 +1046,8 @@ class NodeImage
 		$this->size		= $SMALL_CLUSTERIMAGE_NODEWIDTH;
 		$this->down		= 0;
 		$this->offline		= 0;
+		$this->small		= false;
+		$this->big		= false;
 	}
 
 	function addJob( $jobid, $cpus )
@@ -1181,6 +1183,8 @@ class NodeImage
 		global $SMALL_CLUSTERIMAGE_NODEWIDTH;
 
 		$this->size	= $SMALL_CLUSTERIMAGE_NODEWIDTH;
+		$this->small	= true;
+		$this->big	= false;
 
 		$this->draw();
 	}
@@ -1190,6 +1194,8 @@ class NodeImage
 		global $BIG_CLUSTERIMAGE_NODEWIDTH;
 
 		$this->size	= $BIG_CLUSTERIMAGE_NODEWIDTH;
+		$this->small	= false;
+		$this->big	= true;
 
 		$this->drawShadow();
 		$this->draw();
@@ -1252,7 +1258,16 @@ class NodeImage
 		$black_color = imageColorAllocate( $this->image, 0, 0, 0 );
 		$size = $this->size;
 
-		imageFilledRectangle( $this->image, $this->x, $this->y, $this->x+($size-2), $this->y+($size-2), $black_color );
+		// seperator pixel row
+		//
+		$sep	= 0;
+
+		if( $this->big )
+		{
+			$sep	= 2;
+		}
+
+		imageFilledRectangle( $this->image, $this->x, $this->y, $this->x+($size-$sep), $this->y+($size-$sep), $black_color );
 
 		if( $this->showinfo)
 		{
@@ -1269,7 +1284,7 @@ class NodeImage
 			//
 			$load = $this->determineLoad();	
 			$usecolor = $this->colorHex( load_color($load) );
-			imageFilledRectangle( $this->image, $this->x+1, $this->y+1, $this->x+($size-3), $this->y+($size-3), $usecolor );
+			imageFilledRectangle( $this->image, $this->x+1, $this->y+1, $this->x+($size-(1+$sep)), $this->y+($size-(1+$sep)), $usecolor );
 			if( $this->down )
 			{
 				imageString( $this->image, 1, $this->x+(($size/2)-1), $this->y+(($size/2)-4), $NODE_DOWN_MARKING, $black_color );
