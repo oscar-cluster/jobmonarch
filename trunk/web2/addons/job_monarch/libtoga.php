@@ -1048,6 +1048,7 @@ class NodeImage
 		$this->offline		= 0;
 		$this->small		= false;
 		$this->big		= false;
+		$this->selected		= false;
 	}
 
 	function addJob( $jobid, $cpus )
@@ -1178,6 +1179,11 @@ class NodeImage
 		$this->showinfo = $showinfo;
 	}
 
+	function setSelected()
+	{
+		$this->selected	= true;
+	}
+
 	function drawSmall()
 	{
 		global $SMALL_CLUSTERIMAGE_NODEWIDTH;
@@ -1267,7 +1273,16 @@ class NodeImage
 			$sep	= 2;
 		}
 
-		imageFilledRectangle( $this->image, $this->x, $this->y, $this->x+($size-$sep), $this->y+($size-$sep), $black_color );
+		$select_color	= imageColorAllocate( $this->image, 91, 255, 41 );
+
+		if( $this->selected )
+		{
+			imageFilledRectangle( $this->image, $this->x, $this->y, $this->x+($size), $this->y+($size), $select_color );
+		}
+		else
+		{
+			imageFilledRectangle( $this->image, $this->x, $this->y, $this->x+($size-$sep), $this->y+($size-$sep), $black_color );
+		}
 
 		if( $this->showinfo)
 		{
@@ -1346,6 +1361,7 @@ class ClusterImage
 		$this->width		= 0;
 		$this->height		= 0;
 		$this->output		= 1;
+		$this->selected		= '';
 	}
 
 	function getWidth()
@@ -1395,7 +1411,12 @@ class ClusterImage
 			{
 				$mynjobs = $node->getJobs();
 
-				if( count( $mynjobs ) > 0 )
+				if( $filtername == 'host' && $hostname == $filtervalue )
+				{
+					$addhost	= 1;
+					$this->selected	= $hostname;
+				}
+				else if( count( $mynjobs ) > 0 )
 				{
 					foreach( $mynjobs as $myjob )
 					{
@@ -1418,21 +1439,14 @@ class ClusterImage
 								}
 								else
 								{
-									if( $filtername == 'host' && $hostname == $filtervalue )
+									if( $jobs[$myjob][$filtername] == $filtervalue )
 									{
 										$addhost = 1;
+										continue;
 									}
-									else
+									else if( $jobs[$myjob][$filtername] != $filtervalue )
 									{
-										if( $jobs[$myjob][$filtername] == $filtervalue )
-										{
-											$addhost = 1;
-											continue;
-										}
-										else if( $jobs[$myjob][$filtername] != $filtervalue )
-										{
-											$addhost = 0;
-										}
+										$addhost = 0;
 									}
 									if( $filtername == 'query' )
 									{
@@ -1556,6 +1570,7 @@ class ClusterImage
 
 		$jobs = $mydatag->getJobs();
 		$filtered_nodes = $this->filterNodes( $jobs, $nodes );
+		$selected_host	= $this->selected;
 
 		if( $SORTBY_HOSTNAME != "" )
 		{
@@ -1949,6 +1964,13 @@ class ClusterImage
 							// This node has been filtered out: we only want to see certain nodes
 							//
 							$nodes[$cur_node]->setShowinfo( 0 );
+						}
+						else
+						{
+							if( $selected_host != '' && $host == $selected_host )
+							{
+								$nodes[$cur_node]->setSelected();
+							}
 						}
 
 						$nodes[$cur_node]->setCoords( $x, $y );
