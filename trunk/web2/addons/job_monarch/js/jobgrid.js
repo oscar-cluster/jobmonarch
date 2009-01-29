@@ -138,8 +138,15 @@ function ClusterImageSelectHost( somehost )
   }
   else
   {
-    delete myfilters['host'];
-    delete myparams['host'];
+    if( myfilters['host'] == somehost )
+    {
+      delete myfilters['host'];
+      delete myparams['host'];
+    }
+    else
+    {
+      myfilters['host'] = somehost;
+    }
   }
 
   reloadClusterImage();
@@ -657,6 +664,9 @@ function ShowGraphs( Button, Event ) {
 			width       : 500,
 			height      : 300,
 			closeAction :'hide',
+		        collapsible: true,
+		        animCollapse: true,
+		        maximizable: true,
 			title:	'Node graph details',
 			layout:	'fit',
 			tbar:	new Ext.form.ComboBox({
