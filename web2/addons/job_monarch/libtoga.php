@@ -1191,7 +1191,58 @@ class NodeImage
 
 		$this->size	= $BIG_CLUSTERIMAGE_NODEWIDTH;
 
+		$this->drawShadow();
 		$this->draw();
+	}
+
+	function drawShadow()
+	{
+		// offset of drop shadow from top left
+		//
+		$ds_offset	= 5;
+ 
+		// number of steps from black to background color
+		//
+		$ds_steps	= 15;
+
+		// distance between steps
+		//
+		$ds_spread = 1;
+
+		// define the background color
+		//
+		$background = array("r" => 255, "g" => 255, "b" => 255);
+
+		// create a new canvas.  New canvas dimensions should be larger than the original's
+		//
+		$width  = $this->size + $ds_offset;
+		$height = $this->size + $ds_offset;
+
+		// determine the offset between colors
+		//
+		$step_offset = array("r" => ($background["r"] / $ds_steps), "g" => ($background["g"] / $ds_steps), "b" => ($background["b"] / $ds_steps));
+
+		// calculate and allocate the needed colors
+		//
+		$current_color = $background;
+
+		for ($i = 0; $i <= $ds_steps ; $i++)
+		{
+			$colors[$i] = imagecolorallocate($this->image, round($current_color["r"]), round($current_color["g"]), round($current_color["b"]));
+
+			$current_color["r"] -= $step_offset["r"];
+			$current_color["g"] -= $step_offset["g"];
+			$current_color["b"] -= $step_offset["b"];
+		}
+
+		// draw overlapping rectangles to create a drop shadow effect
+		//
+		for ($i = 3; $i < count($colors); $i++)
+		{
+			imagefilledrectangle( $this->image, ($this->x + $ds_offset), ($this->y + $ds_offset), ($this->x + $width), ($this->y + $height), $colors[$i] );
+			$width -= $ds_spread;
+			$height -= $ds_spread;
+		}
 	}
 
 	function draw()
@@ -1201,7 +1252,7 @@ class NodeImage
 		$black_color = imageColorAllocate( $this->image, 0, 0, 0 );
 		$size = $this->size;
 
-		imageFilledRectangle( $this->image, $this->x, $this->y, $this->x+($size), $this->y+($size), $black_color );
+		imageFilledRectangle( $this->image, $this->x, $this->y, $this->x+($size-2), $this->y+($size-2), $black_color );
 
 		if( $this->showinfo)
 		{
@@ -1218,7 +1269,7 @@ class NodeImage
 			//
 			$load = $this->determineLoad();	
 			$usecolor = $this->colorHex( load_color($load) );
-			imageFilledRectangle( $this->image, $this->x+1, $this->y+1, $this->x+($size-1), $this->y+($size-1), $usecolor );
+			imageFilledRectangle( $this->image, $this->x+1, $this->y+1, $this->x+($size-3), $this->y+($size-3), $usecolor );
 			if( $this->down )
 			{
 				imageString( $this->image, 1, $this->x+(($size/2)-1), $this->y+(($size/2)-4), $NODE_DOWN_MARKING, $black_color );
@@ -1960,6 +2011,8 @@ class ClusterImage
 		}
 	
 		$this->nodes	= &$nodes;
+
+		imageColorTransparent( $image, $colorwhite );
 
 		if ($this->output)
 		{
