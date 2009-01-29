@@ -251,7 +251,7 @@ function reloadClusterImage()
       ClusterImageWindow.getBottomToolbar().clearStatus( { useDefaults:true } );
       setTimeout( "resizeClusterImage()", 250 );
       setTimeout( "setClusterImagePosition()", 500 );
-      setTimeout( "achorJobListing()", 1000 );
+      //setTimeout( "achorJobListing()", 1000 );
     }
 
   ClusterImageWindow.getBottomToolbar().showBusy();
