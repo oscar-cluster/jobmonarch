@@ -3,14 +3,14 @@
 ini_set("memory_limit","100M");
 set_time_limit(0);
 
-$c			= $_POST["c"];
+$c			= $_POST['c'];
 $clustername		= $c;
 $cluster		= $c;
 
 // Supplied by ExtJS when DataStore has remoteSort: true
 //
-$sortfield		= isset($_POST['sort'] ) ? $_POST["sort"] : "jid";
-$sortorder		= isset($_POST['dir'] ) ? $_POST["dir"] : "ASC"; // ASC or DESC
+$sortfield		= isset($_POST['sort'] ) ? $_POST['sort'] : "jid";
+$sortorder		= isset($_POST['dir'] ) ? $_POST['dir'] : "ASC"; // ASC or DESC
 
 // Search query from ext.SearchField
 //
@@ -46,8 +46,8 @@ $pend	= (int) $_POST['limit'];
 //echo $pend.'p ';
 // Need to fool Ganglia here: or it won't parse XML for our cluster
 //
-$HTTP_POST_VARS["c"]	= $c;
-$_GET["c"]		= $c;
+$HTTP_POST_VARS['c']	= $c;
+$_GET['c']		= $c;
 
 global $c, $clustername, $cluster;
 
@@ -57,8 +57,8 @@ $ds             = new DataSource();
 $myxml_data     = &$ds->getData();
 
 session_start();
-unset( $_SESSION["data"] );
-$_SESSION["data"]       = &$myxml_data;
+unset( $_SESSION['data'] );
+$_SESSION['data']       = &$myxml_data;
 
 global $jobs, $metrics;
 
@@ -202,16 +202,16 @@ function sortJobs( $jobs, $sortby, $sortorder )
         {
                 foreach( $jobs as $jobid => $jobattrs )
                 {
-                                $state          = $jobattrs[status];
-                                $user           = $jobattrs[owner];
-                                $queue          = $jobattrs[queue];
-                                $name           = $jobattrs[name];
-                                $req_cpu        = $jobattrs[requested_time];
-                                $req_memory     = $jobattrs[requested_memory];
+                                $state          = $jobattrs['status'];
+                                $user           = $jobattrs['owner'];
+                                $queue          = $jobattrs['queue'];
+                                $name           = $jobattrs['name'];
+                                $req_cpu        = $jobattrs['requested_time'];
+                                $req_memory     = $jobattrs['requested_memory'];
 
-                                $nodes		= $jobattrs[nodes];
+                                $nodes		= $jobattrs['nodes'];
 
-                                $ppn            = (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
+                                $ppn            = (int) $jobattrs['ppn'] ? $jobattrs['ppn'] : 1;
 
 				if( $state == 'R' )
 				{
@@ -221,8 +221,8 @@ function sortJobs( $jobs, $sortby, $sortorder )
 				{
 					$cpus		= ((int) $nodes ) * $ppn;
 				}
-                                $queued_time    = (int) $jobattrs[queued_timestamp];
-                                $start_time     = (int) $jobattrs[start_timestamp];
+                                $queued_time    = (int) $jobattrs['queued_timestamp'];
+                                $start_time     = (int) $jobattrs['start_timestamp'];
                                 $runningtime    = $report_time - $start_time;
 
                                 switch( $sortby )
@@ -321,40 +321,40 @@ function filterJobs( $jobs )
         {
                 foreach( $jobs as $jobid => $jobattrs )
                 {
-                                $state          = $jobattrs[status];
-                                $user           = $jobattrs[owner];
-                                $jqueue          = $jobattrs[queue];
-                                $name           = $jobattrs[name];
-                                $req_cpu        = $jobattrs[requested_time];
-                                $req_memory     = $jobattrs[requested_memory];
+                                $state          = $jobattrs['status'];
+                                $user           = $jobattrs['owner'];
+                                $jqueue          = $jobattrs['queue'];
+                                $name           = $jobattrs['name'];
+                                $req_cpu        = $jobattrs['requested_time'];
+                                $req_memory     = $jobattrs['requested_memory'];
 
                                 if( $state == 'R' )
                                 {
-                                        $nodes = count( $jobattrs[nodes] );
+                                        $nodes = count( $jobattrs['nodes'] );
 
 					$mynodehosts = array();
-				        foreach( $jobattrs[nodes] as $mynode )
+				        foreach( $jobattrs['nodes'] as $mynode )
 					{
 						//if( $use_fqdn == 1)
 						//{
-						//	$mynode = $mynode.".".$jobattrs[domain];
+						//	$mynode = $mynode.".".$jobattrs['domain'];
 						//}
 						$mynodehosts[]  = $mynode;
 					}
-					$jobattrs[nodes] = $mynodehosts;
+					$jobattrs['nodes'] = $mynodehosts;
                                 }
                                 else
                                 {
-                                        $nodes = $jobattrs[nodes];
+                                        $nodes = $jobattrs['nodes'];
                                 }
 
-                                $ppn            = (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
+                                $ppn            = (int) $jobattrs['ppn'] ? $jobattrs['ppn'] : 1;
                                 $cpus           = $nodes * $ppn;
-                                $queued_time    = (int) $jobattrs[queued_timestamp];
-                                $start_time     = (int) $jobattrs[start_timestamp];
+                                $queued_time    = (int) $jobattrs['queued_timestamp'];
+                                $start_time     = (int) $jobattrs['start_timestamp'];
                                 $runningtime    = $report_time - $start_time;
 
-				$domain		= $jobattrs[domain];
+				$domain		= $jobattrs['domain'];
 				$domain_len 	= 0 - strlen( $domain );
 
 				$keepjob	= true;
@@ -453,14 +453,14 @@ function getNodes()
 		$nr['x']	= '5';
 		$nr['v']	= '0';
 
-		$cpus		= $metrics[$host]["cpu_num"]["VAL"];
+		$cpus		= $metrics[$host]['cpu_num']['VAL'];
 
 		if ( !$cpus )
 		{
 			$cpus		= 1;
 		}
 
-		$load_one	= $metrics[$host]["load_one"]["VAL"];
+		$load_one	= $metrics[$host]['load_one']['VAL'];
 		$load		= ((float) $load_one) / $cpus;
 		$load_color	= load_color($load);
 
@@ -531,14 +531,14 @@ function getJobs()
 
 		if( $jr['status'] == 'R' )
 		{
-			$nodes 		= count( $jobs[$jobid][nodes] );
+			$nodes 		= count( $jobs[$jobid]['nodes'] );
 		}
 		else
 		{
-			$nodes 		= (int) $jobs[$jobid][nodes];
+			$nodes 		= (int) $jobs[$jobid]['nodes'];
 		}
 
-		$jr['ppn']		= strval( $jobs[$jobid][ppn] ? $jobs[$jobid][ppn] : 1 );
+		$jr['ppn']		= strval( $jobs[$jobid]['ppn'] ? $jobs[$jobid]['ppn'] : 1 );
 		$jr['nodect']		= strval( $nodes );
 
 		if( $jr['status'] == 'R' )
