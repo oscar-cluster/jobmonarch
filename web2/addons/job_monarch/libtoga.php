@@ -33,8 +33,8 @@ class HTTPVariables
 	{
 		$this->restvars		= array();
 
-		$this->clustername	= $httpvars["c"] ? $httpvars["c"] : $getvars["c"];
-		$this->metricname	= $httpvars["m"] ? $httpvars["m"] : $getvars["m"];
+		$this->clustername	= $httpvars['c'] ? $httpvars['c'] : $getvars['c'];
+		$this->metricname	= $httpvars['m'] ? $httpvars['m'] : $getvars['m'];
 
 		if( count( $httpvars ) > 0 )
 		{
@@ -1232,7 +1232,7 @@ class NodeImage
 
 		// determine the offset between colors
 		//
-		$step_offset = array("r" => ($background["r"] / $ds_steps), "g" => ($background["g"] / $ds_steps), "b" => ($background["b"] / $ds_steps));
+		$step_offset = array("r" => ($background['r'] / $ds_steps), "g" => ($background['g'] / $ds_steps), "b" => ($background['b'] / $ds_steps));
 
 		// calculate and allocate the needed colors
 		//
@@ -1240,11 +1240,11 @@ class NodeImage
 
 		for ($i = 0; $i <= $ds_steps ; $i++)
 		{
-			$colors[$i] = imagecolorallocate($this->image, round($current_color["r"]), round($current_color["g"]), round($current_color["b"]));
+			$colors[$i] = imagecolorallocate($this->image, round($current_color['r']), round($current_color['g']), round($current_color['b']));
 
-			$current_color["r"] -= $step_offset["r"];
-			$current_color["g"] -= $step_offset["g"];
-			$current_color["b"] -= $step_offset["b"];
+			$current_color['r'] -= $step_offset['r'];
+			$current_color['g'] -= $step_offset['g'];
+			$current_color['b'] -= $step_offset['b'];
 		}
 
 		// draw overlapping rectangles to create a drop shadow effect
