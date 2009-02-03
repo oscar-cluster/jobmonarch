@@ -715,6 +715,10 @@ class DataGatherer:
 
 			for val_name, val_value in val_list.items():
 
+				if type(val_value) == list:
+
+					val_value	= val_value.join( ',' )
+
 				if my_val_str:
 
 					my_val_str = my_val_str + ' ' + val_name + '=' + val_value
