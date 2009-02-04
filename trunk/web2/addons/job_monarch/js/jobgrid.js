@@ -70,6 +70,13 @@ Ext.namespace( 'Ext' );
 
 function clearFilters()
 {
+	if( inMyArrayKeys( myfilters, 'query' ) )
+	{
+		SearchField.getEl().dom.value = '';
+		delete SearchField.store.baseParams['query'];
+		delete myfilters['query'];
+		delete myparams['query'];
+	}
 	if( inMyArrayKeys( myfilters, 'host' ) )
 	{
 		delete myfilters['host'];
@@ -295,6 +302,12 @@ function setClusterImagePosition()
 function deselectFilterMenu( menuItem, event )
 {
   filterValue = menuItem.text;
+
+  if( filterValue == SearchField.getEl().dom.value && inMyArrayKeys( myfilters, 'query' ) )
+  {
+    SearchField.getEl().dom.value = '';
+    delete SearchField.store.baseParams['query'];
+  }
 
   for( arkey in myfilters )
   {
