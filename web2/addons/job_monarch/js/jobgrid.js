@@ -21,7 +21,17 @@ var filterButton = new Ext.MenuButton({
 			id: 'filtermenuknop',
 			text: 'Filters',
 			disabled: true,
-			menu: filterMenu
+			menu: filterMenu,
+		      listeners:  {
+				'click': {
+					scope: this,
+					fn: function( myButton, event )
+						{
+							myButton.menu.show( myButton.getEl() );
+						}
+				}
+			}
+
 		});
 
 Ext.namespace('Ext.ux');
