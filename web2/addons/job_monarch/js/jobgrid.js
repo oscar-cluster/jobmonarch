@@ -20,6 +20,7 @@ var filterMenu = new Ext.menu.Menu({
 var filterButton = new Ext.MenuButton({
 			id: 'filtermenuknop',
 			text: 'Filters',
+			disabled: true,
 			menu: filterMenu
 		});
 
@@ -326,6 +327,15 @@ function makeFilterMenu()
   if( filterButton )
   {
     filterButton.menu = filterMenu;
+
+    if( ArraySize( myfilters ) > 0 )
+    {
+      filterButton.enable();
+    }
+    else
+    {
+      filterButton.disable();
+    }
   }
 }
 
