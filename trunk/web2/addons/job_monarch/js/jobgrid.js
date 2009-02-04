@@ -330,7 +330,7 @@ function initJobGrid() {
 	delete myparams[filterName];
 
         reloadJobStore();
-	reloadClusterImage();
+	//reloadClusterImage();
       }
       else
       {
@@ -348,7 +348,7 @@ function initJobGrid() {
         myfilters[filterName] = data;
 
         reloadJobStore();
-	reloadClusterImage();
+	//reloadClusterImage();
       }
       JobListingWindow.setTitle( filter_str );
       filter_title = true;
@@ -724,6 +724,45 @@ function ShowGraphs( Button, Event ) {
 					'click': {
 						scope: this,
 						fn: ShowGraphs
+					}
+				}
+			}),
+		new Ext.Button({
+				text: 'Clear filters',
+				tooltip: 'Clear all jobs filters',
+				iconCls: 'remove',
+				listeners: {
+					'click': {
+						scope: this,
+						fn: function()
+						{
+							if( inMyArrayKeys( myfilters, 'host' ) )
+							{
+								delete myfilters['host'];
+								delete myparams['host'];
+							}
+							if( inMyArrayKeys( myfilters, 'jid' ) )
+							{
+								delete myfilters['jid'];
+								delete myparams['jid'];
+							}
+							if( inMyArrayKeys( myfilters, 'queue' ) )
+							{
+								delete myfilters['queue'];
+								delete myparams['queue'];
+							}
+							if( inMyArrayKeys( myfilters, 'owner' ) )
+							{
+								delete myfilters['owner'];
+								delete myparams['owner'];
+							}
+							if( inMyArrayKeys( myfilters, 'status' ) )
+							{
+								delete myfilters['status'];
+								delete myparams['status'];
+							}
+							reloadJobStore();
+						}
 					}
 				}
 			}) ]
