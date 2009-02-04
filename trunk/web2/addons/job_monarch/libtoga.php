@@ -1418,15 +1418,9 @@ class ClusterImage
 				if( $hostname == $this->filters['host'] )
 				{
 					$this->selected		= $hostname;
-					$filtered_nodes[] = $hostname;
-					//$filter_checks['host']	= true;
+					$filtered_nodes[]	= $hostname;
 				}
 			}
-
-			//if( count( $mynjobs ) == 0 )
-			//{
-			//	continue;
-			//}
 
 			foreach( $mynjobs as $myjob )
 			{
@@ -1455,7 +1449,7 @@ class ClusterImage
 							}
 							else
 							{
-								if( strpos( $myj_v, $filtervalue ) !== false )
+								if( strpos( $myj_val, $filtervalue ) !== false )
 								{
 									$filter_checks['query'] = true;
 								}
