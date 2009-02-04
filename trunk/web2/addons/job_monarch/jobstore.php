@@ -258,7 +258,7 @@ function sortJobs( $jobs, $sortby, $sortorder )
                                         case "ppn":
                                                 $sorted[$jobid] = $ppn;
                                                 break;
-                                        case "nodesct":
+                                        case "nodect":
 						if( $state == 'Q' )
 						{
 							$sorted[$jobid] = $nodes;
