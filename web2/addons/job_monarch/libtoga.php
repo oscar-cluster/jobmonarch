@@ -1423,10 +1423,10 @@ class ClusterImage
 				}
 			}
 
-			if( count( $mynjobs ) == 0 )
-			{
-				continue;
-			}
+			//if( count( $mynjobs ) == 0 )
+			//{
+			//	continue;
+			//}
 
 			foreach( $mynjobs as $myjob )
 			{
