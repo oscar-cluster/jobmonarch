@@ -4,12 +4,24 @@ var JobListingEditorGrid;
 var JobListingWindow;
 var JobProxy;
 var SearchField;
+var filterButton;
 var myfilters = { };
 var myparams = { };
 var mylimit = 15;
 var ClusterImageArgs = { };
 
 var filterfields = [ "jid", "queue", "name", "owner" ];
+
+var filterMenu = new Ext.menu.Menu({
+    id: 'filterMenu',
+    items: [ new Ext.menu.Item({ text: 'Clear all', handler: clearFilters }) ]
+});
+
+var filterButton = new Ext.MenuButton({
+			id: 'filtermenuknop',
+			text: 'Filters',
+			menu: filterMenu
+		});
 
 Ext.namespace('Ext.ux');
 
@@ -55,6 +67,36 @@ Ext.extend(Ext.ux.PageSizePlugin, Ext.form.ComboBox, {
 
 Ext.namespace( 'Ext' );
 
+function clearFilters()
+{
+	if( inMyArrayKeys( myfilters, 'host' ) )
+	{
+		delete myfilters['host'];
+		delete myparams['host'];
+	}
+	if( inMyArrayKeys( myfilters, 'jid' ) )
+	{
+		delete myfilters['jid'];
+		delete myparams['jid'];
+	}
+	if( inMyArrayKeys( myfilters, 'queue' ) )
+	{
+		delete myfilters['queue'];
+		delete myparams['queue'];
+	}
+	if( inMyArrayKeys( myfilters, 'owner' ) )
+	{
+		delete myfilters['owner'];
+		delete myparams['owner'];
+	}
+	if( inMyArrayKeys( myfilters, 'status' ) )
+	{
+		delete myfilters['status'];
+		delete myparams['status'];
+	}
+	reloadJobStore();
+}
+
 function makeArrayURL( somearr )
 {
   filter_url = '';
@@ -93,6 +135,18 @@ function inMyArray( arr, someval )
     }
   }
   return false;
+}
+
+function ArraySize( arr )
+{
+  count = 0;
+
+  for( arkey in arr )
+  {
+    count = count + 1;
+  }
+
+  return count;
 }
 
 function inMyArrayValues( arr, someval )
@@ -235,6 +289,44 @@ function setClusterImagePosition()
 {
   ci_x = (window.innerWidth - ClusterImageWindow.getSize()['width'] - 20); 
   ClusterImageWindow.setPosition( ci_x, 10 );
+}
+
+function deselectFilterMenu( menuItem, event )
+{
+  filterValue = menuItem.text;
+
+  for( arkey in myfilters )
+  {
+    if( myfilters[arkey] == filterValue )
+    {
+      delete myfilters[arkey];
+      delete myparams[arkey];
+    }
+  }
+  reloadJobStore();
+}
+
+function makeFilterMenu()
+{
+  var filterMenu = new Ext.menu.Menu({
+      id: 'filterMenu',
+      items: [ new Ext.menu.Item({ text: 'Clear all', handler: clearFilters }) ]
+  });
+
+  if( ArraySize( myfilters ) > 0 )
+  {
+    filterMenu.addSeparator();
+  }
+
+  for( arkey in myfilters )
+  {
+    filterMenu.add( new Ext.menu.CheckItem({ text: myfilters[arkey], handler: deselectFilterMenu, checked: true }) );
+  }
+
+  if( filterButton )
+  {
+    filterButton.menu = filterMenu;
+  }
 }
 
 function reloadClusterImage()
@@ -430,35 +522,45 @@ function initJobGrid() {
 						delete myfilters['query'];
 						delete myparams['query'];
 					}
-				}
-			}
-		},
-      		'load':
-		{
-      			scope: this,
-			fn: function()
-			{
-				if( SearchField )
-				{
-					search_value = SearchField.getEl().dom.value;
-
-					if( search_value != '' )
+					else
 					{
 						myfilters['query']	= search_value;
 					}
 
+					makeFilterMenu();
 					reloadClusterImage();
 
 					filter_str = myparams.c + ' Jobs Overview' + makeFilterString();
 					JobListingWindow.setTitle( filter_str );
-
-					if( search_value != '' )
-					{
-						delete myfilters['query'];
-					}
 				}
 			}
-		}
+		} //,
+      		//'load':
+		//{
+      		//	scope: this,
+		//	fn: function()
+		//	{
+		//		if( SearchField )
+		//		{
+		//			search_value = SearchField.getEl().dom.value;
+
+		//			if( search_value != '' )
+		//			{
+		//				myfilters['query']	= search_value;
+		//			}
+
+		//			reloadClusterImage();
+
+		//			filter_str = myparams.c + ' Jobs Overview' + makeFilterString();
+		//			JobListingWindow.setTitle( filter_str );
+
+		//			if( search_value != '' )
+		//			{
+		//				delete myfilters['query'];
+		//			}
+		//		}
+		//	}
+		//}
 	}
     });
    
@@ -697,6 +799,7 @@ function ShowGraphs( Button, Event ) {
 	win.show(Button);
 }
 
+
   JobListingEditorGrid =  new Ext.grid.EditorGridPanel({
       id: 'JobListingEditorGrid',
       store: JobsDataStore,
@@ -727,45 +830,7 @@ function ShowGraphs( Button, Event ) {
 					}
 				}
 			}),
-		new Ext.Button({
-				text: 'Clear filters',
-				tooltip: 'Clear all jobs filters',
-				iconCls: 'remove',
-				listeners: {
-					'click': {
-						scope: this,
-						fn: function()
-						{
-							if( inMyArrayKeys( myfilters, 'host' ) )
-							{
-								delete myfilters['host'];
-								delete myparams['host'];
-							}
-							if( inMyArrayKeys( myfilters, 'jid' ) )
-							{
-								delete myfilters['jid'];
-								delete myparams['jid'];
-							}
-							if( inMyArrayKeys( myfilters, 'queue' ) )
-							{
-								delete myfilters['queue'];
-								delete myparams['queue'];
-							}
-							if( inMyArrayKeys( myfilters, 'owner' ) )
-							{
-								delete myfilters['owner'];
-								delete myparams['owner'];
-							}
-							if( inMyArrayKeys( myfilters, 'status' ) )
-							{
-								delete myfilters['status'];
-								delete myparams['status'];
-							}
-							reloadJobStore();
-						}
-					}
-				}
-			}) ]
+		filterButton ]
     });
 
   ClusterImageWindow = new Ext.Window({
