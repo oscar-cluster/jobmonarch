@@ -27,19 +27,23 @@ set_time_limit(0);
 
 include_once "./libtoga.php";
 
-if ( !empty( $_GET ) ) {
+if ( !empty( $_GET ) )
+{
         extract( $_GET );
 }
 
-function checkSessionData() {
-
+function checkSessionData()
+{
 	global $_SESSION;
 
 	session_start();
 
-	if( isset( $_SESSION["data"] ) ) {
-		$myxml_data	= &$_SESSION["data"];
-	} else {
+	if( isset( $_SESSION['data'] ) )
+	{
+		$myxml_data	= &$_SESSION['data'];
+	}
+	else
+	{
 		$myxml_data	= 0;
 	}
 
@@ -47,25 +51,23 @@ function checkSessionData() {
 		$ds             = new DataSource();
 		$myxml_data     = $ds->getData();
 
-		//print_f( "%s\n", $myxml_data );
 	}
 	return $myxml_data;
 }
 
 
-$httpvars = new HTTPVariables( $HTTP_GET_VARS, $_GET );
-$view = $httpvars->getHttpVar( "view" );
-$host = $httpvars->getHttpVar( "host" );
-$query = $httpvars->getHttpVar( "query" );
-$clustername = $httpvars->getClusterName();
+$httpvars	= new HTTPVariables( $HTTP_GET_VARS, $_GET );
+$view		= $httpvars->getHttpVar( "view" );
+$host		= $httpvars->getHttpVar( "host" );
+$query		= $httpvars->getHttpVar( "query" );
+$clustername	= $httpvars->getClusterName();
 
-if( isset($jid) && ($jid!='')) $filter[jid]=$jid;
-if( isset($state) && ($state!='')) $filter[state]=$state;
-if( isset($owner) && ($owner!='')) $filter[owner]=$owner;
-if( isset($queue) && ($queue!='')) $filter[queue]=$queue;
-if( isset($host) && ($host!='')) $filter[host]=$host;
-if( isset($query) && ($query!='')) $filter[query]=$query;
-//printf("host = %s\n", $filter[host] );
+if( isset($jid) && ($jid!='')) $filter['jid']=$jid;
+if( isset($state) && ($state!='')) $filter['state']=$state;
+if( isset($owner) && ($owner!='')) $filter['owner']=$owner;
+if( isset($queue) && ($queue!='')) $filter['queue']=$queue;
+if( isset($host) && ($host!='')) $filter['host']=$host;
+if( isset($query) && ($query!='')) $filter['query']=$query;
 
 function drawHostImage() {
 
@@ -79,9 +81,13 @@ function drawHostImage() {
 	$data_gatherer->parseXML( $myxml_data );
 
 	if( $data_gatherer->isJobmonRunning() )
+	{
 		$ic = new HostImage( $data_gatherer, $clustername, $hostname );
+	}
 	else
+	{
 		$ic = new EmptyImage();
+	}
 
 	$ic->draw();
 }
@@ -97,10 +103,13 @@ function drawSmallClusterImage() {
 
 	$data_gatherer->parseXML( $myxml_data );
 
-	if( $data_gatherer->isJobmonRunning() ) {
+	if( $data_gatherer->isJobmonRunning() )
+	{
 		$ic = new ClusterImage( $myxml_data, $clustername );
 		$ic->setSmall();
-	} else {
+	}
+	else
+	{
 		$ic = new EmptyImage();
 	}
 
@@ -116,32 +125,11 @@ function drawBigClusterImage() {
 	$ic = new ClusterImage( $myxml_data, $clustername );
 	$ic->setBig();
 
-	if( isset( $filter ) ) {
-		foreach( $filter as $filtername=>$filtervalue ) {
-			//printf("filter %s,%s\n", $filtername, $filtervalue);
-			switch( $filtername ) {
-
-				case "jid":
-					$ic->setFilter( 'jobid', $filtervalue );
-					break;
-				case "owner":
-					$ic->setFilter( 'owner', $filtervalue);
-					break;
-				case "queue":
-					$ic->setFilter( 'queue', $filtervalue);
-					break;
-				case "state":
-					$ic->setFilter( 'status', $filtervalue);
-					break;
-				case "host":
-					$ic->setFilter( 'host', $filtervalue);
-					break;
-				case "query":
-					$ic->setFilter( 'query', $filtervalue);
-					break;
-				default:
-					break;
-			}
+	if( isset( $filter ) )
+	{
+		foreach( $filter as $filtername=>$filtervalue )
+		{
+			$ic->setFilter( $filtername, $filtervalue );
 		}
 	}
 	$ic->draw();

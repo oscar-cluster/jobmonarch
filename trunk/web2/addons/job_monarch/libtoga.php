@@ -1401,95 +1401,88 @@ class ClusterImage
 	{
 		$filtered_nodes = array();
 
+		$filter_checks	= array();
+
 		foreach( $nodes as $node )
 		{
-			$hostname = $node->getHostname();
+			$hostname	= $node->getHostname();
+			$mynjobs	= $node->getJobs();
 
-			$addhost = 1;
-
-			if( count( $this->filters ) > 0 )
+			foreach( $this->filters as $filtername => $filtervalue )
 			{
-				$mynjobs = $node->getJobs();
+				$filter_checks[$filtername] = false;
+			}
 
-				if( $filtername == 'host' && $hostname == $filtervalue )
+			if( array_key_exists( 'host', $this->filters ) )
+			{
+				if( $hostname == $this->filters['host'] )
 				{
-					$addhost	= 1;
-					$this->selected	= $hostname;
+					$this->selected		= $hostname;
+					$filtered_nodes[] = $hostname;
+					//$filter_checks['host']	= true;
 				}
-				else if( count( $mynjobs ) > 0 )
+			}
+
+			if( count( $mynjobs ) == 0 )
+			{
+				continue;
+			}
+
+			foreach( $mynjobs as $myjob )
+			{
+				foreach( $this->filters as $filtername => $filtervalue )
 				{
-					foreach( $mynjobs as $myjob )
+					if( $filtername == 'jid' )
 					{
-						foreach( $this->filters as $filtername => $filtervalue )
+						if( $myjob == $filtervalue )
 						{
-							if( $filtername!=null && $filtername!='' )
+							$filter_checks['jid'] = true;
+						}
+					}
+					if( $filtername == 'query' )
+					{
+						foreach( $jobs[$myjob] as $myj_attr => $myj_val )
+						{
+							if( is_array( $myj_val ) )
 							{
-								if( $filtername == 'jobid' )
+								foreach( $myj_val as $myj_v )
 								{
-									if ( $myjob != $filtervalue )
+									if( strpos( $myj_v, $filtervalue ) !== false )
 									{
-										$addhost = 0;
-										break;
-									}
-									else
-									{
-										$addhost = 1;
-										break;
+										$filter_checks['query'] = true;
 									}
 								}
-								else
+							}
+							else
+							{
+								if( strpos( $myj_v, $filtervalue ) !== false )
 								{
-									if( $jobs[$myjob][$filtername] == $filtervalue )
-									{
-										$addhost = 1;
-										continue;
-									}
-									else if( $jobs[$myjob][$filtername] != $filtervalue )
-									{
-										$addhost = 0;
-									}
-									if( $filtername == 'query' )
-									{
-										foreach( $jobs[$myjob] as $myj_attr => $myj_val )
-										{
-											if(!is_array( $myj_val ) )
-											{
-												if( strpos( $myj_val, $filtervalue ) !== false )
-												{
-													$addhost = 1;
-													continue;
-												}
-											}
-											else
-											{
-												foreach( $myj_val as $myj_v )
-												{
-													if( strpos( $myj_v, $filtervalue ) !== false )
-													{
-														$addhost = 1;
-														continue;
-													}
-												}
-											}
-											if( strpos( $myjob, $filtervalue ) !== false )
-											{
-												$addhost	= 1;
-												continue;
-											}
-										}
-									}
+									$filter_checks['query'] = true;
 								}
 							}
 						}
 					}
-				}
-				else
-				{
-					$addhost = 0;
+					if( $filtername != 'host' )
+					{
+						if( $jobs[$myjob][$filtername] == $filtervalue )
+						{
+							$filter_checks[$filtername] = true;
+						}
+					}
 				}
 			}
 
-			if( $addhost )
+			$addhost	= true;
+
+			foreach( $filter_checks as $c_filtername => $c_filterfound )
+			{
+				if( ! $c_filterfound )
+				{
+					$addhost	= false;
+				}
+			}
+
+			if( $addhost == true )
 			{
 				$filtered_nodes[] = $hostname;
 			}
