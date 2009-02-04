@@ -366,14 +366,13 @@ function filterJobs( $jobs )
 						$keepjob	= false;
 					}
 				}
-
-				if( $host )
+				else if( $host )
 				{
 					if( $state == 'R' )
 					{
-						$jnodes = $jobattrs['nodes'];
+						$jnodes		= $jobattrs['nodes'];
 
-						$keepjob = false;
+						$keepjob	= false;
 
 						foreach( $jnodes as $jnode)
 						{
@@ -385,7 +384,7 @@ function filterJobs( $jobs )
 					}
 					else
 					{
-						$keepjob = false;
+						$keepjob	= false;
 					}
 				}
 				if( $owner )
