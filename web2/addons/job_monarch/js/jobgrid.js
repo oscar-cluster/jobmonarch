@@ -414,6 +414,18 @@ function initJobGrid() {
 
   Ext.QuickTips.init();
 
+  function jobRowSelect( selModel ) 
+  {
+    if( selModel.hasSelection() )
+    {
+      showGraphsButton.enable();
+    }
+    else
+    {
+      showGraphsButton.disable();
+    }
+  }
+
   function jobCellClick(grid, rowIndex, columnIndex, e)
   {
     var record = grid.getStore().getAt(rowIndex);  // Get the Record
@@ -822,6 +834,18 @@ function ShowGraphs( Button, Event ) {
 	win.show(Button);
 }
 
+  showGraphsButton = new Ext.Button({
+				text: 'Show graphs',
+				tooltip: 'Show node graphs for selected jobs',
+				iconCls: 'option',
+				disabled: true,
+				listeners: {
+					'click': {
+						scope: this,
+						fn: ShowGraphs
+					}
+				}
+			});
 
   JobListingEditorGrid =  new Ext.grid.EditorGridPanel({
       id: 'JobListingEditorGrid',
@@ -842,17 +866,7 @@ function ShowGraphs( Button, Event ) {
 		plugins: [new Ext.ux.PageSizePlugin()]
             }),
       tbar: [ SearchField,
-		new Ext.Button({
-				text: 'Show graphs',
-				tooltip: 'Show node graphs for selected jobs',
-				iconCls: 'option',
-				listeners: {
-					'click': {
-						scope: this,
-						fn: ShowGraphs
-					}
-				}
-			}),
+		showGraphsButton,
 		filterButton ]
     });
 
@@ -935,4 +949,5 @@ function ShowGraphs( Button, Event ) {
     });
 
   JobListingEditorGrid.addListener( 'cellclick', jobCellClick );
+  CheckJobs.addListener( 'selectionchange', jobRowSelect );
 }
