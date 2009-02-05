@@ -47,6 +47,49 @@ var filterButton = new Ext.MenuButton(
 	}
 });
 
+function checkGraphWindowOption( item, checked )
+{
+	alert('Item Check', 'You {1} the "{0}" menu item.', item.text, checked ? 'checked' : 'unchecked');
+}
+
+var graphMenu = new Ext.menu.Menu(
+{
+	id:	'graphMenu',
+	items:
+	[{
+		text:		'Each job in new window',
+		checked:	false,
+		group:		'graphwindow',
+		handler:	checkGraphWindowOption
+	},{
+		text:		'Each job in a seperate tab, in new window',
+		checked:	true,
+		group:		'graphwindow',
+		handler:	checkGraphWindowOption
+	},{
+		text:		'Each job in a seperate tab, in last opened window',
+		checked:	false,
+		group:		'graphwindow',
+		handler:	checkGraphWindowOption
+	}]
+});
+
+var showGraphsButton = new Ext.MenuButton(
+{
+	id:		'showgraphbutton',
+	text:		'Show graphs',
+	disabled:	true,
+	menu:		graphMenu,
+	listeners:
+	{
+		'click':
+		{
+			scope:	this,
+			fn:	ShowGraphs
+		}
+	}
+});
+
 Ext.namespace('Ext.ux');
 
 Ext.ux.PageSizePlugin = function()
@@ -900,24 +943,6 @@ function ShowGraphs( Button, Event )
 	NodesDataStore.load();
 	win.show( Button );
 }
-
-var showGraphsButton = 
-
-	new Ext.Button(
-	{
-		text:		'Show graphs',
-		tooltip:	'Show node graphs for selected jobs',
-		iconCls:	'option',
-		disabled:	true,
-		listeners: 
-		{
-			'click': 
-			{
-				scope:	this,
-				fn:	ShowGraphs
-			}
-		}
-	});
 
 var JobListingEditorGrid =
 
