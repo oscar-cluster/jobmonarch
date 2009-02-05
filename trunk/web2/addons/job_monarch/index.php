@@ -32,11 +32,10 @@ global $r, $range;
 
 include_once "./libtoga.php";
 
-if ( !empty( $_GET ) ) {
+if ( !empty( $_GET ) )
+{
 	extract( $_GET );
 }
-
-//printf( "r2%s\n", $range );
 
 global $GANGLIA_PATH;
 chdir( $GANGLIA_PATH );
@@ -54,50 +53,48 @@ if( !isset($view) ) $view = "overview";
 if( !isset($sortorder) ) $sortorder = "asc";
 if( !isset($sortby) ) $sortby = "id";
 
-if( isset( $filterorder ) && ($filterorder!='') ) {
+if( isset( $filterorder ) && ($filterorder!='') )
+{
 	$myfilter_fields = explode( ",", $filterorder );
-} else {
-	if( isset($queue) && ($queue!='')) $filter[queue]=$queue;
-	if( isset($state) && ($state!='')) $filter[state]=$state;
-	if( isset($user) && ($user!='')) $filter[user]=$user;
-	if( isset($id) && ($id!='')) $filter[id]=$id;
+}
+else
+{
+	if( isset($queue) && ($queue!='')) $filter['queue']=$queue;
+	if( isset($state) && ($state!='')) $filter['state']=$state;
+	if( isset($user) && ($user!='')) $filter['user']=$user;
+	if( isset($id) && ($id!='')) $filter['id']=$id;
 }
 
 // Fill filter array in order they were picked by user
-if( isset($myfilter_fields) ) {
-
-	foreach( $myfilter_fields as $myfilter ) {
-
-		switch( $myfilter ) {
-
+if( isset($myfilter_fields) )
+{
+	foreach( $myfilter_fields as $myfilter )
+	{
+		switch( $myfilter )
+		{
 			case "queue":
-				$filter[queue]=$queue;
+				$filter['queue']=$queue;
 				break;
 			case "state":
-				$filter[state]=$state;
+				$filter['state']=$state;
 				break;
 			case "user":
-				$filter[user]=$user;
+				$filter['user']=$user;
 				break;
 			case "id":
-				$filter[id]=$id;
+				$filter['id']=$id;
 				break;
 		}
 	}
 }
 
-//if( isset($queue) && ($queue!='')) $filter[queue]=$queue;
-//if( isset($state) && ($state!='')) $filter[state]=$state;
-//if( isset($user) && ($user!='')) $filter[user]=$user;
-//if( isset($id) && ($id!='')) $filter[id]=$id;
-
-function epochToDatetime( $epoch ) {
-
+function epochToDatetime( $epoch )
+{
         return strftime( "%d-%m-%Y %H:%M:%S", $epoch );
 }
 
-function makeHeader( $page_call, $title, $longtitle ) {
-
+function makeHeader( $page_call, $title, $longtitle )
+{
 	global $tpl, $grid, $context, $initgrid;
 	global $jobrange, $jobstart;
 	global $page, $gridwalk, $clustername;
@@ -119,19 +116,24 @@ function makeHeader( $page_call, $title, $longtitle ) {
 	$header = "header";
 
 	# Maintain our path through the grid tree.
-	$me = $self . "@" . $grid[$self][AUTHORITY];
+	$me = $self . "@" . $grid[$self]['AUTHORITY'];
 
 	$gridstack = array();
 	$gridstack[] = $me;
 
-	if ($gridwalk=="fwd") {
+	if ($gridwalk=="fwd")
+	{
 		# push our info on gridstack, format is "name@url>name2@url".
-		if (end($gridstack) != $me) {
+		if (end($gridstack) != $me)
+		{
 			$gridstack[] = $me;
 		}
-	} else if ($gridwalk=="back") {
+	}
+	else if ($gridwalk=="back") 
+	{
 		# pop a single grid off stack.
-		if (end($gridstack) != $me) {
+		if (end($gridstack) != $me) 
+		{
 			array_pop($gridstack);
 		}
 	}
@@ -139,7 +141,8 @@ function makeHeader( $page_call, $title, $longtitle ) {
 	$gridstack_str = join(">", $gridstack);
 	$gridstack_url = rawurlencode($gridstack_str);
 
-	if ($initgrid or $gridwalk) {
+	if ($initgrid or $gridwalk) 
+	{
 		# Use cookie so we dont have to pass gridstack around within this site.
 		# Cookie values are automatically urlencoded. Expires in a day.
 		setcookie("gs", $gridstack_str, time() + 86400);
@@ -151,7 +154,8 @@ function makeHeader( $page_call, $title, $longtitle ) {
 
 	# Setup a redirect to a remote server if you choose a grid from pulldown menu. Tell
 	# destination server that we're walking foward in the grid tree.
-	if (strstr($clustername, "http://")) {
+	if (strstr($clustername, "http://")) 
+	{
 		$tpl->assign("refresh", "0");
 		$tpl->assign("redirect", ";URL=$clustername?gw=fwd&gs=$gridstack_url");
 		echo "<h2>Redirecting, please wait...</h2>";
@@ -193,7 +197,8 @@ function makeHeader( $page_call, $title, $longtitle ) {
 	# Build the node_menu
 	$node_menu = "";
 
-	if ($parentgrid) {
+	if ($parentgrid) 
+	{
 		$node_menu .= "<B>$parentgrid $meta_designator</B> ";
 		$node_menu .= "<B>&gt;</B>\n";
 	}
@@ -204,16 +209,20 @@ function makeHeader( $page_call, $title, $longtitle ) {
 	$node_menu .= "<B>&gt;</B>\n";
 
 	if ($physical)
+	{
 		$node_menu .= hiddenvar("p", $physical);
+	}
 
-	if ( $clustername ) {
+	if ( $clustername ) 
+	{
 		$url = rawurlencode($clustername);
 		$node_menu .= "<B><A HREF=\"../../?c=".rawurlencode($clustername)."\">$clustername</A></B> ";
 		$node_menu .= "<B>&gt;</B>\n";
 		$node_menu .= hiddenvar("c", $clustername);
 	}
 
-	if (!count($metrics)) {
+	if (!count($metrics)) 
+	{
 		echo "<h4>Cannot find any metrics for selected cluster \"$clustername\", exiting.</h4>\n";
 		echo "Check ganglia XML tree (telnet $ganglia_ip $ganglia_port)\n";
 		exit;
@@ -238,21 +247,21 @@ function makeHeader( $page_call, $title, $longtitle ) {
 
 	$node_menu .= "<B><A HREF=\"./?c=".rawurlencode($clustername)."\">Joblist</A></B> ";
 
-	if( isset( $hostname ) && ( $view != 'host' ) ) {
-
+	if( isset( $hostname ) && ( $view != 'host' ) ) 
+	{
 		$node_menu .= "<B>&gt;</B>\n";
 		$href = "<A HREF=\"./?c=".rawurlencode($clustername)."&h=".$hostname."\">";
 		$node_menu .= "<B>$href";
 		$node_menu .= "host: $hostname</A></B> ";
 	}
 
-	if( count( $filter ) > 0 && $view != "search" ) {
-
+	if( count( $filter ) > 0 && $view != "search" ) 
+	{
 		$my_ct = 1;
 		$filter_nr = count( $filter );
 
-		foreach( $filter as $filtername=>$filterval ) {
-
+		foreach( $filter as $filtername=>$filterval ) 
+		{
 			$node_menu .= "<B>&gt;</B>\n";
 
 			$href = "<A HREF=\"./?c=".rawurlencode($clustername);
@@ -261,9 +270,10 @@ function makeHeader( $page_call, $title, $longtitle ) {
 			$my_filterorder = "";
 			$my_filters = array_keys( $filter );
 
-			foreach( $n_filter as $n_filtername=>$n_filterval ) {
-
-				if( $temp_ct < $my_ct ) {
+			foreach( $n_filter as $n_filtername=>$n_filterval ) 
+			{
+				if( $temp_ct < $my_ct ) 
+				{
 					$href .= "&". $n_filtername . "=" . $n_filterval;
 
 					if( $my_filterorder == "" )
@@ -285,28 +295,23 @@ function makeHeader( $page_call, $title, $longtitle ) {
 		}
 	}
 
-	//$m = $metricname;
-
-
 	$tpl->gotoBlock( "_ROOT" );
 	$tpl->assignGlobal("view", $view);
 
-
-	if( array_key_exists( "id", $filter ) or isset($hostname) ) {
-
+	if( array_key_exists( "id", $filter ) or isset($hostname) ) 
+	{
 		$range = "job";
-
-		//print_r( $context_metrics );
 
 		if( $page_call != "host_view" )
 		{
-
-			if (is_array($context_metrics) ) {
+			if (is_array($context_metrics) ) 
+			{
 				$metric_menu = "<B>Metric</B>&nbsp;&nbsp;"
 					."<SELECT NAME=\"m\" OnChange=\"toga_form.submit();\">\n";
 
 				sort($context_metrics);
-				foreach( $context_metrics as $k ) {
+				foreach( $context_metrics as $k ) 
+				{
 					$url = rawurlencode($k);
 					$metric_menu .= "<OPTION VALUE=\"$url\" ";
 					if ($k == $metricname )
@@ -320,19 +325,23 @@ function makeHeader( $page_call, $title, $longtitle ) {
 
 		$tpl->assign("metric_menu", $metric_menu );
 
-		if( $view == "search" or $view == "host" ) {
+		if( $view == "search" or $view == "host" ) 
+		{
 			$tpl->newBlock("timeperiod");
-			if( is_numeric( $period_start ) ) {
+			if( is_numeric( $period_start ) ) 
+			{
 				$period_start = epochToDatetime( $period_start );
 			}
-			if( is_numeric( $period_stop ) ) {
+			if( is_numeric( $period_stop ) ) 
+			{
 				$period_stop = epochToDatetime( $period_stop );
 			}
 			$tpl->assign("period_start", $period_start );
 			$tpl->assign("period_stop", $period_stop );
 			$tpl->assign("hostname", $hostname );
 
-			if( $view == "host" ) {
+			if( $view == "host" ) 
+			{
 				$tpl->newBlock("hostview");
 				$tpl->assign("job_start", $job_start );
 				$tpl->assign("job_stop", $job_stop );
@@ -340,8 +349,6 @@ function makeHeader( $page_call, $title, $longtitle ) {
 		} 
 
 	}
-
-	//$ex_fn = $tpl->getVarValue( "_ROOT", "form_name" );
 
 	if( $view != "search" )
 	{
@@ -353,7 +360,8 @@ function makeHeader( $page_call, $title, $longtitle ) {
 		$context_ranges[]="job";
 
 		$range_menu = "<B>Last</B>&nbsp;&nbsp;" ."<SELECT NAME=\"r\" OnChange=\"toga_form.submit();\">\n";
-		foreach ($context_ranges as $v) {
+		foreach ($context_ranges as $v) 
+		{
 			$url=rawurlencode($v);
 			$range_menu .= "<OPTION VALUE=\"$url\" ";
 			if ($v == $range)
@@ -366,19 +374,21 @@ function makeHeader( $page_call, $title, $longtitle ) {
 
 	}
 
-	if( $view == "search" or $view == "host" ) {
-
+	if( $view == "search" or $view == "host" ) 
+	{
 		$node_menu .= "<B>&gt;</B>\n";
 		$node_menu .= "<B>Jobarchive</B> ";
 		$form_name = "archive_search_form";
 		$tpl->assignGlobal("form_name", $form_name );
-
-	} else {
+	}
+	else
+	{
 		$form_name = "toga_form";
 		$tpl->assignGlobal("form_name", $form_name );
 	}
 
-	if( $JOB_ARCHIVE && $page_call == 'overview' ) {
+	if( $JOB_ARCHIVE && $page_call == 'overview' ) 
+	{
 		$tpl->newBlock( "search" );
 		$tpl->assignGlobal( "cluster_url", rawurlencode($clustername) );
 		$tpl->assignGlobal( "cluster", $clustername );
@@ -394,17 +404,21 @@ function makeHeader( $page_call, $title, $longtitle ) {
 	header ("Pragma: no-cache");                          # HTTP/1.0
 }
 
-function makeFooter() {
+function makeFooter() 
+{
 	global $tpl, $version, $parsetime, $monarchversion;
 
 	$tpl->gotoBlock( "_ROOT" );
 	$tpl->assign("webfrontend-version",$version["webfrontend"]);
 	$tpl->assign("monarch-version", $monarchversion);
 
-	if ($version["gmetad"]) {
+	if ($version["gmetad"]) 
+	{
 		$tpl->assign("webbackend-component", "gmetad");
 		$tpl->assign("webbackend-version",$version["gmetad"]);
-	} else if ($version["gmond"]) {
+	} 
+	else if ($version["gmond"]) 
+	{
 		$tpl->assign("webbackend-component", "gmond");
 		$tpl->assign("webbackend-version", $version["gmond"]);
 	}
@@ -412,21 +426,22 @@ function makeFooter() {
 	$tpl->assign("parsetime", sprintf("%.4f", $parsetime) . "s");
 }
 
-function includeSearchpage() {
+function includeSearchpage() 
+{
 	global $tpl;
 
 	$tpl->assignInclude( "main", "templates/search.tpl" );
-
 }
 
-function includeOverview() {
+function includeOverview() 
+{
 	global $tpl;
 
 	$tpl->assignInclude( "main", "templates/overview.tpl" );
 }
 
-function includeHostPage() {
-
+function includeHostPage() 
+{
 	global $tpl;
 
 	$tpl->assignInclude( "main", "templates/host_view.tpl" );
@@ -436,13 +451,13 @@ $tpl = new TemplatePower( "templates/index.tpl" );
 
 $tpl->assignInclude( "header", "templates/header.tpl" );
 
-if( isset( $h ) and $h != '' ) {
+if( isset( $h ) and $h != '' ) 
+{
 	$hostname = $h;
-	//$view = "host";
 }
 
-switch( $view ) {
-
+switch( $view ) 
+{
 	case "overview":
 
 		includeOverview();
@@ -469,12 +484,11 @@ $tpl->prepare();
 
 $longtitle = "Batch Report :: Powered by Job Monarch!";
 $title = "Batch Report";
-//makeHeader( 'index' );
 $tpl->assign("cluster_url", rawurlencode($clustername) );
 $tpl->assign("cluster", $clustername );
 
-switch( $view ) {
-
+switch( $view ) 
+{
 	case "overview":
 
 		include "./overview.php";
