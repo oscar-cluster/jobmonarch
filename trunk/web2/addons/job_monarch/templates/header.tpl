@@ -13,31 +13,34 @@
 <script type="text/javascript" src="./lib/extjs/searchfield.js"></script>
 <script type="text/javascript" src="./js/monarch.js"></script>
 <script type="text/javascript">
-Ext.onReady( function(){
-  initJobGrid();
-  JobProxy.on('beforeload', function(p, params) 
-    {
-        params.c = "{cluster}";
-	newparams = joinMyArray( params, myfilters );
-	myparams = newparams;
-	params = newparams;
-    });
 
-  ClusterImageArgs['{session_name}'] = '{session_id}';
-  ClusterImageArgs['c'] = '{cluster}';
+Ext.onReady( function()
+{
+	Ext.QuickTips.init();
 
-  ClusterImageWindow.html = '<IMG ID="clusterimage" SRC="{clusterimage}" USEMAP="#MONARCH_CLUSTER_BIG" BORDER="0">';
-  ClusterImageWindow.show();
-  reloadClusterImage();
+	JobProxy.on('beforeload', function(p, params) 
+	{
+		params.c	= "{cluster}";
+		newparams	= joinMyArray( params, myfilters );
+		myparams	= newparams;
+		params		= newparams;
+	});
 
-  JobListingWindow.setTitle( "{cluster} Jobs Overview" );
-  JobListingWindow.show();
-  reloadJobStore();
+	ClusterImageArgs['{session_name}']	= '{session_id}';
+	ClusterImageArgs['c']			= '{cluster}';
 
-  GraphSummaryWindow.show();
+	ClusterImageWindow.html			= '<IMG ID="clusterimage" SRC="{clusterimage}" USEMAP="#MONARCH_CLUSTER_BIG" BORDER="0">';
+	ClusterImageWindow.show();
+	reloadClusterImage();
 
-  Ext.get( 'rjqjgraph' ).update( '<IMG ID="rjqj_graph" SRC="{rjqj_graph}" BORDER=0>' );
-  Ext.get( 'pie' ).update( '<IMG ID="pie" SRC="{pie}" BORDER=0>' );
+	JobListingWindow.setTitle( "{cluster} Jobs Overview" );
+	JobListingWindow.show();
+	reloadJobStore();
+
+	GraphSummaryWindow.show();
+
+	Ext.get( 'rjqjgraph' ).update( '<IMG ID="rjqj_graph" SRC="{rjqj_graph}" BORDER=0>' );
+	Ext.get( 'pie' ).update( '<IMG ID="pie" SRC="{pie}" BORDER=0>' );
 });
 </script>
 
