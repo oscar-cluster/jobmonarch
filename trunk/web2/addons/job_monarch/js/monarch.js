@@ -22,6 +22,9 @@ var ClusterImageArgs = { };
 
 var filterfields = [ "jid", "queue", "name", "owner" ];
 
+var graphWindowBehaviour = 'tabbed-new-window';
+var previousGraphWindow;
+
 var filterMenu = new Ext.menu.Menu(
 {
 	id:	'filterMenu',
@@ -32,6 +35,7 @@ var filterButton = new Ext.MenuButton(
 {
 	id:		'filtermenuknop',
 	text:		'Filters',
+	toolip:		'Click to change filter options',
 	disabled:	true,
 	menu:		filterMenu,
 	listeners:
@@ -40,7 +44,7 @@ var filterButton = new Ext.MenuButton(
 		{
 			scope:	this,
 			fn:	function( myButton, event )
-				{
+				{	// immediatly show menu when button is clicked
 					myButton.menu.show( myButton.getEl() );
 				}
 		}
@@ -49,7 +53,7 @@ var filterButton = new Ext.MenuButton(
 
 function checkGraphWindowOption( item, checked )
 {
-	alert('Item Check', 'You {1} the "{0}" menu item.', item.text, checked ? 'checked' : 'unchecked');
+	graphWindowBehaviour	= item.id;
 }
 
 var graphMenu = new Ext.menu.Menu(
@@ -57,16 +61,19 @@ var graphMenu = new Ext.menu.Menu(
 	id:	'graphMenu',
 	items:
 	[{
+		id:		'new-window',
 		text:		'Each job in new window',
 		checked:	false,
 		group:		'graphwindow',
 		handler:	checkGraphWindowOption
 	},{
+		id:		'tabbed-new-window',
 		text:		'Each job in a seperate tab, in new window',
 		checked:	true,
 		group:		'graphwindow',
 		handler:	checkGraphWindowOption
 	},{
+		id:		'tabbed-prev-window',
 		text:		'Each job in a seperate tab, in last opened window',
 		checked:	false,
 		group:		'graphwindow',
@@ -811,68 +818,55 @@ SearchField	= new Ext.app.SearchField(
 			width:	200
 		});
 
-NodesDataStore = new Ext.data.Store(
+function createNodesDataStore( cluster, jid )
 {
-	id: 'NodesDataStore',
-	proxy: JobProxy,
-	autoLoad: false,
-	baseParams: { task: "GETNODES" },
-	reader: new Ext.data.JsonReader(
-	{
-		root: 'results',
-		totalProperty: 'total',
-		id: 'id'
-	},[
-		{name: 'c', type: 'string', mapping: 'c'},
-		{name: 'h', type: 'string', mapping: 'h'},
-		{name: 'x', type: 'string', mapping: 'x'},
-		{name: 'v', type: 'string', mapping: 'v'},
-		{name: 'l', type: 'string', mapping: 'l'},
-		{name: 'jr', type: 'string', mapping: 'jr'},
-		{name: 'js', type: 'string', mapping: 'js'}
-	]),
-	listeners: 
-	{
-		'beforeload': 
+	nodesDataStore =
+
+		new Ext.data.Store(
 		{
-			scope: this,
-			fn: 
-			
-			function() 
+			//id:		'NodesDataStore',
+			proxy:		JobProxy,
+			autoLoad:	false,
+			baseParams:
 			{
-				var jids;
+				'task':		"GETNODES",
+				'c':		cluster,
+				'jid':		jid
+			},
+			reader: new Ext.data.JsonReader(
+			{
+				root:		'results',
+				totalProperty:	'total',
+				id:		'id'
+			},[
+				{name: 'c', type: 'string', mapping: 'c'},
+				{name: 'h', type: 'string', mapping: 'h'},
+				{name: 'x', type: 'string', mapping: 'x'},
+				{name: 'v', type: 'string', mapping: 'v'},
+				{name: 'l', type: 'string', mapping: 'l'},
+				{name: 'jr', type: 'string', mapping: 'jr'},
+				{name: 'js', type: 'string', mapping: 'js'}
+			])
+		});
 
-				var row_records = CheckJobs.getSelections();
+	return nodesDataStore;
+}
 
-				for(var i=0; i<row_records.length; i++ )
-				{
-					rsel = row_records[i];
-					if( !jids )
-					{
-						jids = rsel.get('jid');
-					}
-					else
-					{
-						jids = jids + ',' + rsel.get('jid');
-					}
-				}
-				NodesDataStore.baseParams.jids	= jids;
-				NodesDataStore.baseParams.c	= myparams.c;
-			}
-		}
-	}
-});
-
-function ShowGraphs( Button, Event ) 
+function createGraphView( store, jid )
 {
-	var GraphView =
+	var graphView =
 	
 		new Ext.DataView(
 		{
+			id:		jid,	
 			itemSelector:	'thumb',
+			title:		jid,
 			style:		'overflow:auto',
 			multiSelect:	true,
-			store:		NodesDataStore,
+			//autoHeight:	true,
+			autoShow:	true,
+			store:		store,
+			layout:		'fit',
 			tpl:
 			
 				new Ext.XTemplate(
@@ -882,22 +876,37 @@ function ShowGraphs( Button, Event )
 				)
 		});
 
-	var images = 
+	return graphView;
+}
 
-		new Ext.Panel(
+function createGraphPanel( view )
+{
+	var graphPanel = 
+
+		new Ext.TabPanel(
 		{
 			id:		'images',
-			//title:	'My Images',
 			region:		'center',
 			bodyStyle:	'background: transparent',
+			autoShow:	true,
+			autoHeight:	true,
 			//margins:	'2 2 2 0',
-			layout:		'fit',
-			items:		GraphView
+			//layout:	'fit',
+			resizeTabs:	true,
+			minTabWidth:	115,
+			tabWidth:	135,
+			enableTabScroll:true,
+			defaults:	{autoScroll:true}
 		});
 
-	if(!win)
-	{
-		win = new Ext.Window(
+	return graphPanel;
+}
+
+function createGraphWindow( panel, Button )
+{
+	graphWindow =
+
+		new Ext.Window(
 		{
 			animateTarget:	Button,
 			width:		500,
@@ -907,20 +916,21 @@ function ShowGraphs( Button, Event )
 			animCollapse:	true,
 			maximizable:	true,
 			title:		'Node graph details',
-			layout:		'fit',
+			//layout:		'fit',
 			tbar:	
-			
+		
+			// RB TODO: range combobox; hour, day, week, etc
+	
 			new Ext.form.ComboBox(
 			{
 				fieldLabel:	'Metric',
-				//hiddenName:	'ID',
 				store:		MetricsDataStore,
 				valueField:	'name',
 				displayField:	'name',
 				typeAhead:	true,
 				mode:		'remote',
 				triggerAction:	'all',
-				emptyText:	'Select metric',
+				emptyText:	'load_one',
 				selectOnFocus:	true,
 				xtype:		'combo',
 				width:		190,
@@ -932,16 +942,85 @@ function ShowGraphs( Button, Event )
 					{
 						var metric = record.data.name;
 						// doe iets
+
+						// RB: misschien zo metric opgeven aan datastore?
+						//items[0].items[0].getStore().baseParams.metric = metric;
 					}
 				}
 
 			}),
 
-			items:	[ images ]
+			items:	[ panel ]
 		});
+
+	return graphWindow;
+}
+
+function ShowGraphs( Button, Event ) 
+{
+	var row_records		= CheckJobs.getSelections();
+	var graphJids		= Array();
+	var windowCount		= 0;
+	var tabCount		= 0;
+
+	for( var i=0; i<row_records.length; i++ )
+	{
+		rsel		= row_records[i];
+		jid		= rsel.get('jid');
+
+		if( graphJids[windowCount] == undefined )
+		{
+			graphJids[windowCount]	= Array();
+		}
+
+		graphJids[windowCount][tabCount]	= jid;
+
+		if( (i+1) < row_records.length )
+		{
+			if( graphWindowBehaviour == 'new-window' )
+			{
+				windowCount++;
+			}
+			else
+			{
+				tabCount++;
+			}
+		}
 	}
-	NodesDataStore.load();
-	win.show( Button );
+
+	for( var w=0; w<=windowCount; w++ )
+	{
+		if( graphWindowBehaviour == 'tabbed-prev-window' )
+		{
+			myWindow	= previousGraphWindow;
+			myPanel		= previousGraphPanel;
+		}
+		else
+		{
+			myPanel		= createGraphPanel();
+			myWindow	= createGraphWindow( myPanel, Button );
+
+			myWindow.add( myPanel );
+		}
+
+		for( var t=0; t<=tabCount; t++ )
+		{
+			nodeDatastore	= createNodesDataStore( myparams.c, graphJids[w][t] );
+			graphView	= createGraphView( nodeDatastore, graphJids[w][t] );
+			lastView	= myPanel.add( graphView );
+
+			nodeDatastore.load();
+			myPanel.setActiveTab( lastView );
+		}
+
+		myWindow.show( Button );
+
+		myPanel.doLayout();
+		myWindow.doLayout();
+
+		previousGraphWindow	= myWindow;
+		previousGraphPanel	= myPanel;
+	}
 }
 
 var JobListingEditorGrid =
