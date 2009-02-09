@@ -99,6 +99,14 @@ switch($task)
         break;
 }
 
+function printCacheHeaders()
+{
+	header ("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+	header ("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");
+	header ("Cache-Control: no-cache, must-revalidate");
+	header ("Pragma: no-cache");
+}
+
 function getMetrics( $host=null )
 {
 	global $metrics;
@@ -132,6 +140,8 @@ function getMetrics( $host=null )
 	$results		= array();
 	$results['names']	= $metric_list;
 	$results['total']	= $metric_count;
+
+	printCacheHeaders();
 
 	$jsonresults    = JEncode( $results );
 
@@ -420,30 +430,28 @@ function filterJobs( $jobs )
 
 function getNodes()
 {
-	global $jobs, $jobids, $clustername, $metrics;
+	global $jobs, $jobids, $clustername, $metrics, $jid;
 
 	$display_nodes	= array();
 
-	if( !$jobids )
+	printCacheHeaders();
+
+	if( !$jobids && !$jid )
 	{
+		printf("no jobid(s)\n");
 		return 1;
 	}
-	foreach( $jobs as $jobid => $jobattrs )
+	foreach( $jobs[$jid]['nodes'] as $jobnode )
 	{
-		if( in_array( $jobid, $jobids ) )
+		if( !in_array( $jobnode, $display_nodes) )
 		{
-			foreach( $jobattrs['nodes'] as $jobnode )
-			{
-				if( !in_array( $jobnode, $display_nodes) )
-				{
-					$display_nodes[$jobid]	= $jobnode;
-				}
-			}
+			$display_nodes[$jobid]	= $jobnode;
 		}
 	}
 
 	$node_results	= array();
 	$result_count	= count( $display_nodes );
+
 	foreach( $display_nodes as $jobid => $host )
 	{
 		$nr		= array();
@@ -473,6 +481,8 @@ function getNodes()
 
 		$node_results[]	= $nr;
 	}
+
+
 	$jsonresults	= JEncode( $node_results );
 
 	echo '{"total":"'. $result_count .'","results":'. $jsonresults .'}';
@@ -485,6 +495,8 @@ function getJobs()
 	global $jid, $owner, $queue,  $status;
 
 	$job_count		= count( $jobs );
+
+	printCacheHeaders();
 
 	if( $job_count == 0 )
 	{
@@ -576,6 +588,7 @@ function getJobs()
 	}
 
 	$jsonresults	= JEncode( $jobresults );
+
 
 	echo '{"total":"'. $result_count .'","results":'. $jsonresults .'}';
 
