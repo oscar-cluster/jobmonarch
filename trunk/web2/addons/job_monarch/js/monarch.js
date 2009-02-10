@@ -6,6 +6,13 @@ var JobProxy;
 var SearchField;
 var filterButton;
 
+// Extra header to prevent browser caching
+//
+Ext.Ajax.defaultHeaders =
+{
+	'If-Modified-Since':	'Sat, 1 Jan 2005 00:00:00 GMT'
+};
+
 // associative filter array
 //
 var myfilters = { };
@@ -358,9 +365,9 @@ ImageLoader.prototype =
 {
 	load:		function()
 			{
-				var url = this.url;
-				var image = this.image;
-				var loadEvent = this.loadEvent;
+				var url		= this.url;
+				var image	= this.image;
+				var loadEvent	= this.loadEvent;
 				addListener( this.image, 'load',
 					function(e)
 					{
@@ -444,14 +451,14 @@ function makeFilterMenu()
 
 function reloadClusterImage()
 {
-	ClusterImageArgs['view'] = 'big-clusterimage';
+	ClusterImageArgs['view']	= 'big-clusterimage';
 
-	filt_url = makeArrayURL( myfilters );
-	imag_url = makeArrayURL( ClusterImageArgs );
-	img_url = './image.php?' + filt_url + '&' + imag_url;
+	filt_url			= makeArrayURL( myfilters );
+	imag_url			= makeArrayURL( ClusterImageArgs );
+	img_url				= './image.php?' + filt_url + '&' + imag_url;
 
-	var newClusterImage = new ImageLoader( 'clusterimage', img_url );
-	newClusterImage.loadEvent = function( url, image ) 
+	var newClusterImage		= new ImageLoader( 'clusterimage', img_url );
+	newClusterImage.loadEvent	= function( url, image ) 
 	{
 		ClusterImageWindow.getBottomToolbar().clearStatus( { useDefaults:true } );
 		setTimeout( "resizeClusterImage()", 250 );
@@ -469,8 +476,8 @@ function reloadClusterImage()
 
 function resizeClusterImage()
 {
-	var ci_height = document.getElementById( "clusterimage" ).height + ClusterImageWindow.getFrameHeight();
-	var ci_width = document.getElementById( "clusterimage" ).width + ClusterImageWindow.getFrameWidth();
+	var ci_height	= document.getElementById( "clusterimage" ).height + ClusterImageWindow.getFrameHeight();
+	var ci_width	= document.getElementById( "clusterimage" ).width + ClusterImageWindow.getFrameWidth();
 
 	ClusterImageWindow.setSize( ci_width, ci_height );
 }
@@ -530,9 +537,9 @@ function jobCellClick(grid, rowIndex, columnIndex, e)
 	{
 		if( fieldName == 'nodes' )
 		{
-			filterName = 'host';
-			fil_dis = 'nodesfilter';
-			fil_ena = 'nodesfilterenabled';
+			filterName	= 'host';
+			fil_dis		= 'nodesfilter';
+			fil_ena		= 'nodesfilterenabled';
 		}
 		if( inMyArrayKeys( myfilters, filterName ) )
 		{
@@ -566,42 +573,43 @@ function jobCellClick(grid, rowIndex, columnIndex, e)
 			//reloadClusterImage();
 		}
 		JobListingWindow.setTitle( filter_str );
-		filter_title = true;
-		filter_str = myparams.c + ' Jobs Overview' + makeFilterString();
+
+		filter_title	= true;
+		filter_str	= myparams.c + ' Jobs Overview' + makeFilterString();
 	}
 }
 
 function jobCellRender( value, metadata, record, rowindex, colindex, store )
 {
-	var fieldName = JobsColumnModel.getColumnById( colindex ).dataIndex;
-	var fil_dis = 'filter';
-	var fil_ena = 'filterenabled';
-	var filterName = fieldName;
+	var fieldName	= JobsColumnModel.getColumnById( colindex ).dataIndex;
+	var fil_dis	= 'filter';
+	var fil_ena	= 'filterenabled';
+	var filterName	= fieldName;
 
 	if( fieldName == 'owner' || fieldName == 'jid' || fieldName == 'status' || fieldName == 'queue' || fieldName == 'nodes' )
 	{
 		if( fieldName == 'nodes' )
 		{
-			fil_dis = 'nodesfilter';
-			fil_ena = 'nodesfilterenabled';
-			filterName = 'host';
+			fil_dis		= 'nodesfilter';
+			fil_ena		= 'nodesfilterenabled';
+			filterName	= 'host';
 		}
 		if( myfilters[filterName] != null )
 		{
-			metadata.css = fil_ena;
+			metadata.css	= fil_ena;
 		}
 		else
 		{
-			metadata.css = fil_dis;
+			metadata.css	= fil_dis;
 		}
 	}
 	return value;
 }
 
-JobProxy = new Ext.data.HttpProxy(
+var JobProxy = new Ext.data.HttpProxy(
 {
-	url:	'jobstore.php',
-	method:	'POST'
+	url:		'jobstore.php',
+	method:		'POST'
 });
 
 JobsDataStore = new Ext.data.Store(
@@ -612,9 +620,9 @@ JobsDataStore = new Ext.data.Store(
 	reader:
 		new Ext.data.JsonReader(
 		{
-			root: 'results',
-			totalProperty: 'total',
-			id: 'id'
+			root:		'results',
+			totalProperty:	'total',
+			id:		'id'
 		},
 		[
 			{name: 'jid', type: 'int', mapping: 'jid'},
@@ -633,8 +641,8 @@ JobsDataStore = new Ext.data.Store(
 		]),
 	sortInfo: 
 	{ 
-		field: 'jid', 
-		direction: "DESC" 
+		field:		'jid', 
+		direction:	"DESC" 
 	},
 	remoteSort: true,
 	listeners:
@@ -644,8 +652,12 @@ JobsDataStore = new Ext.data.Store(
 			scope: this,
 			fn:
 
-			function()
+			function( myStore, myOptions )
 			{
+				// Add a (bogus) timestamp, to create a unique url and prevent browser caching
+				//
+				myStore.proxy.url	= 'jobstore.php?timestamp=' + new Date().getTime();
+
 				if( SearchField )
 				{
 					search_value = SearchField.getEl().dom.value;
@@ -825,13 +837,17 @@ function createNodesDataStore( cluster, jid )
 		new Ext.data.Store(
 		{
 			//id:		'NodesDataStore',
-			proxy:		JobProxy,
-			autoLoad:	false,
+			proxy:		new Ext.data.HttpProxy(
+			{
+				url:		'jobstore.php',
+				method:		'POST'
+			}),
+			autoLoad:	true,
 			baseParams:
 			{
-				'task':		"GETNODES",
-				'c':		cluster,
-				'jid':		jid
+				'task':			"GETNODES",
+				'c':			cluster,
+				'jid':			jid
 			},
 			reader: new Ext.data.JsonReader(
 			{
@@ -846,7 +862,24 @@ function createNodesDataStore( cluster, jid )
 				{name: 'l', type: 'string', mapping: 'l'},
 				{name: 'jr', type: 'string', mapping: 'jr'},
 				{name: 'js', type: 'string', mapping: 'js'}
-			])
+			]),
+			listeners:
+			{ 
+				'beforeload':
+				{
+					scope: this,
+					fn:
+
+					function( myStore, myOptions )
+					{
+						// Add a (bogus) timestamp, to create a unique url and prevent browser caching
+						//
+						myStore.proxy.url	= 'jobstore.php?timestamp=' + new Date().getTime();
+						//alert( myStore.proxy.url );
+					}
+				}
+			}
+
 		});
 
 	return nodesDataStore;
@@ -865,6 +898,7 @@ function createGraphView( store, jid )
 			multiSelect:	true,
 			//autoHeight:	true,
 			autoShow:	true,
+			loadMask:	true,
 			store:		store,
 			layout:		'fit',
 			tpl:
@@ -896,7 +930,20 @@ function createGraphPanel( view )
 			minTabWidth:	115,
 			tabWidth:	135,
 			enableTabScroll:true,
-			defaults:	{autoScroll:true}
+			defaults:	{autoScroll:true},
+			view:		view,
+			listeners:
+			{
+				'tabchange':
+				{
+					scope:	this,
+					fn:	function( myTabPanel, tab )
+						{
+							//myTabPanel.items[0].refresh();
+							//this.view.refresh();
+						}
+				}
+			}
 		});
 
 	return graphPanel;
@@ -1007,9 +1054,12 @@ function ShowGraphs( Button, Event )
 		{
 			nodeDatastore	= createNodesDataStore( myparams.c, graphJids[w][t] );
 			graphView	= createGraphView( nodeDatastore, graphJids[w][t] );
+
+			nodeDatastore.removeAll();
+
 			lastView	= myPanel.add( graphView );
 
-			nodeDatastore.load();
+			//nodeDatastore.load();
 			myPanel.setActiveTab( lastView );
 		}
 
@@ -1048,12 +1098,12 @@ var JobListingEditorGrid =
 	
 		new Ext.PagingToolbar(
 		{
-			pageSize: 15,
-			store: JobsDataStore,
-			displayInfo: true,
-			displayMsg: 'Displaying jobs {0} - {1} out of {2} jobs total found.',
-			emptyMsg: 'No jobs found to display',
-			plugins: [new Ext.ux.PageSizePlugin()]
+			pageSize:	15,
+			store:		JobsDataStore,
+			displayInfo:	true,
+			displayMsg:	'Displaying jobs {0} - {1} out of {2} jobs total found.',
+			emptyMsg:	'No jobs found to display',
+			plugins:	[ new Ext.ux.PageSizePlugin() ]
 		}),
 
 		tbar: 
@@ -1085,9 +1135,9 @@ var ClusterImageWindow =
 		
 			new Ext.StatusBar(
 			{
-				defaultText: 'Ready.',
-				id: 'basic-statusbar',
-				defaultIconCls: ''
+				defaultText:	'Ready.',
+				id:		'basic-statusbar',
+				defaultIconCls:	''
 			})
 	});
 
