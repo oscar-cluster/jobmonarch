@@ -441,18 +441,19 @@ function getNodes()
 		printf("no jobid(s)\n");
 		return 1;
 	}
+
 	foreach( $jobs[$jid]['nodes'] as $jobnode )
 	{
 		if( !in_array( $jobnode, $display_nodes) )
 		{
-			$display_nodes[$jobid]	= $jobnode;
+			$display_nodes[]	= $jobnode;
 		}
 	}
 
 	$node_results	= array();
 	$result_count	= count( $display_nodes );
 
-	foreach( $display_nodes as $jobid => $host )
+	foreach( $display_nodes as $host )
 	{
 		$nr		= array();
 		$nr['c']	= $clustername;
@@ -473,11 +474,11 @@ function getNodes()
 
 		$nr['l']	= $load_color;
 
-		$job_runtime	= (int) $jobs[$jobid]['reported'] - (int) $jobs[$jobid]['start_timestamp'];
+		$job_runtime	= (int) $jobs[$jid]['reported'] - (int) $jobs[$jid]['start_timestamp'];
 		$job_window	= intval($job_runtime * 1.2);
 
 		$nr['jr']	= -$job_window;
-		$nr['js']	= (int) $jobs[$jobid]['start_timestamp'];
+		$nr['js']	= (int) $jobs[$jid]['start_timestamp'];
 
 		$node_results[]	= $nr;
 	}
