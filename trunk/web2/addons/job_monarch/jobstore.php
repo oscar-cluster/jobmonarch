@@ -479,6 +479,7 @@ function getNodes()
 
 		$nr['jr']	= -$job_window;
 		$nr['js']	= (int) $jobs[$jid]['start_timestamp'];
+		$nr['jid']	= $jid;
 
 		$node_results[]	= $nr;
 	}
