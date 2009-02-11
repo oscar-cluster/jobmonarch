@@ -896,8 +896,9 @@ function createGraphView( store, jid )
 			title:		jid,
 			style:		'overflow:auto',
 			multiSelect:	true,
-			//autoHeight:	true,
+			autoHeight:	true,
 			autoShow:	true,
+			//autoScroll:	true,
 			loadMask:	true,
 			store:		store,
 			layout:		'fit',
@@ -919,19 +920,21 @@ function createGraphPanel( view )
 
 		new Ext.TabPanel(
 		{
-			id:		'images',
+			id:		'tabPanel',
 			region:		'center',
 			bodyStyle:	'background: transparent',
 			autoShow:	true,
 			autoHeight:	true,
+			autoWidth:	true,
 			//margins:	'2 2 2 0',
 			//layout:	'fit',
 			resizeTabs:	true,
-			minTabWidth:	115,
-			tabWidth:	135,
+			minTabWidth:	60,
+			//tabWidth:	135,
+			//closeable:	true,
 			enableTabScroll:true,
-			defaults:	{autoScroll:true},
-			view:		view,
+			resizeTabs:	true,
+			//defaults:	{autoScroll:true},
 			listeners:
 			{
 				'tabchange':
@@ -962,6 +965,8 @@ function createGraphWindow( panel, Button )
 			collapsible:	true,
 			animCollapse:	true,
 			maximizable:	true,
+			autoScroll:	true,
+			defaults:	{autoScroll:true},
 			title:		'Node graph details',
 			//layout:		'fit',
 			tbar:	
@@ -994,10 +999,25 @@ function createGraphWindow( panel, Button )
 						//items[0].items[0].getStore().baseParams.metric = metric;
 					}
 				}
-
 			}),
 
-			items:	[ panel ]
+			items:	[ panel ],
+			listeners:
+			{
+				resize:
+
+				function(  myWindow, width, height )
+				{
+					//var myPanel	= myWindow.getComponent( 'tabPanel' ).getEl();
+					var myPanel	= myWindow.items.get( 'tabPanel' );
+
+					var myView	= myPanel.getActiveTab();
+
+					//myView.doLayout();
+					myPanel.doLayout();
+					myWindow.doLayout();
+				}
+			}
 		});
 
 	return graphWindow;
@@ -1059,13 +1079,12 @@ function ShowGraphs( Button, Event )
 
 			lastView	= myPanel.add( graphView );
 
-			//nodeDatastore.load();
-			myPanel.setActiveTab( lastView );
+			myPanel.doLayout();
 		}
 
-		myWindow.show( Button );
+		myPanel.setActiveTab( lastView );
 
-		myPanel.doLayout();
+		myWindow.show( Button );
 		myWindow.doLayout();
 
 		previousGraphWindow	= myWindow;
