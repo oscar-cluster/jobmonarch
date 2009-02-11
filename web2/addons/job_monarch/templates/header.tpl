@@ -4,8 +4,15 @@
 <TITLE>Ganglia :: {longpage_title}</TITLE>
 <META http-equiv="Content-type" content="text/html; charset=utf-8">
 
+<link rel="stylesheet" href="./lib/lightbox/css/lightbox.css" type="text/css" media="screen" />
+
+<script type="text/javascript" src="./lib/lightbox/js/prototype.js"></script>
+<script type="text/javascript" src="./lib/lightbox/js/scriptaculous.js?load=effects,builder"></script>
+<script type="text/javascript" src="./lib/lightbox/js/lightbox.js"></script>
+
 <link rel="stylesheet" type="text/css" href="./lib/extjs/resources/css/ext-all.css" />
 <link rel="stylesheet" type="text/css" href="./css/styles.css" />
+
 <script type="text/javascript" src="./lib/extjs/adapter/ext/ext-base.js"></script>
 <!-- <script type="text/javascript" src="./lib/extjs/adapter/ext/ext-base-debug.js"></script> -->
 <script type="text/javascript" src="./lib/extjs/adapter/ext/ext-base-debug.js"></script>
@@ -45,6 +52,7 @@ Ext.onReady( function()
 	Ext.get( 'pie' ).update( '<IMG ID="pie" SRC="{pie}" BORDER=0>' );
 });
 </script>
+
 
 </HEAD>
 <BODY CLASS="background">

@@ -509,16 +509,26 @@ Ext.apply(Ext.form.VTypes,
 	numText:	'Must be numeric'
 });
 
-function jobRowSelect( selModel ) 
+function jobBeforeRowSelect( mySelectionModel, rowIndex, keepExisting, myRecord )
 {
-	if( selModel.hasSelection() )
+	if( myRecord.get('status') == 'Q' )
+	{	// return false: dont select row if queued
+		return false;
+	}
+
+	return true;
+}
+
+function jobRowSelect( mySelectionModel, rowIndex, myRecord ) 
+{
+	if( mySelectionModel.hasSelection() )
 	{
 		showGraphsButton.enable();
+
+		return 0;
 	}
-	else
-	{
-		showGraphsButton.disable();
-	}
+
+	showGraphsButton.disable();
 }
 
 function jobCellClick(grid, rowIndex, columnIndex, e)
@@ -689,7 +699,17 @@ var CheckJobs =
 	{
 		listeners:
 		{
-			'selectionchange':
+			'beforerowselect':
+			{
+				scope:	this,
+				fn:	jobBeforeRowSelect
+			},
+			'rowselect':
+			{
+				scope:	this,
+				fn:	jobRowSelect
+			},
+			'rowdeselect':
 			{
 				scope:	this,
 				fn:	jobRowSelect
@@ -861,7 +881,8 @@ function createNodesDataStore( cluster, jid )
 				{name: 'v', type: 'string', mapping: 'v'},
 				{name: 'l', type: 'string', mapping: 'l'},
 				{name: 'jr', type: 'string', mapping: 'jr'},
-				{name: 'js', type: 'string', mapping: 'js'}
+				{name: 'js', type: 'string', mapping: 'js'},
+				{name: 'jid', type: 'string', mapping: 'jid'}
 			]),
 			listeners:
 			{ 
@@ -875,7 +896,6 @@ function createNodesDataStore( cluster, jid )
 						// Add a (bogus) timestamp, to create a unique url and prevent browser caching
 						//
 						myStore.proxy.url	= 'jobstore.php?timestamp=' + new Date().getTime();
-						//alert( myStore.proxy.url );
 					}
 				}
 			}
@@ -902,11 +922,12 @@ function createGraphView( store, jid )
 			loadMask:	true,
 			store:		store,
 			layout:		'fit',
+			closable:	true,
 			tpl:
 			
 				new Ext.XTemplate(
 					'<tpl for=".">',
-					'<div class="rrd-float"><img src="../../graph.php?z=small&c={c}&h={h}&l={l}&v={v}&x={x}&r=job&jr={jr}&js={js}" border="0"></div>',
+					'<div class="rrd-float"><a href="../../graph.php?z=large&c={c}&h={h}&l={l}&v={v}\&x={x}&r=job&jr={jr}&js={js}" border="0" rel="lightbox[{jid}]"><img src="../../graph.php?z=small&c={c}&h={h}&l={l}&v={v}&x={x}&r=job&jr={jr}&js={js}" border="0"></a></div>',
 					'</tpl>'
 				)
 		});
@@ -926,27 +947,45 @@ function createGraphPanel( view )
 			autoShow:	true,
 			autoHeight:	true,
 			autoWidth:	true,
-			//margins:	'2 2 2 0',
-			//layout:	'fit',
+			autoScroll:	true,
 			resizeTabs:	true,
 			minTabWidth:	60,
 			//tabWidth:	135,
 			//closeable:	true,
 			enableTabScroll:true,
 			resizeTabs:	true,
-			//defaults:	{autoScroll:true},
-			listeners:
-			{
-				'tabchange':
+			// RB TODO: range combobox; hour, day, week, etc
+
+			tbar:
+			[
+				new Ext.form.ComboBox(
 				{
-					scope:	this,
-					fn:	function( myTabPanel, tab )
+					fieldLabel:	'Metric',
+					store:		MetricsDataStore,
+					valueField:	'name',
+					displayField:	'name',
+					typeAhead:	true,
+					mode:		'remote',
+					triggerAction:	'all',
+					emptyText:	'load_one',
+					selectOnFocus:	true,
+					xtype:		'combo',
+					width:		190,
+					listeners:
+					{
+						select: 
+								
+						function(combo, record, index)
 						{
-							//myTabPanel.items[0].refresh();
-							//this.view.refresh();
+							var metric = record.data.name;
+							// doe iets
+
+							// RB: misschien zo metric opgeven aan datastore?
+							//items[0].items[0].getStore().baseParams.metric = metric;
 						}
-				}
-			}
+					}
+				})
+			]
 		});
 
 	return graphPanel;
@@ -965,55 +1004,20 @@ function createGraphWindow( panel, Button )
 			collapsible:	true,
 			animCollapse:	true,
 			maximizable:	true,
-			autoScroll:	true,
-			defaults:	{autoScroll:true},
+			//autoScroll:	true,
+			//defaults:	{autoScroll:true},
 			title:		'Node graph details',
-			//layout:		'fit',
-			tbar:	
+			tbar:		panel,
 		
-			// RB TODO: range combobox; hour, day, week, etc
-	
-			new Ext.form.ComboBox(
-			{
-				fieldLabel:	'Metric',
-				store:		MetricsDataStore,
-				valueField:	'name',
-				displayField:	'name',
-				typeAhead:	true,
-				mode:		'remote',
-				triggerAction:	'all',
-				emptyText:	'load_one',
-				selectOnFocus:	true,
-				xtype:		'combo',
-				width:		190,
-				listeners:
-				{
-					select: 
-							
-					function(combo, record, index)
-					{
-						var metric = record.data.name;
-						// doe iets
-
-						// RB: misschien zo metric opgeven aan datastore?
-						//items[0].items[0].getStore().baseParams.metric = metric;
-					}
-				}
-			}),
-
-			items:	[ panel ],
 			listeners:
 			{
 				resize:
 
 				function(  myWindow, width, height )
 				{
-					//var myPanel	= myWindow.getComponent( 'tabPanel' ).getEl();
 					var myPanel	= myWindow.items.get( 'tabPanel' );
-
 					var myView	= myPanel.getActiveTab();
 
-					//myView.doLayout();
 					myPanel.doLayout();
 					myWindow.doLayout();
 				}
@@ -1057,7 +1061,7 @@ function ShowGraphs( Button, Event )
 
 	for( var w=0; w<=windowCount; w++ )
 	{
-		if( graphWindowBehaviour == 'tabbed-prev-window' )
+		if( ( graphWindowBehaviour == 'tabbed-prev-window' ) && ( previousGraphWindow != null ) && ( previousGraphPanel != null ) )
 		{
 			myWindow	= previousGraphWindow;
 			myPanel		= previousGraphPanel;
@@ -1102,7 +1106,7 @@ var JobListingEditorGrid =
 		enableColLock:	false,
 		clicksToEdit:	1,
 		loadMask:	true,
-		selModel:	new Ext.grid.RowSelectionModel({singleSelect:false}),
+		selModel:	new Ext.grid.RowSelectionModel( { singleSelect:	false } ),
 		stripeRows:	true,
 		sm:		CheckJobs,
 		listeners:
