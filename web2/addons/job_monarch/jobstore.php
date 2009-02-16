@@ -110,25 +110,39 @@ function printCacheHeaders()
 
 function getMetrics( $host=null )
 {
-	global $metrics;
+	global $metrics, $reports;
 
 	reset($metrics);
+
+        $context_metrics        = array();
+
 	if( !$host)
 	{
-          $firsthost = key($metrics);
+		$firsthost = key($metrics);
 	}
 	else
 	{
-          $firsthost = $host;
+		$firsthost = $host;
 	}
 
 	$first_metrics = $metrics[$firsthost];
 
-	$metric_list	= array();
+	foreach( $first_metrics as $metricname => $metricval )
+        {
+                $context_metrics[] = $metricname;
+        }
 
+        foreach ($reports as $mr => $mfoo)
+	{
+                $context_metrics[] = $mr;
+	}
+
+	sort( $context_metrics );
+
+	$metric_list	= array();
 	$metric_count	= 0;
 
-	foreach( $first_metrics as $metricname => $metricval )
+	foreach( $context_metrics as $metricname )
 	{
 		$metric		= array();
 		$metric['id']	= $metricname;
