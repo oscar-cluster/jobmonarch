@@ -24,6 +24,7 @@ $owner			= isset($_POST['owner']) ? $_POST['owner'] : null;
 $status			= isset($_POST['status']) ? $_POST['status'] : null;
 $queue			= isset($_POST['queue']) ? $_POST['queue'] : null;
 $host			= isset($_POST['host']) ? $_POST['host'] : null;
+$metricname		= isset($_POST['metricname']) ? $_POST['metricname'] : 'load_one';
 
 if( $jids != null )
 {
@@ -430,7 +431,8 @@ function filterJobs( $jobs )
 
 function getNodes()
 {
-	global $jobs, $jobids, $clustername, $metrics, $jid;
+	global $jobs, $jobids, $clustername, $metrics, $jid, $metricname;
+	global $always_timestamp, $always_constant;
 
 	$display_nodes	= array();
 
@@ -438,6 +440,8 @@ function getNodes()
 
 	if( !$jobids && !$jid )
 	{
+		// RB: todo replace with 0 result rows
+		//
 		printf("no jobid(s)\n");
 		return 1;
 	}
@@ -456,12 +460,10 @@ function getNodes()
 	foreach( $display_nodes as $host )
 	{
 		$nr		= array();
-		$nr['c']	= $clustername;
-		$nr['h']	= $host ;
-		$nr['x']	= '5';
-		$nr['v']	= '0';
 
 		$cpus		= $metrics[$host]['cpu_num']['VAL'];
+
+		//print_r( $jobs[$jid] );
 
 		if ( !$cpus )
 		{
@@ -472,14 +474,54 @@ function getNodes()
 		$load		= ((float) $load_one) / $cpus;
 		$load_color	= load_color($load);
 
-		$nr['l']	= $load_color;
 
-		$job_runtime	= (int) $jobs[$jid]['reported'] - (int) $jobs[$jid]['start_timestamp'];
-		$job_window	= intval($job_runtime * 1.2);
+		// RB: something broken here with JR / JS
+		//
+		//$job_runtime	= intval( $jobs[$jid]['reported'] ) - intval( $jobs[$jid]['start_timestamp'] );
+		$job_runtime	= date( 'u' ) - intval( $jobs[$jid]['start_timestamp'] );
+		$job_window	= intval( $job_runtime ) * 1.2;
 
-		$nr['jr']	= -$job_window;
-		$nr['js']	= (int) $jobs[$jid]['start_timestamp'];
+		$jobrange	= -$job_window;
+		$jobstart	= $jobs[$jid]['start_timestamp'];
+
 		$nr['jid']	= $jid;
+
+		$hostar		= array( $host );
+
+		list($min,$max)	= find_limits( $hostar, $metricname );
+
+		$host_url	= rawurlencode( $host );
+		$cluster_url	= rawurlencode( $clustername );
+
+		$textval	= "";
+
+		$val		= $metrics[$host][$metricname];
+
+		// RB: haven't used this yet: link to Ganglia's host overview
+		// maybe later to popup?
+		//
+		//$host_link      = "\"../../?c=$cluster_url&h=$host_url&r=job&jr=$jobrange&js=$jobstart\"";
+
+		if ( $val["TYPE"] == "timestamp" || $always_timestamp[$metricname] )
+		{
+			$textval	= date( "r", $val["VAL"] );
+		}
+		elseif ( $val["TYPE"] == "string" || $val["SLOPE"] == "zero" || $always_constant[$metricname] )
+		{
+			$textval	= $val["VAL"] . " " . $val["UNITS"];
+		}
+		else
+		{
+			$graphargs	= ($reports[$metricname]) ? "g=$metricname&" : "m=$metricname&";
+			$graphargs	.= "c=$cluster_url&h=$host_url&l=$load_color&v=".$val['VAL']."&r=job&jr=$jobrange&js=$jobstart";
+
+			if( $max > 0 )
+			{
+				$graphargs	.= "&x=$max&n=$min";
+			}
+		}
+
+		$nr['ga']	= $graphargs;
 
 		$node_results[]	= $nr;
 	}

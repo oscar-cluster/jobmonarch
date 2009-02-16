@@ -876,14 +876,8 @@ function createNodesDataStore( cluster, jid )
 				totalProperty:	'total',
 				id:		'id'
 			},[
-				{name: 'c', type: 'string', mapping: 'c'},
-				{name: 'h', type: 'string', mapping: 'h'},
-				{name: 'x', type: 'string', mapping: 'x'},
-				{name: 'v', type: 'string', mapping: 'v'},
-				{name: 'l', type: 'string', mapping: 'l'},
-				{name: 'jr', type: 'string', mapping: 'jr'},
-				{name: 'js', type: 'string', mapping: 'js'},
-				{name: 'jid', type: 'string', mapping: 'jid'}
+				{name: 'jid', type: 'string', mapping: 'jid'},
+				{name: 'ga', type: 'string', mapping: 'ga'}
 			]),
 			listeners:
 			{ 
@@ -928,7 +922,7 @@ function createGraphView( store, jid )
 			
 				new Ext.XTemplate(
 					'<tpl for=".">',
-					'<div class="rrd-float"><a href="../../graph.php?z=large&c={c}&h={h}&l={l}&v={v}\&x={x}&r=job&jr={jr}&js={js}" border="0" rel="lightbox[{jid}.{[globalWindowCount]}]"><img src="../../graph.php?z=small&c={c}&h={h}&l={l}&v={v}&x={x}&r=job&jr={jr}&js={js}" border="0"></a></div>',
+					'<div class="rrd-float"><a href="../../graph.php?z=large&{ga}" border="0" rel="lightbox[{jid}.{[globalWindowCount]}]"><img src="../../graph.php?z=small&{ga}" border="0"></a></div>',
 					'</tpl>'
 				)
 		});

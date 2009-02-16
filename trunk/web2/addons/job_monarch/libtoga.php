@@ -119,7 +119,7 @@ $httpvars = new HTTPVariables( $HTTP_GET_VARS, $_GET );
 // Set cluster context so that Ganglia will
 // provide us with the correct metrics array
 //
-global $context, $clustername, $reports;
+global $context, $clustername, $reports, $always_timestamp, $always_constant;
 
 global $default_metric;
 
