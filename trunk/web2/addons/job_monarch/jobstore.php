@@ -1,6 +1,6 @@
 <?php
 
-ini_set("memory_limit","100M");
+ini_set("memory_limit","200M");
 set_time_limit(0);
 
 $c			= $_POST['c'];

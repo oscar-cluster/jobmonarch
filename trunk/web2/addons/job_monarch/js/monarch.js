@@ -5,6 +5,7 @@ var JobListingWindow;
 var JobProxy;
 var SearchField;
 var filterButton;
+var globalWindowCount = 0;
 
 // Extra header to prevent browser caching
 //
@@ -927,7 +928,7 @@ function createGraphView( store, jid )
 			
 				new Ext.XTemplate(
 					'<tpl for=".">',
-					'<div class="rrd-float"><a href="../../graph.php?z=large&c={c}&h={h}&l={l}&v={v}\&x={x}&r=job&jr={jr}&js={js}" border="0" rel="lightbox[{jid}]"><img src="../../graph.php?z=small&c={c}&h={h}&l={l}&v={v}&x={x}&r=job&jr={jr}&js={js}" border="0"></a></div>',
+					'<div class="rrd-float"><a href="../../graph.php?z=large&c={c}&h={h}&l={l}&v={v}\&x={x}&r=job&jr={jr}&js={js}" border="0" rel="lightbox[{jid}.{[globalWindowCount]}]"><img src="../../graph.php?z=small&c={c}&h={h}&l={l}&v={v}&x={x}&r=job&jr={jr}&js={js}" border="0"></a></div>',
 					'</tpl>'
 				)
 		});
@@ -1072,6 +1073,8 @@ function ShowGraphs( Button, Event )
 			myWindow	= createGraphWindow( myPanel, Button );
 
 			myWindow.add( myPanel );
+
+			globalWindowCount++;
 		}
 
 		for( var t=0; t<=tabCount; t++ )
