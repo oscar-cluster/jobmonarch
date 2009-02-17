@@ -137,8 +137,7 @@ Ext.extend(Ext.ux.PageSizePlugin, Ext.form.ComboBox,
 				{
 					paging.add('-',
 					this,
-					'jobs per page'
-					);
+					'jobs per page');
 					this.setValue(paging.pageSize);
 					this.on('select', this.onPageSizeChanged, paging);
 				},
@@ -465,7 +464,7 @@ function reloadClusterImage()
 		setTimeout( "resizeClusterImage()", 250 );
 		setTimeout( "setClusterImagePosition()", 500 );
 		//setTimeout( "achorJobListing()", 1000 );
-	}
+	};
 
 	ClusterImageWindow.getBottomToolbar().showBusy();
 
@@ -715,7 +714,7 @@ var CheckJobs =
 				scope:	this,
 				fn:	jobRowSelect
 			}
-		},
+		}
 	});
 
 JobsColumnModel = new Ext.grid.ColumnModel(
@@ -816,8 +815,8 @@ JobsColumnModel = new Ext.grid.ColumnModel(
 		dataIndex:	'runningtime',
 		width:		140,
 		hidden:		false
-	}]
-);
+	}
+]);
 
 JobsColumnModel.defaultSortable	= true;
 
@@ -844,8 +843,8 @@ MetricsDataStore = new Ext.data.Store(
 			name:		'ID'
 		},{
 			name:		'name'
-		}]
-		),
+		}
+		]),
 	listeners:
 	{ 
 		'beforeload':
@@ -942,8 +941,7 @@ function createGraphView( store, jid )
 				new Ext.XTemplate(
 					'<tpl for=".">',
 					'<div class="rrd-float"><a href="./graph.php?z=large&{ga}" border="0" rel="lightbox[{jid}.{[globalWindowCount]}]"><img src="./graph.php?z=small&{ga}" border="0"></a></div>',
-					'</tpl>'
-				)
+					'</tpl>')
 		});
 
 	return graphView;
