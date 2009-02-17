@@ -56,17 +56,29 @@ $cluster = $c;
 $metricname = ($g) ? $g : $m;
 $hostname = $h;
 
-# Assumes we have a $start variable (set in get_context.php).
-if ($size == "small") {
-	$height = 40;
-	$width = 130;
-} else if ($size == "medium") {
-	$height = 75;
-	$width = 300;
-} else {
-	$height = 100;
-	$width = 400;
+//# Assumes we have a $start variable (set in get_context.php).
+//if ($size == "small") {
+//	$height = 40;
+//	$width = 130;
+//} else if ($size == "medium") {
+//	$height = 75;
+//	$width = 300;
+//} else {
+//	$height = 100;
+//	$width = 400;
+//}
+
+if( in_array( $size, array_keys( $graph_sizes ) ) )
+{
+	$height	= $graph_sizes[ $size ][ 'height' ];
+	$width	= $graph_sizes[ $size ][ 'width' ];
+} 
+else 
+{
+	$height	= $graph_sizes[ 'default' ][ 'height' ];
+	$width	= $graph_sizes[ 'default' ][ 'width' ];
 }
+
 
 if($command) {
       $command = '';
@@ -74,18 +86,27 @@ if($command) {
 
 //printf( "cluster = %s hostname = %s metric = %s\n", $cluster, $hostname, $metricname );
 
-$trd = new TarchRrdGraph( $cluster, $hostname );
+if( $archive )
+{
+	$trd = new TarchRrdGraph( $cluster, $hostname );
+}
 //$rrd_files = $trd->getRrdFiles( $metricname, $start, $stop );
 
 //print_r( $rrd_files );
 
 $graph = $metricname;
 
-if (isset($graph)) {
+if( isset($graph) )
+{
 	$series = '';
-	if( isset( $period_start ) && isset( $period_stop ) )
+
+	if( ( $archive ) && ( isset( $period_start ) && isset( $period_stop ) ) )
 	{
 		$rrd_dirs = $trd->getRrdDirs( $period_start, $period_stop );
+	}
+	else
+	{
+		$rrd_dirs = array( "$rrds/$clustername/$hostname" );
 	}
 
 	if($graph == "cpu_report") {
@@ -364,9 +385,19 @@ if (isset($graph)) {
 
 		foreach( $rrd_dirs as $rrd_dir ) {
 
-			if( $def_nr == 0 ) {
-				$title_str = ":'${subtitle}'";
-			} else {
+			if( $def_nr == 0 )
+			{
+				if( $archive )
+				{
+					$title_str = ":'${subtitle}'";
+				}
+				else
+				{
+					$title_str = ":'${subtitle} (now $value)'";
+				}
+			}
+			else 
+			{
 				$title_str = "";
 			}
 
@@ -386,30 +417,14 @@ if (isset($graph)) {
 	}
 }
 
-//$title = "$hostname $style $metricname";
 $title = "$hostname";
 
-//# Set the graph title.
-//if($context == "meta") {
-//	$title = "$self $meta_designator $style last $range";
-//} else if ($context == "grid") {
-//	$title = "$grid $meta_designator $style last $range";
-//} else if ($context == "cluster") {
-//	$title = "$clustername $style last $range";
-//} else {
-//	if ($size == "small") {
-//		# Value for this graph define a background color.
-//		if (!$load_color) $load_color = "ffffff";
-//			$background = "--color BACK#'$load_color'";
+if( !$load_color )
+{
+	$load_color = "ffffff";
+}
 
-//		$title = $hostname;
-//	} else {
-//		if ($style)
-//			$title = "$hostname $style last $range";
-//		else
-//			$title = $metricname;
-//	}
-//}
+$background = "--color BACK#'$load_color'";
 
 function determineXGrid( $p_start, $p_stop ) {
 
@@ -493,23 +508,23 @@ function determineXGrid( $p_start, $p_stop ) {
 $lower_limit = "--lower-limit 0";
 
 # Calculate time range.
-if( isset($sourcetime) )
-{
+//if( isset($sourcetime) )
+//{
 	//printf("yay");
 
-	$end = $sourcetime;
-	# Get_context makes start negative.
-	$start = $sourcetime + $start;
+//	$end = $sourcetime;
+//	# Get_context makes start negative.
+//	$start = $sourcetime + $start;
 
-	# Fix from Phil Radden, but step is not always 15 anymore.
-	if ($range=="month")
-		$end = floor($end / 672) * 672;
+//	# Fix from Phil Radden, but step is not always 15 anymore.
+//	if ($range=="month")
+//		$end = floor($end / 672) * 672;
 
-	$command = RRDTOOL . " graph - --start $start --end $end ".
-		"--width $width --height $height $lower_limit ".
-		"--title '$title' $extras $background ".
-		$series;
-}
+//	$command = RRDTOOL . " graph - --start $start --end $end ".
+//		"--width $width --height $height $lower_limit ".
+//		"--title '$title' $extras $background ".
+//		$series;
+//}
 
 #
 # Generate the rrdtool graph command.
@@ -519,17 +534,18 @@ if( isset($sourcetime) )
 #	"--title '$title' $vertical_label $extras $background $xgrid ".
 #	$series;
 
-else {
+//else {
 	$command = RRDTOOL . " graph - --start $period_start --end $period_stop ".
 		"--width $width --height $height $lower_limit ".
 		"--title '$title' $extras $background ".
 		$series;
-}
+//}
 
 $debug=0;
 
 # Did we generate a command?   Run it.
-if($command) {
+if( $command )
+{
 	/*Make sure the image is not cached*/
 	header ("Expires: Mon, 26 Jul 1997 05:00:00 GMT");   // Date in the past
 	header ("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT"); // always modified

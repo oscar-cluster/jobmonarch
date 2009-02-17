@@ -488,15 +488,19 @@ function getNodes()
 		$load		= ((float) $load_one) / $cpus;
 		$load_color	= load_color($load);
 
+		$reported	= (int) $jobs[$jid]['reported'];
+
+		$time		= time();
 
 		// RB: something broken here with JR / JS
 		//
-		//$job_runtime	= intval( $jobs[$jid]['reported'] ) - intval( $jobs[$jid]['start_timestamp'] );
-		$job_runtime	= date( 'u' ) - intval( $jobs[$jid]['start_timestamp'] );
-		$job_window	= intval( $job_runtime ) * 1.2;
+		$job_runtime	= $time - intval( $jobs[$jid]['start_timestamp'] );
+		//$job_runtime	= date( 'u' ) - intval( $jobs[$jid]['start_timestamp'] );
+		//$job_window	= intval( $job_runtime ) * 1.2;
 
 		$jobrange	= -$job_window;
-		$jobstart	= $jobs[$jid]['start_timestamp'];
+		$jobstart	= (int) $jobs[$jid]['start_timestamp'];
+		$period_start	= (int) ($time - (($time - $jobstart) * 1.1 ));
 
 		$nr['jid']	= $jid;
 
@@ -514,7 +518,7 @@ function getNodes()
 		// RB: haven't used this yet: link to Ganglia's host overview
 		// maybe later to popup?
 		//
-		//$host_link      = "\"../../?c=$cluster_url&h=$host_url&r=job&jr=$jobrange&js=$jobstart\"";
+		//$host_link      = "\"../../?c=$cluster_url&h=$host_url&r=job&jr=$jobrange&job_start=$jobstart\"";
 
 		if ( $val["TYPE"] == "timestamp" || $always_timestamp[$metricname] )
 		{
@@ -526,8 +530,9 @@ function getNodes()
 		}
 		else
 		{
+			$end		= time();
 			$graphargs	= ($reports[$metricname]) ? "g=$metricname&" : "m=$metricname&";
-			$graphargs	.= "c=$cluster_url&h=$host_url&l=$load_color&v=".$val['VAL']."&r=job&jr=$jobrange&js=$jobstart";
+			$graphargs	.= "c=$cluster_url&h=$host_url&l=$load_color&v=".$val['VAL']."&r=job&period_start=$period_start&period_stop=$end&job_start=$jobstart";
 
 			if( $max > 0 )
 			{
