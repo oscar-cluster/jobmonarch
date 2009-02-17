@@ -828,6 +828,7 @@ MetricsDataStore = new Ext.data.Store(
 	id:		'MetricsDataStore',
 	proxy:		JobProxy,
 	autoLoad:	false,
+	// RB: anto cache store timestamp, dan autoload
 	baseParams:	{ task: "GETMETRICS" },
 	reader:
 		new Ext.data.JsonReader(
@@ -922,7 +923,7 @@ function createGraphView( store, jid )
 			
 				new Ext.XTemplate(
 					'<tpl for=".">',
-					'<div class="rrd-float"><a href="../../graph.php?z=large&{ga}" border="0" rel="lightbox[{jid}.{[globalWindowCount]}]"><img src="../../graph.php?z=small&{ga}" border="0"></a></div>',
+					'<div class="rrd-float"><a href="./graph.php?z=large&{ga}" border="0" rel="lightbox[{jid}.{[globalWindowCount]}]"><img src="./graph.php?z=small&{ga}" border="0"></a></div>',
 					'</tpl>'
 				)
 		});
@@ -966,6 +967,7 @@ function createGraphPanel( view )
 					selectOnFocus:	true,
 					xtype:		'combo',
 					width:		190,
+					myview:		view,
 					listeners:
 					{
 						select: 
@@ -975,6 +977,8 @@ function createGraphPanel( view )
 							var metric = record.data.name;
 							// doe iets
 
+							//this.myview.getStore().baseParams.metricname	= metric;
+							//this.myview.refresh();
 							// RB: misschien zo metric opgeven aan datastore?
 							//items[0].items[0].getStore().baseParams.metric = metric;
 						}
