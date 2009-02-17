@@ -826,23 +826,41 @@ var win;
 MetricsDataStore = new Ext.data.Store(
 {
 	id:		'MetricsDataStore',
-	proxy:		JobProxy,
-	autoLoad:	false,
-	// RB: anto cache store timestamp, dan autoload
+	proxy:		new Ext.data.HttpProxy(
+	{
+		url:		'jobstore.php',
+		method:		'POST'
+	}),
+	autoLoad:	true,
 	baseParams:	{ task: "GETMETRICS" },
 	reader:
 		new Ext.data.JsonReader(
 		{
-			root: 'names',
-			totalProperty: 'total',
-			id: 'id'
+			root:		'names',
+			totalProperty:	'total',
+			id:		'id'
 		},
 		[{
-			name: 'ID'
+			name:		'ID'
 		},{
-			name: 'name'
+			name:		'name'
 		}]
-		)
+		),
+	listeners:
+	{ 
+		'beforeload':
+		{
+			scope: this,
+			fn:
+
+			function( myStore, myOptions )
+			{
+				// Add a (bogus) timestamp, to create a unique url and prevent browser caching
+				//
+				myStore.proxy.url	= 'jobstore.php?timestamp=' + new Date().getTime();
+			}
+		}
+	}
 });
 
 SearchField	= new Ext.app.SearchField(
