@@ -1,0 +1,41 @@
+#! /bin/sh
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/sbin/jobarchived
+NAME=jobarchived
+DESC="Job Archiving Daemon"
+
+PIDFILE="/var/run/$NAME.pid"
+OPTIONS=""
+
+test -x $DAEMON || exit 0
+
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+case "$1" in
+  start)
+	echo -n "Starting $DESC: "
+	start-stop-daemon --start --quiet --startas "$DAEMON" --pidfile "$PIDFILE" -- \
+		--pidfile="$PIDFILE" $OPTIONS || { echo "start failed."; exit 0; }
+	echo "$NAME."
+	exit 0
+	;;
+  stop)
+	echo -n "Stopping $DESC: "
+        start-stop-daemon --stop  --quiet --pidfile "$PIDFILE" \
+                --signal 9 2>&1 > /dev/null || { rm -f "$PIDFILE"; echo "not running."; exit 0; }
+	echo "$NAME."
+	rm -f "$PIDFILE"
+	exit 0
+	;;
+  restart|force-reload)
+	$0 stop
+	$0 start
+	;;
+  *)
+	echo "Usage: $N {start|stop|restart}" >&2
+	exit 1
+	;;
+esac
+
+exit 0
