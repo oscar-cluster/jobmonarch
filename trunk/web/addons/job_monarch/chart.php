@@ -23,8 +23,8 @@ foreach($_GET as $key=>$val)
 
 // Include pChart libs
 //
-include( "./lib/pchart/pData.class" );
-include( "./lib/pchart/pChart.class" );
+include( "./lib/pchart/pChart/pData.class" );
+include( "./lib/pchart/pChart/pChart.class" );
 
 // Dataset definition
 //

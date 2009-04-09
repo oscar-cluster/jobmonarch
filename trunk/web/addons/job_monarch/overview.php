@@ -45,8 +45,8 @@ $gnodes		= $data_gatherer->getNodes();
 $cpus		= $data_gatherer->getCpus();
 $use_fqdn	= $data_gatherer->getUsingFQDN();
 
-include("./lib/pchart/pData.class");
-include("./lib/pchart/pChart.class");
+include("./lib/pchart/pChart/pData.class");
+include("./lib/pchart/pChart/pChart.class");
 
 function setupFilterSettings() 
 {
