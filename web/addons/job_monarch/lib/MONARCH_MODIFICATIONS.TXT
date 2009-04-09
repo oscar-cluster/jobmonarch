@@ -1,0 +1,16 @@
+extjs/:
+
+ * added searchfield.js example
+
+pchart/:
+
+ * added tohama.tff font
+
+lightbox2/css/lightbox.css:
+
+ * changed #overlay z-index to 20000 (was 90)
+ * changed #lightbox z-index to 21000 (was 100)
+
+lightbox2/js/lightbox.js:
+
+ * changed images/ path to lib/lightbox2/images/
