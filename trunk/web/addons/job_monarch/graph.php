@@ -508,23 +508,23 @@ function determineXGrid( $p_start, $p_stop ) {
 $lower_limit = "--lower-limit 0";
 
 # Calculate time range.
-//if( isset($sourcetime) )
-//{
+if( isset($sourcetime) )
+{
 	//printf("yay");
 
-//	$end = $sourcetime;
+	$end = $sourcetime;
 //	# Get_context makes start negative.
-//	$start = $sourcetime + $start;
+	$start = $sourcetime + $start;
 
 //	# Fix from Phil Radden, but step is not always 15 anymore.
 //	if ($range=="month")
 //		$end = floor($end / 672) * 672;
 
-//	$command = RRDTOOL . " graph - --start $start --end $end ".
-//		"--width $width --height $height $lower_limit ".
-//		"--title '$title' $extras $background ".
-//		$series;
-//}
+	$command = RRDTOOL . " graph - --start $start --end $end ".
+		"--width $width --height $height $lower_limit ".
+		"--title '$title' $extras $background ".
+		$series;
+}
 
 #
 # Generate the rrdtool graph command.
@@ -534,12 +534,12 @@ $lower_limit = "--lower-limit 0";
 #	"--title '$title' $vertical_label $extras $background $xgrid ".
 #	$series;
 
-//else {
+else {
 	$command = RRDTOOL . " graph - --start $period_start --end $period_stop ".
 		"--width $width --height $height $lower_limit ".
 		"--title '$title' $extras $background ".
 		$series;
-//}
+}
 
 $debug=0;
 
