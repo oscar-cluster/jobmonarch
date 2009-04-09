@@ -924,7 +924,7 @@ function createGraphView( store, jid )
 	
 		new Ext.DataView(
 		{
-			id:		jid,	
+			//id:		jid,	
 			itemSelector:	'thumb',
 			title:		jid,
 			style:		'overflow:auto',
@@ -973,6 +973,7 @@ function createGraphPanel( view )
 				new Ext.form.ComboBox(
 				{
 					fieldLabel:	'Metric',
+					id:		'myComboBox',
 					store:		MetricsDataStore,
 					valueField:	'name',
 					displayField:	'name',
