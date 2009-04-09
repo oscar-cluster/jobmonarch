@@ -45,9 +45,6 @@ $gnodes		= $data_gatherer->getNodes();
 $cpus		= $data_gatherer->getCpus();
 $use_fqdn	= $data_gatherer->getUsingFQDN();
 
-include("./lib/pchart/pData.class");
-include("./lib/pchart/pChart.class");
-
 function setupFilterSettings() 
 {
 
@@ -404,7 +401,7 @@ function drawPie()
 		$qcolors[] 	= $color;
 		$pie_args 	.= "&$name=$percentage,$color";
 	}
-	$pie = "./chart.php?$pie_args";
+	$pie = "../../pie.php?$pie_args";
 
 	return $pie;
 }
