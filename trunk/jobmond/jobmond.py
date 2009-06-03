@@ -3,7 +3,7 @@
 # This file is part of Jobmonarch
 #
 # Copyright (C) 2006-2007  Ramon Bastiaans
-# Copyright (C) 2007  Dave Love  (SGE code)
+# Copyright (C) 2007, 2009  Dave Love  (SGE code)
 # 
 # Jobmonarch is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 import sys, getopt, ConfigParser, time, os, socket, string, re
 import xdrlib, socket, syslog, xml, xml.sax
 from xml.sax.handler import feature_namespaces
+from collections import deque
 
 VERSION='0.3.1'
 
@@ -90,6 +91,9 @@ def processArgs( args ):
 
 	return loadConfig( config_filename )
 
+# Fixme:  This doesn't DTRT with commented-out bits of the file.  E.g.
+# it picked up a commented-out `mcast_join' and tried to use a
+# multicast channel when it shouldn't have done.
 class GangliaConfigParser:
 
 	def __init__( self, config_file ):
@@ -721,7 +725,13 @@ class DataGatherer:
 
 				if my_val_str:
 
-					my_val_str = my_val_str + ' ' + val_name + '=' + val_value
+					try:
+						# fixme: It's getting
+						# ('nodes', None) items
+						my_val_str = my_val_str + ' ' + val_name + '=' + val_value
+					except:
+						pass
+
 				else:
 					my_val_str = val_name + '=' + val_value
 
@@ -776,8 +786,9 @@ class DataGatherer:
 			self.submitJobData()
 			time.sleep( BATCH_POLL_INTERVAL )	
 
-# SGE code by Dave Love <fx@gnu.org>.  Tested with SGE 6.0u8 and 6.0u11.
-# Probably needs modification for SGE 6.1.  See also the fixmes.
+# SGE code by Dave Love <fx@gnu.org>.  Tested with SGE 6.0u8 and 6.0u11.  May
+# work with SGE 6.1 (else should be easily fixable), but definitely doesn't
+# with 6.2.  See also the fixmes.
 
 class NoJobs (Exception):
 	"""Exception raised by empty job list in qstat output."""
@@ -793,11 +804,13 @@ class SgeQstatXMLParser(xml.sax.handler.ContentHandler):
 		self.queue = ""
 		self.in_joblist = False
 		self.lrequest = False
+		self.eltq = deque()
 		xml.sax.handler.ContentHandler.__init__(self)
 
-	# The structure of the output is as follows.  Unfortunately
-	# it's voluminous, and probably doesn't scale to large
-	# clusters/queues.
+	# The structure of the output is as follows (for SGE 6.0).  It's
+	# similar for 6.1, but radically different for 6.2, and is
+	# undocumented generally.  Unfortunately it's voluminous, and probably
+	# doesn't scale to large clusters/queues.
 
 	# <detailed_job_info  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
 	#   <djob_info>
@@ -837,7 +850,11 @@ class SgeQstatXMLParser(xml.sax.handler.ContentHandler):
 		self.value = ""
 		if name == "djob_info":	# job list
 			self.in_joblist = True
-		elif name == "qmaster_response" and self.in_joblist: # job
+		# The job container is "qmaster_response" in SGE 6.0
+		# and 6.1, but "element" in 6.2.  This is only the very
+		# start of what's necessary for 6.2, though (sigh).
+		elif (name == "qmaster_response" or name == "element") \
+			    and self.eltq[-1] == "djob_info": # job
 			self.job = {"job_state": "U", "slots": 0,
 				    "nodes": [], "queued_timestamp": "",
 				    "queued_timestamp": "", "queue": "",
@@ -850,6 +867,7 @@ class SgeQstatXMLParser(xml.sax.handler.ContentHandler):
 			self.lrequest = True
 		elif name == "unknown_jobs":
 			raise NoJobs
+		self.eltq.append (name)
 
 	def characters(self, ch):
 		self.value += ch
@@ -865,6 +883,7 @@ class SgeQstatXMLParser(xml.sax.handler.ContentHandler):
 		  "JB_submission_time": "queued_timestamp"
 		  }
 		value = self.value
+		self.eltq.pop ()
 
 		if name == "djob_info":
 			self.in_joblist = False
@@ -987,9 +1006,12 @@ class SgeDataGatherer(DataGatherer):
 		# this method of getting data.  I haven't found better one.
 		# Output with args `-xml -ext -f -r' is easier to parse
 		# in some ways, harder in others, but it doesn't provide
-		# the submission time, at least.
-		piping = popen2.Popen3("qstat -u '*' -j '*' -xml" + queues,
-				       True)
+		# the submission time (at least SGE 6.0).  The pipeline
+		# into sed corrects bogus XML observed with a configuration
+		# of SGE 6.0u8, which otherwise causes the parsing to hang.
+		piping = popen2.Popen3("qstat -u '*' -j '*' -xml | \
+sed -e 's/reported usage>/reported_usage>/g' -e 's;<\/*JATASK:.*>;;'" \
+					       + queues, True)
 		qstatparser = SgeQstatXMLParser()
 		parse_err = 0
 		try:
@@ -1016,9 +1038,15 @@ class SgeDataGatherer(DataGatherer):
 				jobs_processed.append(job_id)
 			if job["status"] == "R":
 				job["nodes"] = do_nodelist (job["nodes"])
-				# Fixme: Is this right?
-				job["ppn"] = float(job["slots"]) / \
-				    len(job["nodes"])
+				# Fixme: why is job["nodes"] sometimes null?
+				try:
+					# Fixme: Is this sensible?  The
+					# PBS-type PPN isn't something you use
+					# with SGE.
+					job["ppn"] = float(job["slots"]) / \
+					    len(job["nodes"])
+				except:
+					job["ppn"] = 0
 				if DETECT_TIME_DIFFS:
 					# If a job start is later than our
 					# current date, that must mean
