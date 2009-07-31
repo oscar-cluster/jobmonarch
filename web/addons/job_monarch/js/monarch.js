@@ -1222,7 +1222,7 @@ var GraphSummaryWindow =
 				id:		'monarchlogo',
 				cls:		'monarch',
 				bodyStyle:	'background: transparent',
-				html:		'<A HREF="https://subtrac.sara.nl/oss/jobmonarch/" TARGET="_blank"><IMG SRC="./jobmonarch.gif" ALT="Job Monarch" BORDER="0"></A>'
+				//html:		'<A HREF="https://subtrac.sara.nl/oss/jobmonarch/" TARGET="_blank"><IMG SRC="./jobmonarch.gif" ALT="Job Monarch" BORDER="0"></A>'
 				//colspan: 2
 			},{
 				id:		'summarycount'

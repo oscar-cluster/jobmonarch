@@ -61,6 +61,11 @@ Ext.onReady( function()
 </HEAD>
 <BODY CLASS="background">
 
+<font size="1" color="blue">
+Job Monarch version {monarch-version}<BR />
+</font>
+<A HREF="https://subtrac.sara.nl/oss/jobmonarch/" TARGET="_blank"><IMG SRC="./jobmonarch.gif" ALT="Job Monarch" BORDER="0"></A>
+
     <MAP NAME="MONARCH_CLUSTER_BIG">
     <!-- START BLOCK : node_clustermap -->
     {node_area_map}
