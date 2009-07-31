@@ -1163,7 +1163,16 @@ var JobListingEditorGrid =
 			showGraphsButton,
 			'-',
 			filterButton 
-		]
+		],
+
+		view:		new Ext.ux.grid.BufferView(
+		{
+			// custom row height
+			//rowHeight: 34,
+			// render rows as they come into viewable area.
+			scrollDelay: false
+		})
+
 	});
 
 var ClusterImageWindow =
