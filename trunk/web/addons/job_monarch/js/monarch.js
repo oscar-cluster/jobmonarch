@@ -39,7 +39,7 @@ var filterMenu = new Ext.menu.Menu(
 	items:	[ new Ext.menu.Item({ text: 'Clear all', handler: clearFilters }) ]
 });
 
-var filterButton = new Ext.Toolbar.SplitButton(
+var filterButton = new Ext.Button(
 {
 	id:		'filtermenuknop',
 	text:		'Filters',
