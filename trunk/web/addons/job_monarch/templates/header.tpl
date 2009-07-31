@@ -12,6 +12,7 @@
 
 <link rel="stylesheet" type="text/css" href="./lib/extjs/resources/css/ext-all.css" />
 <link rel="stylesheet" type="text/css" href="./css/styles.css" />
+<link rel="stylesheet" type="text/css" href="./lib/extjs/tab-scroller-menu.css" />
 
 <script type="text/javascript" src="./lib/extjs/adapter/ext/ext-base.js"></script>
 <!-- <script type="text/javascript" src="./lib/extjs/adapter/ext/ext-base-debug.js"></script> -->
@@ -22,6 +23,7 @@
 <script type="text/javascript" src="./lib/extjs/searchfield.js"></script>
 <script type="text/javascript" src="./lib/extjs/StatusBar.js"></script>
 <script type="text/javascript" src="./lib/extjs/ProgressBarPager.js"></script>
+<script type="text/javascript" src="./lib/extjs/TabScrollerMenu.js"></script>
 <script type="text/javascript" src="./js/monarch.js"></script>
 <script type="text/javascript">
 

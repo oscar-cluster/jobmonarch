@@ -949,25 +949,30 @@ function createGraphView( store, jid )
 
 function createGraphPanel( view )
 {
+	var scrollerMenu = new Ext.ux.TabScrollerMenu(
+	{
+		maxText  : 15,
+		pageSize : 5
+	});
+
+
 	var graphPanel = 
 
 		new Ext.TabPanel(
 		{
 			id:		'tabPanel',
-			region:		'center',
+			//region:		'center',
 			//bodyStyle:	'background: transparent',
 			autoShow:	true,
 			//autoHeight:	true,
-			autoWidth:	true,
-			//autoScroll:	true,
-			//resizeTabs:	true,
-			bodyStyle:	'overflow:auto; background: transparent; heigth: auto',
-			//bodyStyle:	'overflow:auto; background: transparent',
-			//bodyBorder:	false,
-			minTabWidth:	60,
-			//tabWidth:	135,
+			//autoWidth:	true,
 			enableTabScroll:true,
-			//resizeTabs:	false,
+			resizeTabs:	true,
+			border:		false,
+			bodyStyle:	'overflow:auto; background: transparent; heigth: auto',
+			minTabWidth:	60,
+			plugins:	[ scrollerMenu ],
+
 			// RB TODO: range combobox; hour, day, week, etc
 
 			tbar:
@@ -1022,10 +1027,12 @@ function createGraphWindow( panel, Button )
 			collapsible:	true,
 			animCollapse:	true,
 			maximizable:	true,
+			layout:		'fit',
 			//autoScroll:	true,
 			//defaults:	{autoScroll:true},
 			title:		'Node graph details',
-			tbar:		panel,
+			//tbar:		panel,
+			items:		panel,
 		
 			listeners:
 			{
