@@ -114,7 +114,7 @@ Ext.ux.PageSizePlugin = function()
 		store:	new Ext.data.SimpleStore(
 		{
 			fields:	['text', 'value'],
-			data:	[['10', 10], ['15', 15], ['20', 20], ['30', 30], ['50', 50], ['100', 100], ['max', 'max' ]]
+			data:	[['10', 10], ['15', 15], ['20', 20], ['30', 30], ['50', 50], ['100', 100], ['250', 250], ['500', 500], ['all', 'max' ]]
 		}),
 		mode:		'local',
 		displayField:	'text',
@@ -122,7 +122,7 @@ Ext.ux.PageSizePlugin = function()
 		editable:	false,
 		allowBlank:	false,
 		triggerAction:	'all',
-		width:		40
+		width:		50
 	});
 };
 
