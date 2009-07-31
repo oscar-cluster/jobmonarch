@@ -24,6 +24,7 @@
 <script type="text/javascript" src="./lib/extjs/StatusBar.js"></script>
 <script type="text/javascript" src="./lib/extjs/ProgressBarPager.js"></script>
 <script type="text/javascript" src="./lib/extjs/TabScrollerMenu.js"></script>
+<script type="text/javascript" src="./lib/extjs/BufferView.js"></script>
 <script type="text/javascript" src="./js/monarch.js"></script>
 <script type="text/javascript">
 
