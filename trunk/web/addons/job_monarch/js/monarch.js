@@ -39,7 +39,7 @@ var filterMenu = new Ext.menu.Menu(
 	items:	[ new Ext.menu.Item({ text: 'Clear all', handler: clearFilters }) ]
 });
 
-var filterButton = new Ext.Toolbar.Item(
+var filterButton = new Ext.Button(
 {
 	id:		'filtermenuknop',
 	text:		'Filters',
@@ -89,7 +89,7 @@ var graphMenu = new Ext.menu.Menu(
 	}]
 });
 
-var showGraphsButton = new Ext.Toolbar.Item(
+var showGraphsButton = new Ext.Button(
 {
 	id:		'showgraphbutton',
 	text:		'Show graphs',
@@ -1152,8 +1152,10 @@ var JobListingEditorGrid =
 		tbar: 
 		[ 
 			SearchField,
+			'-',
 			showGraphsButton,
-			//filterButton 
+			'-',
+			filterButton 
 		]
 	});
 
