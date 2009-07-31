@@ -39,7 +39,7 @@ var filterMenu = new Ext.menu.Menu(
 	items:	[ new Ext.menu.Item({ text: 'Clear all', handler: clearFilters }) ]
 });
 
-var filterButton = new Ext.MenuButton(
+var filterButton = new Ext.Toolbar.Item(
 {
 	id:		'filtermenuknop',
 	text:		'Filters',
@@ -89,7 +89,7 @@ var graphMenu = new Ext.menu.Menu(
 	}]
 });
 
-var showGraphsButton = new Ext.MenuButton(
+var showGraphsButton = new Ext.Toolbar.Item(
 {
 	id:		'showgraphbutton',
 	text:		'Show graphs',
@@ -927,14 +927,14 @@ function createGraphView( store, jid )
 			//id:		jid,	
 			itemSelector:	'thumb',
 			title:		jid,
-			style:		'overflow:auto',
+			style:		'overflow:auto, heigth: auto',
 			multiSelect:	true,
-			autoHeight:	true,
+			//autoHeight:	true,
 			autoShow:	true,
 			//autoScroll:	true,
-			loadMask:	true,
+			//loadMask:	true,
 			store:		store,
-			layout:		'fit',
+			//layout:		'fit',
 			closable:	true,
 			tpl:
 			
@@ -955,17 +955,19 @@ function createGraphPanel( view )
 		{
 			id:		'tabPanel',
 			region:		'center',
-			bodyStyle:	'background: transparent',
+			//bodyStyle:	'background: transparent',
 			autoShow:	true,
-			autoHeight:	true,
+			//autoHeight:	true,
 			autoWidth:	true,
-			autoScroll:	true,
-			resizeTabs:	true,
+			//autoScroll:	true,
+			//resizeTabs:	true,
+			bodyStyle:	'overflow:auto; background: transparent; heigth: auto',
+			//bodyStyle:	'overflow:auto; background: transparent',
+			//bodyBorder:	false,
 			minTabWidth:	60,
 			//tabWidth:	135,
-			//closeable:	true,
 			enableTabScroll:true,
-			resizeTabs:	true,
+			//resizeTabs:	false,
 			// RB TODO: range combobox; hour, day, week, etc
 
 			tbar:
@@ -1151,7 +1153,7 @@ var JobListingEditorGrid =
 		[ 
 			SearchField,
 			showGraphsButton,
-			filterButton 
+			//filterButton 
 		]
 	});
 
@@ -1174,7 +1176,7 @@ var ClusterImageWindow =
 		layout:		'fit',
 		bbar: 
 		
-			new Ext.StatusBar(
+			new Ext.ux.StatusBar(
 			{
 				defaultText:	'Ready.',
 				id:		'basic-statusbar',
@@ -1224,7 +1226,7 @@ var GraphSummaryWindow =
 		],
 		bbar:
 		
-			new Ext.StatusBar(
+			new Ext.ux.StatusBar(
 			{
 				defaultText:	'Ready.',
 				id:		'basic-statusbar',
