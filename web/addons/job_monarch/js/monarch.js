@@ -39,7 +39,7 @@ var filterMenu = new Ext.menu.Menu(
 	items:	[ new Ext.menu.Item({ text: 'Clear all', handler: clearFilters }) ]
 });
 
-var filterButton = new Ext.Button(
+var filterButton = new Ext.Toolbar.SplitButton(
 {
 	id:		'filtermenuknop',
 	text:		'Filters',
@@ -89,7 +89,7 @@ var graphMenu = new Ext.menu.Menu(
 	}]
 });
 
-var showGraphsButton = new Ext.Button(
+var showGraphsButton = new Ext.Toolbar.SplitButton(
 {
 	id:		'showgraphbutton',
 	text:		'Show graphs',
