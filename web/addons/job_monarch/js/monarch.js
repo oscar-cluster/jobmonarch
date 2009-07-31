@@ -1144,9 +1144,9 @@ var JobListingEditorGrid =
 			pageSize:	15,
 			store:		JobsDataStore,
 			displayInfo:	true,
-			displayMsg:	'Displaying jobs {0} - {1} out of {2} jobs total found.',
+			displayMsg:	'Displaying jobs {0} - {1} out of {2} jobs total.',
 			emptyMsg:	'No jobs found to display',
-			plugins:	[ new Ext.ux.PageSizePlugin() ]
+			plugins:	[ new Ext.ux.ProgressBarPager(), new Ext.ux.PageSizePlugin() ]
 		}),
 
 		tbar: 
