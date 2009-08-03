@@ -689,6 +689,40 @@ JobsDataStore = new Ext.data.Store(
 					JobListingWindow.setTitle( filter_str );
 				}
 			}
+		},
+		'load':
+		{
+			scope: this,
+			fn:
+
+			function( store, records, options )
+			{
+				if( records.length == 1 )
+				{
+					jobid		= records[0].get('jid');
+
+					myPanel		= createGraphPanel();
+					nodeDatastore	= createNodesDataStore( myparams.c, jobid );
+					graphView	= createGraphView( nodeDatastore, jobid );
+
+					//graphView.autoShow = true;
+
+					newtab = myPanel.add( graphView );
+					myPanel.setActiveTab( newtab );
+					myPanel.doLayout();
+
+					//nodeDatastore.removeAll();
+
+					Ext.getCmp('preview-pane').removeAll();
+					Ext.getCmp('preview-pane').add( myPanel );
+					Ext.getCmp('preview-pane').doLayout();
+				}
+				else
+				{
+					Ext.getCmp('preview-pane').removeAll();
+					Ext.getCmp('preview-pane').doLayout();
+				}
+			}
 		}
 	}
 });
@@ -990,7 +1024,7 @@ function createGraphPanel( view )
 					emptyText:	'load_one',
 					selectOnFocus:	true,
 					xtype:		'combo',
-					width:		190,
+					width:		100,
 					myview:		view,
 					listeners:
 					{
@@ -1128,6 +1162,7 @@ var JobListingEditorGrid =
 	new Ext.grid.EditorGridPanel(
 	{
 		id:		'JobListingEditorGrid',
+		region:		'center',
 		store:		JobsDataStore,
 		cm:		JobsColumnModel,
 		enableColLock:	false,
@@ -1230,9 +1265,7 @@ var GraphSummaryWindow =
 			{
 				id:		'monarchlogo',
 				cls:		'monarch',
-				bodyStyle:	'background: transparent',
-				//html:		'<A HREF="https://subtrac.sara.nl/oss/jobmonarch/" TARGET="_blank"><IMG SRC="./jobmonarch.gif" ALT="Job Monarch" BORDER="0"></A>'
-				//colspan: 2
+				bodyStyle:	'background: transparent'
 			},{
 				id:		'summarycount'
 			},{
@@ -1264,10 +1297,23 @@ var JobListingWindow =
 		maximizable:	true,
 		y:		375,
 		width:		860,
-		height:		445,
+		height:		645,
 		plain:		true,
 		shadow:		true,
 		shadowOffset:	10,
-		layout:		'fit',
-		items:		JobListingEditorGrid
+		layout:		'border',
+		items:		
+		[		JobListingEditorGrid,
+				{
+					region:		'south', 
+					layout:		'fit',
+					id:		'preview-pane',
+					height:		200,
+					collapsible:	true,
+					border:		true,
+					title:		'Preview',
+					split:		true,
+					bodyStyle:	'overflow:auto; background: transparent; heigth: auto'
+				}
+		]
 	});
