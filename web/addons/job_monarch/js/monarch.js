@@ -697,7 +697,7 @@ JobsDataStore = new Ext.data.Store(
 
 			function( store, records, options )
 			{
-				if( records.length == 1 )
+				if( records.length == 1 ) // TODO: if job state is running
 				{
 					jobid		= records[0].get('jid');
 
@@ -958,7 +958,8 @@ function createGraphView( store, jid )
 	
 		new Ext.DataView(
 		{
-			//id:		jid,	
+			//id:		jid,
+			id:		'jobPanel',
 			itemSelector:	'thumb',
 			title:		jid,
 			style:		'overflow:auto, heigth: auto',
@@ -995,6 +996,7 @@ function createGraphPanel( view )
 		new Ext.TabPanel(
 		{
 			id:		'tabPanel',
+			xtype:		'tabpanel',
 			//region:		'center',
 			//bodyStyle:	'background: transparent',
 			autoShow:	true,
@@ -1011,6 +1013,7 @@ function createGraphPanel( view )
 
 			tbar:
 			[
+				'Metric name: ',
 				new Ext.form.ComboBox(
 				{
 					fieldLabel:	'Metric',
@@ -1025,20 +1028,20 @@ function createGraphPanel( view )
 					selectOnFocus:	true,
 					xtype:		'combo',
 					width:		100,
-					myview:		view,
+					//myview:		view,
 					listeners:
 					{
 						select: 
 								
 						function(combo, record, index)
 						{
-							var metric = record.data.name;
-							// doe iets
+							var metric	= record.data.name;
 
-							//this.myview.getStore().baseParams.metricname	= metric;
-							//this.myview.refresh();
-							// RB: misschien zo metric opgeven aan datastore?
-							//items[0].items[0].getStore().baseParams.metric = metric;
+							parentPanel	= this.findParentByType( 'tabpanel' );
+							my_dataview	= parentPanel.getActiveTab();
+
+							my_dataview.getStore().baseParams.metricname	= metric;
+							my_dataview.getStore().reload();
 						}
 					}
 				})

@@ -24,7 +24,9 @@ $owner			= isset($_POST['owner']) ? $_POST['owner'] : null;
 $status			= isset($_POST['status']) ? $_POST['status'] : null;
 $queue			= isset($_POST['queue']) ? $_POST['queue'] : null;
 $host			= isset($_POST['host']) ? $_POST['host'] : null;
-$metricname		= isset($_POST['metricname']) ? $_POST['metricname'] : 'load_one';
+$p_metricname		= isset($_POST['metricname']) ? $_POST['metricname'] : 'load_one';
+
+//print_r( $_POST );
 
 if( $jids != null )
 {
@@ -445,10 +447,12 @@ function filterJobs( $jobs )
 
 function getNodes()
 {
-	global $jobs, $jobids, $clustername, $metrics, $jid, $metricname;
+	global $jobs, $jobids, $clustername, $metrics, $jid, $p_metricname;
 	global $always_timestamp, $always_constant;
 
 	$display_nodes	= array();
+
+	$metricname	= $p_metricname;
 
 	printCacheHeaders();
 
