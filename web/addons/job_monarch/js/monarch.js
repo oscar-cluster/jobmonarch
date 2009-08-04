@@ -995,7 +995,7 @@ function createGraphPanel( view )
 
 		new Ext.TabPanel(
 		{
-			id:		'tabPanel',
+			//id:		'tabPanel',
 			xtype:		'tabpanel',
 			//region:		'center',
 			//bodyStyle:	'background: transparent',
@@ -1017,7 +1017,7 @@ function createGraphPanel( view )
 				new Ext.form.ComboBox(
 				{
 					fieldLabel:	'Metric',
-					id:		'myComboBox',
+					//id:		'myComboBox',
 					store:		MetricsDataStore,
 					valueField:	'name',
 					displayField:	'name',
@@ -1037,8 +1037,9 @@ function createGraphPanel( view )
 						{
 							var metric	= record.data.name;
 
-							parentPanel	= this.findParentByType( 'tabpanel' );
-							my_dataview	= parentPanel.getActiveTab();
+							var parentPanel	= this.findParentByType( 'tabpanel' );
+							//var parentPanel	= Ext.getCmp( this.el.up( 'div.x-tab-panel' ).id );
+							var my_dataview	= parentPanel.getActiveTab();
 
 							my_dataview.getStore().baseParams.metricname	= metric;
 							my_dataview.getStore().reload();
@@ -1053,7 +1054,7 @@ function createGraphPanel( view )
 
 function createGraphWindow( panel, Button )
 {
-	graphWindow =
+	var graphWindow =
 
 		new Ext.Window(
 		{
@@ -1071,19 +1072,19 @@ function createGraphWindow( panel, Button )
 			//tbar:		panel,
 			items:		panel,
 		
-			listeners:
-			{
-				resize:
+			//listeners:
+			//{
+			//	resize:
 
-				function(  myWindow, width, height )
-				{
-					var myPanel	= myWindow.items.get( 'tabPanel' );
-					var myView	= myPanel.getActiveTab();
+			//	function(  myWindow, width, height )
+			//	{
+			//		var myPanel	= myWindow.items.get( 'tabPanel' );
+			//		var myView	= myPanel.getActiveTab();
 
-					myPanel.doLayout();
-					myWindow.doLayout();
-				}
-			}
+			//		myPanel.doLayout();
+			//		myWindow.doLayout();
+			//	}
+			//}
 		});
 
 	return graphWindow;
