@@ -43,15 +43,18 @@ Ext.onReady( function()
 	ClusterImageArgs['{session_name}']	= '{session_id}';
 	ClusterImageArgs['c']			= '{cluster}';
 
+	GraphSummaryWindow.show();
+
 	ClusterImageWindow.html			= '<IMG ID="clusterimage" SRC="{clusterimage}" USEMAP="#MONARCH_CLUSTER_BIG" BORDER="0">';
 	ClusterImageWindow.show();
+	setClusterImagePosition();
 	reloadClusterImage();
 
 	JobListingWindow.setTitle( "{cluster} Jobs Overview" );
 	JobListingWindow.show();
+	//achorJobListing();
+	setJobListingPosition();
 	reloadJobStore();
-
-	GraphSummaryWindow.show();
 
 	Ext.get( 'rjqjgraph' ).update( '<IMG ID="rjqj_graph" SRC="{rjqj_graph}" BORDER=0>' );
 	Ext.get( 'pie' ).update( '<IMG ID="pie" SRC="{pie}" BORDER=0>' );
