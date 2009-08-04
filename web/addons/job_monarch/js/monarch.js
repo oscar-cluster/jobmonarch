@@ -386,13 +386,20 @@ ImageLoader.prototype =
 
 function achorJobListing()
 {
-	JobListingWindow.anchorTo( "ClusterImageWindow", "tr-br", [ 0, 10 ] );
+	//JobListingWindow.anchorTo( "ClusterImageWindow", "tr-br", [ 0, 10 ] );
+	JobListingWindow.anchorTo( "ClusterImageWindow", "tr-tr", [ 0, 10 ] );
 }
 
 function setClusterImagePosition()
 {
-	ci_x = (window.innerWidth - ClusterImageWindow.getSize()['width'] - 20); 
-	ClusterImageWindow.setPosition( ci_x, 10 );
+	//var ci_x = (window.innerWidth - ClusterImageWindow.getSize()['width'] - 20); 
+	ClusterImageWindow.setPosition( 10, 10 );
+}
+
+function setJobListingPosition()
+{
+	var jl_x = (window.innerWidth - JobListingWindow.getSize()['width'] - 20); 
+	JobListingWindow.setPosition( jl_x, 10 );
 }
 
 function deselectFilterMenu( menuItem, event )
@@ -462,7 +469,7 @@ function reloadClusterImage()
 	{
 		ClusterImageWindow.getBottomToolbar().clearStatus( { useDefaults:true } );
 		setTimeout( "resizeClusterImage()", 250 );
-		setTimeout( "setClusterImagePosition()", 500 );
+		//setTimeout( "setClusterImagePosition()", 500 );
 		//setTimeout( "achorJobListing()", 1000 );
 	};
 
