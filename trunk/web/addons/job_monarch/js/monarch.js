@@ -70,19 +70,19 @@ var graphMenu = new Ext.menu.Menu(
 	items:
 	[{
 		id:		'new-window',
-		text:		'Each job in new window',
+		text:		'In new window(s)',
 		checked:	false,
 		group:		'graphwindow',
 		handler:	checkGraphWindowOption
 	},{
 		id:		'tabbed-new-window',
-		text:		'Each job in a seperate tab, in new window',
+		text:		'In seperate tab(s), in 1 new window',
 		checked:	true,
 		group:		'graphwindow',
 		handler:	checkGraphWindowOption
 	},{
 		id:		'tabbed-prev-window',
-		text:		'Each job in a seperate tab, in last opened window',
+		text:		'In seperate tab(s), in last opened window',
 		checked:	false,
 		group:		'graphwindow',
 		handler:	checkGraphWindowOption
@@ -92,7 +92,7 @@ var graphMenu = new Ext.menu.Menu(
 var showGraphsButton = new Ext.Toolbar.SplitButton(
 {
 	id:		'showgraphbutton',
-	text:		'Show graphs',
+	text:		'Open selected',
 	disabled:	true,
 	menu:		graphMenu,
 	listeners:
@@ -1201,6 +1201,7 @@ var JobListingEditorGrid =
 
 		tbar: 
 		[ 
+			'Search: ',
 			SearchField,
 			'-',
 			showGraphsButton,
