@@ -959,7 +959,7 @@ function createGraphView( store, jid )
 		new Ext.DataView(
 		{
 			//id:		jid,
-			id:		'jobPanel',
+			//id:		'jobPanel',
 			itemSelector:	'thumb',
 			title:		jid,
 			style:		'overflow:auto, heigth: auto',
@@ -1095,6 +1095,10 @@ function ShowGraphs( Button, Event )
 	var graphJids		= Array();
 	var windowCount		= 0;
 	var tabCount		= 0;
+	var nodeDatastore;
+	var graphView;
+	var myWindow;
+	var myPanel;
 
 	for( var i=0; i<row_records.length; i++ )
 	{
