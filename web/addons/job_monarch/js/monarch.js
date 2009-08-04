@@ -706,15 +706,17 @@ JobsDataStore = new Ext.data.Store(
 			{
 				if( records.length == 1 ) // TODO: if job state is running
 				{
-					jobid		= records[0].get('jid');
+					jobid			= records[0].get('jid');
 
-					myPanel		= createGraphPanel();
-					nodeDatastore	= createNodesDataStore( myparams.c, jobid );
-					graphView	= createGraphView( nodeDatastore, jobid );
+					var myPanel		= createGraphPanel();
+					var nodeDatastore	= createNodesDataStore( myparams.c, jobid );
+					var graphView		= createGraphView( nodeDatastore, jobid );
+					var graphTab		= createGraphTab( graphView, jobid );
 
 					//graphView.autoShow = true;
 
-					newtab = myPanel.add( graphView );
+					//newtab = myPanel.add( graphView );
+					var newtab = myPanel.add( graphTab );
 					myPanel.setActiveTab( newtab );
 					myPanel.doLayout();
 
@@ -927,7 +929,8 @@ function createNodesDataStore( cluster, jid )
 			{
 				'task':			"GETNODES",
 				'c':			cluster,
-				'jid':			jid
+				'jid':			jid,
+				'metricname':		'load_one'
 			},
 			reader: new Ext.data.JsonReader(
 			{
@@ -968,6 +971,7 @@ function createGraphView( store, jid )
 			//id:		jid,
 			//id:		'jobPanel',
 			itemSelector:	'thumb',
+			region:		'center',
 			title:		jid,
 			style:		'overflow:auto, heigth: auto',
 			multiSelect:	true,
@@ -989,6 +993,35 @@ function createGraphView( store, jid )
 	return graphView;
 }
 
+function createGraphTab( view, jobid )
+{
+	var graphTab =
+
+		new Ext.Panel(
+		{
+			title:	jobid,
+			layout:	'border',
+
+			items:
+			[
+				view,
+				{
+					region: 	'west',
+					split:		true,
+					title:		'Job info',
+					width:		200,
+					layout:		'fit',
+					//id:		'jobinfo-pane',
+					collapsible:	true,
+					border:		true
+				}
+			]
+		});
+
+	return graphTab;
+}
+
+
 function createGraphPanel( view )
 {
 	var scrollerMenu = new Ext.ux.TabScrollerMenu(
@@ -1004,6 +1037,7 @@ function createGraphPanel( view )
 		{
 			//id:		'tabPanel',
 			xtype:		'tabpanel',
+			//layout:		'border',
 			//region:		'center',
 			//bodyStyle:	'background: transparent',
 			autoShow:	true,
@@ -1011,7 +1045,7 @@ function createGraphPanel( view )
 			//autoWidth:	true,
 			enableTabScroll:true,
 			resizeTabs:	true,
-			border:		false,
+			//border:		false,
 			bodyStyle:	'overflow:auto; background: transparent; heigth: auto',
 			minTabWidth:	60,
 			plugins:	[ scrollerMenu ],
@@ -1038,22 +1072,37 @@ function createGraphPanel( view )
 					//myview:		view,
 					listeners:
 					{
-						select: 
+					//	select: 
 								
-						function(combo, record, index)
-						{
-							var metric	= record.data.name;
+					//	function(combo, record, index)
+					//	{
+					//		var metric	= record.data.name;
 
-							var parentPanel	= this.findParentByType( 'tabpanel' );
+					//		var parentPanel	= this.findParentByType( 'tabpanel' );
 							//var parentPanel	= Ext.getCmp( this.el.up( 'div.x-tab-panel' ).id );
-							var my_dataview	= parentPanel.getActiveTab();
+					//		var my_dataview	= parentPanel.getActiveTab().findByType(Ext.DataView);
 
-							my_dataview.getStore().baseParams.metricname	= metric;
-							my_dataview.getStore().reload();
-						}
+					//		my_dataview.getStore().baseParams.metricname	= metric;
+					//		my_dataview.getStore().reload();
+					//	}
 					}
 				})
 			]
+
+			//listeners:
+			//{
+			//	tabchange:
+				
+			//	function( panel, tab )
+			//	{
+			//		if( panel.rendered )
+			//		{
+			//			combobox	= tab.findParentByType( 'tabpanel' );
+			//			alert( combobox.xtype );
+			//			combobox.value	= tab.getStore().baseParams.metricname;
+			//		}
+			//	}
+			//}
 		});
 
 	return graphPanel;
@@ -1075,9 +1124,9 @@ function createGraphWindow( panel, Button )
 			layout:		'fit',
 			//autoScroll:	true,
 			//defaults:	{autoScroll:true},
-			title:		'Node graph details',
+			title:		'Jobs',
 			//tbar:		panel,
-			items:		panel,
+			items:		[ panel ]
 		
 			//listeners:
 			//{
@@ -1105,6 +1154,7 @@ function ShowGraphs( Button, Event )
 	var tabCount		= 0;
 	var nodeDatastore;
 	var graphView;
+	var graphTab;
 	var myWindow;
 	var myPanel;
 
@@ -1154,10 +1204,11 @@ function ShowGraphs( Button, Event )
 		{
 			nodeDatastore	= createNodesDataStore( myparams.c, graphJids[w][t] );
 			graphView	= createGraphView( nodeDatastore, graphJids[w][t] );
+			graphTab	= createGraphTab( graphView, graphJids[w][t] );
 
 			nodeDatastore.removeAll();
 
-			lastView	= myPanel.add( graphView );
+			lastView	= myPanel.add( graphTab );
 
 			myPanel.doLayout();
 		}
