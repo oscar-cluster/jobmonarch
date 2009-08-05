@@ -711,7 +711,7 @@ JobsDataStore = new Ext.data.Store(
 					var myPanel		= createGraphPanel();
 					var nodeDatastore	= createNodesDataStore( myparams.c, jobid );
 					var graphView		= createGraphView( nodeDatastore, jobid );
-					var graphTab		= createGraphTab( graphView, jobid );
+					var graphTab		= createGraphTab( graphView, jobid, nodeDatastore );
 
 					//graphView.autoShow = true;
 
@@ -978,6 +978,7 @@ function createGraphView( store, jid )
 			multiSelect:	true,
 			//autoHeight:	true,
 			autoShow:	true,
+			xtype:		'dataview',
 			//autoScroll:	true,
 			//loadMask:	true,
 			store:		store,
@@ -996,7 +997,7 @@ function createGraphView( store, jid )
 }
 
 
-function createGraphTab( view, jobid )
+function createGraphTab( view, jobid, store )
 {
 	var graphTab =
 
@@ -1004,14 +1005,80 @@ function createGraphTab( view, jobid )
 		{
 			title:		jobid,
 			layout:		'border',
+			xtype:		'panel',
 			bodyStyle:	'overflow:auto; background: transparent; heigth: auto',
 			closable:	true,
+
+			tbar:
+			[
+				'Metric name: ',
+				new Ext.form.ComboBox(
+				{
+					fieldLabel:	'Metric',
+					store:		MetricsDataStore,
+					valueField:	'name',
+					displayField:	'name',
+					typeAhead:	true,
+					mode:		'remote',
+					triggerAction:	'all',
+					emptyText:	'load_one',
+					selectOnFocus:	true,
+					xtype:		'combo',
+					width:		100,
+					listeners:
+					{
+						select: 
+								
+						function(combo, record, index)
+						{
+							var metric	= record.data.name;
+
+							var parentPanel	= this.findParentByType( 'panel' );
+							var my_dataview	= parentPanel.items.get(0);
+
+							my_dataview.getStore().baseParams.metricname	= metric;
+							my_dataview.getStore().reload();
+						}
+					}
+				}),
+				'-',
+				'Range: ',
+				new Ext.form.ComboBox(
+				{
+					fieldLabel:	'Range',
+					//store:		MetricsDataStore,
+					valueField:	'name',
+					displayField:	'name',
+					typeAhead:	true,
+					//mode:		'remote',
+					triggerAction:	'all',
+					emptyText:	'job',
+					selectOnFocus:	true,
+					xtype:		'combo',
+					width:		100,
+					listeners:
+					{
+					//	select: 
+								
+					//	function(combo, record, index)
+					//	{
+					//		var metric	= record.data.name;
+
+					//		var parentPanel	= this.findParentByType( 'panel' );
+					//		var my_dataview	= parentPanel.items.get(0);
+
+					//		my_dataview.getStore().baseParams.metricname	= metric;
+					//		my_dataview.getStore().reload();
+					//	}
+					}
+				}),
+			],
 
 			items:
 			[
 				view,
 				{
-					region: 	'west',
+					region: 	'east',
 					split:		true,
 					title:		'Job info',
 					width:		200,
@@ -1057,43 +1124,6 @@ function createGraphPanel( view )
 
 			// RB TODO: range combobox; hour, day, week, etc
 
-			tbar:
-			[
-				'Metric name: ',
-				new Ext.form.ComboBox(
-				{
-					fieldLabel:	'Metric',
-					//id:		'myComboBox',
-					store:		MetricsDataStore,
-					valueField:	'name',
-					displayField:	'name',
-					typeAhead:	true,
-					mode:		'remote',
-					triggerAction:	'all',
-					emptyText:	'load_one',
-					selectOnFocus:	true,
-					xtype:		'combo',
-					width:		100,
-					//myview:		view,
-					listeners:
-					{
-					//	select: 
-								
-					//	function(combo, record, index)
-					//	{
-					//		var metric	= record.data.name;
-
-					//		var parentPanel	= this.findParentByType( 'tabpanel' );
-							//var parentPanel	= Ext.getCmp( this.el.up( 'div.x-tab-panel' ).id );
-					//		var my_dataview	= parentPanel.getActiveTab().findByType(Ext.DataView);
-					//		alert( my_dataview.xtype );
-
-					//		my_dataview.getStore().baseParams.metricname	= metric;
-					//		my_dataview.getStore().reload();
-					//	}
-					}
-				})
-			]
 
 			//listeners:
 			//{
@@ -1199,6 +1229,7 @@ function nodeWindow( node, node_url )
 		title:		node,
 		layout:		'fit',
 		items:		[ nodePanel ],
+		collapsible:	true,
 		listeners:
 		{
 			show:	function() 
@@ -1271,7 +1302,7 @@ function ShowGraphs( Button, Event )
 		{
 			nodeDatastore	= createNodesDataStore( myparams.c, graphJids[w][t] );
 			graphView	= createGraphView( nodeDatastore, graphJids[w][t] );
-			graphTab	= createGraphTab( graphView, graphJids[w][t] );
+			graphTab	= createGraphTab( graphView, graphJids[w][t], nodeDatastore );
 
 			nodeDatastore.removeAll();
 
@@ -1435,6 +1466,7 @@ var JobListingWindow =
 		plain:		true,
 		shadow:		true,
 		shadowOffset:	10,
+		bodyStyle:	'overflow:auto; background: transparent; heigth: auto',
 		layout:		'border',
 		items:		
 		[		JobListingEditorGrid,
