@@ -973,7 +973,8 @@ function createGraphView( store, jid )
 			itemSelector:	'thumb',
 			region:		'center',
 			title:		jid,
-			style:		'overflow:auto, heigth: auto',
+			//style:		'overflow:auto, heigth: auto',
+			bodyStyle:	'overflow:auto; background: transparent; heigth: auto',
 			multiSelect:	true,
 			//autoHeight:	true,
 			autoShow:	true,
@@ -986,12 +987,14 @@ function createGraphView( store, jid )
 			
 				new Ext.XTemplate(
 					'<tpl for=".">',
-					'<div class="rrd-float"><a href="./graph.php?z=large&{ga}" border="0" rel="lightbox[{jid}.{[globalWindowCount]}]"><img src="./graph.php?z=small&{ga}" border="0"></a></div>',
+					//'<div class="rrd-float"><a href="./graph.php?z=large&{ga}" border="0" rel="lightbox[{jid}.{[globalWindowCount]}]"><img src="./graph.php?z=small&{ga}" border="0"></a></div>',
+					'<div class="rrd-float"><img src="./graph.php?z=small&{ga}" border="0" style="cursor:pointer" onclick="nodeWindow(\'node x\', \'{ga}\');"></a></div>',
 					'</tpl>')
 		});
 
 	return graphView;
 }
+
 
 function createGraphTab( view, jobid )
 {
@@ -999,8 +1002,10 @@ function createGraphTab( view, jobid )
 
 		new Ext.Panel(
 		{
-			title:	jobid,
-			layout:	'border',
+			title:		jobid,
+			layout:		'border',
+			bodyStyle:	'overflow:auto; background: transparent; heigth: auto',
+			closable:	true,
 
 			items:
 			[
@@ -1081,6 +1086,7 @@ function createGraphPanel( view )
 					//		var parentPanel	= this.findParentByType( 'tabpanel' );
 							//var parentPanel	= Ext.getCmp( this.el.up( 'div.x-tab-panel' ).id );
 					//		var my_dataview	= parentPanel.getActiveTab().findByType(Ext.DataView);
+					//		alert( my_dataview.xtype );
 
 					//		my_dataview.getStore().baseParams.metricname	= metric;
 					//		my_dataview.getStore().reload();
@@ -1144,6 +1150,67 @@ function createGraphWindow( panel, Button )
 		});
 
 	return graphWindow;
+}
+
+function nodeWindow( node, node_url )
+{
+	source_url	= '../../?c=' + myparams.c + '&h=' + node_url;
+
+	var nodePanel = new Ext.Panel(
+	{
+		html:	'<iframe style="overflow:auto;width:100%;height:100%;background: transparent;" frameborder="0"  src="' + source_url + '"></iframe>',
+		layout:	'fit',
+		tbar:
+		[
+			{
+				text:		'Back',
+				handler:	function() 
+				{
+					history.back();
+				}
+			},
+			{
+				text:		'Forward',
+				handler:	function() 
+				{
+					history.forward();
+				}
+			},
+			{
+				text:		'Reload',
+				handler:	function() 
+				{
+					my_panel	= this.findParentByType('panel').getEl();
+					my_frame	= my_panel.child('iframe', true);
+
+					my_frame.contentDocument.location.reload();
+				}
+			}
+		],
+	});
+
+	var win = new Ext.Window(
+	{
+		width:		800,
+		//id:		'autoload-win',
+		height:		300,
+		maximizable:	true,
+		//autoScroll:	true,
+		title:		node,
+		layout:		'fit',
+		items:		[ nodePanel ],
+		listeners:
+		{
+			show:	function() 
+			{
+				this.loadMask = new Ext.LoadMask(this.body, {
+					msg:'Loading. Please wait...'
+				 });
+			}
+		}
+	});
+
+	win.show();
 }
 
 function ShowGraphs( Button, Event ) 
