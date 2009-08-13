@@ -598,7 +598,8 @@ function jobCellClick(grid, rowIndex, columnIndex, e)
 
 function jobCellRender( value, metadata, record, rowindex, colindex, store )
 {
-	var fieldName	= JobsColumnModel.getColumnById( colindex ).dataIndex;
+	var column_id	= JobsColumnModel.getColumnId( colindex );
+	var fieldName	= JobsColumnModel.getColumnById( column_id ).dataIndex;
 	var fil_dis	= 'filter';
 	var fil_ena	= 'filterenabled';
 	var filterName	= fieldName;
@@ -761,105 +762,90 @@ var CheckJobs =
 	});
 
 JobsColumnModel = new Ext.grid.ColumnModel(
-[
-	CheckJobs,
+{
+	//CheckJobs,
+	defaults:
 	{
-		header:		'#',
-		tooltip:	'Job id',
-		readOnly:	true,
-		dataIndex:	'jid',
-		width:		50,
 		hidden:		false,
-		renderer:	jobCellRender
-	},{
-		header:		'S',
-		tooltip:	'Job status',
-		readOnly:	true,
-		dataIndex:	'status',
-		width:		20,
-		hidden:		false,
-		renderer:	jobCellRender
-	},{
-		header:		'User',
-		tooltip:	'Owner of job',
-		readOnly:	true,
-		dataIndex:	'owner',
-		width:		60,
-		hidden:		false,
-		renderer:	jobCellRender
-	},{
-		header:		'Queue',
-		tooltip:	'In which queue does this job reside',
-		readOnly:	true,
-		dataIndex:	'queue',
-		width:		60,
-		hidden:		false,
-		renderer:	jobCellRender
-	},{
-		header:		'Name',
-		tooltip:	'Name of job',
-		readOnly:	true,
-		dataIndex:	'name',
-		width:		100,
-		hidden:		false
-	},{
-		header:		'Requested Time',
-		tooltip:	'Amount of requested time (wallclock)',
-		readOnly:	true,
-		dataIndex:	'requested_time',
-		width:		100,
-		hidden:		false
-	},{
-		header:		'Requested Memory',
-		tooltip:	'Amount of requested memory',
-		readOnly:	true,
-		dataIndex:	'requested_memory',
-		width:		100,
-		hidden:		true
-	},{
-		header:		'P',
-		tooltip:	'Number of processors per node (PPN)',
-		readOnly:	true,
-		dataIndex:	'ppn',
-		width:		25,
-		hidden:		false
-	},{
-		header:		'N',
-		tooltip:	'Number of nodes (hosts)',
-		readOnly:	true,
-		dataIndex:	'nodect',
-		width:		25,
-		hidden:		false
-	},{
-		header:		'Nodes',
-		readOnly:	true,
-		dataIndex:	'nodes',
-		width:		100,
-		hidden:		false,
-		renderer:	jobCellRender
-	},{
-		header:		'Queued',
-		tooltip:	'At what time did this job enter the queue',
-		readOnly:	true,
-		dataIndex:	'queued_timestamp',
-		width:		120,
-		hidden:		false
-	},{
-		header:		'Started',
-		tooltip:	'At what time did this job enter the running status',
-		readOnly:	true,
-		dataIndex:	'start_timestamp',
-		width:		120,
-		hidden:		false
-	},{
-		header:		'Runningtime',
-		tooltip:	'How long has this job been in the running status',
-		readOnly:	true,
-		dataIndex:	'runningtime',
-		width:		140,
-		hidden:		false
-	}
-]);
+		readonly:	true,
+		sortable:	true
+	},
+	columns:
+	[
+		{
+			header:		'#',
+			tooltip:	'Job id',
+			dataIndex:	'jid',
+			width:		50,
+			renderer:	jobCellRender
+		},{
+			header:		'S',
+			tooltip:	'Job status',
+			dataIndex:	'status',
+			width:		20,
+			renderer:	jobCellRender
+		},{
+			header:		'User',
+			tooltip:	'Owner of job',
+			dataIndex:	'owner',
+			width:		60,
+			renderer:	jobCellRender
+		},{
+			header:		'Queue',
+			tooltip:	'In which queue does this job reside',
+			dataIndex:	'queue',
+			width:		60,
+			hidden:		false,
+			renderer:	jobCellRender
+		},{
+			header:		'Name',
+			tooltip:	'Name of job',
+			dataIndex:	'name',
+			width:		100,
+		},{
+			header:		'Requested Time',
+			tooltip:	'Amount of requested time (wallclock)',
+			dataIndex:	'requested_time',
+			width:		100,
+		},{
+			header:		'Requested Memory',
+			tooltip:	'Amount of requested memory',
+			dataIndex:	'requested_memory',
+			width:		100,
+			hidden:		true
+		},{
+			header:		'P',
+			tooltip:	'Number of processors per node (PPN)',
+			dataIndex:	'ppn',
+			width:		25,
+		},{
+			header:		'N',
+			tooltip:	'Number of nodes (hosts)',
+			dataIndex:	'nodect',
+			width:		25,
+		},{
+			header:		'Nodes',
+			dataIndex:	'nodes',
+			width:		100,
+			renderer:	jobCellRender
+		},{
+			header:		'Queued',
+			tooltip:	'At what time did this job enter the queue',
+			dataIndex:	'queued_timestamp',
+			width:		120,
+		},{
+			header:		'Started',
+			tooltip:	'At what time did this job enter the running status',
+			dataIndex:	'start_timestamp',
+			width:		120,
+		},{
+			header:		'Runningtime',
+			tooltip:	'How long has this job been in the running status',
+			dataIndex:	'runningtime',
+			width:		140,
+		}
+	]
+});
 
 JobsColumnModel.defaultSortable	= true;
 
@@ -1323,12 +1309,12 @@ function ShowGraphs( Button, Event )
 
 var JobListingEditorGrid =
 
-	new Ext.grid.EditorGridPanel(
+	new Ext.grid.GridPanel(
 	{
 		id:		'JobListingEditorGrid',
 		region:		'center',
 		store:		JobsDataStore,
-		cm:		JobsColumnModel,
+		colModel:	JobsColumnModel,
 		enableColLock:	false,
 		clicksToEdit:	1,
 		loadMask:	true,
