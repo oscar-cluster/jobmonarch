@@ -763,7 +763,6 @@ var CheckJobs =
 
 JobsColumnModel = new Ext.grid.ColumnModel(
 {
-	//CheckJobs,
 	defaults:
 	{
 		hidden:		false,
@@ -772,6 +771,7 @@ JobsColumnModel = new Ext.grid.ColumnModel(
 	},
 	columns:
 	[
+		CheckJobs,
 		{
 			header:		'#',
 			tooltip:	'Job id',
@@ -925,7 +925,9 @@ function createNodesDataStore( cluster, jid )
 				id:		'id'
 			},[
 				{name: 'jid', type: 'string', mapping: 'jid'},
-				{name: 'ga', type: 'string', mapping: 'ga'}
+				{name: 'ga', type: 'string', mapping: 'ga'},
+				{name: 'nodename', type: 'string', mapping: 'nodename'},
+				{name: 'hostlink', type: 'string', mapping: 'hostlink'}
 			]),
 			listeners:
 			{ 
@@ -975,7 +977,7 @@ function createGraphView( store, jid )
 				new Ext.XTemplate(
 					'<tpl for=".">',
 					//'<div class="rrd-float"><a href="./graph.php?z=large&{ga}" border="0" rel="lightbox[{jid}.{[globalWindowCount]}]"><img src="./graph.php?z=small&{ga}" border="0"></a></div>',
-					'<div class="rrd-float"><img src="./graph.php?z=small&{ga}" border="0" style="cursor:pointer" onclick="nodeWindow(\'node x\', \'{ga}\');"></a></div>',
+					'<div class="rrd-float"><img src="./graph.php?z=small&{ga}" border="0" style="cursor:pointer" onclick="nodeWindow(\'{nodename}\', \'{hostlink}\');"></a></div>',
 					'</tpl>')
 		});
 

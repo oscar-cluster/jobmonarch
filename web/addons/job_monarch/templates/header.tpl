@@ -34,10 +34,11 @@ Ext.onReady( function()
 
 	JobProxy.on('beforeload', function(p, params) 
 	{
-		params.c	= "{cluster}";
-		newparams	= joinMyArray( params, myfilters );
-		myparams	= newparams;
-		params		= newparams;
+		params['c']			= '{cluster}';
+		params['{session_name}']	= '{session_id}';
+		newparams			= joinMyArray( params, myfilters );
+		myparams			= newparams;
+		params				= newparams;
 	});
 
 	ClusterImageArgs['{session_name}']	= '{session_id}';
