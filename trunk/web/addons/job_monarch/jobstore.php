@@ -56,17 +56,86 @@ global $c, $clustername, $cluster;
 
 include_once "./libtoga.php";
 
-$ds             = new DataSource();
-$myxml_data     = &$ds->getData();
+function makeSession()
+{
+	$ds             = new DataSource();
+	$myxml_data     = &$ds->getData();
 
-session_start();
-unset( $_SESSION['data'] );
-$_SESSION['data']       = &$myxml_data;
+	unset( $_SESSION['data'] );
+
+	$_SESSION['data']		= &$myxml_data;
+	$_SESSION['gather_time']	= time();
+}
+
+global $session_active, $_SESSION;
+
+function checkSessionPollInterval( $poll_interval )
+{
+	global $session_active, $_SESSION;
+
+	if( ! session_active )
+	{
+		return 0;
+	}
+
+	if( isset( $_SESSION['poll_interval'] ) )
+	{
+		if( $poll_interval <> $_SESSION['poll_interval'] )
+		{
+			$_SESSION['poll_interval']	= $poll_interval;
+		}
+	}
+	else
+	{
+		$_SESSION['poll_interval']	= $poll_interval;
+	}	
+
+	session_write_close();
+
+	$session_active	= false;
+}
+
+function checkSession()
+{
+	global $session_active, $_SESSION;
+
+	session_start();
+
+	$session_active 	= true;
+
+	// I got nothing; create session
+	//
+	if( ! isset( $_SESSION['gather_time'] ) || ! isset( $_SESSION['data'] ) )
+	{
+		makeSession();
+
+		return 0;	
+	}
+
+	if( isset( $_SESSION['poll_interval'] ) )
+	{
+		$gather_time	= $_SESSION['gather_time'];
+		$poll_interval	= $_SESSION['poll_interval'];
+
+		$cur_time	= time();
+
+		// If poll_interval time elapsed since last update; recreate session
+		//
+		if( ($cur_time - $gather_time) >= $poll_interval )
+		{
+			makeSession();
+
+			return 0;	
+		}
+	}
+}
+
+checkSession();
 
 global $jobs, $metrics;
 
 $data_gatherer  = new DataGatherer( $clustername );
-$data_gatherer->parseXML( &$myxml_data );
+$data_gatherer->parseXML( &$_SESSION['data'] );
 
 $heartbeat      = &$data_gatherer->getHeartbeat();
 $jobs           = &$data_gatherer->getJobs();
@@ -494,19 +563,24 @@ function getNodes()
 
 		$reported	= (int) $jobs[$jid]['reported'];
 
+		$poll_interval	= (int) $jobs[$jid]['poll_interval'];
+
+		checkSessionPollInterval( $poll_interval );
+
 		$time		= time();
 
 		// RB: something broken here with JR / JS
 		//
 		$job_runtime	= $time - intval( $jobs[$jid]['start_timestamp'] );
 		//$job_runtime	= date( 'u' ) - intval( $jobs[$jid]['start_timestamp'] );
-		//$job_window	= intval( $job_runtime ) * 1.2;
+		$job_window	= intval( $job_runtime ) * 1.2;
 
 		$jobrange	= -$job_window;
 		$jobstart	= (int) $jobs[$jid]['start_timestamp'];
 		$period_start	= (int) ($time - (($time - $jobstart) * 1.1 ));
 
 		$nr['jid']	= $jid;
+		$nr['nodename']	= $host;
 
 		$hostar		= array( $host );
 
@@ -522,7 +596,9 @@ function getNodes()
 		// RB: haven't used this yet: link to Ganglia's host overview
 		// maybe later to popup?
 		//
-		//$host_link      = "\"../../?c=$cluster_url&h=$host_url&r=job&jr=$jobrange&job_start=$jobstart\"";
+		$host_link      = "../../?c=$cluster_url&h=$host_url&r=job&jr=$jobrange&job_start=$jobstart";
+
+		$nr['hostlink']	= $host_link;
 
 		if ( $val["TYPE"] == "timestamp" || $always_timestamp[$metricname] )
 		{
@@ -606,6 +682,10 @@ function getJobs()
 		$jr['queue']		= $jobs[$jobid]['queue'];
 		$jr['name']		= $jobs[$jobid]['name'];
 		$jr['requested_time']	= makeTime( timeToEpoch( $jobs[$jobid]['requested_time'] ) );
+
+		$poll_interval		= (int) $jobs[$jobid]['poll_interval'];
+
+		checkSessionPollInterval( $poll_interval );
 
 		if( $jr['status'] == 'R' )
 		{

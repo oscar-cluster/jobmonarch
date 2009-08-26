@@ -32,29 +32,83 @@ if ( !empty( $_GET ) )
         extract( $_GET );
 }
 
-function checkSessionData()
+function makeSession()
 {
-	global $_SESSION;
+        $ds             = new DataSource();
+        $myxml_data     = &$ds->getData();
 
-	session_start();
+        unset( $_SESSION['data'] );
 
-	if( isset( $_SESSION['data'] ) )
-	{
-		$myxml_data	= &$_SESSION['data'];
-	}
-	else
-	{
-		$myxml_data	= 0;
-	}
-
-	if( !$myxml_data ) {
-		$ds             = new DataSource();
-		$myxml_data     = $ds->getData();
-
-	}
-	return $myxml_data;
+        $_SESSION['data']               = &$myxml_data;
+        $_SESSION['gather_time']        = time();
 }
 
+global $session_active, $_SESSION, $myxml_data;
+
+function checkSessionPollInterval( $poll_interval )
+{
+        global $session_active, $_SESSION;
+
+        if( ! session_active )
+        {
+                return 0;
+        }
+
+        if( isset( $_SESSION['poll_interval'] ) )
+        {
+                if( $poll_interval <> $_SESSION['poll_interval'] )
+                {
+                        $_SESSION['poll_interval']      = $poll_interval;
+                }
+        }
+        else
+        {
+                $_SESSION['poll_interval']      = $poll_interval;
+        }
+
+        session_write_close();
+
+        $session_active = false;
+}
+
+function checkSession()
+{
+        global $session_active, $_SESSION;
+
+        session_start();
+
+        $session_active         = true;
+
+        // I got nothing; create session
+        //
+        if( ! isset( $_SESSION['gather_time'] ) || ! isset( $_SESSION['data'] ) )
+        {
+                makeSession();
+
+                return 0;
+        }
+
+        if( isset( $_SESSION['poll_interval'] ) )
+        {
+                $gather_time    = $_SESSION['gather_time'];
+                $poll_interval  = $_SESSION['poll_interval'];
+
+                $cur_time       = time();
+
+                // If poll_interval time elapsed since last update; recreate session
+                //
+                if( ($cur_time - $gather_time) >= $poll_interval )
+                {
+                        makeSession();
+
+                        return 0;
+                }
+        }
+}
+
+checkSession();
+$myxml_data	= &$_SESSION['data'];
+session_write_close();
 
 $httpvars	= new HTTPVariables( $HTTP_GET_VARS, $_GET );
 $view		= $httpvars->getHttpVar( "view" );
@@ -69,16 +123,12 @@ if( isset($queue) && ($queue!='')) $filter['queue']=$queue;
 if( isset($host) && ($host!='')) $filter['host']=$host;
 if( isset($query) && ($query!='')) $filter['query']=$query;
 
-function drawHostImage() {
+$data_gatherer  = new DataGatherer( $clustername );
+$data_gatherer->parseXML( &$myxml_data );
 
+function drawHostImage()
+{
 	global $clustername, $hostname, $data_gatherer;
-
-	$ds             = new DataSource();
-	$myxml_data     = $ds->getData();
-
-	$data_gatherer	= new DataGatherer( $clustername );
-
-	$data_gatherer->parseXML( $myxml_data );
 
 	if( $data_gatherer->isJobmonRunning() )
 	{
@@ -92,16 +142,9 @@ function drawHostImage() {
 	$ic->draw();
 }
 
-function drawSmallClusterImage() {
-
-	global $clustername, $data_gatherer;
-
-	$ds             = new DataSource();
-	$myxml_data     = $ds->getData();
-
-	$data_gatherer	= new DataGatherer( $clustername );
-
-	$data_gatherer->parseXML( $myxml_data );
+function drawSmallClusterImage() 
+{
+	global $clustername, $data_gatherer, $myxml_data;
 
 	if( $data_gatherer->isJobmonRunning() )
 	{
@@ -116,11 +159,9 @@ function drawSmallClusterImage() {
 	$ic->draw();
 }
 
-function drawBigClusterImage() {
-
-	global $filter, $clustername;
-
-	$myxml_data	= checkSessionData();
+function drawBigClusterImage()
+{
+	global $filter, $clustername, $myxml_data;
 
 	$ic = new ClusterImage( $myxml_data, $clustername );
 	$ic->setBig();
@@ -135,8 +176,8 @@ function drawBigClusterImage() {
 	$ic->draw();
 }
 
-switch( $view ) {
-
+switch( $view ) 
+{
 	case "small-clusterimage":
 
 		drawSmallClusterImage();
