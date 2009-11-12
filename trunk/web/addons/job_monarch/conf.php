@@ -74,7 +74,7 @@ $SHOW_EMPTY_ROW = true;
 // by default localhost's gmetad
 // [syntax: <ip>:<port>]
 //
-$DATA_SOURCE = '127.0.0.1:8651';
+$DATA_SOURCE = '127.0.0.1:8652';
 
 // Is there a jobarchive?
 //

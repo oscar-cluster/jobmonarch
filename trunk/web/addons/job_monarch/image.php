@@ -22,7 +22,7 @@
  * SVN $Id: image.php 329 2007-04-22 13:36:26Z bastiaans $
  */
 
-ini_set("memory_limit","200M");
+ini_set("memory_limit","1G");
 set_time_limit(0);
 
 include_once "./libtoga.php";
@@ -32,89 +32,29 @@ if ( !empty( $_GET ) )
         extract( $_GET );
 }
 
-function makeSession()
-{
-        $ds             = new DataSource();
-        $myxml_data     = &$ds->getData();
-
-        unset( $_SESSION['data'] );
-
-        $_SESSION['data']               = &$myxml_data;
-        $_SESSION['gather_time']        = time();
-}
-
-global $session_active, $_SESSION, $myxml_data;
-
-function checkSessionPollInterval( $poll_interval )
-{
-        global $session_active, $_SESSION;
-
-        if( ! session_active )
-        {
-                return 0;
-        }
-
-        if( isset( $_SESSION['poll_interval'] ) )
-        {
-                if( $poll_interval <> $_SESSION['poll_interval'] )
-                {
-                        $_SESSION['poll_interval']      = $poll_interval;
-                }
-        }
-        else
-        {
-                $_SESSION['poll_interval']      = $poll_interval;
-        }
-
-        session_write_close();
-
-        $session_active = false;
-}
-
-function checkSession()
-{
-        global $session_active, $_SESSION;
-
-        session_start();
-
-        $session_active         = true;
-
-        // I got nothing; create session
-        //
-        if( ! isset( $_SESSION['gather_time'] ) || ! isset( $_SESSION['data'] ) )
-        {
-                makeSession();
-
-                return 0;
-        }
-
-        if( isset( $_SESSION['poll_interval'] ) )
-        {
-                $gather_time    = $_SESSION['gather_time'];
-                $poll_interval  = $_SESSION['poll_interval'];
-
-                $cur_time       = time();
-
-                // If poll_interval time elapsed since last update; recreate session
-                //
-                if( ($cur_time - $gather_time) >= $poll_interval )
-                {
-                        makeSession();
-
-                        return 0;
-                }
-        }
-}
-
-checkSession();
-$myxml_data	= &$_SESSION['data'];
-session_write_close();
-
 $httpvars	= new HTTPVariables( $HTTP_GET_VARS, $_GET );
 $view		= $httpvars->getHttpVar( "view" );
 $host		= $httpvars->getHttpVar( "host" );
 $query		= $httpvars->getHttpVar( "query" );
 $clustername	= $httpvars->getClusterName();
+
+global $mySession, $myData, $myXML;
+
+//printf( "c %s\n", $clustername );
+
+$mySession      = new SessionHandler( $clustername );
+$mySession->checkSession();
+
+$session        = &$mySession->getSession();
+$myXML		= $session['data'];
+
+$myData         = new DataGatherer( $clustername );
+$myData->parseXML( $myXML );
+
+$mySession->updatePollInterval( $myData->getPollInterval() );
+$mySession->endSession();
+
+//printf( "%s\n", strlen( $myXML ) );
 
 if( isset($jid) && ($jid!='')) $filter['jid']=$jid;
 if( isset($state) && ($state!='')) $filter['state']=$state;
@@ -123,16 +63,13 @@ if( isset($queue) && ($queue!='')) $filter['queue']=$queue;
 if( isset($host) && ($host!='')) $filter['host']=$host;
 if( isset($query) && ($query!='')) $filter['query']=$query;
 
-$data_gatherer  = new DataGatherer( $clustername );
-$data_gatherer->parseXML( &$myxml_data );
-
 function drawHostImage()
 {
-	global $clustername, $hostname, $data_gatherer;
+	global $clustername, $hostname, $myData;
 
-	if( $data_gatherer->isJobmonRunning() )
+	if( $myData->isJobmonRunning() )
 	{
-		$ic = new HostImage( $data_gatherer, $clustername, $hostname );
+		$ic = new HostImage( $myData, $clustername, $hostname );
 	}
 	else
 	{
@@ -144,16 +81,21 @@ function drawHostImage()
 
 function drawSmallClusterImage() 
 {
-	global $clustername, $data_gatherer, $myxml_data;
+	global $clustername, $myData, $myXML;
 
-	if( $data_gatherer->isJobmonRunning() )
+	//printf( "%s\n", strlen( $myXML ) );
+
+	if( $myData->isJobmonRunning() )
 	{
-		$ic = new ClusterImage( $myxml_data, $clustername );
+		//$ic = new ClusterImage( $myXML, $clustername );
+		$ic = new ClusterImage( $myData, $clustername );
 		$ic->setSmall();
+		//printf( "is running\n" );
 	}
 	else
 	{
 		$ic = new EmptyImage();
+		//printf( "not running\n" );
 	}
 
 	$ic->draw();
@@ -161,9 +103,10 @@ function drawSmallClusterImage()
 
 function drawBigClusterImage()
 {
-	global $filter, $clustername, $myxml_data;
+	global $filter, $clustername, $myXML, $myData;
 
-	$ic = new ClusterImage( $myxml_data, $clustername );
+	//$ic = new ClusterImage( $myXML, $clustername );
+	$ic = new ClusterImage( $myData, $clustername );
 	$ic->setBig();
 
 	if( isset( $filter ) )

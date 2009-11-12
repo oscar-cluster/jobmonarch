@@ -1,6 +1,7 @@
 <?php
 //
-$SORTBY_HOSTNAME = "v{x}-{y}.gina.sara.nl";
+//$SORTBY_HOSTNAME = "v{x}-{y}.gina.sara.nl";
+$SORTBY_HOSTNAME = "{x}-{y}.gina.sara.nl";
 $SORT_ORDER = "asc";
 
 $SORT_XLABEL = "rack";
