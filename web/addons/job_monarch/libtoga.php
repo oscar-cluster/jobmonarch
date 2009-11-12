@@ -136,6 +136,90 @@ function makeDate( $time )
 	return strftime( $DATETIME_FORMAT, $time );
 }
 
+class SessionHandler
+{
+	var $cluster, $poll_stored;
+
+	function SessionHandler( $cluster )
+	{
+		$this->cluster		= $cluster;
+		$this->ds		= new DataSource( $this->cluster );
+
+		//ob_start();
+		session_start();
+	}
+
+	function refreshSession()
+	{
+		$ds			= &$this->ds;
+		$myxml_data		= $ds->getData();
+
+		$_SESSION['data']		= &$myxml_data;
+		$_SESSION['gather_time']	= time();
+	}
+
+	function hasSession()
+	{
+		return ( $this->have_session );
+	}
+
+	function getSession()
+	{
+		return $_SESSION;
+
+	}
+
+	function endSession()
+	{
+		session_write_close();
+		//ob_end_flush();
+		//session_unlock();
+		//session_destroy();
+	}
+
+	function updatePollInterval( $poll_interval )
+	{
+		//if( ! isset( $_SESSION['poll_interval'] ) )
+		//{
+			$_SESSION['poll_interval']      = $poll_interval;
+		//}
+	}
+
+	function checkSession()
+	{
+		// I got nothing; create session
+		//
+		//if( ! $this->have_session )
+		//{
+		//	$this->refreshSession();
+		//
+		//	return 0;
+		//}
+
+		//if( $this->poll_stored )
+		//{
+		//	session_start();
+
+			if( isset( $_SESSION['gather_time'] ) && isset( $_SESSION['poll_interval'] ) )
+			{
+
+				$gather_time    = $_SESSION['gather_time'];
+				$poll_interval  = $_SESSION['poll_interval'];
+
+				// If poll_interval time elapsed since last update; recreate session
+				//
+				if( (time() - $gather_time) >= $poll_interval )
+				{
+					$this->refreshSession();
+				}
+			}
+			else
+			{
+				$this->refreshSession();
+			}
+		//}
+	}
+}
 
 class TarchDbase
 {
@@ -458,7 +542,7 @@ class DataSource
 {
 	var $data, $ip, $port;
 
-	function DataSource()
+	function DataSource( $cluster )
 	{
 		global $DATA_SOURCE;
 
@@ -469,7 +553,7 @@ class DataSource
 
 		$this->ip 	= $ds_ip;
 		$this->port 	= $ds_port;
-
+		$this->cluster	= $cluster;
 	}
 
 	function getData()
@@ -483,6 +567,16 @@ class DataSource
 		if( !$fp )
 		{
 			echo 'Unable to connect to '.$this->ip.':'.$this->port; // printf( 'Unable to connect to [%s:%.0f]', $this->ip, $this->port );
+			return;
+		}
+
+		$clustername	= $this->cluster;
+
+		$rc = fputs($fp, "/$clustername"."\n" );
+
+		if (!$rc)
+		{
+			echo "Could not sent request to gmetad: $errstr";
 			return;
 		}
 
@@ -514,12 +608,21 @@ class DataGatherer
 		$this->parser 		= xml_parser_create();
 		$this->xmlhandler 	= new TorqueXMLHandler( $this->cluster );
 
+		xml_parser_set_option( $this->parser, XML_OPTION_CASE_FOLDING, 0 );
 		xml_set_element_handler( $this->parser, array( &$this->xmlhandler, 'startElement' ), array( &$this->xmlhandler, 'stopElement' ) );
 
 		if ( !xml_parse( $this->parser, $data ) )
 		{
 			$error = sprintf( 'XML error: %s at %d', xml_error_string( xml_get_error_code( $this->parser ) ), xml_get_current_line_number( $this->parser ) );
 		}
+	}
+
+	function getPollInterval()
+	{
+		$handler = $this->xmlhandler;
+		//printf("d i %s\n", $handler->getPollInterval() );
+
+		return $handler->getPollInterval();
 	}
 
 	function printInfo()
@@ -554,8 +657,8 @@ class DataGatherer
 
 	function getJobs()
 	{
-		$handler = $this->xmlhandler;
-		return $handler->getJobs();
+		$handler = &$this->xmlhandler;
+		return ( $handler->getJobs() );
 	}
 
 	function getJob( $job )
@@ -592,6 +695,13 @@ class TorqueXMLHandler
 		$this->clustername	= $clustername;
 		$this->fqdn		= 0;
 		$this->fqdnFound	= 0;
+		$this->pollinterval	= 0;
+	}
+
+	function getPollInterval()
+	{
+		//printf( "t pi %s\n", $this->pollinterval );
+		return ( $this->pollinterval );
 	}
 
 	function getUsingFQDN()
@@ -620,11 +730,11 @@ class TorqueXMLHandler
 	{
 		if (isset( $this->heartbeat['time'] ))
 		{
-			return 1;
+			return true;
 		}
 		else
 		{
-			return 0;
+			return false;
 		}
 	}
 
@@ -632,13 +742,14 @@ class TorqueXMLHandler
 	{
 		// Should hostname be FQDN or short w/o domain
 		//
-		$nodes = &$this->nodes;
+		//$nodes = &$this->nodes;
 
 		$domain_len	= 0 - strlen( $tdomain );
 	
 		if( $tdomain && $this->fqdn )
 		{
 			if( substr( $thostname, $domain_len ) != $tdomain )
+			//if( strpos( $thostname, $tdomain ) !== false )
 			{
 				$thostname = $thostname . '.'.$tdomain;
 			} 
@@ -649,8 +760,8 @@ class TorqueXMLHandler
 
 	function startElement( $parser, $name, $attrs )
 	{
-		$jobs = $this->jobs;
-		$nodes = $this->nodes;
+		$jobs	= $this->jobs;
+		$nodes	= $this->nodes;
 
 		if ( $attrs['TN'] )
 		{
@@ -663,11 +774,12 @@ class TorqueXMLHandler
 
 		$jobid = null;
 
-		if( $name == 'CLUSTER' )
-		{
-			$this->proc_cluster = $attrs['NAME'];
-		}
-		else if( $name == 'HOST' and $this->proc_cluster == $this->clustername)
+		//if( $name == 'CLUSTER' )
+		//{
+		//	$this->proc_cluster = $attrs['NAME'];
+		//}
+		//else if( $name == 'HOST' and $this->proc_cluster == $this->clustername)
+		if( $name == 'HOST' )
 		{
 			$hostname = $attrs['NAME'];
 
@@ -697,13 +809,14 @@ class TorqueXMLHandler
 				$nodes[$hostname] = new NodeImage( $this->proc_cluster, $hostname );
 			}
 		}
-		else if( $name == 'METRIC' and strstr( $attrs['NAME'], 'MONARCH' ) and $this->proc_cluster == $this->clustername )
+		//else if( $name == 'METRIC' and strstr( $attrs['NAME'], 'MONARCH' ) and $this->proc_cluster == $this->clustername )
+		else if( ($name == 'METRIC') && (strpos( $attrs['NAME'], 'MONARCH' ) !== false) )
 		{
-			if( strstr( $attrs['NAME'], 'MONARCH-HEARTBEAT' ) )
+			if( strpos( $attrs['NAME'], 'MONARCH-HEARTBEAT' ) !== false )
 			{
 				$this->heartbeat['time'] = $attrs['VAL'];
 			}
-			else if( strstr( $attrs['NAME'], 'MONARCH-DOWN' ) )
+			else if( strpos( $attrs['NAME'], 'MONARCH-DOWN' ) !== false)
 			{
 				$fields		= explode( ' ', $attrs['VAL'] );
 
@@ -716,6 +829,7 @@ class TorqueXMLHandler
 
 					$toganame	= $togavalues[0];
 					$togavalue	= $togavalues[1];
+
 
 					if( $toganame == 'nodes' )
 					{
@@ -745,7 +859,7 @@ class TorqueXMLHandler
 					$nodes_down[] = $this->makeHostname( $node, $down_domain );
 				}
 			}
-			else if( strstr( $attrs['NAME'], 'MONARCH-OFFLINE' ) )
+			else if( strpos( $attrs['NAME'], 'MONARCH-OFFLINE' ) !== false )
 			{
 				$fields		= explode( ' ', $attrs['VAL'] );
 
@@ -787,7 +901,7 @@ class TorqueXMLHandler
 					$nodes_offline[] = $this->makeHostname( $node, $offline_domain );
 				}
 			}
-			else if( strstr( $attrs['NAME'], 'MONARCH-JOB' ) )
+			else if( strpos( $attrs['NAME'], 'MONARCH-JOB' ) !== false )
 			{
 				sscanf( $attrs['NAME'], 'MONARCH-JOB-%d-%d', $jobid, $monincr );
 
@@ -804,6 +918,8 @@ class TorqueXMLHandler
 
 					$toganame = $togavalues[0];
 					$togavalue = $togavalues[1];
+
+					//printf( "tn %s\n", $toganame );
 
 					if( $toganame == 'nodes' )
 					{
@@ -829,6 +945,11 @@ class TorqueXMLHandler
 						{
 							$jobs[$jobid][$toganame] = $togavalue;
 						}
+					}
+					else if( $toganame == 'poll_interval' )
+					{
+						$this->pollinterval	= $togavalue;
+						//printf("u pi %s\n", $togavalue );
 					}
 					else
 					{
@@ -1351,10 +1472,11 @@ class ClusterImage
 	var $dataget, $image, $clustername;
 	var $filtername, $filters;
 
-	function ClusterImage( $data, $clustername )
+	function ClusterImage( $datag, $clustername )
 	{
-		$this->dataget		= new DataGatherer( $clustername );
-		$this->data		= $data;
+		//$this->dataget		= new DataGatherer( $clustername );
+		$this->dataget		= $datag;
+		//$this->data		= $data;
 		$this->clustername	= $clustername;
 		$this->filters		= array();
 		$this->size		= 's';
@@ -1502,8 +1624,8 @@ class ClusterImage
 			}
 		}
 
-		$mydatag = $this->dataget;
-		$mydatag->parseXML( $this->data );
+		$mydatag		= &$this->dataget;
+		//$mydatag->parseXML( $this->data );
 
 		if( $this->isSmall() )
 		{
@@ -1517,6 +1639,7 @@ class ClusterImage
 		}
 
 		$nodes		= $mydatag->getNodes();
+		//print_r( $nodes);
 		$nodes_hosts	= array_keys( $nodes );
 
 		$nodes_nr	= count( $nodes );
@@ -1555,7 +1678,7 @@ class ClusterImage
 		$this->width	= $max_width;
 		$this->height	= ($y_offset + (($node_rows*$node_width)+1) );
 
-		$jobs = $mydatag->getJobs();
+		$jobs		= $mydatag->getJobs();
 		$filtered_nodes = $this->filterNodes( $jobs, $nodes );
 		$selected_host	= $this->selected;
 

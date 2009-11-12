@@ -46,7 +46,7 @@ Ext.onReady( function()
 
 	GraphSummaryWindow.show();
 
-	ClusterImageWindow.html			= '<IMG ID="clusterimage" SRC="{clusterimage}" USEMAP="#MONARCH_CLUSTER_BIG" BORDER="0">';
+	ClusterImageWindow.html			= '<IMG ID="clusterimage" SRC="./image.php?{session_name}={session_id}" USEMAP="#MONARCH_CLUSTER_BIG" BORDER="0">';
 	ClusterImageWindow.show();
 	setClusterImagePosition();
 	reloadClusterImage();
@@ -58,7 +58,7 @@ Ext.onReady( function()
 	reloadJobStore();
 
 	Ext.get( 'rjqjgraph' ).update( '<IMG ID="rjqj_graph" SRC="{rjqj_graph}" BORDER=0>' );
-	Ext.get( 'pie' ).update( '<IMG ID="pie" SRC="{pie}" BORDER=0>' );
+	//Ext.get( 'pie' ).update( '<IMG ID="pie" SRC="./image.php?{session_name}={session_id}&c={uue_clustername}&view=big-clusterimage" BORDER=0>' );
 });
 </script>
 
@@ -72,7 +72,5 @@ Job Monarch version {monarch-version}<BR />
 <A HREF="https://subtrac.sara.nl/oss/jobmonarch/" TARGET="_blank"><IMG SRC="./jobmonarch.gif" ALT="Job Monarch" BORDER="0"></A>
 
     <MAP NAME="MONARCH_CLUSTER_BIG">
-    <!-- START BLOCK : node_clustermap -->
     {node_area_map}
-    <!-- END BLOCK : node_clustermap -->
     </MAP> 

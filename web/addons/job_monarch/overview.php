@@ -34,10 +34,10 @@ if( $JOB_ARCHIVE )
 }
 
 $ds		= new DataSource();
-$myxml_data	= $ds->getData();
+//$myxml_data	= $ds->getData();
 
 $data_gatherer	= new DataGatherer( $clustername );
-$data_gatherer->parseXML( $myxml_data );
+//$data_gatherer->parseXML( $myxml_data );
 
 $heartbeat	= $data_gatherer->getHeartbeat();
 $jobs		= $data_gatherer->getJobs();

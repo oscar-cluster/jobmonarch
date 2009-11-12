@@ -1,7 +1,11 @@
 <?php
 
-ini_set("memory_limit","200M");
+ini_set("memory_limit","1G");
 set_time_limit(0);
+
+//ini_set("xdebug.profiler_output_dir","/tmp");
+//ini_set("xdebug.profiler_output_name","timestamp");
+//ini_set("xdebug.profiler_enable","1");
 
 $c			= $_POST['c'];
 $clustername		= $c;
@@ -52,96 +56,41 @@ $pend	= (int) $_POST['limit'];
 $HTTP_POST_VARS['c']	= $c;
 $_GET['c']		= $c;
 
-global $c, $clustername, $cluster;
+global $c, $clustername, $cluster, $mySession;
 
 include_once "./libtoga.php";
 
-function makeSession()
-{
-	$ds             = new DataSource();
-	$myxml_data     = &$ds->getData();
 
-	unset( $_SESSION['data'] );
+global $jobs, $metrics, $session;
 
-	$_SESSION['data']		= &$myxml_data;
-	$_SESSION['gather_time']	= time();
-}
+//printf( "c %s\n", $clustername );
 
-global $session_active, $_SESSION;
+$mySession	= new SessionHandler( $clustername );
+$mySession->checkSession();
 
-function checkSessionPollInterval( $poll_interval )
-{
-	global $session_active, $_SESSION;
+$session	= &$mySession->getSession();
+$myXML		= $session['data'];
 
-	if( ! session_active )
-	{
-		return 0;
-	}
+//printf( "gt %s\n", $session['gather_time'] );
+//printf( "pi %s\n", $session['poll_interval'] );
 
-	if( isset( $_SESSION['poll_interval'] ) )
-	{
-		if( $poll_interval <> $_SESSION['poll_interval'] )
-		{
-			$_SESSION['poll_interval']	= $poll_interval;
-		}
-	}
-	else
-	{
-		$_SESSION['poll_interval']	= $poll_interval;
-	}	
+$myData		= new DataGatherer( $clustername );
+$myData->parseXML( $myXML );
 
-	session_write_close();
+$mySession->updatePollInterval( $myData->getPollInterval() );
+//printf( "pi %s\n", $myData->getPollInterval() );
+//printf( "pi %s\n", $session['poll_interval'] );
+$mySession->endSession();
 
-	$session_active	= false;
-}
 
-function checkSession()
-{
-	global $session_active, $_SESSION;
+$heartbeat      = &$myData->getHeartbeat();
+$jobs           = &$myData->getJobs();
+$cpus           = &$myData->getCpus();
+$use_fqdn       = &$myData->getUsingFQDN();
 
-	session_start();
+//print_r( $jobs );
 
-	$session_active 	= true;
-
-	// I got nothing; create session
-	//
-	if( ! isset( $_SESSION['gather_time'] ) || ! isset( $_SESSION['data'] ) )
-	{
-		makeSession();
-
-		return 0;	
-	}
-
-	if( isset( $_SESSION['poll_interval'] ) )
-	{
-		$gather_time	= $_SESSION['gather_time'];
-		$poll_interval	= $_SESSION['poll_interval'];
-
-		$cur_time	= time();
-
-		// If poll_interval time elapsed since last update; recreate session
-		//
-		if( ($cur_time - $gather_time) >= $poll_interval )
-		{
-			makeSession();
-
-			return 0;	
-		}
-	}
-}
-
-checkSession();
-
-global $jobs, $metrics;
-
-$data_gatherer  = new DataGatherer( $clustername );
-$data_gatherer->parseXML( &$_SESSION['data'] );
-
-$heartbeat      = &$data_gatherer->getHeartbeat();
-$jobs           = &$data_gatherer->getJobs();
-//$gnodes         = $data_gatherer->getNodes();
-$cpus           = &$data_gatherer->getCpus();
-$use_fqdn       = &$data_gatherer->getUsingFQDN();
+//print_r( $session );
 
 // The ext grid script will send  a task field which will specify what it wants to do
 //$task = '';
@@ -517,7 +466,7 @@ function filterJobs( $jobs )
 function getNodes()
 {
 	global $jobs, $jobids, $clustername, $metrics, $jid, $p_metricname;
-	global $always_timestamp, $always_constant;
+	global $always_timestamp, $always_constant, $mySession;
 
 	$display_nodes	= array();
 
@@ -565,7 +514,7 @@ function getNodes()
 
 		$poll_interval	= (int) $jobs[$jid]['poll_interval'];
 
-		checkSessionPollInterval( $poll_interval );
+		//$mySession->updatePollInterval( $poll_interval );
 
 		$time		= time();
 
@@ -635,7 +584,7 @@ function getJobs()
 {
 	global $jobs, $hearbeat, $pstart, $pend;
 	global $sortfield, $sortorder, $query, $host;
-	global $jid, $owner, $queue,  $status;
+	global $jid, $owner, $queue,  $status, $mySession;
 
 	$job_count		= count( $jobs );
 
@@ -685,7 +634,7 @@ function getJobs()
 
 		$poll_interval		= (int) $jobs[$jobid]['poll_interval'];
 
-		checkSessionPollInterval( $poll_interval );
+		//$mySession->updatePollInterval( $poll_interval );
 
 		if( $jr['status'] == 'R' )
 		{
