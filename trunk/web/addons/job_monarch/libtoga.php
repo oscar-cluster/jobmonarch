@@ -1738,20 +1738,24 @@ class ClusterImage
 				$y_first	= 1;
 			}
 
+			// Turn it into a regexp /something/ search pattern
+			//
+			$skan_str       = '/' . $skan_str . '/';
+
 			// Now replace our {x} and {y} with %d for sscanf parsing 
 			//
 			if(( $x_first ) && ( $x_present && $y_present ) )
 			{
-				$skan_str	= str_replace( $x_str, "%d", $skan_str );
-				$skan_str	= str_replace( $y_str, "%d", $skan_str );
+				$skan_str	= str_replace( $x_str, "(?<x>\d+)", $skan_str );
+				$skan_str	= str_replace( $y_str, "(?<y>\d+)", $skan_str );
 			} 
 			else if( $x_present)
 			{
-				$skan_str	= str_replace( $x_str, "%d", $skan_str );
+				$skan_str	= str_replace( $x_str, "(?<x>\d+)", $skan_str );
 			}
 			else if( $y_present)
 			{
-				$skan_str	= str_replace( $y_str, "%d", $skan_str );
+				$skan_str	= str_replace( $y_str, "(?<y>\d+)", $skan_str );
 			}
 
 			$x_min		= null;
@@ -1771,51 +1775,57 @@ class ClusterImage
 
 				if( $x_present && $y_present )
 				{
-					if( $x_first )
-					{
-						$n = sscanf( $hostname, $skan_str, $x, $y );
-					}
-					else if( $y_first )
-					{
-						$n = sscanf( $hostname, $skan_str, $y, $x );
-					}
+					preg_match( $skan_str, $hostname, $matches );
 
 					// Remove nodes that don't match
 					//
-					if( $n < 2 )
+					if( !array_key_exists( 'x', $matches ) && !array_key_exists( 'y', $matches ) )
 					{
 						// This node hostname has no match for: {x} and {y}
 						//
 						unset( $nodes[$hostname] );
 					}
+                                        else
+                                        {
+                                                $x      = $matches['x'];
+                                                $y      = $matches['y'];
+                                        }
 				}
 				else if( $x_present && !$y_present )
 				{
-					$n = sscanf( $hostname, $skan_str, $x );
+					preg_match( $skan_str, $hostname, $matches );
 
 					// Remove nodes that don't match
 					//
-					if( $n < 1 )
+					if( !array_key_exists( 'x', $matches ) )
 					{
 						// This node hostname has no match for: {x}
 						//
 						unset( $nodes[$hostname] );
 					}
-					$y	= 1;
+                                        else
+                                        {
+                                                $x      = $matches['x'];
+                                                $y      = 1;
+                                        }
 				}
 				else if( $y_present && !$x_present )
 				{
-					$n = sscanf( $hostname, $skan_str, $y );
+					preg_match( $skan_str, $hostname, $matches );
 
 					// Remove nodes that don't match
 					//
-					if( $n < 1 )
+					if( !array_key_exists( 'y', $matches ) )
 					{
 						// This node hostname has no match for: {y}
 						//
 						unset( $nodes[$hostname] );
 					}
-					$x	= 1;
+                                        else
+                                        {
+                                                $y      = $matches['y'];
+                                                $x      = 1;
+                                        }
 				}
 
 				// Determine the lowest value of {x} that exists in all node hostnames
@@ -1901,7 +1911,8 @@ class ClusterImage
 				$x_offset	= ($fontwidth * (1 + strlen( $y_max) ) ) + ((2 + strlen( $y_max)) * $fontspaceing);
 			}
 
-			$image_width	= $x_offset + ($node_width * ($x_max-$x_min+2));
+			//$image_width	= $x_offset + ($node_width * ($x_max-$x_min+2));
+			$image_width    = $x_offset + ($node_width * (count($x_columns)));
 
 			if( $this->isSmall() ) 
 			{
@@ -2032,19 +2043,30 @@ class ClusterImage
 
 						if( $x_present && $y_present )
 						{
-							if( $x_first )
-							{
-								$nn = sscanf( $host, $skan_str, $rx, $ry );
-							}
-							else if( $y_first )
-							{
-								$nn = sscanf( $host, $skan_str, $ry, $rx );
-							}
-							if ( $nn < 2 )
+							//if( $x_first )
+							//{
+							//	$nn = sscanf( $host, $skan_str, $rx, $ry );
+							//}
+							//else if( $y_first )
+							//{
+							//	$nn = sscanf( $host, $skan_str, $ry, $rx );
+							//}
+							//if ( $nn < 2 )
+							//{
+							//	//printf( "skipping node %s - y present & x present + <2 x,y matchs\n", $host);
+							//	continue;
+							//}
+
+							preg_match( $skan_str, $host, $matches );
+							$rx = $matches['x'];
+							$ry = $matches['y'];
+
+							if( !array_key_exists( 'x', $matches ) && !array_key_exists( 'y', $matches ) )
 							{
 								//printf( "skipping node %s - y present & x present + <2 x,y matchs\n", $host);
 								continue;
 							}
+
 							if( intval( $rx ) > $n )
 							{
 								// If x(rack) is higher than current x, skip to next x(rack)
@@ -2062,11 +2084,15 @@ class ClusterImage
 						}
 						else if( $x_present )
 						{
-							$nn = sscanf( $host, $skan_str, $rx );
+							//$nn = sscanf( $host, $skan_str, $rx );
+							preg_match( $skan_str, $host, $matches );
+							$rx = $matches['x'];
 						}
 						else if( $y_present )
 						{
-							$nn = sscanf( $host, $skan_str, $ry );
+							//$nn = sscanf( $host, $skan_str, $ry );
+							preg_match( $skan_str, $host, $matches );
+							$ry = $matches['y'];
 						}
 
 						if( !in_array( $host, $filtered_nodes ) )
@@ -2453,26 +2479,43 @@ function cmp( $a, $b )
 
 	if( $x_present && $y_present )
 	{
-		if( $x_first )
-		{
-			$n = sscanf( $a, $skan_str, $a_x, $a_y );
-			$n = sscanf( $b, $skan_str, $b_x, $b_y );
-		}
-		else if( $y_first )
-		{
-			$n = sscanf( $a, $skan_str, $a_y, $a_x );
-			$n = sscanf( $b, $skan_str, $b_y, $b_x );
-		}
+		//if( $x_first )
+		//{
+		//	$n = sscanf( $a, $skan_str, $a_x, $a_y );
+		//	$n = sscanf( $b, $skan_str, $b_x, $b_y );
+		//}
+		//else if( $y_first )
+		//{
+		//	$n = sscanf( $a, $skan_str, $a_y, $a_x );
+		//	$n = sscanf( $b, $skan_str, $b_y, $b_x );
+		//}
+
+		preg_match( $skan_str, $a, $matches );
+		$a_x = $matches['x'];
+		$a_y = $matches['y'];
+		preg_match( $skan_str, $b, $matches );
+		$b_x = $matches['x'];
+		$b_y = $matches['y'];
 	} 
 	else if( $x_present && !$y_present )
 	{
-		$n = sscanf( $a, $skan_str, $a_x );
-		$n = sscanf( $b, $skan_str, $b_x );
+		//$n = sscanf( $a, $skan_str, $a_x );
+		//$n = sscanf( $b, $skan_str, $b_x );
+
+		preg_match( $skan_str, $a, $matches );
+		$a_x = $matches['x'];
+		preg_match( $skan_str, $b, $matches );
+		$b_x = $matches['x'];
 	}
 	else if( $y_present && !$x_present )
 	{
-		$n = sscanf( $a, $skan_str, $a_y );
-		$n = sscanf( $b, $skan_str, $b_y );
+		//$n = sscanf( $a, $skan_str, $a_y );
+		//$n = sscanf( $b, $skan_str, $b_y );
+
+		preg_match( $skan_str, $a, $matches );
+		$a_y = $matches['y'];
+		preg_match( $skan_str, $b, $matches );
+		$b_y = $matches['y'];
 	}
 
 	if ( $SORT_ORDER=="desc" )
@@ -2525,6 +2568,17 @@ function cmp( $a, $b )
 				return -1;
 			}
 		}
+		else if( !$y_present && !$x_present )
+		{
+			if ($a < $b)
+			{
+				return 1;
+			}
+			else if ($a > $b)
+			{
+				return -1;
+			}
+		}
 	}
 	else if ( $SORT_ORDER == "asc" )
 	{
@@ -2572,6 +2626,17 @@ function cmp( $a, $b )
 				return 1;
 			}
 			else if ($a_y < $b_y)
+			{
+				return -1;
+			}
+		}
+		else if( !$y_present && !$x_present )
+		{
+			if ($a > $b)
+			{
+				return 1;
+			}
+			else if ($a < $b)
 			{
 				return -1;
 			}
