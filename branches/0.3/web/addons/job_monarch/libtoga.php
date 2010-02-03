@@ -235,7 +235,7 @@ class TarchDbase
 			$count_query = "SELECT " . $count_result_idname . " " . $query;
 
 			$count_result = $this->queryDbase( $count_query );
-			$this->resultcount = (int) $count_result[0][count];
+			$this->resultcount = (int) $count_result[0]['count'];
 
 			$select_query = "SELECT " . $select_result_idname . " " . $query . " ORDER BY job_id DESC LIMIT " . $SEARCH_RESULT_LIMIT;
 		}
@@ -246,7 +246,7 @@ class TarchDbase
 
 		foreach( $ids as $crow)
 		{
-			$ret[] = $crow[job_id];
+			$ret[] = $crow['job_id'];
 		}
 
 		return $ret;
@@ -260,7 +260,7 @@ class TarchDbase
 
 		foreach( $result as $result_row ) 
 		{
-			$nodes[] = $this->getNodeArray( $result_row[node_id] );
+			$nodes[] = $this->getNodeArray( $result_row['node_id'] );
 		}
 
 		return $nodes;
@@ -274,7 +274,7 @@ class TarchDbase
 
 		foreach( $result as $result_row )
 		{
-			$jobs[] = $this->getJobArray( $result_row[job_id] );
+			$jobs[] = $this->getJobArray( $result_row['job_id'] );
 		}
 		return $jobs;
 	}
@@ -606,8 +606,8 @@ class TorqueXMLHandler
 		{
 			foreach( $this->jobs as $jobid=>$jobattrs )
 			{
-				$nodes	= count( $jobattrs[nodes] );
-				$ppn	= (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
+				$nodes	= count( $jobattrs['nodes'] );
+				$ppn	= (int) $jobattrs['ppn'] ? $jobattrs['ppn'] : 1;
 				$mycpus	= $nodes * $ppn;
 
 				$cpus	= $cpus + $mycpus;
@@ -678,10 +678,10 @@ class TorqueXMLHandler
 		$jobs = $this->jobs;
 		$nodes = $this->nodes;
 
-		if ( $attrs[TN] )
+		if ( $attrs['TN'] )
 		{
 			// Ignore dead metrics. Detect and mask failures.
-			if ( $attrs[TN] > $attrs[TMAX] * 4 )
+			if ( $attrs['TN'] > $attrs['TMAX'] * 4 )
 			{
 				return;
 			}
@@ -691,28 +691,28 @@ class TorqueXMLHandler
 
 		if( $name == 'CLUSTER' )
 		{
-			$this->proc_cluster = $attrs[NAME];
+			$this->proc_cluster = $attrs['NAME'];
 		}
 		else if( $name == 'HOST' and $this->proc_cluster == $this->clustername)
 		{
-			$hostname = $attrs[NAME];
+			$hostname = $attrs['NAME'];
 
-			$location = $attrs[LOCATION];
+			$location = $attrs['LOCATION'];
 
 			if( !isset( $nodes[$hostname] ) )
 			{
 				$nodes[$hostname] = new NodeImage( $this->proc_cluster, $hostname );
 			}
 		}
-		else if( $name == 'METRIC' and strstr( $attrs[NAME], 'MONARCH' ) and $this->proc_cluster == $this->clustername )
+		else if( $name == 'METRIC' and strstr( $attrs['NAME'], 'MONARCH' ) and $this->proc_cluster == $this->clustername )
 		{
-			if( strstr( $attrs[NAME], 'MONARCH-HEARTBEAT' ) )
+			if( strstr( $attrs['NAME'], 'MONARCH-HEARTBEAT' ) )
 			{
-				$this->heartbeat['time'] = $attrs[VAL];
+				$this->heartbeat['time'] = $attrs['VAL'];
 			}
-			else if( strstr( $attrs[NAME], 'MONARCH-DOWN' ) )
+			else if( strstr( $attrs['NAME'], 'MONARCH-DOWN' ) )
 			{
-				$fields		= explode( ' ', $attrs[VAL] );
+				$fields		= explode( ' ', $attrs['VAL'] );
 
 				$nodes_down	= array();
 				$down_domain	= null;
@@ -746,9 +746,9 @@ class TorqueXMLHandler
 					}
 				}
 			}
-			else if( strstr( $attrs[NAME], 'MONARCH-OFFLINE' ) )
+			else if( strstr( $attrs['NAME'], 'MONARCH-OFFLINE' ) )
 			{
-				$fields		= explode( ' ', $attrs[VAL] );
+				$fields		= explode( ' ', $attrs['VAL'] );
 
 				$nodes_offline	= array();
 				$offline_domain	= null;
@@ -782,16 +782,16 @@ class TorqueXMLHandler
 					}
 				}
 			}
-			else if( strstr( $attrs[NAME], 'MONARCH-JOB' ) )
+			else if( strstr( $attrs['NAME'], 'MONARCH-JOB' ) )
 			{
-				sscanf( $attrs[NAME], 'MONARCH-JOB-%d-%d', $jobid, $monincr );
+				sscanf( $attrs['NAME'], 'MONARCH-JOB-%d-%d', $jobid, $monincr );
 
 				if( !isset( $jobs[$jobid] ) )
 				{
 					$jobs[$jobid] = array();
 				}
 
-				$fields = explode( ' ', $attrs[VAL] );
+				$fields = explode( ' ', $attrs['VAL'] );
 
 				foreach( $fields as $f )
 				{
@@ -802,7 +802,7 @@ class TorqueXMLHandler
 
 					if( $toganame == 'nodes' )
 					{
-						if( $jobs[$jobid][status] == 'R' )
+						if( $jobs[$jobid]['status'] == 'R' )
 						{
 							if( !isset( $jobs[$jobid][$toganame] ) )
 							{
@@ -820,7 +820,7 @@ class TorqueXMLHandler
 							}
 
 						}
-						else if( $jobs[$jobid][status] == 'Q' )
+						else if( $jobs[$jobid]['status'] == 'Q' )
 						{
 							$jobs[$jobid][$toganame] = $togavalue;
 						}
@@ -831,16 +831,16 @@ class TorqueXMLHandler
 					}
 				}
 
-				if( isset( $jobs[$jobid][nodes] ) )
+				if( isset( $jobs[$jobid]['nodes'] ) )
 				{
-					$nr_nodes = count( $jobs[$jobid][nodes] );
+					$nr_nodes = count( $jobs[$jobid]['nodes'] );
 		
-					if( $jobs[$jobid][status] == 'R' )
+					if( $jobs[$jobid]['status'] == 'R' )
 					{
 
-						if( isset( $jobs[$jobid][domain] ) )
+						if( isset( $jobs[$jobid]['domain'] ) )
 						{
-							$domain		= $jobs[$jobid][domain];
+							$domain		= $jobs[$jobid]['domain'];
 							$domain_len	= 0 - strlen( $domain );
 
 							// Let's see if Ganglia use's FQDN or short hostnames
@@ -859,12 +859,12 @@ class TorqueXMLHandler
 							$this->fqdn	= 0;
 						}
 
-						foreach( $jobs[$jobid][nodes] as $node )
+						foreach( $jobs[$jobid]['nodes'] as $node )
 						{
 
 							// Only add domain name to the hostname if Ganglia is doing that too
 							//
-							if( $this->fqdn && isset( $jobs[$jobid][domain] ) )
+							if( $this->fqdn && isset( $jobs[$jobid]['domain'] ) )
 							{
 								if( substr( $node, $domain_len ) != $domain )
 								{
@@ -890,9 +890,9 @@ class TorqueXMLHandler
 
 							if( !$my_node->hasJob( $jobid ) )
 							{
-								if( isset( $jobs[$jobid][ppn] ) )
+								if( isset( $jobs[$jobid]['ppn'] ) )
 								{
-									$my_node->addJob( $jobid, ((int) $jobs[$jobid][ppn]) );
+									$my_node->addJob( $jobid, ((int) $jobs[$jobid]['ppn']) );
 								}
 								else
 								{
@@ -982,9 +982,9 @@ class TorqueXMLHandler
 		{
 			printf( "job %s\n", $jobid );
 
-			if( isset( $job[nodes] ) )
+			if( isset( $job['nodes'] ) )
 			{
-				foreach( $job[nodes] as $node )
+				foreach( $job['nodes'] as $node )
 				{
 					$mynode = $this->nodes[$node];
 					$hostname = $mynode->getHostname();
@@ -1265,7 +1265,7 @@ class NodeImage
 	{
 		global $metrics;
 
-		$cpus = $metrics[$this->hostname][cpu_num][VAL];
+		$cpus = $metrics[$this->hostname]['cpu_num']['VAL'];
 
 		if (!$cpus)
 		{
@@ -1279,7 +1279,7 @@ class NodeImage
 	{
 		global $metrics;
 
-		$load_one	= $metrics[$this->hostname][load_one][VAL];
+		$load_one	= $metrics[$this->hostname]['load_one']['VAL'];
 		$load		= ((float) $load_one)/$this->cpus;
 
 		return $load;
@@ -2008,20 +2008,20 @@ class HostImage
 			{
 				if( $headername == 'nodes' )
 				{
-					$attrval	= strval( count( $jobinfo[nodes] ) );
+					$attrval	= strval( count( $jobinfo['nodes'] ) );
 				}
 				else if( $headername == 'cpus' )
 				{
-					if( !isset( $jobinfo[ppn] ) )
+					if( !isset( $jobinfo['ppn'] ) )
 					{
-						$jobinfo[ppn] = 1;
+						$jobinfo['ppn'] = 1;
 					}
 
-					$attrval	= strval( count( $jobinfo[nodes] ) * intval( $jobinfo[ppn] ) );
+					$attrval	= strval( count( $jobinfo['nodes'] ) * intval( $jobinfo['ppn'] ) );
 				}
 				else if( $headername == 'runningtime' )
 				{
-					$attrval	= makeTime( intval( $jobinfo[reported] ) - intval( $jobinfo[start_timestamp] ) );
+					$attrval	= makeTime( intval( $jobinfo['reported'] ) - intval( $jobinfo['start_timestamp'] ) );
 				}
 				else
 				{
@@ -2046,78 +2046,78 @@ class HostImage
 			$jobid			= $this->njobs[$n];
 			$jobinfo		= $dg->getJob( $jobid );
 
-			if( !isset( $this->headerstrlen[id] ) )
+			if( !isset( $this->headerstrlen['id'] ) )
 			{
-				$this->headerstrlen[id]	= strlen( strval( $jobid ) );
+				$this->headerstrlen['id']	= strlen( strval( $jobid ) );
 			}
-			else if( strlen( strval( $jobid ) ) > $this->headerstrlen[id] )
+			else if( strlen( strval( $jobid ) ) > $this->headerstrlen['id'] )
 			{
-				$this->headerstrlen[id]	= strlen( strval( $jobid ) );
-			}
-
-			if( !isset( $this->headerstrlen[owner] ) )
-			{
-				$this->headerstrlen[owner]	= strlen( strval( $jobinfo[owner] ) );
-			}
-			else if( strlen( strval( $jobinfo[owner] ) ) > $this->headerstrlen[owner] )
-			{
-				$this->headerstrlen[owner]	= strlen( strval( $jobinfo[owner] ) );
+				$this->headerstrlen['id']	= strlen( strval( $jobid ) );
 			}
 
-			if( !isset( $this->headerstrlen[queue] ) )
+			if( !isset( $this->headerstrlen['owner'] ) )
 			{
-				$this->headerstrlen[queue]	= strlen( strval( $jobinfo[queue] ) );
+				$this->headerstrlen['owner']	= strlen( strval( $jobinfo['owner'] ) );
 			}
-			else if( strlen( strval( $jobinfo[queue] ) ) > $this->headerstrlen[queue] )
+			else if( strlen( strval( $jobinfo['owner'] ) ) > $this->headerstrlen['owner'] )
 			{
-				$this->headerstrlen[queue]	= strlen( strval( $jobinfo[queue] ) );
-			}
-
-			if( !isset( $jobinfo[ppn] ) )
-			{
-				$jobinfo[ppn] = 1;
+				$this->headerstrlen['owner']	= strlen( strval( $jobinfo['owner'] ) );
 			}
 
-			$cpus			= count( $jobinfo[nodes] ) * intval( $jobinfo[ppn] );
-
-			if( !isset( $this->headerstrlen[cpus] ) )
+			if( !isset( $this->headerstrlen['queue'] ) )
 			{
-				$this->headerstrlen[cpus]	= strlen( strval( $cpus ) );
+				$this->headerstrlen['queue']	= strlen( strval( $jobinfo['queue'] ) );
 			}
-			else if( strlen( strval( $cpus ) ) > $this->headerstrlen[cpus] )
+			else if( strlen( strval( $jobinfo['queue'] ) ) > $this->headerstrlen['queue'] )
 			{
-				$this->headerstrlen[cpus]	= strlen( strval( $cpus ) );
+				$this->headerstrlen['queue']	= strlen( strval( $jobinfo['queue'] ) );
 			}
 
-			$nodes			= count( $jobinfo[nodes] );
-
-			if( !isset( $this->headerstrlen[nodes] ) )
+			if( !isset( $jobinfo['ppn'] ) )
 			{
-				$this->headerstrlen[nodes]	= strlen( strval( $nodes ) );
-			}
-			else if( strlen( strval( $nodes) ) > $this->headerstrlen[nodes] )
-			{
-				$this->headerstrlen[nodes]	= strlen( strval( $nodes ) );
+				$jobinfo['ppn'] = 1;
 			}
 
-			$runningtime		= makeTime( intval( $jobinfo[reported] ) - intval( $jobinfo[start_timestamp] ) );
+			$cpus			= count( $jobinfo['nodes'] ) * intval( $jobinfo['ppn'] );
 
-			if( !isset( $this->headerstrlen[runningtime] ) )
+			if( !isset( $this->headerstrlen['cpus'] ) )
 			{
-				$this->headerstrlen[runningtime]	= strlen( strval( $runningtime) );
+				$this->headerstrlen['cpus']	= strlen( strval( $cpus ) );
 			}
-			else if( strlen( strval( $runningtime) ) > $this->headerstrlen[runningtime] )
+			else if( strlen( strval( $cpus ) ) > $this->headerstrlen['cpus'] )
 			{
-				$this->headerstrlen[runningtime]	= strlen( strval( $runningtime) );
+				$this->headerstrlen['cpus']	= strlen( strval( $cpus ) );
 			}
 
-			if( !isset( $this->headerstrlen[name] ) )
+			$nodes			= count( $jobinfo['nodes'] );
+
+			if( !isset( $this->headerstrlen['nodes'] ) )
 			{
-				$this->headerstrlen[name]	= strlen( strval( $jobinfo[name] ) );
+				$this->headerstrlen['nodes']	= strlen( strval( $nodes ) );
 			}
-			else if( strlen( strval( $jobinfo[name] ) ) > $this->headerstrlen[name] )
+			else if( strlen( strval( $nodes) ) > $this->headerstrlen['nodes'] )
 			{
-				$this->headerstrlen[name]	= strlen( strval( $jobinfo[name] ) );
+				$this->headerstrlen['nodes']	= strlen( strval( $nodes ) );
+			}
+
+			$runningtime		= makeTime( intval( $jobinfo[reported] ) - intval( $jobinfo['start_timestamp'] ) );
+
+			if( !isset( $this->headerstrlen['runningtime'] ) )
+			{
+				$this->headerstrlen['runningtime']	= strlen( strval( $runningtime) );
+			}
+			else if( strlen( strval( $runningtime) ) > $this->headerstrlen['runningtime'] )
+			{
+				$this->headerstrlen['runningtime']	= strlen( strval( $runningtime) );
+			}
+
+			if( !isset( $this->headerstrlen['name'] ) )
+			{
+				$this->headerstrlen['name']	= strlen( strval( $jobinfo['name'] ) );
+			}
+			else if( strlen( strval( $jobinfo['name'] ) ) > $this->headerstrlen['name'] )
+			{
+				$this->headerstrlen['name']	= strlen( strval( $jobinfo['name'] ) );
 			}
 		}
 
