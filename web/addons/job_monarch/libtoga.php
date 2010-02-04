@@ -586,12 +586,12 @@ class TorqueXMLHandler
 
 	function TorqueXMLHandler( $clustername )
 	{
-		$jobs			= array();
-		$clusters 		= array();
+		$this->jobs		= array();
+		$this->clusters 	= array();
 		$this->nodes 		= array();
-		$heartbeat 		= array();
-		$down_nodes		= array();
-		$offline_nodes		= array();
+		$this->heartbeat 	= array();
+		$this->down_nodes	= array();
+		$this->offline_nodes	= array();
 		$this->clustername	= $clustername;
 		$this->fqdn		= 1;
 	}
