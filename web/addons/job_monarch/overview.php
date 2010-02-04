@@ -254,12 +254,12 @@ function drawPie()
 	{
 		$myjobs		= $node->getJobs();
 		$myhost		= $node->getHostname();
-		$node_cpus	= $metrics[$myhost]["cpu_num"][VAL];
+		$node_cpus	= $metrics[$myhost]["cpu_num"]['VAL'];
 		$job_cpu	= 0;
 
 		foreach( $myjobs as $myjob ) 
 		{
-			$job_cpu	+= (int) $jobs[$myjob][ppn] ? $jobs[$myjob][ppn] : 1;
+			$job_cpu	+= (int) $jobs[$myjob]['ppn'] ? $jobs[$myjob]['ppn'] : 1;
 		}
 
 		$node_freecpu	= $node_cpus - $job_cpu;
@@ -288,11 +288,11 @@ function drawPie()
 		$node_jobs 	= $node->getJobs();
 		$nr_node_jobs 	= count( $node_jobs );
 		$myhost 	= $node->getHostname();
-		$node_cpus	= $metrics[$myhost]["cpu_num"][VAL];
+		$node_cpus	= $metrics[$myhost]["cpu_num"]['VAL'];
 
 		foreach( $node_jobs as $myjob )
 		{
-			$job_cpu		= (int) $jobs[$myjob][ppn] ? $jobs[$myjob][ppn] : 1;
+			$job_cpu		= (int) $jobs[$myjob]['ppn'] ? $jobs[$myjob]['ppn'] : 1;
 
 			// Determine the weight of this job
 			// - what percentage of the cpus is in use by this job
@@ -313,7 +313,7 @@ function drawPie()
 				}
 				else if( $piefilter == 'user' )
 				{
-					if( $jobs[$myjob][owner] != $filter[$piefilter] )
+					if( $jobs[$myjob]['owner'] != $filter[$piefilter] )
 					{
 						$countjob = 0;
 					}
@@ -356,7 +356,7 @@ function drawPie()
 			else
 			{
 
-				$qname		= $jobs[$myjob][queue];
+				$qname		= $jobs[$myjob]['queue'];
 
 				if( !isset( $queues[$qname] ) )
 				{
@@ -425,26 +425,26 @@ function sortJobs( $jobs, $sortby, $sortorder )
 	{
 		foreach( $jobs as $jobid => $jobattrs ) 
 		{
-				$state		= $jobattrs[status];
-				$user 		= $jobattrs[owner];
-				$queue 		= $jobattrs[queue];
-				$name 		= $jobattrs[name];
-				$req_cpu 	= $jobattrs[requested_time];
-				$req_memory 	= $jobattrs[requested_memory];
+				$state		= $jobattrs['status'];
+				$user 		= $jobattrs['owner'];
+				$queue 		= $jobattrs['queue'];
+				$name 		= $jobattrs['name'];
+				$req_cpu 	= $jobattrs['requested_time'];
+				$req_memory 	= $jobattrs['requested_memory'];
 
 				if( $state == 'R' )
 				{
-					$nodes = count( $jobattrs[nodes] );
+					$nodes = count( $jobattrs['nodes'] );
 				}
 				else
 				{
-					$nodes = $jobattrs[nodes];
+					$nodes = $jobattrs['nodes'];
 				}
 
-				$ppn 		= (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
+				$ppn 		= (int) $jobattrs['ppn'] ? $jobattrs['ppn'] : 1;
 				$cpus 		= $nodes * $ppn;
-				$queued_time 	= (int) $jobattrs[queued_timestamp];
-				$start_time 	= (int) $jobattrs[start_timestamp];
+				$queued_time 	= (int) $jobattrs['queued_timestamp'];
+				$start_time 	= (int) $jobattrs['start_timestamp'];
 				$runningtime 	= $report_time - $start_time;
 
 				switch( $sortby ) 
@@ -633,25 +633,25 @@ function makeOverview()
 	{
 		$report_time 	= $jobs[$jobid][reported];
 
-		if( $jobs[$jobid][status] == 'R' )
+		if( $jobs[$jobid]['status'] == 'R' )
 		{
-			$nodes = count( $jobs[$jobid][nodes] );
+			$nodes = count( $jobs[$jobid]['nodes'] );
 		}
-		else if( $jobs[$jobid][status] == 'Q' )
+		else if( $jobs[$jobid]['status'] == 'Q' )
 		{
-			$nodes = $jobs[$jobid][nodes];
+			$nodes = $jobs[$jobid]['nodes'];
 		}
 
-		$ppn 		= (int) $jobs[$jobid][ppn] ? $jobs[$jobid][ppn] : 1;
+		$ppn 		= (int) $jobs[$jobid]['ppn'] ? $jobs[$jobid]['ppn'] : 1;
 		$cpus 		= $nodes * $ppn;
 
 		if( $report_time == $heartbeat ) 
 		{
 			$display_job	= 1;
 
-			if( $jobs[$jobid][status] == 'R' ) 
+			if( $jobs[$jobid]['status'] == 'R' ) 
 			{
-				foreach( $jobs[$jobid][nodes] as $tempnode ) 
+				foreach( $jobs[$jobid]['nodes'] as $tempnode ) 
 				{
 					$all_used_nodes[] = $tempnode;
 				}
@@ -659,7 +659,7 @@ function makeOverview()
 
 			$used_cpus += $cpus;
 
-			if( $jobs[$jobid][status] == 'R' ) 
+			if( $jobs[$jobid]['status'] == 'R' ) 
 			{
 				$running_cpus 	+= $cpus;
 
@@ -667,7 +667,7 @@ function makeOverview()
 
 				$found_node_job	= 0;
 
-				foreach( $jobs[$jobid][nodes] as $tempnode ) 
+				foreach( $jobs[$jobid]['nodes'] as $tempnode ) 
 				{
 					$running_name_nodes[] = $tempnode;
 
@@ -675,14 +675,14 @@ function makeOverview()
 					{
 						//$filter[host] = $hostname;
 
-						$domain_len 	= 0 - strlen( $jobs[$jobid][domain] );
+						$domain_len 	= 0 - strlen( $jobs[$jobid]['domain'] );
 						$hostnode 	= $tempnode;
 
 						if( $use_fqdn == 1)
 						{
-							if( substr( $hostnode, $domain_len ) != $jobs[$jobid][domain] ) 
+							if( substr( $hostnode, $domain_len ) != $jobs[$jobid]['domain'] ) 
 							{
-								$hostnode = $hostnode. '.'. $jobs[$jobid][domain];
+								$hostnode = $hostnode. '.'. $jobs[$jobid]['domain'];
 							}
 						}
 
@@ -699,7 +699,7 @@ function makeOverview()
 				}
 			}
 
-			if( $jobs[$jobid][status] == 'Q' ) 
+			if( $jobs[$jobid]['status'] == 'Q' ) 
 			{
 				if( isset( $hostname ) && $hostname != '' )
 				{
@@ -718,15 +718,15 @@ function makeOverview()
 				{
 					$display_job = 0;
 				}
-				else if( $filtername == 'state' && $jobs[$jobid][status] != $filtervalue )
+				else if( $filtername == 'state' && $jobs[$jobid]['status'] != $filtervalue )
 				{
 					$display_job = 0;
 				}
-				else if( $filtername == 'queue' && $jobs[$jobid][queue] != $filtervalue )
+				else if( $filtername == 'queue' && $jobs[$jobid]['queue'] != $filtervalue )
 				{
 					$display_job = 0;
 				}
-				else if( $filtername == 'user' && $jobs[$jobid][owner] != $filtervalue )
+				else if( $filtername == 'user' && $jobs[$jobid]['owner'] != $filtervalue )
 				{
 					$display_job = 0;
 				}
@@ -740,25 +740,25 @@ function makeOverview()
 
 				$last_displayed_job 	= $jobid;
 
-				$tpl->assign( "state", $jobs[$jobid][status] );
+				$tpl->assign( "state", $jobs[$jobid]['status'] );
 
 				$fullstate 		= '';
 
-				if( $jobs[$jobid][status] == 'R' ) 
+				if( $jobs[$jobid]['status'] == 'R' ) 
 				{
 					$fullstate 	= "Running";
 				} 
-				else if( $jobs[$jobid][status] == 'Q' ) 
+				else if( $jobs[$jobid]['status'] == 'Q' ) 
 				{
 					$fullstate 	= "Queued";
 				}
 
 				$tpl->assign( "fullstate", $fullstate );
 				
-				$tpl->assign( "user", $jobs[$jobid][owner] );
-				$tpl->assign( "queue", $jobs[$jobid][queue] );
+				$tpl->assign( "user", $jobs[$jobid]['owner'] );
+				$tpl->assign( "queue", $jobs[$jobid]['queue'] );
 
-				$fulljobname 		= $jobs[$jobid][name];
+				$fulljobname 		= $jobs[$jobid]['name'];
 				$shortjobname 		= '';
 
 				$tpl->assign( "fulljobname", $fulljobname );
@@ -792,14 +792,14 @@ function makeOverview()
 					$tpl->gotoBlock( "node" );
 				}
 
-				$domain 		= $jobs[$jobid][domain];
+				$domain 		= $jobs[$jobid]['domain'];
 
-				$tpl->assign( "req_cpu", makeTime( timeToEpoch( $jobs[$jobid][requested_time] ) ) );
+				$tpl->assign( "req_cpu", makeTime( timeToEpoch( $jobs[$jobid]['requested_time'] ) ) );
 
 				if( $COLUMN_REQUESTED_MEMORY ) 
 				{
 					$tpl->newBlock( "column_req_mem" );
-					$tpl->assign( "req_memory", $jobs[$jobid][requested_memory] );
+					$tpl->assign( "req_memory", $jobs[$jobid]['requested_memory'] );
 					$tpl->gotoBlock( "node" );
 				}
 
@@ -807,7 +807,7 @@ function makeOverview()
 				if( $COLUMN_QUEUED ) 
 				{
 					$tpl->newBlock( "column_queued" );
-					$tpl->assign( "queued", makeDate( $jobs[$jobid][queued_timestamp] ) );
+					$tpl->assign( "queued", makeDate( $jobs[$jobid]['queued_timestamp'] ) );
 					$tpl->gotoBlock( "node" );
 				}
 				if( $COLUMN_NODES ) 
@@ -816,22 +816,22 @@ function makeOverview()
 					$tpl->gotoBlock( "node" );
 				}
 
-				$ppn 			= (int) $jobs[$jobid][ppn] ? $jobs[$jobid][ppn] : 1;
+				$ppn 			= (int) $jobs[$jobid]['ppn'] ? $jobs[$jobid]['ppn'] : 1;
 				$cpus 			= $nodes * $ppn;
 
 				$tpl->assign( "nodes", $nodes );
 				$tpl->assign( "cpus", $cpus );
 
-				$start_time 		= (int) $jobs[$jobid][start_timestamp];
+				$start_time 		= (int) $jobs[$jobid]['start_timestamp'];
 				$job_start 		= $start_time;
 
 				$view_cpus 		+= $cpus;
 
 				$view_jobs++;
 
-				if( $jobs[$jobid][status] == 'R' ) 
+				if( $jobs[$jobid]['status'] == 'R' ) 
 				{
-					foreach( $jobs[$jobid][nodes] as $tempnode )
+					foreach( $jobs[$jobid]['nodes'] as $tempnode )
 					{
 						$view_name_nodes[] 	= $tempnode;
 					}
@@ -842,11 +842,11 @@ function makeOverview()
 
 						$mynodehosts 		= array();
 
-						foreach( $jobs[$jobid][nodes] as $mynode ) 
+						foreach( $jobs[$jobid]['nodes'] as $mynode ) 
 						{
 							if( $use_fqdn == 1)
 							{
-								$mynode	= $mynode.".".$jobs[$jobid][domain];
+								$mynode	= $mynode.".".$jobs[$jobid]['domain'];
 							}
 							$myhost_href 	= "./?c=".$clustername."&h=".$mynode;
 							$mynodehosts[] 	= "<A HREF=\"".$myhost_href."\">".$mynode."</A>";
@@ -858,9 +858,9 @@ function makeOverview()
 						$tpl->gotoBlock( "node" );
 					}
 				} 
-				else if( $jobs[$jobid][status] == 'Q' ) 
+				else if( $jobs[$jobid]['status'] == 'Q' ) 
 				{
-					$view_nodes 	+= (int) $jobs[$jobid][nodes];
+					$view_nodes 	+= (int) $jobs[$jobid]['nodes'];
 				}
 
 				if( $even ) 
@@ -950,7 +950,7 @@ function makeOverview()
 	{
 		if( $last_displayed_job != null )
 		{
-			$filter[id] = $last_displayed_job;
+			$filter['id'] = $last_displayed_job;
 		}
 	}
 
@@ -987,7 +987,7 @@ function makeOverview()
 		$cols_menu 	.= "</SELECT>\n";
 
 		$tpl->assign( "metric","$metricname $units" );
-		$tpl->assign( "id", $filter[id] );
+		$tpl->assign( "id", $filter['id'] );
 
 		# Host columns menu defined in header.php
 		$tpl->assign( "cols_menu", $cols_menu );
@@ -1008,7 +1008,7 @@ function makeOverview()
 			}
 
 			$sorted_hosts 	= array();
-			$hosts_up 	= $jobs[$filter[id]][nodes];
+			$hosts_up 	= $jobs[$filter['id']]['nodes'];
 
 			//printf( "r %s\n", $job_runningtime );
 
@@ -1050,7 +1050,7 @@ function makeOverview()
 					$cpus		= 1;
 				}
 
-				$load_one 		= $metrics[$host]["load_one"][VAL];
+				$load_one 		= $metrics[$host]["load_one"]['VAL'];
 				$load 			= ((float) $load_one) / $cpus;
 				$host_load[$host] 	= $load;
 
@@ -1062,7 +1062,7 @@ function makeOverview()
 				}
 				else
 				{
-					$sorted_hosts[$host] 	= $metrics[$host][$metricname][VAL];
+					$sorted_hosts[$host] 	= $metrics[$host][$metricname]['VAL'];
 				}
 			}
 
@@ -1118,7 +1118,7 @@ function makeOverview()
 				{
 					$load_color	= load_color($host_load[$host]);
 					$graphargs 	= ($reports[$metricname]) ? "g=$metricname&" : "m=$metricname&";
-					$graphargs 	.= "z=small&c=$cluster_url&h=$host_url&l=$load_color" . "&v=$val[VAL]&r=job&jr=$jobrange&js=$jobstart";
+					$graphargs 	.= "z=small&c=$cluster_url&h=$host_url&l=$load_color" . "&v=$val['VAL']&r=job&jr=$jobrange&js=$jobstart";
 					if( $max > 0 ) 
 					{
 						$graphargs	.= "&x=$max&n=$min";

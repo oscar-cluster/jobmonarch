@@ -33,8 +33,8 @@ class HTTPVariables
 	{
 		$this->restvars		= array();
 
-		$this->clustername	= $httpvars["c"] ? $httpvars["c"] : $getvars["c"];
-		$this->metricname	= $httpvars["m"] ? $httpvars["m"] : $getvars["m"];
+		$this->clustername	= isset( $httpvars["c"] ) ? $httpvars["c"] : $getvars["c"];
+		$this->metricname	= isset( $httpvars["m"] ) ? $httpvars["m"] : $getvars["m"];
 
 		if( count( $httpvars ) > 0 )
 		{
@@ -83,6 +83,9 @@ class HTTPVariables
 }
 
 $CLUSTER_CONFS	= array();
+
+ini_set("memory_limit","1024000000");
+set_time_limit(0);
 
 // Monarch's conf
 //
@@ -474,9 +477,9 @@ class DataSource
 
 	function getData()
 	{
-		$errstr;
-		$errno = 0;
-		$timeout = 3;
+		$errstr		= '';
+		$errno		= 0;
+		$timeout	= 3;
 
 		$fp = fsockopen( $this->ip, $this->port, $errno, $errstr, $timeout );
 
@@ -678,12 +681,15 @@ class TorqueXMLHandler
 		$jobs = $this->jobs;
 		$nodes = $this->nodes;
 
-		if ( $attrs['TN'] )
+		if( isset( $attrs['TN'] ) )
 		{
-			// Ignore dead metrics. Detect and mask failures.
-			if ( $attrs['TN'] > $attrs['TMAX'] * 4 )
+			if ( $attrs['TN'] )
 			{
-				return;
+				// Ignore dead metrics. Detect and mask failures.
+				if ( $attrs['TN'] > $attrs['TMAX'] * 4 )
+				{
+					return;
+				}
 			}
 		}
 
