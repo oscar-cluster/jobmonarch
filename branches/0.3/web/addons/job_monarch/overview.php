@@ -631,7 +631,7 @@ function makeOverview()
 
 	foreach( $sorted_jobs as $jobid => $sortdec ) 
 	{
-		$report_time 	= $jobs[$jobid][reported];
+		$report_time 	= $jobs[$jobid]['reported'];
 
 		if( $jobs[$jobid]['status'] == 'R' )
 		{
@@ -642,7 +642,7 @@ function makeOverview()
 			$nodes = $jobs[$jobid]['nodes'];
 		}
 
-		$ppn 		= (int) $jobs[$jobid]['ppn'] ? $jobs[$jobid]['ppn'] : 1;
+		$ppn 		= isset( $jobs[$jobid]['ppn'] ) ? $jobs[$jobid]['ppn'] : 1;
 		$cpus 		= $nodes * $ppn;
 
 		if( $report_time == $heartbeat ) 
@@ -816,7 +816,7 @@ function makeOverview()
 					$tpl->gotoBlock( "node" );
 				}
 
-				$ppn 			= (int) $jobs[$jobid]['ppn'] ? $jobs[$jobid]['ppn'] : 1;
+				$ppn 			= isset( $jobs[$jobid]['ppn'] ) ? $jobs[$jobid]['ppn'] : 1;
 				$cpus 			= $nodes * $ppn;
 
 				$tpl->assign( "nodes", $nodes );
@@ -1118,7 +1118,7 @@ function makeOverview()
 				{
 					$load_color	= load_color($host_load[$host]);
 					$graphargs 	= ($reports[$metricname]) ? "g=$metricname&" : "m=$metricname&";
-					$graphargs 	.= "z=small&c=$cluster_url&h=$host_url&l=$load_color" . "&v=$val['VAL']&r=job&jr=$jobrange&js=$jobstart";
+					$graphargs 	.= "z=small&c=$cluster_url&h=$host_url&l=$load_color&v=".$val['VAL']."&r=job&jr=$jobrange&js=$jobstart";
 					if( $max > 0 ) 
 					{
 						$graphargs	.= "&x=$max&n=$min";
