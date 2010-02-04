@@ -1910,7 +1910,7 @@ class ClusterImage
 					$y = $y_offset + ($n * $node_width);
 
 					$cur_node = ($n * $nodes_per_row) + ($m);
-					$host = $nodes_hosts[$cur_node];
+					$host = isset( $nodes_hosts[$cur_node] ) ? $nodes_hosts[$cur_node] : '';
 
 					if( isset( $nodes[$host] ) )
 					{

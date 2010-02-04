@@ -292,7 +292,7 @@ function drawPie()
 
 		foreach( $node_jobs as $myjob )
 		{
-			$job_cpu		= (int) $jobs[$myjob]['ppn'] ? $jobs[$myjob]['ppn'] : 1;
+			$job_cpu		= isset( $jobs[$myjob]['ppn'] ) ? $jobs[$myjob]['ppn'] : 1;
 
 			// Determine the weight of this job
 			// - what percentage of the cpus is in use by this job
