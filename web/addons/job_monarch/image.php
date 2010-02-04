@@ -22,8 +22,8 @@
  * SVN $Id: image.php 329 2007-04-22 13:36:26Z bastiaans $
  */
 
-ini_set("memory_limit","1G");
-set_time_limit(0);
+//ini_set("memory_limit","1G");
+//set_time_limit(0);
 
 include_once "./libtoga.php";
 
@@ -45,7 +45,7 @@ global $mySession, $myData, $myXML;
 $mySession      = new SessionHandler( $clustername );
 $mySession->checkSession();
 
-$session        = &$mySession->getSession();
+$session        = $mySession->getSession();
 $myXML		= $session['data'];
 
 $myData         = new DataGatherer( $clustername );

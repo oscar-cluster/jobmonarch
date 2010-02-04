@@ -33,8 +33,8 @@ class HTTPVariables
 	{
 		$this->restvars		= array();
 
-		$this->clustername	= $httpvars['c'] ? $httpvars['c'] : $getvars['c'];
-		$this->metricname	= $httpvars['m'] ? $httpvars['m'] : $getvars['m'];
+		$this->clustername	= isset( $httpvars['c'] ) ? $httpvars['c'] : $getvars['c'];
+		$this->metricname	= isset( $httpvars['m'] ) ? $httpvars['m'] : $getvars['m'];
 
 		if( count( $httpvars ) > 0 )
 		{
@@ -83,6 +83,9 @@ class HTTPVariables
 }
 
 $CLUSTER_CONFS	= array();
+
+ini_set("memory_limit","1024000000");
+set_time_limit(0);
 
 // Monarch's conf
 //
@@ -558,9 +561,9 @@ class DataSource
 
 	function getData()
 	{
-		$errstr;
-		$errno = 0;
-		$timeout = 3;
+		$errstr		= '';
+		$errno		= 0;
+		$timeout	= 3;
 
 		$fp = fsockopen( $this->ip, $this->port, $errno, $errstr, $timeout );
 
@@ -582,6 +585,8 @@ class DataSource
 
 		stream_set_timeout( $fp, 30 );
 
+		$data	= '';
+
 		while ( !feof( $fp ) )
 		{
 			$data .= fread( $fp, 16384 );
@@ -600,21 +605,42 @@ class DataGatherer
 	function DataGatherer( $cluster )
 	{
 		$this->cluster	= $cluster;
-		$this->httpvars = $httpvars;
+		//$this->httpvars = $httpvars;
 	}
 
 	function parseXML( $data )
 	{
-		$this->parser 		= xml_parser_create();
+		//$this->parser 		= xml_parser_create();
 		$this->xmlhandler 	= new TorqueXMLHandler( $this->cluster );
 
-		xml_parser_set_option( $this->parser, XML_OPTION_CASE_FOLDING, 0 );
-		xml_set_element_handler( $this->parser, array( &$this->xmlhandler, 'startElement' ), array( &$this->xmlhandler, 'stopElement' ) );
+		preg_match_all( '/<HOST (.*)?>/', $data, $hosts );
+		unset( $hosts[1] );
+		preg_match_all( '/<METRIC NAME="MONARCH-(.*)?\>/', $data, $metrics );
+		unset( $metrics[1] );
 
-		if ( !xml_parse( $this->parser, $data ) )
+		//print_r( $metrics );
+		//print_r( $hosts );
+
+		$togas	= $metrics[0];
+
+		//print_r( $togas );
+
+		foreach( $togas as $mid=>$metric )
 		{
-			$error = sprintf( 'XML error: %s at %d', xml_error_string( xml_get_error_code( $this->parser ) ), xml_get_current_line_number( $this->parser ) );
+		//	printf( "%s\n", $metric );
+			preg_match( '/<METRIC NAME="MONARCH-(.*?)" VAL="(?<toga>\d+)" /', $metric, $toga );
+			//print_r( $toga );
 		}
+
+		//xml_parser_set_option( $this->parser, XML_OPTION_CASE_FOLDING, 0 );
+		//xml_parser_set_option( $this->parser, XML_OPTION_SKIP_WHITE, 1 );
+		//xml_set_element_handler( $this->parser, array( &$this->xmlhandler, 'startElement' ), array( &$this->xmlhandler, 'stopElement' ) );
+
+		//if ( !xml_parse( $this->parser, $data ) )
+		//{
+		//	$error = sprintf( 'XML error: %s at %d', xml_error_string( xml_get_error_code( $this->parser ) ), xml_get_current_line_number( $this->parser ) );
+		//}
+		//xml_parser_free( $this->parser );
 	}
 
 	function getPollInterval()
