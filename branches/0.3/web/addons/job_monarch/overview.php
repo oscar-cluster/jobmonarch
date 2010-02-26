@@ -259,7 +259,7 @@ function drawPie()
 
 		foreach( $myjobs as $myjob ) 
 		{
-			$job_cpu	+= (int) $jobs[$myjob]['ppn'] ? $jobs[$myjob]['ppn'] : 1;
+			$job_cpu	+= isset( $jobs[$myjob]['ppn'] ) ? $jobs[$myjob]['ppn'] : 1;
 		}
 
 		$node_freecpu	= $node_cpus - $job_cpu;
