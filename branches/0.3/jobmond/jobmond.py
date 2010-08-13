@@ -27,7 +27,7 @@ import xdrlib, socket, syslog, xml, xml.sax
 from xml.sax.handler import feature_namespaces
 from collections import deque
 
-VERSION='0.3.1'
+VERSION='0.3.1+SVN'
 
 def usage( ver ):
 
@@ -1276,6 +1276,15 @@ class PbsDataGatherer( DataGatherer ):
 			self.pq		= PBSQuery( BATCH_SERVER )
 		else:
 			self.pq		= PBSQuery()
+
+		try:
+			self.pq.old_data_structure()
+
+		except AttributeError:
+
+			# pbs_query is older
+			#
+			pass
 
 	def getJobData( self ):
 
