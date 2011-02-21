@@ -390,7 +390,7 @@ class DataProcessor:
 
 		"""Remember alternate binary location if supplied"""
 
-		global GMETRIC_BINARY
+		global GMETRIC_BINARY, GMOND_CONF
 
 		if binary:
 			self.binary = binary
@@ -423,7 +423,7 @@ class DataProcessor:
 		for the syntax we use
 		"""
 
-		global METRIC_MAX_VAL_LEN
+		global METRIC_MAX_VAL_LEN, GMETRIC_TARGET
 
 		incompatible	= 0
 
@@ -467,6 +467,16 @@ class DataProcessor:
 						elif version_patch >= 3:
 
 							METRIC_MAX_VAL_LEN = 1400
+
+					elif version_minor == 1:
+
+						debug_msg( 0, 'Gmetric 3.1 detected, internal gmetric handling disabled. Failing back to gmetric binary' )
+
+						METRIC_MAX_VAL_LEN = 1400
+
+						# We don't speak 3.1 gmetric so use binary
+						#
+						GMETRIC_TARGET = None
 
 		return incompatible
 
