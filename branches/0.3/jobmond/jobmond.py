@@ -472,7 +472,7 @@ class DataProcessor:
 
 						debug_msg( 0, 'Gmetric 3.1 detected, internal gmetric handling disabled. Failing back to gmetric binary' )
 
-						METRIC_MAX_VAL_LEN = 1400
+						METRIC_MAX_VAL_LEN = 500
 
 						# We don't speak 3.1 gmetric so use binary
 						#
