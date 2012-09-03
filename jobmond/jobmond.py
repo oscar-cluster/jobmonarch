@@ -26,6 +26,7 @@ import sys, getopt, ConfigParser, time, os, socket, string, re
 import xdrlib, socket, syslog, xml, xml.sax
 from xml.sax.handler import feature_namespaces
 from collections import deque
+from types import *
 
 VERSION='0.3.1'
 
@@ -180,37 +181,37 @@ def findGmetric():
 
 def loadConfig( filename ):
 
-        def getlist( cfg_string ):
+    def getlist( cfg_string ):
 
-                my_list = [ ]
+        my_list = [ ]
 
-                for item_txt in cfg_string.split( ',' ):
+        for item_txt in cfg_string.split( ',' ):
 
-                        sep_char = None
+                sep_char = None
 
-                        item_txt = item_txt.strip()
+                item_txt = item_txt.strip()
 
-                        for s_char in [ "'", '"' ]:
+                for s_char in [ "'", '"' ]:
 
-                                if item_txt.find( s_char ) != -1:
+                        if item_txt.find( s_char ) != -1:
 
-                                        if item_txt.count( s_char ) != 2:
+                                if item_txt.count( s_char ) != 2:
 
-                                                print 'Missing quote: %s' %item_txt
-                                                sys.exit( 1 )
+                                        print 'Missing quote: %s' %item_txt
+                                        sys.exit( 1 )
 
-                                        else:
+                                else:
 
-                                                sep_char = s_char
-                                                break
+                                        sep_char = s_char
+                                        break
 
-                        if sep_char:
+                if sep_char:
 
-                                item_txt = item_txt.split( sep_char )[1]
+                        item_txt = item_txt.split( sep_char )[1]
 
-                        my_list.append( item_txt )
+                my_list.append( item_txt )
 
-                return my_list
+        return my_list
 
     cfg     = ConfigParser.ConfigParser()
 
@@ -303,7 +304,7 @@ def loadConfig( filename ):
         #
         gmetric_dest_ip     = ganglia_cfg.getStr( 'udp_send_channel', 'host' )
 
-    gmetric_dest_port   = ganglia_cfg.getStr( 'udp_send_channel', 'port' )
+        gmetric_dest_port   = ganglia_cfg.getStr( 'udp_send_channel', 'port' )
 
     if gmetric_dest_ip and gmetric_dest_port:
 
@@ -533,15 +534,19 @@ class DataGatherer:
 
             print '\t%s = %s' %( name, val )
 
-    def getAttr( self, attrs, name ):
+    def getAttr( self, d, name ):
 
         """Return certain attribute from dictionary, if exists"""
 
-        if attrs.has_key( name ):
+        if d.has_key( name ):
 
-            return attrs[ name ]
-        else:
-            return ''
+            if type( d[ name ] ) == ListType:
+
+                return string.join( d[ name ], ' ' )
+
+            return d[ name ]
+        
+        return ''
 
     def jobDataChanged( self, jobs, job_id, attrs ):
 
@@ -607,11 +612,11 @@ class DataGatherer:
         
             for name, node in self.pq.getnodes().items():
 
-                if ( node[ 'state' ].find( "down" ) != -1 ):
+                if 'down' in node[ 'state' ]:
 
                     downed_nodes.append( name )
 
-                if ( node[ 'state' ].find( "offline" ) != -1 ):
+                if 'offline' in node[ 'state' ]:
 
                     offline_nodes.append( name )
 
@@ -628,159 +633,86 @@ class DataGatherer:
         for jobid, jobattrs in self.jobs.items():
 
             # Make gmetric values for each job: respect max gmetric value length
-                        #
-            gmetric_val     = self.compileGmetricVal( jobid, jobattrs )
-            metric_increment    = 0
-
-            # If we have more job info than max gmetric value length allows, split it up
-                        # amongst multiple metrics
             #
-            for val in gmetric_val:
+            gmetrics     = self.compileGmetricVal( jobid, jobattrs )
 
-                self.dp.multicastGmetric( 'MONARCH-JOB-' + jobid + '-' + str(metric_increment), val )
+            for g_name, g_val in gmetrics.items():
 
-                # Increase follow number if this jobinfo is split up amongst more than 1 gmetric
-                                #
-                metric_increment    = metric_increment + 1
+                self.dp.multicastGmetric( g_name, g_val )
 
     def compileGmetricVal( self, jobid, jobattrs ):
 
-        """Create a val string for gmetric of jobinfo"""
+        """Create gmetric name/value pairs of jobinfo"""
 
-        gval_lists  = [ ]
-        val_list    = { }
+        gmetrics = { }
 
         for val_name, val_value in jobattrs.items():
 
-            # These are our own metric names, i.e.: status, start_timestamp, etc
-                        #
-            val_list_names_len  = len( string.join( val_list.keys() ) ) + len(val_list.keys())
+            gmetric_sequence = 0
 
-            # These are their corresponding values
-                        #
-            val_list_vals_len   = len( string.join( val_list.values() ) ) + len(val_list.values())
+            if len( val_value ) > METRIC_MAX_VAL_LEN:
 
-            if val_name == 'nodes' and jobattrs['status'] == 'R':
+                while len( val_value ) > METRIC_MAX_VAL_LEN:
 
-                node_str = None
+                    gmetric_value   = val_value[:METRIC_MAX_VAL_LEN]
+                    val_value       = val_value[METRIC_MAX_VAL_LEN:]
 
-                for node in val_value:
+                    gmetric_name    = 'MONARCHJOB$%s$%s$%s' %( jobid, string.upper(val_name), gmetric_sequence )
 
-                    if node_str:
+                    gmetrics[ gmetric_name ] = gmetric_value
 
-                        node_str = node_str + ';' + node
-                    else:
-                        node_str = node
+                    gmetric_sequence = gmetric_sequence + 1
+            else:
+                gmetric_value   = val_value
 
-                    # Make sure if we add this new info, that the total metric's value length does not exceed METRIC_MAX_VAL_LEN
-                                        #
-                    if (val_list_names_len + len(val_name) ) + (val_list_vals_len + len(node_str) ) > METRIC_MAX_VAL_LEN:
+                gmetric_name    = 'MONARCH$%s$%s$%s' %( jobid, string.upper(val_name), gmetric_sequence )
 
-                        # It's too big, we need to make a new gmetric for the additional info
-                                                #
-                        val_list[ val_name ]    = node_str
+                gmetrics[ gmetric_name ] = gmetric_value
 
-                        gval_lists.append( val_list )
+        return gmetrics
 
-                        val_list        = { }
-                        node_str        = None
+    def daemon( self ):
 
-                val_list[ val_name ]    = node_str
+        """Run as daemon forever"""
 
-                gval_lists.append( val_list )
+        # Fork the first child
+        #
+        pid = os.fork()
+        if pid > 0:
+                sys.exit(0)  # end parent
 
-                val_list        = { }
+        # creates a session and sets the process group ID
+        #
+        os.setsid()
 
-            elif val_value != '':
-
-                # Make sure if we add this new info, that the total metric's value length does not exceed METRIC_MAX_VAL_LEN
-                                #
-                if (val_list_names_len + len(val_name) ) + (val_list_vals_len + len(str(val_value)) ) > METRIC_MAX_VAL_LEN:
-
-                    # It's too big, we need to make a new gmetric for the additional info
-                                        #
-                    gval_lists.append( val_list )
-
-                    val_list        = { }
-
-                val_list[ val_name ]    = val_value
-
-        if len( val_list ) > 0:
-
-            gval_lists.append( val_list )
-
-        str_list    = [ ]
-
-        # Now append the value names and values together, i.e.: stop_timestamp=value, etc
-                #
-        for val_list in gval_lists:
-
-            my_val_str  = None
-
-            for val_name, val_value in val_list.items():
-
-                if type(val_value) == list:
-
-                    val_value   = val_value.join( ',' )
-
-                if my_val_str:
-
-                    try:
-                        # fixme: It's getting
-                        # ('nodes', None) items
-                        my_val_str = my_val_str + ' ' + val_name + '=' + val_value
-                    except:
-                        pass
-
-                else:
-                    my_val_str = val_name + '=' + val_value
-
-            str_list.append( my_val_str )
-
-        return str_list
-
-        def daemon( self ):
-
-                """Run as daemon forever"""
-
-                # Fork the first child
-                #
-                pid = os.fork()
-                if pid > 0:
-                        sys.exit(0)  # end parent
-
-                # creates a session and sets the process group ID
-                #
-                os.setsid()
-
-                # Fork the second child
-                #
-                pid = os.fork()
-                if pid > 0:
-                        sys.exit(0)  # end parent
+        # Fork the second child
+        #
+        pid = os.fork()
+        if pid > 0:
+                sys.exit(0)  # end parent
 
         write_pidfile()
 
-                # Go to the root directory and set the umask
-                #
-                os.chdir('/')
-                os.umask(0)
+        # Go to the root directory and set the umask
+        #
+        os.chdir('/')
+        os.umask(0)
 
-                sys.stdin.close()
-                sys.stdout.close()
-                sys.stderr.close()
+        sys.stdin.close()
+        sys.stdout.close()
+        sys.stderr.close()
 
-                os.open('/dev/null', os.O_RDWR)
-                os.dup2(0, 1)
-                os.dup2(0, 2)
+        os.open('/dev/null', os.O_RDWR)
+        os.dup2(0, 1)
+        os.dup2(0, 2)
 
-                self.run()
+        self.run()
 
-        def run( self ):
+    def run( self ):
 
-                """Main thread"""
+        """Main thread"""
 
-                while ( 1 ):
+        while ( 1 ):
         
             self.getJobData()
             self.submitJobData()
@@ -1021,13 +953,13 @@ sed -e 's/reported usage>/reported_usage>/g' -e 's;<\/*JATASK:.*>;;'" \
         except:
             parse_err = 1
             if piping.wait():
-            debug_msg(10,
+                debug_msg(10,
                   "qstat error, skipping until next polling interval: "
                   + piping.childerr.readline())
-            return None
-        elif parse_err:
-            debug_msg(10, "Bad XML output from qstat"())
-            exit (1)
+                return None
+            elif parse_err:
+                debug_msg(10, "Bad XML output from qstat"())
+                exit (1)
         for f in piping.fromchild, piping.tochild, piping.childerr:
             f.close()
         self.cur_time = time.time()
@@ -1103,23 +1035,23 @@ class LsfDataGatherer(DataGatherer):
 
         def _countDuplicatesInList( self, dupedList ):
 
-        countDupes  = { }
+            countDupes  = { }
 
-        for item in dupedList:
+            for item in dupedList:
 
-            if not countDupes.has_key( item ):
+                if not countDupes.has_key( item ):
 
-                countDupes[ item ]  = 1
-            else:
-                countDupes[ item ]  = countDupes[ item ] + 1
+                    countDupes[ item ]  = 1
+                else:
+                    countDupes[ item ]  = countDupes[ item ] + 1
 
-        dupeCountList   = [ ]
+            dupeCountList   = [ ]
 
-        for item, count in countDupes.items():
+            for item, count in countDupes.items():
 
-            dupeCountList.append( ( item, count ) )
+                dupeCountList.append( ( item, count ) )
 
-                return dupeCountList
+            return dupeCountList
 #
 #lst = ['I1','I2','I1','I3','I4','I4','I7','I7','I7','I7','I7']
 #print _countDuplicatesInList(lst)
@@ -1179,16 +1111,16 @@ class LsfDataGatherer(DataGatherer):
                         if requested_cpus == None or requested_cpus == "":
                                 requested_cpus = 1
 
-            if QUEUE:
-                for q in QUEUE:
-                    if q == queue:
-                        display_queue = 1
-                        break
-                    else:
-                        display_queue = 0
-                        continue
-            if display_queue == 0:
-                continue
+                        if QUEUE:
+                            for q in QUEUE:
+                                if q == queue:
+                                    display_queue = 1
+                                    break
+                                else:
+                                    display_queue = 0
+                                    continue
+                        if display_queue == 0:
+                            continue
 
                         runState = self.getAttr( attrs, 'status' )
                         if runState == 4:
@@ -1235,7 +1167,7 @@ class LsfDataGatherer(DataGatherer):
                         myAttrs[ 'queued_timestamp' ]   = str(queued_timestamp)
                         myAttrs[ 'reported' ]       = str( int( int( self.cur_time ) + int( self.timeoffset ) ) )
                         myAttrs[ 'nodes' ]      = do_nodelist( nodelist )
-            myAttrs[ 'domain' ]     = fqdn_parts( socket.getfqdn() )[1]
+                        myAttrs[ 'domain' ]     = fqdn_parts( socket.getfqdn() )[1]
                         myAttrs[ 'poll_interval' ]  = str(BATCH_POLL_INTERVAL)
 
                         if self.jobDataChanged( jobs, job_id, myAttrs ) and myAttrs['status'] in [ 'R', 'Q' ]:
@@ -1248,8 +1180,8 @@ class LsfDataGatherer(DataGatherer):
                                 # This one isn't there anymore
                                 #
                                 del jobs[ id ]
-                self.jobs=jobs
 
+                self.jobs = jobs
 
 class PbsDataGatherer( DataGatherer ):
 
@@ -1315,10 +1247,10 @@ class PbsDataGatherer( DataGatherer ):
 
 
             owner           = self.getAttr( attrs, 'Job_Owner' ).split( '@' )[0]
-            requested_time      = self.getAttr( attrs, 'Resource_List.walltime' )
-            requested_memory    = self.getAttr( attrs, 'Resource_List.mem' )
+            requested_time      = self.getAttr( attrs['Resource_List'], 'walltime' )
+            requested_memory    = self.getAttr( attrs['Resource_List'], 'mem' )
 
-            mynoderequest       = self.getAttr( attrs, 'Resource_List.nodes' )
+            mynoderequest       = self.getAttr( attrs['Resource_List'], 'nodes' )
 
             ppn         = ''
 
@@ -1565,7 +1497,7 @@ def debug_msg( level, msg ):
 
     global DAEMONIZE, DEBUG_LEVEL, SYSLOG_LEVEL
 
-        if (not DAEMONIZE and DEBUG_LEVEL >= level):
+    if (not DAEMONIZE and DEBUG_LEVEL >= level):
         sys.stderr.write( msg + '\n' )
 
     if (DAEMONIZE and USE_SYSLOG and SYSLOG_LEVEL >= level):
