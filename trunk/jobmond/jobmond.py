@@ -24,6 +24,7 @@
 import sys, getopt, ConfigParser, time, os, socket, string, re
 import xdrlib, socket, syslog, xml, xml.sax
 from types import *
+from glob import glob
 
 VERSION='TRUNK+SVN'
 
@@ -96,12 +97,22 @@ class GangliaConfigParser:
 
     def __init__( self, config_file ):
 
-        self.config_file    = config_file
+        self.config_file     = config_file
+        self.include_parsers = [ ]
 
         if not os.path.exists( self.config_file ):
 
             debug_msg( 0, "FATAL ERROR: gmond config '" + self.config_file + "' not found!" )
             sys.exit( 1 )
+
+    def removeHaakjes( self, value ):
+
+        clean_value = value
+        clean_value = clean_value.replace( "(", "" )
+        clean_value = clean_value.replace( ")", "" )
+        clean_value = clean_value.strip()
+
+        return clean_value
 
     def removeQuotes( self, value ):
 
@@ -155,6 +166,24 @@ class GangliaConfigParser:
             if comment_start:
 
                 continue
+
+            if line.find( 'include' ) != -1:
+
+                line = line.removeHaakjes()
+
+                include_line  = line.strip(' ')[1:]
+
+                for include_file in glob( include_line ):
+
+                    include_parser = GangliaConfigParser( include_file )
+                    include_getval = include_parser.getStr( section, valname )
+
+                    if include_getval:
+
+                        value = include_getval
+                        #break ? FIXME value can be overriden by other includes: perhaps users problem
+
+                    del include_parser
 
             if line.find( section ) != -1:
 
