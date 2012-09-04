@@ -962,20 +962,6 @@ class PbsDataGatherer( DataGatherer ):
                 #
                 del self.jobs[ id ]
 
-#
-# Gmetric by Nick Galbreath - nickg(a.t)modp(d.o.t)com
-# Version 1.0 - 21-April2-2007
-# http://code.google.com/p/embeddedgmetric/
-#
-# Modified by: Ramon Bastiaans
-# For the Job Monarch Project, see: https://subtrac.sara.nl/oss/jobmonarch/
-#
-# added: DEFAULT_TYPE for Gmetric's
-# added: checkHostProtocol to determine if target is multicast or not
-# changed: allow default for Gmetric constructor
-# changed: allow defaults for all send() values except dmax
-#
-
 GMETRIC_DEFAULT_TYPE    = 'string'
 GMETRIC_DEFAULT_HOST    = '127.0.0.1'
 GMETRIC_DEFAULT_PORT    = '8649'
@@ -994,7 +980,8 @@ class Gmetric:
         global GMETRIC_DEFAULT_TYPE
 
         self.prot       = self.checkHostProtocol( host )
-        self.msg        = xdrlib.Packer()
+        self.data_msg   = xdrlib.Packer()
+        self.meta_msg   = xdrlib.Packer()
         self.socket     = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
 
         if self.prot not in self.protocol:
@@ -1034,11 +1021,16 @@ class Gmetric:
         if len( typestr ) == 0:
             typestr     = GMETRIC_DEFAULT_TYPE
 
-        msg             = self.makexdr( name, value, typestr, units, self.slopestr, self.tmax, dmax )
+        (meta_msg, data_msg) = self.makexdr( name, value, typestr, units, self.slopestr, self.tmax, dmax )
 
-        return self.socket.sendto( msg, self.hostport )
+        meta_rt = self.socket.sendto( meta_msg, self.hostport )
+        data_rt = self.socket.sendto( data_msg, self.hostport )
 
-    def makexdr( self, name, value, typestr, unitstr, slopestr, tmax, dmax ):
+        return ( meta_rt, data_rt )
+
+    def makexdr( self, name, value, typestr, unitstr, slopestr, tmax, dmax, group=None, spoof=None ):
+
+        hostname = "unset"
 
         if slopestr not in self.slope:
 
@@ -1052,17 +1044,54 @@ class Gmetric:
 
             raise ValueError( "Name must be non-empty" )
 
-        self.msg.reset()
-        self.msg.pack_int( 0 )
-        self.msg.pack_string( typestr )
-        self.msg.pack_string( name )
-        self.msg.pack_string( str( value ) )
-        self.msg.pack_string( unitstr )
-        self.msg.pack_int( self.slope[ slopestr ] )
-        self.msg.pack_uint( int( tmax ) )
-        self.msg.pack_uint( int( dmax ) )
+        self.meta_msg.reset()
+        self.meta_msg.pack_int( 128 )
 
-        return self.msg.get_buffer()
+        if not spoof:
+            self.meta_msg.pack_string( hostname )
+        else:
+            self.meta_msg.pack_string( spoof )
+
+        self.meta_msg.pack_string( name )
+
+        if not spoof:
+            self.meta_msg.pack_int( 0 )
+        else:
+            self.meta_msg.pack_int( 1 )
+            
+        self.meta_msg.pack_string( typestr )
+        self.meta_msg.pack_string( name )
+        self.meta_msg.pack_string( unitstr )
+        self.meta_msg.pack_int( self.slope[ slopestr ] )
+        self.meta_msg.pack_uint( int( tmax ) )
+        self.meta_msg.pack_uint( int( dmax ) )
+
+        if not group:
+            self.meta_msg.pack_int( 0 )
+        else:
+            self.meta_msg.pack_int( 1 )
+            self.meta_msg.pack_string( "GROUP" )
+            self.meta_msg.pack_string( group )
+
+        self.data_msg.reset()
+        self.data_msg.pack_int( 128+5 )
+
+        if not spoof:
+            self.data_msg.pack_string( hostname )
+        else:
+            self.data_msg.pack_string( spoof )
+
+        self.data_msg.pack_string( name )
+
+        if not spoof:
+            self.data_msg.pack_int( 0 )
+        else:
+            self.data_msg.pack_int( 1 )
+
+        self.data_msg.pack_string( "%s" )
+        self.data_msg.pack_string( str( value ) )
+
+        return ( self.meta_msg.get_buffer(), self.data_msg.get_buffer() )
 
 def printTime( ):
 
