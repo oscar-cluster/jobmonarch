@@ -1233,7 +1233,7 @@ class PbsDataGatherer( DataGatherer ):
             owner           = self.getAttr( attrs, 'Job_Owner' )
             name            = self.getAttr( attrs, 'Job_Name' )
             queue           = self.getAttr( attrs, 'queue' )
-            nodect          = self.getAttr( attrs['nodes'], 'nodect' )
+            nodect          = self.getAttr( attrs['Resource_List'], 'nodect' )
             exec_group      = self.getAttr( attrs, 'egroup' )
 
             requested_time      = self.getAttr( attrs['Resource_List'], 'walltime' )
