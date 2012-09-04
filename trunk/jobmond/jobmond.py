@@ -112,14 +112,49 @@ class GangliaConfigParser:
 
         return clean_value
 
+    def removeComments( self, value ):
+
+        clean_value = value
+
+        if clean_value.find('#') != -1:
+
+            clean_value = value[:value.find('#')]
+
+        if clean_value.find('//') != -1:
+
+            clean_value = value[:value.find('//')]
+
+        return clean_value
+
     def getVal( self, section, valname ):
 
         cfg_fp      = open( self.config_file )
-        section_start   = False
-        section_found   = False
-        value       = None
+        cfg_lines   = cfg_fp.readlines()
+        cfg_fp.close()
 
-        for line in cfg_fp.readlines():
+        section_start = False
+        section_found = False
+        value         = None
+        comment_start = False
+
+        for line in cfg_lines:
+
+            line = line.strip()
+            line = self.removeComments( line )
+
+            if line.find( '/*' ) != -1:
+
+                line = line[:line.find('/*')]
+                comment_start = True
+
+            if line.find( '*/' ) != -1:
+
+                line = line[line.find('*/'):]
+                comment_start = False
+
+            if comment_start:
+
+                continue
 
             if line.find( section ) != -1:
 
@@ -137,8 +172,6 @@ class GangliaConfigParser:
             if line.find( valname ) != -1 and section_start:
 
                 value       = string.join( line.split( '=' )[1:], '' ).strip()
-
-        cfg_fp.close()
 
         return value
 
