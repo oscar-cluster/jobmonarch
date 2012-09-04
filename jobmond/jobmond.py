@@ -288,9 +288,9 @@ def loadConfig( filename ):
 
     except ConfigParser.NoOptionError:
 
-        # Not specified: assume /etc/gmond.conf
+        # Not specified: assume /etc/ganglia/gmond.conf
         #
-        GMOND_CONF      = '/etc/gmond.conf'
+        GMOND_CONF      = '/etc/ganglia/gmond.conf'
 
     ganglia_cfg     = GangliaConfigParser( GMOND_CONF )
 
@@ -880,7 +880,6 @@ class SgeQstatXMLParser(xml.sax.handler.ContentHandler):
                 self.job[name] = value
 
 # Abstracted from PBS original.
-# Fixme:  Is it worth (or appropriate for PBS) sorting the result?
 #
 def do_nodelist( nodes ):
 
@@ -1231,53 +1230,63 @@ class PbsDataGatherer( DataGatherer ):
             display_queue       = 1
             job_id          = name.split( '.' )[0]
 
+            owner           = self.getAttr( attrs, 'Job_Owner' )
             name            = self.getAttr( attrs, 'Job_Name' )
             queue           = self.getAttr( attrs, 'queue' )
+            nodect          = self.getAttr( attrs['nodes'], 'nodect' )
+            exec_group      = self.getAttr( attrs, 'egroup' )
 
-            if QUEUE:
-                for q in QUEUE:
-                    if q == queue:
-                        display_queue = 1
-                        break
-                    else:
-                        display_queue = 0
-                        continue
-            if display_queue == 0:
-                continue
-
-
-            owner           = self.getAttr( attrs, 'Job_Owner' ).split( '@' )[0]
             requested_time      = self.getAttr( attrs['Resource_List'], 'walltime' )
             requested_memory    = self.getAttr( attrs['Resource_List'], 'mem' )
 
+
+            requested_nodes     = ''
             mynoderequest       = self.getAttr( attrs['Resource_List'], 'nodes' )
 
             ppn         = ''
+            attributes  = ''
 
-            if mynoderequest.find( ':' ) != -1 and mynoderequest.find( 'ppn' ) != -1:
+            if mynoderequest.find( ':' ) != -1:
 
                 mynoderequest_fields    = mynoderequest.split( ':' )
 
                 for mynoderequest_field in mynoderequest_fields:
 
+                    if mynoderequest_field.isdigit():
+
+                        continue #TODO add requested_nodes if is hostname(s)
+
                     if mynoderequest_field.find( 'ppn' ) != -1:
 
                         ppn = mynoderequest_field.split( 'ppn=' )[1]
 
+                    else:
+
+                        if attributes == '':
+
+                            attributes = '%s' %mynoderequest_field
+                        else:
+                            attributes = '%s:%s' %( attributes, mynoderequest_field )
+
             status          = self.getAttr( attrs, 'job_state' )
 
-            if status in [ 'Q', 'R' ]:
+            if status in [ 'Q', 'R', 'W' ]:
 
                 jobs_processed.append( job_id )
 
-            queued_timestamp    = self.getAttr( attrs, 'ctime' )
+            create_timestamp    = self.getAttr( attrs, 'ctime' )
+            running_nodes       = ''
+            exec_nodestr        = '' 
 
             if status == 'R':
 
-                start_timestamp     = self.getAttr( attrs, 'mtime' )
-                nodes           = self.getAttr( attrs, 'exec_host' ).split( '+' )
+                #start_timestamp     = self.getAttr( attrs, 'etime' )
+                start_timestamp     = self.getAttr( attrs, 'start_time' )
+                exec_nodestr        = self.getAttr( attrs, 'exec_host' )
 
+                nodes           = exec_nodestr.split( '+' )
                 nodeslist       = do_nodelist( nodes )
+                running_nodes   = string.join( nodeslist, ' ' )
 
                 if DETECT_TIME_DIFFS:
 
@@ -1305,6 +1314,8 @@ class PbsDataGatherer( DataGatherer ):
 
                 start_timestamp     = ''
                 count_mynodes       = 0
+
+                queued_timestamp    = self.getAttr( attrs, 'qtime' )
 
                 for node in mynoderequest.split( '+' ):
 
@@ -1357,21 +1368,24 @@ class PbsDataGatherer( DataGatherer ):
 
             myAttrs             = { }
 
-            myAttrs[ 'name' ]       = str( name )
-            myAttrs[ 'queue' ]      = str( queue )
-            myAttrs[ 'owner' ]      = str( owner )
-            myAttrs[ 'requested_time' ] = str( requested_time )
-            myAttrs[ 'requested_memory' ]   = str( requested_memory )
-            myAttrs[ 'ppn' ]        = str( ppn )
-            myAttrs[ 'status' ]     = str( status )
-            myAttrs[ 'start_timestamp' ]    = str( start_timestamp )
-            myAttrs[ 'queued_timestamp' ]   = str( queued_timestamp )
-            myAttrs[ 'reported' ]       = str( int( int( self.cur_time ) + int( self.timeoffset ) ) )
-            myAttrs[ 'nodes' ]      = nodeslist
-            myAttrs[ 'domain' ]     = fqdn_parts( socket.getfqdn() )[1]
-            myAttrs[ 'poll_interval' ]  = str( BATCH_POLL_INTERVAL )
+            myAttrs[ 'name' ]              = str( name )
+            myAttrs[ 'status' ]            = str( status )
+            myAttrs[ 'queue' ]             = str( queue )
+            myAttrs[ 'owner' ]             = str( owner )
+            myAttrs[ 'nodect' ]            = str( nodect )
+            myAttrs[ 'exec.group' ]        = str( exec_group )
+            myAttrs[ 'exec.hostnames' ]    = str( running_nodes )
+            myAttrs[ 'exec.nodestr' ]      = str( exec_nodestr )
+            myAttrs[ 'req.walltime' ]      = str( requested_time )
+            myAttrs[ 'req.memory' ]        = str( requested_memory )
+            myAttrs[ 'req.nodes' ]         = str( requested_nodes )
+            myAttrs[ 'req.ppn' ]           = str( ppn )
+            myAttrs[ 'req.attributes' ]    = str( attributes )
+            myAttrs[ 'timestamp.running' ] = str( start_timestamp )
+            myAttrs[ 'timestamp.created' ] = str( create_timestamp )
+            myAttrs[ 'timestamp.queued' ]  = str( queued_timestamp )
 
-            if self.jobDataChanged( self.jobs, job_id, myAttrs ) and myAttrs['status'] in [ 'R', 'Q' ]:
+            if self.jobDataChanged( self.jobs, job_id, myAttrs ) and myAttrs['status'] in [ 'R', 'Q', 'W' ]:
 
                 self.jobs[ job_id ] = myAttrs
 
