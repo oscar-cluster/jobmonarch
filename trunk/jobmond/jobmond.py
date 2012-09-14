@@ -90,9 +90,6 @@ def processArgs( args ):
 
     return loadConfig( config_filename )
 
-# Fixme:  This doesn't DTRT with commented-out bits of the file.  E.g.
-# it picked up a commented-out `mcast_join' and tried to use a
-# multicast channel when it shouldn't have done.
 class GangliaConfigParser:
 
     def __init__( self, config_file ):
@@ -139,41 +136,74 @@ class GangliaConfigParser:
 
     def getVal( self, section, valname ):
 
+        debug_msg( 10, "Parsing: '" + self.config_file + "' - searching for section: " + section + " value: " + valname )
+
         cfg_fp      = open( self.config_file )
         cfg_lines   = cfg_fp.readlines()
         cfg_fp.close()
 
         section_start = False
         section_found = False
+        include_start = False
         value         = None
         comment_start = False
+
+        acc_count     = 0
 
         for line in cfg_lines:
 
             line = line.strip()
+            debug_msg( 10, "line org: " + line )
             line = self.removeComments( line )
+            debug_msg( 10, "line remove comments: " + line )
 
-            if line.find( '/*' ) != -1:
+            if line.find( '/*' ) != -1 and line.find( 'include', 0, 7 ):
 
-                line = line[:line.find('/*')]
-                comment_start = True
+                debug_msg( 10, "line comment start */: " + line )
 
-            if line.find( '*/' ) != -1:
+                if line.find( '*/' ) != -1:
 
-                line = line[line.find('*/'):]
+                    begin_line = line[:line.find('/*')]
+                    rest_line = line[(line.find('*/')+2):]
+
+                    line = begin_line + rest_line
+
+                    debug_msg( 10, "line comment end */: " + line )
+
+                else:
+
+                    line = line[:line.find('/*')]
+                    comment_start = True
+
+                    debug_msg( 10, "line find /*: " + line )
+
+                debug_msg( 10, "line find /*: " + line )
+
+            if line.find( '*/' ) != -1 and comment_start:
+
+                line = line[(line.find('*/')+2):]
                 comment_start = False
+                debug_msg( 10, "line comment end*/: " + line )
 
             if comment_start:
 
+                debug_msg( 10, "line ignoring comment: " + line )
                 continue
 
             if line.find( 'include' ) != -1:
 
-                line = line.removeHaakjes()
+                debug_msg( 10, "line include: " + line )
+                line = self.removeHaakjes( line )
+                line = self.removeQuotes( line )
+                debug_msg( 10, "line removeHaakjes: " + line )
 
-                include_line  = line.strip(' ')[1:]
+                include_line  = line.split(' ')[1]
+
+                debug_msg( 10, "line includes: " + str( include_line ) )
 
                 for include_file in glob( include_line ):
+
+                    debug_msg( 10, "include file found: '" + include_file + "'" )
 
                     include_parser = GangliaConfigParser( include_file )
                     include_getval = include_parser.getStr( section, valname )
@@ -183,24 +213,36 @@ class GangliaConfigParser:
                         value = include_getval
                         #break ? FIXME value can be overriden by other includes: perhaps users problem
 
+                        debug_msg( 10, "VALUE found: '" + value + "'" )
+
                     del include_parser
 
             if line.find( section ) != -1:
 
                 section_found   = True
 
+                debug_msg( 10, "section start: '" + section + "'" )
+
             if line.find( '{' ) != -1 and section_found:
 
                 section_start   = True
+                acc_count       = acc_count + 1
 
             if line.find( '}' ) != -1 and section_found:
 
-                section_start   = False
-                section_found   = False
+                acc_count       = acc_count - 1
+
+                if acc_count == 0:
+
+                    debug_msg( 10, "section closed: '" + section + "'" )
+                    section_start   = False
+                    section_found   = False
 
             if line.find( valname ) != -1 and section_start:
 
                 value       = string.join( line.split( '=' )[1:], '' ).strip()
+
+        debug_msg( 10, "Parsing done: '" + self.config_file + "' " )
 
         return value
 
