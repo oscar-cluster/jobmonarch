@@ -84,7 +84,7 @@ class HTTPVariables
 
 $CLUSTER_CONFS	= array();
 
-ini_set("memory_limit","1024000000");
+ini_set("memory_limit","500M");
 set_time_limit(0);
 
 // Monarch's conf
@@ -105,7 +105,8 @@ $my_dir = getcwd();
 // Load Ganglia's PHP
 chdir( $GANGLIA_PATH );
 
-include_once "./conf.php";
+//include_once "./conf.php";
+include_once "./eval_conf.php";
 include_once "./functions.php";
 include_once "./ganglia.php";
 include_once "./get_context.php";
@@ -821,7 +822,7 @@ class TorqueXMLHandler
 							{
 								if( !in_array( $node, $jobs[$jobid][$toganame] ) )
 								{
-									$jobs[$jobid][$toganame][] = $node;
+                                    array_push( $jobs[$jobid][$toganame], $node );
 								}
 							}
 

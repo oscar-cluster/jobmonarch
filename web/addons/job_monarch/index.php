@@ -22,7 +22,7 @@
  * SVN $Id$
  */
 
-ini_set("memory_limit","100M");
+ini_set("memory_limit","500M");
 set_time_limit(0);
 
 
@@ -39,10 +39,10 @@ if ( !empty( $_GET ) ) {
 //printf( "r2%s\n", $range );
 
 global $GANGLIA_PATH;
-chdir( $GANGLIA_PATH );
+//chdir( $GANGLIA_PATH );
 
 include_once "./class.TemplatePower.inc.php";
-chdir( $my_dir );
+//chdir( $my_dir );
 
 $httpvars = new HTTPVariables( $HTTP_GET_VARS, $_GET );
 $clustername = $httpvars->getClusterName();
