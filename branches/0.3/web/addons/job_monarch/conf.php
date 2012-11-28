@@ -21,7 +21,7 @@ $COLUMN_NODES = true;
 
 // Path to Ganglia's web frontend root
 //
-$GANGLIA_PATH = "/var/www/test-ganglia";
+$GANGLIA_PATH = "/data/ganglia-web-current/";
 //$GANGLIA_PATH = "../..";
 
 // Format of how to display a date and time in human readable format
@@ -78,7 +78,7 @@ $DATA_SOURCE = '127.0.0.1:8651';
 
 // Is there a jobarchive?
 //
-$JOB_ARCHIVE = true;
+$JOB_ARCHIVE = false;
 
 // Path to the job archive rrd files
 //
