@@ -413,13 +413,13 @@ class DataProcessor:
 
             if incompatible:
 
-                debug_msg( 0, 'Gmetric version not compatible, please upgrade to at least 3.0.1' )
+                debug_msg( 0, 'Gmetric version not compatible, please upgrade to at least 3.4.0' )
                 sys.exit( 1 )
 
     def checkGmetricVersion( self ):
 
         """
-        Check version of gmetric is at least 3.0.1
+        Check version of gmetric is at least 3.4.0
         for the syntax we use
         """
 
@@ -428,7 +428,7 @@ class DataProcessor:
         incompatible    = 0
 
         gfp        = os.popen( self.binary + ' --version' )
-        lines        = gfp.readlines()
+        lines      = gfp.readlines()
 
         gfp.close()
 
@@ -452,31 +452,13 @@ class DataProcessor:
                 
                 elif version_major == 3:
 
-                    if version_minor == 0:
+                    if version_minor < 4:
 
-                        if version_patch < 1:
-                        
-                            incompatible = 1
+                        incompatible = 1
 
-                        # Gmetric 3.0.1 >< 3.0.3 had a bug in the max metric length
-                        #
-                        if version_patch < 3:
+                    else:
 
-                            METRIC_MAX_VAL_LEN = 900
-
-                        elif version_patch >= 3:
-
-                            METRIC_MAX_VAL_LEN = 1400
-
-                    elif version_minor == 1:
-
-                        debug_msg( 0, 'Gmetric 3.1 detected, internal gmetric handling disabled. Failing back to gmetric binary' )
-
-                        METRIC_MAX_VAL_LEN = 500
-
-                        # We don't speak 3.1 gmetric so use binary
-                        #
-                        GMETRIC_TARGET = None
+                        METRIC_MAX_VAL_LEN = 1400
 
         return incompatible
 
