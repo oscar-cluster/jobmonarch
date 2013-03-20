@@ -22,6 +22,8 @@
 # SVN $Id$
 #
 
+# vi :set ts=4
+
 import sys, getopt, ConfigParser, time, os, socket, string, re
 import xdrlib, socket, syslog, xml, xml.sax
 from xml.sax.handler import feature_namespaces
