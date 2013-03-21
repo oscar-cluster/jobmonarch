@@ -49,7 +49,7 @@ $view = $httpvars->getHttpVar( "j_view" );
 $filter = array();
 
 if( !isset($view) ) $view = "overview";
-if( !isset($sortorder) ) $sortorder = "asc";
+if( !isset($sortorder) ) $sortorder = "desc";
 if( !isset($sortby) ) $sortby = "id";
 
 if( isset( $filterorder ) && ($filterorder!='') ) 
