@@ -3,7 +3,7 @@
  *
  * This file is part of Jobmonarch
  *
- * Copyright (C) 2006  Ramon Bastiaans
+ * Copyright (C) 2006-2013  Ramon Bastiaans
  *
  * Jobmonarch is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,23 +40,21 @@ function validateFormInput() {
 		$error_msg .= "No search criteria set!";
 	}
 
-	if( !is_numeric($id) and !$error and $id != '') {
+	if( !is_numeric($id) and !$error and $id != '') 
+    {
 
 		$error = 1;
 		$show_msg = 1;
 		$error_msg .= "Id must be a number";
 	}
 
-	//printf( "period_start = %s period_stop = %s\n", $period_start, $period_stop );
-
-	if( !$error and $period_start != '' ) {
-		//printf( "period_start = %s period_stop = %s\n", $period_start, $period_stop );
+	if( !$error and $period_start != '' ) 
+    {
 		$pstart_epoch = datetimeToEpoch( $period_start );
-		//printf( "period_start = %s period_stop = %s\n", $period_start, $period_stop );
-		if( $period_stop != '' ) {
+		if( $period_stop != '' ) 
+        {
 
 			$pstop_epoch = datetimeToEpoch( $period_stop );
-			//printf( "pstop_epoch = %s pstart_epoch = %s\n", $pstop_epoch, $pstart_epoch );
 
 			if( $pstart_epoch > $pstop_epoch ) {
 
@@ -83,13 +81,8 @@ function validateFormInput() {
 	return ($error ? 0 : 1 );
 }
 
-//function makeDate( $time ) {
-//        return strftime( "%a %d %b %Y %H:%M:%S", $time );
-//}
-
 function datetimeToEpoch( $datetime ) {
 
-	//printf("datetime = %s\n", $datetime );
 	$datetime_fields = explode( ' ', $datetime );
 
 	$date = $datetime_fields[0];
@@ -101,19 +94,13 @@ function datetimeToEpoch( $datetime ) {
 	$months = $date_fields[1];
 	$years = $date_fields[2];
 
-	//printf( "days = %s months = %s years = %s\n", $days, $months, $years );
-
 	$time_fields = explode( ':', $time );
 
 	$hours = $time_fields[0];
 	$minutes = $time_fields[1];
 	$seconds = $time_fields[2];
 
-	//printf( "hours = %s minutes = %s seconds = %s\n", $hours, $minutes, $seconds );
-
 	$timestamp = mktime( $hours, $minutes, $seconds, $months, $days, $years );
-
-	//printf( "timestamp = %s\n", $timestamp );
 
 	return $timestamp;
 }
@@ -148,8 +135,6 @@ function timeToEpoch( $time ) {
 
 function sortJobs( $jobs, $nodes, $sortby, $sortorder ) {
 
-	//printf("sortby = %s sortorder = %s\n", $sortby, $sortorder );
-
         $sorted = array();
 
         $cmp = create_function( '$a, $b',
@@ -161,8 +146,6 @@ function sortJobs( $jobs, $nodes, $sortby, $sortorder ) {
                         "return ( \$a < \$b ) ? 1 : -1;".
                 "else if (\$sortorder==\"asc\")".
                         "return ( \$a > \$b ) ? 1 : -1;" );
-
-	//print_r( $jobs );
 
         foreach( $jobs as $jobid => $jobattrs ) {
 
@@ -236,13 +219,10 @@ function sortJobs( $jobs, $nodes, $sortby, $sortorder ) {
                         }
         }
 
-        //uasort( $sorted, $cmp );
         if( $sortorder == "asc" )
                 arsort( $sorted );
         else if( $sortorder == "desc" )
                 asort( $sorted );
-
-	//print_r( $sorted );
 
         return array_keys( $sorted );
 }
@@ -252,11 +232,6 @@ function makeSearchPage() {
 	global $end_from_time, $end_to_time, $filter, $default_showhosts, $m, $hosts_up, $hc;
 	global $period_start, $period_stop, $sortby, $sortorder, $COLUMN_REQUESTED_MEMORY;
 	global $SEARCH_RESULT_LIMIT, $COLUMN_NODES, $metricname;
-
-	//$metricname = $m;
-	//printf("job_start = %s job_stop = %s\n", $job_start, $job_stop );
-	//printf("start = %s stop = %s\n", $start, $stop );
-	//printf("m %s\n", $metricname );
 
 	$longtitle = "Batch Archive Search :: Powered by Job Monarch!";
 	$title = "Batch Archive Search";
@@ -297,11 +272,8 @@ function makeSearchPage() {
 
 		$even = 1;
 
-		//print_r( $search_ids );
-
 		foreach( $search_ids as $myid ) {
 
-			//printf( "myid %s\n", $myid );
 			$jobs[$myid] = $tdb->getJobArray( $myid );
 			$nodes[$myid] = $tdb->getNodesForJob( $myid );
 		}
@@ -313,19 +285,12 @@ function makeSearchPage() {
 			$tpl->newBlock( "column_header_nodes" );
 		}
 
-		//print_r( $nodes );
 		$sorted_search = sortJobs( $jobs, $nodes, $sortby, $sortorder );
 
-		//print_r( $sorted_search );
 		foreach( $sorted_search as $sortid ) {
 
 			$job = $jobs[$sortid];
-			//print_r( $job );
 			$foundid = $job['id'];
-			//printf( "foundid %s\n", $foundid );
-
-			//$job = $tdb->getJobArray( $foundid );
-			//$nodes = $tdb->getNodesForJob( $foundid );
 
 			$tpl->newBlock( "node" );
 			$tpl->assign( "id", $job['id'] );
@@ -378,8 +343,6 @@ function makeSearchPage() {
 			$tpl->assign( "finished", makeDate( $job_stop ) );
 			$tpl->assign( "runningtime", makeTime( $runningtime ) );
 			
-			//print_r( $job );
-			//print_r( $nodes );
 		}
 
 		if( count( $search_ids ) == 1 ) {
@@ -387,7 +350,6 @@ function makeSearchPage() {
 			$tpl->newBlock( "showhosts" );
 
 			$showhosts = isset($sh) ? $sh : $default_showhosts;
-			//if( !$showhosts) $showhosts = $default_showhosts;
 			$tpl->assign("checked$showhosts", "checked");
 
 			# Present a width list
@@ -409,10 +371,6 @@ function makeSearchPage() {
 			$tpl->assign("cols_menu", $cols_menu);
 
 			if( $showhosts ) {
-				//bla
-
-				//printf("job_start = %s job_stop = %s\n", $job_start, $job_stop );
-				//printf("start = %s stop = %s\n", $start, $stop );
 
 				if( !$period_start ) // Add an extra 10% to graphstart
 					$period_start = intval( $job_start - (intval( $runningtime * 0.10 ) ) );
@@ -423,8 +381,6 @@ function makeSearchPage() {
 					$period_stop = intval( $job_stop + (intval( $runningtime * 0.10 ) ) );
 				else
 					$period_stop = datetimeToEpoch( $period_stop );
-
-				//printf("start = %s stop = %s\n", $start, $stop );
 
 		                $tpl->gotoBlock( "timeperiod" );
 
@@ -441,7 +397,6 @@ function makeSearchPage() {
 				$sorted_hosts = array();
 
 				foreach ($hosts_up as $host ) {
-					//$host = $host. '.'.$job_domain;
 					$cpus = $metrics[$host]["cpu_num"]['VAL'];
 					if (!$cpus) $cpus=1;
 					$load_one  = $metrics[$host]["load_one"]['VAL'];
@@ -466,8 +421,6 @@ function makeSearchPage() {
 						break;
 				}
 
-				//$sorted_hosts = array_merge($down_hosts, $sorted_hosts);
-
 				# First pass to find the max value in all graphs for this
 				# metric. The $start,$end variables comes from get_context.php,
 				# included in index.php.
@@ -477,13 +430,10 @@ function makeSearchPage() {
 				$i = 1;
 				foreach ( $sorted_hosts as $host=>$value  ) {
 					$tpl->newBlock ("sorted_list");
-					//$host = $host. '.'.$domain;
 					$host_url = rawurlencode($host);
 					$cluster_url = rawurlencode($clustername);
 
 					$textval = "";
-					//printf("host = %s, value = %s", $host, $value);
-					//echo "$host: $value, ";
 					$val = $metrics[$host][$metricname];
 					$class = "metric";
 					$host_link="\"?j_view=host&c=$cluster_url&h=$host_url&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop\"";
@@ -506,7 +456,6 @@ function makeSearchPage() {
 						 $tpl->assign ("br", "</tr><tr>");
 				}
 
-				//einde bla
 			}
 		}
 

@@ -3,7 +3,7 @@
  *
  * This file is part of Jobmonarch
  *
- * Copyright (C) 2006  Ramon Bastiaans
+ * Copyright (C) 2006-2013  Ramon Bastiaans
  *
  * Jobmonarch is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -105,7 +105,6 @@ $my_dir = getcwd();
 // Load Ganglia's PHP
 chdir( $GANGLIA_PATH );
 
-//include_once "./conf.php";
 include_once "./eval_conf.php";
 include_once "./functions.php";
 include_once "./ganglia.php";
@@ -486,7 +485,7 @@ class DataSource
 
 		if( !$fp )
 		{
-			echo 'Unable to connect to '.$this->ip.':'.$this->port; // printf( 'Unable to connect to [%s:%.0f]', $this->ip, $this->port );
+			echo 'Unable to connect to '.$this->ip.':'.$this->port;
 			return;
 		}
 
