@@ -199,7 +199,7 @@ function setFilter( filtername, filterval ) {
 
 <INPUT TYPE="HIDDEN" NAME="sortby" VALUE="{sortby}">
 <INPUT TYPE="HIDDEN" NAME="sortorder" VALUE="{sortorder}">
-<INPUT TYPE="HIDDEN" NAME="filterorder" VALUE="{f_order}">
+<INPUT TYPE="HIDDEN" NAME="filterorder" VALUE="{order}">
 
 <TABLE WIDTH="100%" CELLPADDING="2" CELLSPACING="2" BORDER=0>
 <TR CLASS="monarch">

@@ -55,10 +55,10 @@ $view = $httpvars->getHttpVar( "j_view" );
 $clustername = $httpvars->getClusterName();
 
 //printf("clustername = %s\n", $clustername );
-if( isset($f_id) && ($f_id!='')) $filter[f_id]=$id;
-if( isset($f_state) && ($f_state!='')) $filter[f_state]=$state;
-if( isset($f_user) && ($f_user!='')) $filter[f_user]=$user;
-if( isset($f_queue) && ($f_queue!='')) $filter[f_queue]=$queue;
+if( isset($id) && ($id!='')) $filter['id']=$id;
+if( isset($state) && ($state!='')) $filter['state']=$state;
+if( isset($user) && ($user!='')) $filter['user']=$user;
+if( isset($queue) && ($queue!='')) $filter['queue']=$queue;
 
 function drawHostImage() {
 
@@ -114,16 +114,16 @@ function drawBigClusterImage() {
 			//printf("filter %s,%s\n", $filtername, $filtervalue);
 			switch( $filtername ) {
 
-				case "f_id":
+				case "id":
 					$ic->setFilter( 'jobid', $filtervalue );
 					break;
-				case "f_user":
+				case "user":
 					$ic->setFilter( 'owner', $filtervalue);
 					break;
-				case "f_queue":
+				case "queue":
 					$ic->setFilter( 'queue', $filtervalue);
 					break;
-				case "f_state":
+				case "state":
 					$ic->setFilter( 'status', $filtervalue);
 					break;
 				default:

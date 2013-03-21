@@ -56,7 +56,7 @@ function setupFilterSettings()
 
 	foreach( $filter as $filtername => $filtervalue ) 
 	{
-		$tpl->assign( "f_".$filtername, $filtervalue );
+		$tpl->assign( $filtername, $filtervalue );
 
 		$filter_image_url	.= "&$filtername=$filtervalue";
 	}
@@ -81,7 +81,7 @@ function setupFilterSettings()
 	$tpl->assign( "node_area_map", $ic->getImagemapArea() );
 	$tpl->gotoBlock( "_ROOT" );
 
-	$tpl->assign( "f_order", $filterorder );
+	$tpl->assign( "order", $filterorder );
 
 	if( array_key_exists( "id", $filter ) ) 
 	{

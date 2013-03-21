@@ -161,11 +161,11 @@ View
 <INPUT TYPE="HIDDEN" NAME="sortby" VALUE="{sortby}">
 <INPUT TYPE="HIDDEN" NAME="sortorder" VALUE="{sortorder}">
 <INPUT TYPE="HIDDEN" NAME="c" VALUE="{clustername}">
-<INPUT TYPE="HIDDEN" NAME="queue" VALUE="{f_queue}">
-<INPUT TYPE="HIDDEN" NAME="state" VALUE="{f_state}">
-<INPUT TYPE="HIDDEN" NAME="user" VALUE="{f_user}">
-<INPUT TYPE="HIDDEN" NAME="id" VALUE="{f_id}">
-<INPUT TYPE="HIDDEN" NAME="filterorder" VALUE="{f_order}">
+<INPUT TYPE="HIDDEN" NAME="queue" VALUE="{queue}">
+<INPUT TYPE="HIDDEN" NAME="state" VALUE="{state}">
+<INPUT TYPE="HIDDEN" NAME="user" VALUE="{user}">
+<INPUT TYPE="HIDDEN" NAME="id" VALUE="{id}">
+<INPUT TYPE="HIDDEN" NAME="filterorder" VALUE="{order}">
 
 <TABLE WIDTH="100%" CELLPADDING="2" CELLSPACING="2" BORDER=0>
 <TR CLASS="monarch">

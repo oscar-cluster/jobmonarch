@@ -57,10 +57,10 @@ if( !isset($sortby) ) $sortby = "id";
 if( isset( $filterorder ) && ($filterorder!='') ) {
 	$myfilter_fields = explode( ",", $filterorder );
 } else {
-	if( isset($f_queue) && ($queue!='')) $filter[f_queue]=$queue;
-	if( isset($f_state) && ($state!='')) $filter[f_state]=$state;
-	if( isset($f_user) && ($user!='')) $filter[f_user]=$user;
-	if( isset($f_id) && ($id!='')) $filter[f_id]=$id;
+	if( isset($queue) && ($queue!='')) $filter['queue']=$queue;
+	if( isset($state) && ($state!='')) $filter['state']=$state;
+	if( isset($user) && ($user!='')) $filter['user']=$user;
+	if( isset($id) && ($id!='')) $filter['id']=$id;
 }
 
 // Fill filter array in order they were picked by user
@@ -70,17 +70,17 @@ if( isset($myfilter_fields) ) {
 
 		switch( $myfilter ) {
 
-			case "f_queue":
-				$filter[f_queue]=$queue;
+			case "queue":
+				$filter[queue]=$queue;
 				break;
 			case "state":
-				$filter[f_state]=$state;
+				$filter[state]=$state;
 				break;
 			case "user":
-				$filter[f_user]=$user;
+				$filter[user]=$user;
 				break;
 			case "id":
-				$filter[f_id]=$id;
+				$filter[id]=$id;
 				break;
 		}
 	}
