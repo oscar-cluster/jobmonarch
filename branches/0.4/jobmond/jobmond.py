@@ -697,10 +697,6 @@ class DataProcessor:
 
                         incompatible = 1
 
-                    else:
-
-                        METRIC_MAX_VAL_LEN = 1400
-
         return incompatible
 
     def multicastGmetric( self, metricname, metricval, valtype='string', units='' ):
