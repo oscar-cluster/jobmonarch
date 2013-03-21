@@ -44,7 +44,6 @@ function checkSessionData() {
 		$ds             = new DataSource();
 		$myxml_data     = $ds->getData();
 
-		//print_f( "%s\n", $myxml_data );
 	}
 	return $myxml_data;
 }
@@ -54,7 +53,6 @@ $httpvars = new HTTPVariables( $HTTP_GET_VARS, $_GET );
 $view = $httpvars->getHttpVar( "j_view" );
 $clustername = $httpvars->getClusterName();
 
-//printf("clustername = %s\n", $clustername );
 if( isset($id) && ($id!='')) $filter['id']=$id;
 if( isset($state) && ($state!='')) $filter['state']=$state;
 if( isset($owner) && ($owner!='')) $filter['owner']=$owner;
@@ -111,7 +109,6 @@ function drawBigClusterImage() {
 
 	if( isset( $filter ) ) {
 		foreach( $filter as $filtername=>$filtervalue ) {
-			//printf("filter %s,%s\n", $filtername, $filtervalue);
 			switch( $filtername ) {
 
 				case "id":

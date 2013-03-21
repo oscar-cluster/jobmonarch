@@ -31,14 +31,7 @@ if ( !empty( $_GET ) ) {
         extract( $_GET );
 }
 
-//printf( "st%s\n", $st);
 $sourcetime = $st;
-//printf( "st%s\n", $sourcetime);
-
-//printf( "%s\n", $rrds );
-//printf( "r%s\n", $range);
-//printf( "s %s\n", $start);
-//printf( "e %s\n", $end);
 
 # Graph specific variables
 $size = escapeshellcmd( rawurldecode( $HTTP_GET_VARS["z"] ));
@@ -50,7 +43,6 @@ $min = escapeshellcmd( rawurldecode( $HTTP_GET_VARS["n"] ));
 $value = escapeshellcmd( rawurldecode( $HTTP_GET_VARS["v"] ));
 $load_color = escapeshellcmd( rawurldecode( $HTTP_GET_VARS["l"] ));
 $vlabel = escapeshellcmd( rawurldecode( $HTTP_GET_VARS["vl"] ));
-//$sourcetime = escapeshellcmd($HTTP_GET_VARS["st"]);
 
 $cluster = $c;
 $metricname = ($g) ? $g : $m;
@@ -72,12 +64,7 @@ if($command) {
       $command = '';
 }
 
-//printf( "cluster = %s hostname = %s metric = %s\n", $cluster, $hostname, $metricname );
-
 $trd = new TarchRrdGraph( $cluster, $hostname );
-//$rrd_files = $trd->getRrdFiles( $metricname, $start, $stop );
-
-//print_r( $rrd_files );
 
 $graph = $metricname;
 
@@ -91,7 +78,6 @@ if (isset($graph)) {
 	if($graph == "cpu_report") {
 
 		$style = "CPU";
-		//printf("ik doe die shit!\n");
 
 		$upper_limit = "--upper-limit 100 --rigid";
 		$lower_limit = "--lower-limit 0";
@@ -139,7 +125,6 @@ if (isset($graph)) {
 	} else if ($graph == "job_report") {
 		$style = "Jobs";
 
-		//$upper_limit = "--upper-limit 100 --rigid";
 		$lower_limit = "--lower-limit 0 --rigid";
 		$vertical_label = "--vertical-label Jobs";
 
@@ -163,10 +148,6 @@ if (isset($graph)) {
 
 		$sorted_hosts	= array();
 		$sorted_hosts[]	= $rjqj_host;
-
-		//printf( "rjqjh %s\n", $rjqj_host);
-
-		//printf( "rrdd %s\n", $rrd_dir );
 
 		$rj_str = ":'Running Jobs'";
 		$qj_str = ":'Queued Jobs'";
@@ -338,12 +319,6 @@ if (isset($graph)) {
 			$value = $value>1000 ? number_format($value) : number_format($value, 2);
 		}
 
-		//if ($range=="job") {
-		//	$hrs = intval( -$jobrange / 3600 );
-		//	$subtitle = "$prefix last ${hrs}h (now $value)";
-		//} else
-		//	$subtitle = "$prefix last $range (now $value)";
-
 		if (is_numeric($max))
 			$upper_limit = "--upper-limit '$max' ";
 		if (is_numeric($min))
@@ -386,30 +361,7 @@ if (isset($graph)) {
 	}
 }
 
-//$title = "$hostname $style $metricname";
 $title = "$hostname";
-
-//# Set the graph title.
-//if($context == "meta") {
-//	$title = "$self $meta_designator $style last $range";
-//} else if ($context == "grid") {
-//	$title = "$grid $meta_designator $style last $range";
-//} else if ($context == "cluster") {
-//	$title = "$clustername $style last $range";
-//} else {
-//	if ($size == "small") {
-//		# Value for this graph define a background color.
-//		if (!$load_color) $load_color = "ffffff";
-//			$background = "--color BACK#'$load_color'";
-
-//		$title = $hostname;
-//	} else {
-//		if ($style)
-//			$title = "$hostname $style last $range";
-//		else
-//			$title = $metricname;
-//	}
-//}
 
 function determineXGrid( $p_start, $p_stop ) {
 
@@ -495,8 +447,6 @@ $lower_limit = "--lower-limit 0";
 # Calculate time range.
 if( isset($sourcetime) )
 {
-	//printf("yay");
-
 	$end = $sourcetime;
 	# Get_context makes start negative.
 	$start = $sourcetime + $start;

@@ -36,13 +36,10 @@ if ( !empty( $_GET ) ) {
 	extract( $_GET );
 }
 
-//printf( "r2%s\n", $range );
 
 global $GANGLIA_PATH;
-//chdir( $GANGLIA_PATH );
 
 include_once "./class.TemplatePower.inc.php";
-//chdir( $my_dir );
 
 $httpvars = new HTTPVariables( $HTTP_GET_VARS, $_GET );
 $clustername = $httpvars->getClusterName();
@@ -85,11 +82,6 @@ if( isset($myfilter_fields) ) {
 		}
 	}
 }
-
-//if( isset($queue) && ($queue!='')) $filter[queue]=$queue;
-//if( isset($state) && ($state!='')) $filter[state]=$state;
-//if( isset($user) && ($user!='')) $filter[user]=$user;
-//if( isset($id) && ($id!='')) $filter[id]=$id;
 
 function epochToDatetime( $epoch ) {
 
@@ -164,8 +156,6 @@ function makeHeader( $page_call, $title, $longtitle ) {
 		$tpl->assign( "refresh", $default_refresh );
 
 	$tpl->assign( "date", date("r") );
-	//printf("lg %s\n", $longtitle );
-	//printf("title %s\n", $title );
 	$tpl->assign( "longpage_title", $longtitle );
 	$tpl->assign( "page_title", $title );
 
@@ -227,7 +217,6 @@ function makeHeader( $page_call, $title, $longtitle ) {
 
 	$context_metrics	= array();
 
-	//foreach ($mmfh as $mm => $mfoo)
 	foreach( $mmfh as $mm => $bla )
 	{
 		$context_metrics[] = $mm;
@@ -285,9 +274,6 @@ function makeHeader( $page_call, $title, $longtitle ) {
 		}
 	}
 
-	//$m = $metricname;
-
-
 	$tpl->gotoBlock( "_ROOT" );
 	$tpl->assignGlobal("view", $view);
 
@@ -295,8 +281,6 @@ function makeHeader( $page_call, $title, $longtitle ) {
 	if( array_key_exists( "id", $filter ) or isset($hostname) ) {
 
 		$range = "job";
-
-		//print_r( $context_metrics );
 
 		if( $page_call != "host_view" )
 		{
@@ -340,8 +324,6 @@ function makeHeader( $page_call, $title, $longtitle ) {
 		} 
 
 	}
-
-	//$ex_fn = $tpl->getVarValue( "_ROOT", "form_name" );
 
 	if( $view != "search" )
 	{
@@ -438,7 +420,6 @@ $tpl->assignInclude( "header", "templates/header.tpl" );
 
 if( isset( $h ) and $h != '' ) {
 	$hostname = $h;
-	//$view = "host";
 }
 
 switch( $view ) {
@@ -469,7 +450,6 @@ $tpl->prepare();
 
 $longtitle = "Batch Report :: Powered by Job Monarch!";
 $title = "Batch Report";
-//makeHeader( 'index' );
 $tpl->assign("cluster_url", rawurlencode($clustername) );
 $tpl->assign("cluster", $clustername );
 

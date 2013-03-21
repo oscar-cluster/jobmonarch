@@ -74,9 +74,6 @@ function setupFilterSettings()
 
 	$tpl->assign( "clusterimage", "./image.php?". session_name() . "=" . session_id() ."&c=".rawurlencode($clustername)."&j_view=big-clusterimage".$filter_image_url );
 
-	//$tpl->assign( "clusterimage_width", $ic->getWidth() );
-	//$tpl->assign( "clusterimage_height", $ic->getHeight() );
-
 	$tpl->newBlock( "node_clustermap" );
 	$tpl->assign( "node_area_map", $ic->getImagemapArea() );
 	$tpl->gotoBlock( "_ROOT" );
@@ -270,7 +267,6 @@ function drawPie()
 	$empty_cpus		= ( $empty_cpus >= 0 ) ? $empty_cpus : 0;
 	$used_cpus		= $nr_cpus - $empty_cpus;
 
-	//$empty_percentage 	= ($empty_cpus / $nr_cpus) * 100;
 	$empty_percentage 	= $empty_cpus;
 
 	$qcolors 		= array();
@@ -379,22 +375,8 @@ function drawPie()
 		$graphvals = $queues;
 	}
 
-	//$percentage	= 0;
-	//$slice_count	= 0;
-
-	// Find rounding errors: total has to be 100
-	//
-	//foreach( $graphvals as $name => $totalweight) 
-	//{
-	//	$percentage 	= $percentage + $totalweight;
-	//	$slice_count	= $slice_count + 1;
-	//}
-
-	//$round_offset	= ( 100 - $percentage ) / $slice_count;
-
 	foreach( $graphvals as $name => $totalweight) 
 	{
-		//$percentage 	= ( $totalweight * 100 ) + $round_offset;
 		$percentage 	= $totalweight;
 		
 		$color 		= randomColor( $qcolors );
@@ -673,8 +655,6 @@ function makeOverview()
 
 					if( isset( $hostname ) && $hostname != '' ) 
 					{
-						//$filter[host] = $hostname;
-
 						$domain_len 	= 0 - strlen( $jobs[$jobid]['domain'] );
 						$hostnode 	= $tempnode;
 
@@ -879,7 +859,6 @@ function makeOverview()
 				if( $start_time ) 
 				{
 					$runningtime 		= makeTime( $report_time - $start_time );
-					//$job_runningtime	= $report_time - $start_time;
 					$job_runningtime	= $heartbeat - $start_time;
 
 					$tpl->assign( "started", makeDate( $start_time ) );
@@ -954,8 +933,6 @@ function makeOverview()
 		}
 	}
 
-	//print_r( $metrics );
-
 	global $longtitle, $title;
 
 	$longtitle = "Batch Report :: Powered by Job Monarch!";
@@ -1010,17 +987,10 @@ function makeOverview()
 			$sorted_hosts 	= array();
 			$hosts_up 	= $jobs[$filter['id']]['nodes'];
 
-			//printf( "r %s\n", $job_runningtime );
-
 			$r 		= intval($job_runningtime * 1.2);
 
-			//$jobrange 	= ($job_runningtime < 3600) ? -3600 : -$r ;
 			$jobrange 	= -$r ;
-			//$jobstart 	= $report_time - $job_runningtime;
 			$jobstart 	= $start_time;
-
-			//printf( "jr %s\n", $jobrange );
-			//printf( "js %s\n", $jobstart);
 
 			if ( $reports[$metricname] )
 			{
