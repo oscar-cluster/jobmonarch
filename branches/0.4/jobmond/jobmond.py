@@ -352,7 +352,30 @@ class GangliaConfigParser:
     def getUdpSendChannels( self ):
 
         self.checkConfDict()
-        return self.conf_dict[ 'udp_send_channel' ]
+
+        udp_send_channels = [ ] # IP:PORT
+
+        if not self.conf_dict.has_key( 'udp_send_channel' ):
+            return None
+
+        for u in self.conf_dict[ 'udp_send_channel' ]:
+
+            if u.has_key( 'mcast_join' ):
+
+                ip = u['mcast_join'][0]
+
+            elif u.has_key( 'host' ):
+
+                ip = u['host'][0]
+
+            port = u['port'][0]
+
+            udp_send_channels.append( ( ip, port ) )
+
+        if len( udp_send_channels ) == 0:
+            return None
+
+        return udp_send_channels
 
     def getSectionLastOption( self, section, option ):
 
@@ -458,7 +481,7 @@ def loadConfig( filename ):
     global GMOND_CONF, DETECT_TIME_DIFFS, BATCH_HOST_TRANSLATE
     global BATCH_API, QUEUE, GMETRIC_TARGET, USE_SYSLOG
     global SYSLOG_LEVEL, SYSLOG_FACILITY, GMETRIC_BINARY
-    global METRIC_MAX_VAL_LEN
+    global METRIC_MAX_VAL_LEN, GMOND_UDP_SEND_CHANNELS
 
     DEBUG_LEVEL = cfg.getint( 'DEFAULT', 'DEBUG_LEVEL' )
 
@@ -530,25 +553,12 @@ def loadConfig( filename ):
         #
         GMOND_CONF          = '/etc/ganglia/gmond.conf'
 
-    ganglia_cfg     = GangliaConfigParser( GMOND_CONF )
+    ganglia_cfg             = GangliaConfigParser( GMOND_CONF )
+    GMETRIC_TARGET          = None
 
-    # Let's try to find the GMETRIC_TARGET ourselves first from GMOND_CONF
-    #
-    gmetric_dest_ip = ganglia_cfg.getStr( 'udp_send_channel', 'mcast_join' )
+    GMOND_UDP_SEND_CHANNELS = ganglia_cfg.getUdpSendChannels()
 
-    if not gmetric_dest_ip:
-
-        # Maybe unicast target then
-        #
-        gmetric_dest_ip = ganglia_cfg.getStr( 'udp_send_channel', 'host' )
-
-    gmetric_dest_port   = ganglia_cfg.getStr( 'udp_send_channel', 'port' )
-
-    #TODO: use multiple udp send channels (if found)
-    if gmetric_dest_ip and gmetric_dest_port:
-
-        GMETRIC_TARGET  = '%s:%s' %( gmetric_dest_ip, gmetric_dest_port )
-    else:
+    if not GMOND_UDP_SEND_CHANNELS:
 
         debug_msg( 0, "WARNING: Can't parse udp_send_channel from: '%s' - Trying: %s" %( GMOND_CONF, JOBMOND_CONF ) )
 
@@ -636,7 +646,7 @@ class DataProcessor:
         if binary:
             self.binary = binary
 
-        if not self.binary and not GMETRIC_TARGET:
+        if not self.binary and not GMETRIC_TARGET and not GMOND_UDP_SEND_CHANNELS:
             self.binary = GMETRIC_BINARY
 
         # Timeout for XML
@@ -648,7 +658,7 @@ class DataProcessor:
 
         self.dmax = str( int( int( BATCH_POLL_INTERVAL ) * 2 ) )
 
-        if GMOND_CONF and not GMETRIC_TARGET:
+        if GMOND_CONF and not GMETRIC_TARGET and not GMOND_UDP_SEND_CHANNELS:
 
             incompatible = self.checkGmetricVersion()
 
@@ -705,7 +715,19 @@ class DataProcessor:
 
         cmd = self.binary
 
-        if GMETRIC_TARGET:
+        if GMOND_UDP_SEND_CHANNELS:
+
+            for c_ip, c_port  in GMOND_UDP_SEND_CHANNELS:
+
+                metric_debug        = "[gmetric %s:%s] name: %s - val: %s - dmax: %s" %( str(c_ip), str(c_port), str( metricname ), str( metricval ), str( self.dmax ) )
+
+                debug_msg( 10, printTime() + ' ' + metric_debug)
+
+                gm = Gmetric( c_ip, c_port )
+
+                gm.send( str( metricname ), str( metricval ), str( self.dmax ), valtype, units )
+
+        elif GMETRIC_TARGET:
 
             GMETRIC_TARGET_HOST    = GMETRIC_TARGET.split( ':' )[0]
             GMETRIC_TARGET_PORT    = GMETRIC_TARGET.split( ':' )[1]
