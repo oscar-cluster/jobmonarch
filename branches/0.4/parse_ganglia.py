@@ -16,8 +16,11 @@ class GangliaConfigParser:
 
         self.parse()
 
-
     def __del__( self ):
+
+        """
+        Cleanup: close file descriptor
+        """
 
         self.file_pointer.close()
         del self.lexx
@@ -43,6 +46,30 @@ class GangliaConfigParser:
 
     def parse( self ):
 
+        """
+        Parse self.filename using shlex scanning.
+        - Removes /* comments */
+        - Traverses (recursively) through all include () statements
+        - Stores complete valid config tokens in self.conf_list
+
+        i.e.:
+            ['globals',
+             '{',
+             'daemonize',
+             '=',
+             'yes',
+             'setuid',
+             '=',
+             'yes',
+             'user',
+             '=',
+             'ganglia',
+             'debug_level',
+             '=',
+             '0', 
+             <etc> ]
+        """
+
         t = 'bogus'
         c = False
         i = False
@@ -57,42 +84,42 @@ class GangliaConfigParser:
 
                     if t[:2] == '/*' and t[-2:] == '*/':
 
-                        print 'comment line'
-                        print 'skipping: %s' %t
+                        #print 'comment line'
+                        #print 'skipping: %s' %t
                         continue
 
                 if t == '/*' or t[:2] == '/*':
                     c = True
-                    print 'comment start'
-                    print 'skipping: %s' %t
+                    #print 'comment start'
+                    #print 'skipping: %s' %t
                     continue
 
                 if t == '*/' or t[-2:] == '*/':
                     c = False
-                    print 'skipping: %s' %t
-                    print 'comment end'
+                    #print 'skipping: %s' %t
+                    #print 'comment end'
                     continue
 
             if c:
-                print 'skipping: %s' %t
+                #print 'skipping: %s' %t
                 continue
 
             if t == 'include':
                 i = True
-                print 'include start'
-                print 'skipping: %s' %t
+                #print 'include start'
+                #print 'skipping: %s' %t
                 continue
 
             if i:
 
-                print 'include start: %s' %t
+                #print 'include start: %s' %t
 
                 t2 = self.removeQuotes( t )
                 t2 = self.removeBraces( t )
 
                 for in_file in glob( self.removeQuotes(t2) ):
 
-                    print 'including file: %s' %in_file
+                    #print 'including file: %s' %in_file
                     parse_infile = GangliaConfigParser( in_file )
 
                     self.conf_lijst = self.conf_lijst + parse_infile.getConfLijst()
@@ -100,11 +127,11 @@ class GangliaConfigParser:
                     del parse_infile
 
                 i = False
-                print 'include end'
-                print 'skipping: %s' %t
+                #print 'include end'
+                #print 'skipping: %s' %t
                 continue
 
-            print 'keep: %s' %t
+            #print 'keep: %s' %t
             self.conf_lijst.append( t )
 
     def getConfLijst( self ):
@@ -113,6 +140,10 @@ class GangliaConfigParser:
 
     def confListToDict( self, parent_list=None ):
 
+        """
+        Recursively traverses a conf_list and creates dictionary from it
+        """
+
         new_dict = { }
         count    = 0
         skip     = 0
@@ -120,13 +151,13 @@ class GangliaConfigParser:
         if not parent_list:
             parent_list = self.conf_lijst
 
-        print 'entering confListToDict(): (parent) list size %s' %len(parent_list)
+        #print 'entering confListToDict(): (parent) list size %s' %len(parent_list)
 
         for n, c in enumerate( parent_list ):
 
             count = count + 1
 
-            print 'CL: n %d c %s' %(n, c)
+            #print 'CL: n %d c %s' %(n, c)
 
             if skip > 0:
 
@@ -155,8 +186,7 @@ class GangliaConfigParser:
 
                 if parent_list[n] == '}':
 
-                    #print 'parent_list = %s' %parent_list
-                    print 'leaving confListToDict(): new dict = %s' %new_dict
+                    #print 'leaving confListToDict(): new dict = %s' %new_dict
                     return (new_dict, count)
 
     def getConfDict( self ):
@@ -165,18 +195,33 @@ class GangliaConfigParser:
 
     def makeConfDict( self ):
 
+        """
+        Walks through self.conf_list and creates a dictionary based upon config values
+
+        i.e.:
+            'tcp_accept_channel': [{'acl': [{'access': [{'action': ['"allow"'],
+                                                         'ip': ['"127.0.0.1"'],
+                                                         'mask': ['32']}]}],
+                                    'port': ['8649']}],
+            'udp_recv_channel': [{'port': ['8649']}],
+            'udp_send_channel': [{'host': ['145.101.32.3'],
+                                  'port': ['8649']},
+                                 {'host': ['145.101.32.207'],
+                                  'port': ['8649']}]}
+        """
+
         new_dict = { }
         skip     = 0
 
-        print 'entering makeConfDict()'
+        #print 'entering makeConfDict()'
 
         for n, c in enumerate( self.conf_lijst ):
 
-            print 'M: n %d c %s' %(n, c)
+            #print 'M: n %d c %s' %(n, c)
 
             if skip > 0:
 
-                print '- skipped'
+                #print '- skipped'
                 skip = skip - 1
                 continue
 
@@ -200,7 +245,7 @@ class GangliaConfigParser:
                     skip = 2
 
         self.conf_dict = new_dict
-        print 'leaving makeConfDict(): conf dict size %d' %len( self.conf_dict )
+        #print 'leaving makeConfDict(): conf dict size %d' %len( self.conf_dict )
 
 GMOND_LOCATION = '/etc/ganglia/gmond.conf'
 
