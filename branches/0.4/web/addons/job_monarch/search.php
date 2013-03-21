@@ -166,22 +166,19 @@ function sortJobs( $jobs, $nodes, $sortby, $sortorder ) {
 
         foreach( $jobs as $jobid => $jobattrs ) {
 
-                        $state = $jobattrs[status];
-                        $owner = $jobattrs[owner];
-                        $queue = $jobattrs[queue];
-                        $name = $jobattrs[name];
-                        $req_cpu = $jobattrs[requested_time];
-                        $req_memory = $jobattrs[requested_memory];
+                        $state = $jobattrs['status'];
+                        $owner = $jobattrs['owner'];
+                        $queue = $jobattrs['queue'];
+                        $name = $jobattrs['name'];
+                        $req_cpu = $jobattrs['requested_time'];
+                        $req_memory = $jobattrs['requested_memory'];
 
-                        //if( $state == 'R' )
-			$mynodes = count( $nodes[$jobid] );
-                        //else
-                        //        $nodes = $jobattrs[nodes];
+                        $mynodes = count( $nodes[$jobid] );
 
-                        $ppn = (int) $jobattrs[ppn] ? $jobattrs[ppn] : 1;
+                        $ppn = (int) $jobattrs['ppn'] ? $jobattrs['ppn'] : 1;
                         $cpus = $mynodes * $ppn;
-                        $start_time = (int) $jobattrs[start_timestamp];
-                        $stop_time = (int) $jobattrs[stop_timestamp];
+                        $start_time = (int) $jobattrs['start_timestamp'];
+                        $stop_time = (int) $jobattrs['stop_timestamp'];
                         $runningtime = $stop_time - $start_time;
 
                         switch( $sortby ) {
@@ -324,24 +321,23 @@ function makeSearchPage() {
 
 			$job = $jobs[$sortid];
 			//print_r( $job );
-			$foundid = $job[id];
+			$foundid = $job['id'];
 			//printf( "foundid %s\n", $foundid );
 
 			//$job = $tdb->getJobArray( $foundid );
 			//$nodes = $tdb->getNodesForJob( $foundid );
 
 			$tpl->newBlock( "node" );
-			$tpl->assign( "id", $job[id] );
-			$tpl->assign( "state", $job[status] );
-			$tpl->assign( "owner", $job[owner] );
-			$tpl->assign( "queue", $job[queue] );
-			$tpl->assign( "name", $job[name] );
-			$tpl->assign( "req_cpu", makeTime( TimeToEpoch( $job[requested_time] ) ) );
+			$tpl->assign( "id", $job['id'] );
+			$tpl->assign( "state", $job['status'] );
+			$tpl->assign( "owner", $job['owner'] );
+			$tpl->assign( "queue", $job['queue'] );
+			$tpl->assign( "name", $job['name'] );
+			$tpl->assign( "req_cpu", makeTime( TimeToEpoch( $job['requested_time'] ) ) );
 
 			if( $COLUMN_REQUESTED_MEMORY ) {
 				$tpl->newBlock( "column_req_mem" );
-				//$tpl->assign( "req_memory", $jobs[$jobid][requested_memory] );
-				$tpl->assign( "req_memory", $job[requested_memory] );
+				$tpl->assign( "req_memory", $job['requested_memory'] );
 				$tpl->gotoBlock( "node" );
 			}
 			if( $COLUMN_NODES) {
@@ -349,7 +345,7 @@ function makeSearchPage() {
 				$job_nodes	= array();
 
 				foreach( $nodes[$foundid] as $mynode )
-					$job_nodes[] = $mynode[hostname];
+					$job_nodes[] = $mynode['hostname'];
 
 				$tpl->newBlock( "column_nodes" );
 				$nodes_hostnames = implode( " ", $job_nodes );
@@ -369,28 +365,14 @@ function makeSearchPage() {
 				$even = 1;
 			}
 
-
-			// need to replace later with domain stored from dbase
-			//
-			//$job_domain = $job[domain];
-
-			//$myhost = $_SERVER[HTTP_HOST];
-			//$myhf = explode( '.', $myhost );
-			//$myhf = array_reverse( $myhf );
-			//array_pop( $myhf );
-			//$myhf = array_reverse( $myhf );
-			//$job_domain = implode( '.', $myhf );
-			
-			//print_r( $job );
-			//printf( "job domain = %s\n", $job_domain);
-			$ppn = (int) $job[ppn] ? $job[ppn] : 1;
+			$ppn = (int) $job['ppn'] ? $job['ppn'] : 1;
 			$cpus = $nodes_nr * $ppn;
 
 			$tpl->assign( "nodes", $nodes_nr );
 			$tpl->assign( "cpus", $cpus );
 
-			$job_start = $job[start_timestamp];
-			$job_stop = $job[stop_timestamp];
+			$job_start = $job['start_timestamp'];
+			$job_stop = $job['stop_timestamp'];
 			$runningtime = intval( $job_stop - $job_start );
 			$tpl->assign( "started", makeDate( $job_start ) );
 			$tpl->assign( "finished", makeDate( $job_stop ) );
@@ -454,23 +436,22 @@ function makeSearchPage() {
 				$hosts_up = array();
 
 				foreach( $nodes[$id] as $mynode )
-					$hosts_up[] = $mynode[hostname];
+					$hosts_up[] = $mynode['hostname'];
 
 				$sorted_hosts = array();
-				//$hosts_up = $jobs[$filter[id]][nodes];
 
 				foreach ($hosts_up as $host ) {
 					//$host = $host. '.'.$job_domain;
-					$cpus = $metrics[$host]["cpu_num"][VAL];
+					$cpus = $metrics[$host]["cpu_num"]['VAL'];
 					if (!$cpus) $cpus=1;
-					$load_one  = $metrics[$host]["load_one"][VAL];
+					$load_one  = $metrics[$host]["load_one"]['VAL'];
 					$load = ((float) $load_one)/$cpus;
 					$host_load[$host] = $load;
-					$percent_hosts[load_color($load)] += 1;
+					$percent_hosts['load_color'.($load)] += 1;
 					if ($metricname=="load_one")
 						$sorted_hosts[$host] = $load;
 					else
-						$sorted_hosts[$host] = $metrics[$host][$metricname][VAL];
+						$sorted_hosts[$host] = $metrics[$host][$metricname]['VAL'];
 				}
 				switch ($sort) {
 					case "descending":
@@ -507,12 +488,12 @@ function makeSearchPage() {
 					$class = "metric";
 					$host_link="\"?j_view=host&c=$cluster_url&h=$host_url&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop\"";
 
-					if ($val[TYPE]=="timestamp" or $always_timestamp[$metricname]) {
-						$textval = date("r", $val[VAL]);
-					} elseif ($val[TYPE]=="string" or $val[SLOPE]=="zero" or $always_constant[$metricname] or ($max_graphs > 0 and $i > $max_graphs )) {
-						$textval = "$val[VAL] $val[UNITS]";
+					if ($val['TYPE']=="timestamp" or $always_timestamp[$metricname]) {
+						$textval = date("r", $val['VAL']);
+					} elseif ($val['TYPE']=="string" or $val['SLOPE']=="zero" or $always_constant[$metricname] or ($max_graphs > 0 and $i > $max_graphs )) {
+						$textval = "$val['VAL'] $val['UNITS']";
 					} else {
-						$graphargs = "z=small&c=$cluster_url&m=$metricname&h=$host_url&v=$val[VAL]&x=$max&n=$min&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop&min=$min&max=$max";
+						$graphargs = "z=small&c=$cluster_url&m=$metricname&h=$host_url&v=$val['VAL']&x=$max&n=$min&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop&min=$min&max=$max";
 					}
 					if ($textval) {
 						$cell="<td class=$class>".  "<b><a href=$host_link>$host</a></b><br>".  "<i>$metricname:</i> <b>$textval</b></td>";
