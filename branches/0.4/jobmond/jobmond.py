@@ -57,7 +57,7 @@ def processArgs( args ):
     SHORT_L      = 'p:hvc:'
     LONG_L       = [ 'help', 'config=', 'pidfile=', 'version' ]
 
-    global PIDFILE JOBMOND_CONF
+    global PIDFILE, JOBMOND_CONF
     PIDFILE      = None
 
     JOBMOND_CONF = '/etc/jobmond.conf'
@@ -1249,10 +1249,8 @@ sed -e 's/reported usage>/reported_usage>/g' -e 's;<\/*JATASK:.*>;;'" \
             pass
         except:
             parse_err = 1
-               if piping.wait():
-            debug_msg(10,
-                  "qstat error, skipping until next polling interval: "
-                  + piping.childerr.readline())
+        if piping.wait():
+            debug_msg(10, "qstat error, skipping until next polling interval: " + piping.childerr.readline())
             return None
         elif parse_err:
             debug_msg(10, "Bad XML output from qstat"())
@@ -1272,8 +1270,7 @@ sed -e 's/reported usage>/reported_usage>/g' -e 's;<\/*JATASK:.*>;;'" \
                     # Fixme: Is this sensible?  The
                     # PBS-type PPN isn't something you use
                     # with SGE.
-                    job["ppn"] = float(job["slots"]) / \
-                        len(job["nodes"])
+                    job["ppn"] = float(job["slots"]) / len(job["nodes"])
                 except:
                     job["ppn"] = 0
                 if DETECT_TIME_DIFFS:
@@ -1281,15 +1278,10 @@ sed -e 's/reported usage>/reported_usage>/g' -e 's;<\/*JATASK:.*>;;'" \
                     # current date, that must mean
                     # the SGE server's time is later
                     # than our local time.
-                    start_timestamp = \
-                        int (job["start_timestamp"])
-                    if start_timestamp > \
-                            int(self.cur_time) + \
-                            int(self.timeoffset):
+                    start_timestamp = int (job["start_timestamp"])
+                    if start_timestamp > int(self.cur_time) + int(self.timeoffset):
 
-                        self.timeoffset    = \
-                            start_timestamp - \
-                            int(self.cur_time)
+                        self.timeoffset    = start_timestamp - int(self.cur_time)
             else:
                 # fixme: Note sure what this should be:
                 job["ppn"] = job["RN_max"]
@@ -1302,13 +1294,11 @@ sed -e 's/reported usage>/reported_usage>/g' -e 's;<\/*JATASK:.*>;;'" \
                      "start_timestamp", "queued_timestamp"]:
                 myAttrs[attr] = str(job[attr])
             myAttrs["nodes"] = job["nodes"]
-            myAttrs["reported"] = str(int(self.cur_time) + \
-                          int(self.timeoffset))
+            myAttrs["reported"] = str(int(self.cur_time) + int(self.timeoffset))
             myAttrs["domain"] = fqdn_parts(socket.getfqdn())[1]
             myAttrs["poll_interval"] = str(BATCH_POLL_INTERVAL)
 
-            if self.jobDataChanged(self.jobs, job_id, myAttrs) \
-                    and myAttrs["status"] in ["R", "Q"]:
+            if self.jobDataChanged(self.jobs, job_id, myAttrs) and myAttrs["status"] in ["R", "Q"]:
                 self.jobs[job_id] = myAttrs
         for id, attrs in self.jobs.items():
             if id not in jobs_processed:
