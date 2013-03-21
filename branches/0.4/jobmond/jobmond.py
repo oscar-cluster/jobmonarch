@@ -54,13 +54,13 @@ def usage( ver ):
 
 def processArgs( args ):
 
-    SHORT_L        = 'p:hvc:'
-    LONG_L        = [ 'help', 'config=', 'pidfile=', 'version' ]
+    SHORT_L      = 'p:hvc:'
+    LONG_L       = [ 'help', 'config=', 'pidfile=', 'version' ]
 
-    global PIDFILE
-    PIDFILE        = None
+    global PIDFILE JOBMOND_CONF
+    PIDFILE      = None
 
-    config_filename    = '/etc/jobmond.conf'
+    JOBMOND_CONF = '/etc/jobmond.conf'
 
     try:
 
@@ -76,11 +76,11 @@ def processArgs( args ):
 
         if opt in [ '--config', '-c' ]:
         
-            config_filename    = value
+            JOBMOND_CONF = value
 
         if opt in [ '--pidfile', '-p' ]:
 
-            PIDFILE        = value
+            PIDFILE      = value
         
         if opt in [ '--help', '-h' ]:
  
@@ -92,7 +92,7 @@ def processArgs( args ):
             usage( True )
             sys.exit( 0 )
 
-    return loadConfig( config_filename )
+    return loadConfig( JOBMOND_CONF )
 
 class GangliaConfigParser:
 
@@ -458,32 +458,33 @@ def loadConfig( filename ):
     global GMOND_CONF, DETECT_TIME_DIFFS, BATCH_HOST_TRANSLATE
     global BATCH_API, QUEUE, GMETRIC_TARGET, USE_SYSLOG
     global SYSLOG_LEVEL, SYSLOG_FACILITY, GMETRIC_BINARY
+    global METRIC_MAX_VAL_LEN
 
-    DEBUG_LEVEL    = cfg.getint( 'DEFAULT', 'DEBUG_LEVEL' )
+    DEBUG_LEVEL = cfg.getint( 'DEFAULT', 'DEBUG_LEVEL' )
 
-    DAEMONIZE    = cfg.getboolean( 'DEFAULT', 'DAEMONIZE' )
+    DAEMONIZE   = cfg.getboolean( 'DEFAULT', 'DAEMONIZE' )
 
     SYSLOG_LEVEL    = -1
-    SYSLOG_FACILITY    = None
+    SYSLOG_FACILITY = None
 
     try:
-        USE_SYSLOG    = cfg.getboolean( 'DEFAULT', 'USE_SYSLOG' )
+        USE_SYSLOG  = cfg.getboolean( 'DEFAULT', 'USE_SYSLOG' )
 
     except ConfigParser.NoOptionError:
 
-        USE_SYSLOG    = True
+        USE_SYSLOG  = True
 
         debug_msg( 0, 'ERROR: no option USE_SYSLOG found: assuming yes' )
 
     if USE_SYSLOG:
 
         try:
-            SYSLOG_LEVEL    = cfg.getint( 'DEFAULT', 'SYSLOG_LEVEL' )
+            SYSLOG_LEVEL = cfg.getint( 'DEFAULT', 'SYSLOG_LEVEL' )
 
         except ConfigParser.NoOptionError:
 
             debug_msg( 0, 'ERROR: no option SYSLOG_LEVEL found: assuming level 0' )
-            SYSLOG_LEVEL    = 0
+            SYSLOG_LEVEL = 0
 
         try:
 
@@ -497,58 +498,59 @@ def loadConfig( filename ):
 
     try:
 
-        BATCH_SERVER        = cfg.get( 'DEFAULT', 'BATCH_SERVER' )
+        BATCH_SERVER = cfg.get( 'DEFAULT', 'BATCH_SERVER' )
 
     except ConfigParser.NoOptionError:
 
         # Backwards compatibility for old configs
         #
 
-        BATCH_SERVER        = cfg.get( 'DEFAULT', 'TORQUE_SERVER' )
-        api_guess        = 'pbs'
+        BATCH_SERVER = cfg.get( 'DEFAULT', 'TORQUE_SERVER' )
+        api_guess    = 'pbs'
     
     try:
     
-        BATCH_POLL_INTERVAL    = cfg.getint( 'DEFAULT', 'BATCH_POLL_INTERVAL' )
+        BATCH_POLL_INTERVAL = cfg.getint( 'DEFAULT', 'BATCH_POLL_INTERVAL' )
 
     except ConfigParser.NoOptionError:
 
         # Backwards compatibility for old configs
         #
 
-        BATCH_POLL_INTERVAL    = cfg.getint( 'DEFAULT', 'TORQUE_POLL_INTERVAL' )
-        api_guess        = 'pbs'
+        BATCH_POLL_INTERVAL = cfg.getint( 'DEFAULT', 'TORQUE_POLL_INTERVAL' )
+        api_guess           = 'pbs'
     
     try:
 
-        GMOND_CONF        = cfg.get( 'DEFAULT', 'GMOND_CONF' )
+        GMOND_CONF          = cfg.get( 'DEFAULT', 'GMOND_CONF' )
 
     except ConfigParser.NoOptionError:
 
         # Not specified: assume /etc/gmond.conf
         #
-        GMOND_CONF        = '/etc/gmond.conf'
+        GMOND_CONF          = '/etc/gmond.conf'
 
-    ganglia_cfg        = GangliaConfigParser( GMOND_CONF )
+    ganglia_cfg     = GangliaConfigParser( GMOND_CONF )
 
     # Let's try to find the GMETRIC_TARGET ourselves first from GMOND_CONF
     #
-    gmetric_dest_ip        = ganglia_cfg.getStr( 'udp_send_channel', 'mcast_join' )
+    gmetric_dest_ip = ganglia_cfg.getStr( 'udp_send_channel', 'mcast_join' )
 
     if not gmetric_dest_ip:
 
         # Maybe unicast target then
         #
-        gmetric_dest_ip        = ganglia_cfg.getStr( 'udp_send_channel', 'host' )
+        gmetric_dest_ip = ganglia_cfg.getStr( 'udp_send_channel', 'host' )
 
-    gmetric_dest_port    = ganglia_cfg.getStr( 'udp_send_channel', 'port' )
+    gmetric_dest_port   = ganglia_cfg.getStr( 'udp_send_channel', 'port' )
 
+    #TODO: use multiple udp send channels (if found)
     if gmetric_dest_ip and gmetric_dest_port:
 
-        GMETRIC_TARGET    = '%s:%s' %( gmetric_dest_ip, gmetric_dest_port )
+        GMETRIC_TARGET  = '%s:%s' %( gmetric_dest_ip, gmetric_dest_port )
     else:
 
-        debug_msg( 0, "WARNING: Can't parse udp_send_channel from: '%s'" %GMOND_CONF )
+        debug_msg( 0, "WARNING: Can't parse udp_send_channel from: '%s' - Trying: %s" %( GMOND_CONF, JOBMOND_CONF ) )
 
         # Couldn't figure it out: let's see if it's in our jobmond.conf
         #
@@ -557,33 +559,34 @@ def loadConfig( filename ):
             GMETRIC_TARGET    = cfg.get( 'DEFAULT', 'GMETRIC_TARGET' )
 
         # Guess not: now just give up
-        #
+        
         except ConfigParser.NoOptionError:
 
             GMETRIC_TARGET    = None
 
             debug_msg( 0, "ERROR: GMETRIC_TARGET not set: internal Gmetric handling aborted. Failing back to DEPRECATED use of gmond.conf/gmetric binary. This will slow down jobmond significantly!" )
 
-    gmetric_bin    = findGmetric()
+            gmetric_bin    = findGmetric()
 
-    if gmetric_bin:
+            if gmetric_bin:
 
-        GMETRIC_BINARY        = gmetric_bin
-    else:
-        debug_msg( 0, "WARNING: Can't find gmetric binary anywhere in $PATH" )
+                GMETRIC_BINARY     = gmetric_bin
+            else:
+                debug_msg( 0, "WARNING: Can't find gmetric binary anywhere in $PATH" )
 
-        try:
+                try:
 
-            GMETRIC_BINARY        = cfg.get( 'DEFAULT', 'GMETRIC_BINARY' )
+                    GMETRIC_BINARY = cfg.get( 'DEFAULT', 'GMETRIC_BINARY' )
 
-        except ConfigParser.NoOptionError:
+                except ConfigParser.NoOptionError:
 
-            debug_msg( 0, "FATAL ERROR: GMETRIC_BINARY not set and not in $PATH" )
-            sys.exit( 1 )
+                    debug_msg( 0, "FATAL ERROR: GMETRIC_BINARY not set and not in $PATH" )
+                    sys.exit( 1 )
 
+    #TODO: is this really still needed or should be automatic
     DETECT_TIME_DIFFS    = cfg.getboolean( 'DEFAULT', 'DETECT_TIME_DIFFS' )
 
-    BATCH_HOST_TRANSLATE    = getlist( cfg.get( 'DEFAULT', 'BATCH_HOST_TRANSLATE' ) )
+    BATCH_HOST_TRANSLATE = getlist( cfg.get( 'DEFAULT', 'BATCH_HOST_TRANSLATE' ) )
 
     try:
 
@@ -606,6 +609,8 @@ def loadConfig( filename ):
 
         QUEUE        = None
 
+    METRIC_MAX_VAL_LEN = ganglia_cfg.getInt( 'globals', 'max_udp_msg_len' )
+
     return True
 
 def fqdn_parts (fqdn):
@@ -615,8 +620,6 @@ def fqdn_parts (fqdn):
     parts = fqdn.split (".")
 
     return (parts[0], string.join(parts[1:], "."))
-
-METRIC_MAX_VAL_LEN = 900
 
 class DataProcessor:
 
