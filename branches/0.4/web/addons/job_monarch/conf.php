@@ -89,10 +89,6 @@ $JOB_ARCHIVE_DIR = "/path/to/my/archive";
 //
 $JOB_ARCHIVE_DBASE = "127.0.0.1/jobarch";
 
-// Path to rrdtool binary
-//
-$RRDTOOL = "/usr/bin/rrdtool";
-
 // Include cluster specific settings here, 
 // they will override any (global) settings above
 // on a per-cluster basis, where available.
