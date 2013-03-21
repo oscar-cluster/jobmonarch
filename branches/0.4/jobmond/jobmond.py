@@ -526,9 +526,9 @@ def loadConfig( filename ):
 
     except ConfigParser.NoOptionError:
 
-        # Not specified: assume /etc/gmond.conf
+        # Not specified: assume /etc/ganglia/gmond.conf
         #
-        GMOND_CONF          = '/etc/gmond.conf'
+        GMOND_CONF          = '/etc/ganglia/gmond.conf'
 
     ganglia_cfg     = GangliaConfigParser( GMOND_CONF )
 
