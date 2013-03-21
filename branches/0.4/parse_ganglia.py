@@ -132,7 +132,7 @@ class GangliaConfigParser:
                 continue
 
             #print 'keep: %s' %t
-            self.conf_lijst.append( t )
+            self.conf_lijst.append( self.removeQuotes(t) )
 
     def getConfLijst( self ):
 
@@ -189,9 +189,6 @@ class GangliaConfigParser:
                     #print 'leaving confListToDict(): new dict = %s' %new_dict
                     return (new_dict, count)
 
-    def getConfDict( self ):
-
-        return self.conf_dict
 
     def makeConfDict( self ):
 
@@ -247,6 +244,54 @@ class GangliaConfigParser:
         self.conf_dict = new_dict
         #print 'leaving makeConfDict(): conf dict size %d' %len( self.conf_dict )
 
+    def checkConfDict( self ):
+
+        if len( self.conf_lijst ) == 0:
+
+            raise Exception("Something went wrong generating conf list for %s" %self.file_name )
+
+        if len( self.conf_dict ) == 0:
+
+            self.makeConfDict()
+
+    def getConfDict( self ):
+
+        self.checkConfDict()
+        return self.conf_dict
+
+    def getUdpSendChannels( self ):
+
+        self.checkConfDict()
+        return self.conf_dict[ 'udp_send_channel' ]
+
+    def getSectionLastOption( self, section, option ):
+
+        """
+        Get last option set in a config section that could be set multiple times in multiple (include) files.
+
+        i.e.: getSectionLastOption( 'globals', 'send_metadata_interval' )
+        """
+
+        self.checkConfDict()
+        value = None
+
+        if not self.conf_dict.has_key( section ):
+
+            return None
+
+        # Could be set multiple times in multiple (include) files: get last one set
+        for c in self.conf_dict[ section ]:
+
+                if c.has_key( option ):
+
+                    cluster_name = c[ option ][0]
+
+        return cluster_name
+
+    def getClusterName( self ):
+
+        return self.getSectionLastOption( 'cluster', 'name' )
+
 GMOND_LOCATION = '/etc/ganglia/gmond.conf'
 
 g = GangliaConfigParser( GMOND_LOCATION )
@@ -256,6 +301,9 @@ pprint.pprint( g.getConfLijst(), width=1 )
 g.makeConfDict()
 
 pprint.pprint( g.getConfDict(), width=1 )
+
+print g.getClusterName()
+print g.getUdpSendChannels()
 
 print 'exiting..'
 sys.exit(0)
