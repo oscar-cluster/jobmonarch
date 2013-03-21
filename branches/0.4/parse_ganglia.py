@@ -292,6 +292,28 @@ class GangliaConfigParser:
 
         return self.getSectionLastOption( 'cluster', 'name' )
 
+    def getVal( self, section, option ):
+
+        return self.getSectionLastOption( section, option )
+
+    def getInt( self, section, valname ):
+
+        value    = self.getVal( section, valname )
+
+        if not value:
+            return None
+
+        return int( value )
+
+    def getStr( self, section, valname ):
+
+        value    = self.getVal( section, valname )
+
+        if not value:
+            return None
+
+        return str( value )
+
 GMOND_LOCATION = '/etc/ganglia/gmond.conf'
 
 g = GangliaConfigParser( GMOND_LOCATION )
