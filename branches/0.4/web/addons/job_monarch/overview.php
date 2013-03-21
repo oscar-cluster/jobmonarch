@@ -72,7 +72,7 @@ function setupFilterSettings()
 	$ic->setNoimage();
 	$ic->draw();
 
-	$tpl->assign( "clusterimage", "./image.php?". session_name() . "=" . session_id() ."&c=".rawurlencode($clustername)."&view=big-clusterimage".$filter_image_url );
+	$tpl->assign( "clusterimage", "./image.php?". session_name() . "=" . session_id() ."&c=".rawurlencode($clustername)."&j_view=big-clusterimage".$filter_image_url );
 
 	//$tpl->assign( "clusterimage_width", $ic->getWidth() );
 	//$tpl->assign( "clusterimage_height", $ic->getHeight() );

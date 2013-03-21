@@ -51,7 +51,7 @@ function checkSessionData() {
 
 
 $httpvars = new HTTPVariables( $HTTP_GET_VARS, $_GET );
-$view = $httpvars->getHttpVar( "view" );
+$view = $httpvars->getHttpVar( "j_view" );
 $clustername = $httpvars->getClusterName();
 
 //printf("clustername = %s\n", $clustername );

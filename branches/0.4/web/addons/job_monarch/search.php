@@ -505,7 +505,7 @@ function makeSearchPage() {
 					//echo "$host: $value, ";
 					$val = $metrics[$host][$metricname];
 					$class = "metric";
-					$host_link="\"?view=host&c=$cluster_url&h=$host_url&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop\"";
+					$host_link="\"?j_view=host&c=$cluster_url&h=$host_url&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop\"";
 
 					if ($val[TYPE]=="timestamp" or $always_timestamp[$metricname]) {
 						$textval = date("r", $val[VAL]);

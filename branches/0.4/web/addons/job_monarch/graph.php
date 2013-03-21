@@ -22,7 +22,7 @@
  * SVN $Id$
  */
 
-global $metrics, $rrds, $range, $start, $r;
+global $metrics, $rrds, $range, $start, $r, $conf;
 $range = $r;
 
 include "./libtoga.php";
@@ -505,7 +505,7 @@ if( isset($sourcetime) )
 	if ($range=="month")
 		$end = floor($end / 672) * 672;
 
-	$command = RRDTOOL . " graph - --start $start --end $end ".
+	$command = $conf['rrdtool']. " graph - --start $start --end $end ".
 		"--width $width --height $height $lower_limit ".
 		"--title '$title' $extras $background ".
 		$series;
@@ -520,7 +520,7 @@ if( isset($sourcetime) )
 #	$series;
 
 else {
-	$command = RRDTOOL . " graph - --start $period_start --end $period_stop ".
+	$command = $conf['rrdtool'] . " graph - --start $period_start --end $period_stop ".
 		"--width $width --height $height $lower_limit ".
 		"--title '$title' $extras $background ".
 		$series;

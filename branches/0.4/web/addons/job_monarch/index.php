@@ -46,7 +46,7 @@ include_once "./class.TemplatePower.inc.php";
 
 $httpvars = new HTTPVariables( $HTTP_GET_VARS, $_GET );
 $clustername = $httpvars->getClusterName();
-$view = $httpvars->getHttpVar( "view" );
+$view = $httpvars->getHttpVar( "j_view" );
 
 $filter = array();
 
