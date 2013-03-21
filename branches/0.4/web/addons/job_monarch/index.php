@@ -59,7 +59,7 @@ if( isset( $filterorder ) && ($filterorder!='') ) {
 } else {
 	if( isset($queue) && ($queue!='')) $filter['queue']=$queue;
 	if( isset($state) && ($state!='')) $filter['state']=$state;
-	if( isset($user) && ($user!='')) $filter['user']=$user;
+	if( isset($owner) && ($owner!='')) $filter['owner']=$owner;
 	if( isset($id) && ($id!='')) $filter['id']=$id;
 }
 
@@ -71,16 +71,16 @@ if( isset($myfilter_fields) ) {
 		switch( $myfilter ) {
 
 			case "queue":
-				$filter[queue]=$queue;
+				$filter['queue']=$queue;
 				break;
 			case "state":
-				$filter[state]=$state;
+				$filter['state']=$state;
 				break;
-			case "user":
-				$filter[user]=$user;
+			case "owner":
+				$filter['owner']=$owner;
 				break;
 			case "id":
-				$filter[id]=$id;
+				$filter['id']=$id;
 				break;
 		}
 	}

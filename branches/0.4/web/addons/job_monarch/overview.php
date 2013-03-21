@@ -87,9 +87,9 @@ function setupFilterSettings()
 	{
 		$piefilter = 'id';
 	} 
-	else if( array_key_exists( "user", $filter ) ) 
+	else if( array_key_exists( "owner", $filter ) ) 
 	{
-		$piefilter = 'user';
+		$piefilter = 'owner';
 	} 
 	else if( array_key_exists( "queue", $filter ) ) 
 	{
@@ -311,7 +311,7 @@ function drawPie()
 						$countjob = 0;
 					}
 				}
-				else if( $piefilter == 'user' )
+				else if( $piefilter == 'owner' )
 				{
 					if( $jobs[$myjob]['owner'] != $filter[$piefilter] )
 					{
@@ -426,7 +426,7 @@ function sortJobs( $jobs, $sortby, $sortorder )
 		foreach( $jobs as $jobid => $jobattrs ) 
 		{
 				$state		= $jobattrs['status'];
-				$user 		= $jobattrs['owner'];
+				$owner      = $jobattrs['owner'];
 				$queue 		= $jobattrs['queue'];
 				$name 		= $jobattrs['name'];
 				$req_cpu 	= $jobattrs['requested_time'];
@@ -457,8 +457,8 @@ function sortJobs( $jobs, $sortby, $sortorder )
 						$sorted[$jobid] = $state;
 						break;
 
-					case "user":
-						$sorted[$jobid] = $user;
+					case "owner":
+						$sorted[$jobid] = $owner;
 						break;
 
 					case "queue":
@@ -726,7 +726,7 @@ function makeOverview()
 				{
 					$display_job = 0;
 				}
-				else if( $filtername == 'user' && $jobs[$jobid]['owner'] != $filtervalue )
+				else if( $filtername == 'owner' && $jobs[$jobid]['owner'] != $filtervalue )
 				{
 					$display_job = 0;
 				}
@@ -755,7 +755,7 @@ function makeOverview()
 
 				$tpl->assign( "fullstate", $fullstate );
 				
-				$tpl->assign( "user", $jobs[$jobid]['owner'] );
+				$tpl->assign( "owner", $jobs[$jobid]['owner'] );
 				$tpl->assign( "queue", $jobs[$jobid]['queue'] );
 
 				$fulljobname 		= $jobs[$jobid]['name'];

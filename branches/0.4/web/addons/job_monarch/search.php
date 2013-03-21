@@ -25,7 +25,7 @@
 global $clustername, $tpl, $m, $metric;
 
 function validateFormInput() {
-	global $clustername, $tpl, $id, $user, $name, $start_from_time, $start_to_time, $queue;
+	global $clustername, $tpl, $id, $owner, $name, $start_from_time, $start_to_time, $queue;
 	global $end_from_time, $end_to_time, $period_start, $period_stop;
 
 	$error = 0;
@@ -34,7 +34,7 @@ function validateFormInput() {
 
 	$none_set = 0;
 
-	if( $id == '' and $user == '' and $name == '' and $start_from_time == '' and $start_to_time == '' and $queue == '' and $end_from_time == '' and $end_to_time == '') {
+	if( $id == '' and $owner== '' and $name == '' and $start_from_time == '' and $start_to_time == '' and $queue == '' and $end_from_time == '' and $end_to_time == '') {
 		$error = 1;
 		$show_msg = 1;
 		$error_msg .= "No search criteria set!";
@@ -167,7 +167,7 @@ function sortJobs( $jobs, $nodes, $sortby, $sortorder ) {
         foreach( $jobs as $jobid => $jobattrs ) {
 
                         $state = $jobattrs[status];
-                        $user = $jobattrs[owner];
+                        $owner = $jobattrs[owner];
                         $queue = $jobattrs[queue];
                         $name = $jobattrs[name];
                         $req_cpu = $jobattrs[requested_time];
@@ -193,8 +193,8 @@ function sortJobs( $jobs, $nodes, $sortby, $sortorder ) {
                                         $sorted[$jobid] = $state;
                                         break;
 
-                                case "user":
-                                        $sorted[$jobid] = $user;
+                                case "owner":
+                                        $sorted[$jobid] = $owner;
                                         break;
 
                                 case "queue":
@@ -251,7 +251,7 @@ function sortJobs( $jobs, $nodes, $sortby, $sortorder ) {
 }
 
 function makeSearchPage() {
-	global $clustername, $tpl, $id, $user, $name, $start_from_time, $start_to_time, $queue;
+	global $clustername, $tpl, $id, $owner, $name, $start_from_time, $start_to_time, $queue;
 	global $end_from_time, $end_to_time, $filter, $default_showhosts, $m, $hosts_up, $hc;
 	global $period_start, $period_stop, $sortby, $sortorder, $COLUMN_REQUESTED_MEMORY;
 	global $SEARCH_RESULT_LIMIT, $COLUMN_NODES, $metricname;
@@ -268,7 +268,7 @@ function makeSearchPage() {
 
 	$tpl->assign( "cluster", $clustername );
 	$tpl->assign( "id_value", $id );
-	$tpl->assign( "user_value", $user );
+	$tpl->assign( "owner_value", $owner);
 	$tpl->assign( "queue_value", $queue );
 	$tpl->assign( "name_value", $name );
 	$tpl->assign( "start_from_value", rawurldecode( $start_from_time ) );
@@ -286,7 +286,7 @@ function makeSearchPage() {
 		if( $start_to_time ) $start_to_time = datetimeToEpoch( $start_to_time );
 		if( $end_from_time ) $end_from_time = datetimeToEpoch( $end_from_time );
 		if( $end_to_time ) $end_to_time = datetimeToEpoch( $end_to_time );
-		$search_ids = $tdb->searchDbase( $id, $queue, $user, $name, $start_from_time, $start_to_time, $end_from_time, $end_to_time );
+		$search_ids = $tdb->searchDbase( $id, $queue, $owner, $name, $start_from_time, $start_to_time, $end_from_time, $end_to_time );
 
 		if( ($tdb->resultcount) > (int) $SEARCH_RESULT_LIMIT ) {
 			$tpl->gotoBlock( "_ROOT" );
@@ -333,7 +333,7 @@ function makeSearchPage() {
 			$tpl->newBlock( "node" );
 			$tpl->assign( "id", $job[id] );
 			$tpl->assign( "state", $job[status] );
-			$tpl->assign( "user", $job[owner] );
+			$tpl->assign( "owner", $job[owner] );
 			$tpl->assign( "queue", $job[queue] );
 			$tpl->assign( "name", $job[name] );
 			$tpl->assign( "req_cpu", makeTime( TimeToEpoch( $job[requested_time] ) ) );

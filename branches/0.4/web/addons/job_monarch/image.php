@@ -57,7 +57,7 @@ $clustername = $httpvars->getClusterName();
 //printf("clustername = %s\n", $clustername );
 if( isset($id) && ($id!='')) $filter['id']=$id;
 if( isset($state) && ($state!='')) $filter['state']=$state;
-if( isset($user) && ($user!='')) $filter['user']=$user;
+if( isset($owner) && ($owner!='')) $filter['owner']=$owner;
 if( isset($queue) && ($queue!='')) $filter['queue']=$queue;
 
 function drawHostImage() {
@@ -117,7 +117,7 @@ function drawBigClusterImage() {
 				case "id":
 					$ic->setFilter( 'jobid', $filtervalue );
 					break;
-				case "user":
+				case "owner":
 					$ic->setFilter( 'owner', $filtervalue);
 					break;
 				case "queue":

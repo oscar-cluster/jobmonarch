@@ -96,7 +96,7 @@ function setFilter( filtername, filterval ) {
   User:
   </TD>
   <TD>
-  <INPUT TYPE="TEXT" NAME="user" VALUE="{user_value}">
+  <INPUT TYPE="TEXT" NAME="owner" VALUE="{owner_value}">
   </TD>
 
   <TD>
@@ -205,7 +205,7 @@ function setFilter( filtername, filterval ) {
 <TR CLASS="monarch">
 <TH><B><A HREF="#" onClick="setSort( 'id' )" ALT="Jobid" TITLE="Jobid">Id</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'state' )" ALT="State" TITLE="State">S</A></B></TH>
-<TH><B><A HREF="#" onClick="setSort( 'user' )">User</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'owner' )">Owner</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'queue' )">Queue</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'name' )" ALT="Jobname" TITLE="Jobname">Name</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'req_cpu' )" ALT="Requested CPU Time (walltime)" TITLE="Requested CPU Time (walltime)">Req. CPU time</A></B></TH>
@@ -225,7 +225,7 @@ function setFilter( filtername, filterval ) {
   <TR CLASS="{nodeclass}">
     <TD><A HREF="#" onClick="setFilter( 'id', '{id}' )">{id}</A></TD>
     <TD><A HREF="#" onClick="setFilter( 'state', '{state}' )">{state}</A></TD>
-    <TD><A HREF="#" onClick="setFilter( 'user', '{user}' )">{user}</A></TD>
+    <TD><A HREF="#" onClick="setFilter( 'owner', '{owner}' )">{owner}</A></TD>
     <TD><A HREF="#" onClick="setFilter( 'queue', '{queue}' )">{queue}</A></TD>
     <TD ALT="{fulljobname}" TITLE="{fulljobname}">
 <!-- START BLOCK : jobname_hint_start -->

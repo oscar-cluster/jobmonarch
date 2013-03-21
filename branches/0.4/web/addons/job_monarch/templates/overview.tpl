@@ -163,7 +163,7 @@ View
 <INPUT TYPE="HIDDEN" NAME="c" VALUE="{clustername}">
 <INPUT TYPE="HIDDEN" NAME="queue" VALUE="{queue}">
 <INPUT TYPE="HIDDEN" NAME="state" VALUE="{state}">
-<INPUT TYPE="HIDDEN" NAME="user" VALUE="{user}">
+<INPUT TYPE="HIDDEN" NAME="owner" VALUE="{owner}">
 <INPUT TYPE="HIDDEN" NAME="id" VALUE="{id}">
 <INPUT TYPE="HIDDEN" NAME="filterorder" VALUE="{order}">
 
@@ -171,7 +171,7 @@ View
 <TR CLASS="monarch">
 <TH><B><A HREF="#" onClick="setSort( 'id' )" ALT="Jobid" TITLE="Jobid">Id</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'state' )" ALT="State" TITLE="State">S</A></B></TH>
-<TH><B><A HREF="#" onClick="setSort( 'user' )">User</A></B></TH>
+<TH><B><A HREF="#" onClick="setSort( 'owner' )">Owner</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'queue' )">Queue</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'name' )" ALT="Jobname" TITLE="Jobname">Name</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'req_cpu' )" ALT="Requested CPU Time (walltime)" TITLE="Requested CPU Time (walltime)">Req. CPU time</A></B></TH>
@@ -193,7 +193,7 @@ View
   <TR CLASS="{nodeclass}">
     <TD><A HREF="#" onClick="setFilter( 'id', '{id}' )">{id}</A></TD>
     <TD><A HREF="#" onClick="setFilter( 'state', '{state}' )" ALT="{fullstate}" TITLE="{fullstate}">{state}</A></TD>
-    <TD><A HREF="#" onClick="setFilter( 'user', '{user}' )">{user}</A></TD>
+    <TD><A HREF="#" onClick="setFilter( 'owner', '{owner}' )">{owner}</A></TD>
     <TD><A HREF="#" onClick="setFilter( 'queue', '{queue}' )">{queue}</A></TD>
     <TD ALT="{fulljobname}" TITLE="{fulljobname}">
 <!-- START BLOCK : jobname_hint_start -->

@@ -175,7 +175,7 @@ class TarchDbase
 			$this->conn = pg_connect( "host=".$this->ip." dbname=".$this->dbase );
 	}
 
-	function searchDbase( $id = null, $queue = null, $user = null, $name = null, $start_from_time = null, $start_to_time = null, $end_from_time = null, $end_to_time = null )
+	function searchDbase( $id = null, $queue = null, $owner = null, $name = null, $start_from_time = null, $start_to_time = null, $end_from_time = null, $end_to_time = null )
 	{
 		global $SEARCH_RESULT_LIMIT;
 
@@ -192,9 +192,9 @@ class TarchDbase
 			{
 				$query_args[] = "job_queue ='$queue'";
 			}
-			if( $user )
+			if( $owner )
 			{
-				$query_args[] = "job_owner ='$user'";
+				$query_args[] = "job_owner ='$owner'";
 			}
 			if( $name )
 			{
