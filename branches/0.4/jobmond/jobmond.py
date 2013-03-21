@@ -374,9 +374,9 @@ class GangliaConfigParser:
 
                 if c.has_key( option ):
 
-                    cluster_name = c[ option ][0]
+                    value = c[ option ][0]
 
-        return cluster_name
+        return value
 
     def getClusterName( self ):
 
@@ -636,7 +636,7 @@ class DataProcessor:
         if binary:
             self.binary = binary
 
-        if not self.binary:
+        if not self.binary and not GMETRIC_TARGET:
             self.binary = GMETRIC_BINARY
 
         # Timeout for XML
@@ -648,7 +648,7 @@ class DataProcessor:
 
         self.dmax = str( int( int( BATCH_POLL_INTERVAL ) * 2 ) )
 
-        if GMOND_CONF:
+        if GMOND_CONF and not GMETRIC_TARGET:
 
             incompatible = self.checkGmetricVersion()
 
@@ -724,7 +724,7 @@ class DataProcessor:
 
             except NameError:
 
-                debug_msg( 10, 'Assuming /etc/gmond.conf for gmetric cmd (omitting)' )
+                debug_msg( 10, 'Assuming /etc/ganglia/gmond.conf for gmetric cmd' )
 
             cmd = cmd + ' -n' + str( metricname )+ ' -v"' + str( metricval )+ '" -t' + str( valtype ) + ' -d' + str( self.dmax )
 
