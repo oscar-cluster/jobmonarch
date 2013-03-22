@@ -822,14 +822,14 @@ function makeOverview()
 
                         $mynodehosts         = array();
 
-                        foreach( $jobs[$jobid]['nodes'] as $mynode ) 
+                        foreach( $jobs[$jobid]['nodes'] as $shortnode ) 
                         {
                             if( $use_fqdn == 1)
                             {
-                                $mynode    = $mynode.".".$jobs[$jobid]['domain'];
+                                $mynode    = $shortnode.".".$jobs[$jobid]['domain'];
                             }
                             $myhost_href     = "./?c=".$clustername."&h=".$mynode;
-                            $mynodehosts[]     = "<A HREF=\"".$myhost_href."\">".$mynode."</A>";
+                            $mynodehosts[]     = "<A HREF=\"".$myhost_href."\">".$shortnode."</A>";
                         }
 
                         $nodes_hostnames     = implode( " ", $mynodehosts );

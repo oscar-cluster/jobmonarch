@@ -186,7 +186,7 @@ View
 <TH><B><A HREF="#" onClick="setSort( 'queued' )">Queued</A></B></TH>
 <!-- END BLOCK : column_header_queued -->
 <!-- START BLOCK : column_header_nodes -->
-<TH><B><A HREF="#" onClick="setSort( 'nodes' )" ALT="Nodes" TITLE="Nodes">Nodes</A></B></TH>
+<TH WIDTH="11%"><B><A HREF="#" onClick="setSort( 'nodes' )" ALT="Nodes" TITLE="Nodes">Nodes</A></B></TH>
 <!-- END BLOCK : column_header_nodes -->
 <TH><B><A HREF="#" onClick="setSort( 'start' )">Started</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'runningtime' )">Runningtime</A></B></TH>
