@@ -710,13 +710,13 @@ class TorqueXMLHandler
                 $nodes[$hostname] = new NodeImage( $this->proc_cluster, $hostname );
             }
         }
-        else if( $name == 'METRIC' and strstr( $attrs['NAME'], 'MONARCH' ) and $this->proc_cluster == $this->clustername )
+        else if( $name == 'METRIC' and strstr( $attrs['NAME'], 'zplugin-monarch' ) and $this->proc_cluster == $this->clustername )
         {
-            if( strstr( $attrs['NAME'], 'MONARCH-HEARTBEAT' ) )
+            if( strstr( $attrs['NAME'], 'zplugin-monarch-heartbeat' ) )
             {
                 $this->heartbeat['time'] = $attrs['VAL'];
             }
-            else if( strstr( $attrs['NAME'], 'MONARCH-DOWN' ) )
+            else if( strstr( $attrs['NAME'], 'zplugin-monarch-down' ) )
             {
                 $fields        = explode( ' ', $attrs['VAL'] );
 
@@ -752,7 +752,7 @@ class TorqueXMLHandler
                     }
                 }
             }
-            else if( strstr( $attrs['NAME'], 'MONARCH-OFFLINE' ) )
+            else if( strstr( $attrs['NAME'], 'zplugin-monarch-offline' ) )
             {
                 $fields        = explode( ' ', $attrs['VAL'] );
 
@@ -788,9 +788,9 @@ class TorqueXMLHandler
                     }
                 }
             }
-            else if( strstr( $attrs['NAME'], 'MONARCH-JOB' ) )
+            else if( strstr( $attrs['NAME'], 'zplugin-monarch-job' ) )
             {
-                sscanf( $attrs['NAME'], 'MONARCH-JOB-%d-%d', $jobid, $monincr );
+                sscanf( $attrs['NAME'], 'zplugin-monarch-job-%d-%d', $jobid, $monincr );
 
                 if( !isset( $jobs[$jobid] ) )
                 {

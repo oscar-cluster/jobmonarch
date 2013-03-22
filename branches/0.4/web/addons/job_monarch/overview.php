@@ -581,7 +581,7 @@ function makeOverview()
     {
         foreach( $bmetric as $mname => $mval )
         {
-            if( ( $mname == 'MONARCH-RJ' ) || ($mname == 'MONARCH-QJ') )
+            if( ( $mname == 'zplugin-monarch-rj' ) || ($mname == 'zplugin-monarch-qj') )
             {
                 $rjqj_host      = $bhost;
             }

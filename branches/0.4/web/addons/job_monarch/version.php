@@ -21,5 +21,5 @@
  *
  */
 
-$monarchversion = "0.3.1";
+$monarchversion = "0.4+SVN";
 ?>
