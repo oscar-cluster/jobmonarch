@@ -823,7 +823,7 @@ class DataGatherer:
 
         global BATCH_API
 
-        self.dp.multicastGmetric( 'zplugin-monarch-heartbeat', str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
+        self.dp.multicastGmetric( 'zplugin_monarch_heartbeat', str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
 
         running_jobs = 0
         queued_jobs  = 0
@@ -842,8 +842,8 @@ class DataGatherer:
 
         # Report running/queued jobs as seperate metric for a nice RRD graph
         #
-        self.dp.multicastGmetric( 'zplugin-monarch-rj', str( running_jobs ), 'uint32', 'jobs' )
-        self.dp.multicastGmetric( 'zplugin-monarch-qj', str( queued_jobs ), 'uint32', 'jobs' )
+        self.dp.multicastGmetric( 'zplugin_monarch_rj', str( running_jobs ), 'uint32', 'jobs' )
+        self.dp.multicastGmetric( 'zplugin_monarch_qj', str( queued_jobs ), 'uint32', 'jobs' )
 
         # Report down/offline nodes in batch (PBS only ATM)
         #
@@ -851,8 +851,8 @@ class DataGatherer:
 
             domain        = fqdn_parts( socket.getfqdn() )[1]
 
-            downed_nodes    = list()
-            offline_nodes    = list()
+            downed_nodes  = list()
+            offline_nodes = list()
         
             l        = ['state']
         
@@ -866,13 +866,13 @@ class DataGatherer:
 
                     offline_nodes.append( name )
 
-            downnodeslist        = do_nodelist( downed_nodes )
-            offlinenodeslist    = do_nodelist( offline_nodes )
+            downnodeslist    = do_nodelist( downed_nodes )
+            offlinenodeslist = do_nodelist( offline_nodes )
 
             down_str    = 'nodes=%s domain=%s reported=%s' %( string.join( downnodeslist, ';' ), domain, str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
             offl_str    = 'nodes=%s domain=%s reported=%s' %( string.join( offlinenodeslist, ';' ), domain, str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
-            self.dp.multicastGmetric( 'zplugin-monarch-down'   , down_str )
-            self.dp.multicastGmetric( 'zplugin-monarch-offline', offl_str )
+            self.dp.multicastGmetric( 'zplugin_monarch_down'   , down_str )
+            self.dp.multicastGmetric( 'zplugin_monarch_offline', offl_str )
 
         # Now let's spread the knowledge
         #
@@ -888,7 +888,8 @@ class DataGatherer:
             #
             for val in gmetric_val:
 
-                self.dp.multicastGmetric( 'zplugin-monarch-job-' + jobid + '-' + str(metric_increment), val )
+                metric_name = 'zplugin_monarch_job_%s_%s' %( str(metric_increment) , str( jobid ) )
+                self.dp.multicastGmetric( metric_name, val )
 
                 # Increase follow number if this jobinfo is split up amongst more than 1 gmetric
                 #
