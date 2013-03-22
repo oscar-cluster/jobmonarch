@@ -823,10 +823,10 @@ class DataGatherer:
 
         global BATCH_API
 
-        self.dp.multicastGmetric( 'MONARCH-HEARTBEAT', str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
+        self.dp.multicastGmetric( 'zplugin-monarch-heartbeat', str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
 
-        running_jobs    = 0
-        queued_jobs    = 0
+        running_jobs = 0
+        queued_jobs  = 0
 
         # Count how many running/queued jobs we found
         #
@@ -842,8 +842,8 @@ class DataGatherer:
 
         # Report running/queued jobs as seperate metric for a nice RRD graph
         #
-        self.dp.multicastGmetric( 'MONARCH-RJ', str( running_jobs ), 'uint32', 'jobs' )
-        self.dp.multicastGmetric( 'MONARCH-QJ', str( queued_jobs ), 'uint32', 'jobs' )
+        self.dp.multicastGmetric( 'zplugin-monarch-rj', str( running_jobs ), 'uint32', 'jobs' )
+        self.dp.multicastGmetric( 'zplugin-monarch-qj', str( queued_jobs ), 'uint32', 'jobs' )
 
         # Report down/offline nodes in batch (PBS only ATM)
         #
@@ -871,8 +871,8 @@ class DataGatherer:
 
             down_str    = 'nodes=%s domain=%s reported=%s' %( string.join( downnodeslist, ';' ), domain, str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
             offl_str    = 'nodes=%s domain=%s reported=%s' %( string.join( offlinenodeslist, ';' ), domain, str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
-            self.dp.multicastGmetric( 'MONARCH-DOWN'   , down_str )
-            self.dp.multicastGmetric( 'MONARCH-OFFLINE', offl_str )
+            self.dp.multicastGmetric( 'zplugin-monarch-down'   , down_str )
+            self.dp.multicastGmetric( 'zplugin-monarch-offline', offl_str )
 
         # Now let's spread the knowledge
         #
@@ -888,7 +888,7 @@ class DataGatherer:
             #
             for val in gmetric_val:
 
-                self.dp.multicastGmetric( 'MONARCH-JOB-' + jobid + '-' + str(metric_increment), val )
+                self.dp.multicastGmetric( 'zplugin-monarch-job-' + jobid + '-' + str(metric_increment), val )
 
                 # Increase follow number if this jobinfo is split up amongst more than 1 gmetric
                 #
