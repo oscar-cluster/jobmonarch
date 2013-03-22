@@ -23,6 +23,24 @@ All tasks of parallel and array jobs appear as a single &lsquo;job&rsquo;.
 <TD>Cpus</TD>
 </TR>
 
+<!-- START BLOCK : na_nodes -->
+<TR class="overview">
+<TD class="gray">
+Unavailable
+</TD>
+<TD class="gray">
+{na_jobs}
+</TD>
+<TD class="gray">
+{na_nodes}
+</TD>
+<TD class="gray">
+{na_cpus}
+</TD>
+</TR>
+<!-- END BLOCK : na_nodes -->
+
+
 <TR class="overview_line">
 <TD class="blue">
 Capacity
@@ -38,9 +56,10 @@ Capacity
 </TR>
 
 
+
 <TR class="overview">
 <TD class="red">
-Running
+Allocated
 </TD>
 <TD class="red">
 {running_jobs}
@@ -83,26 +102,10 @@ Total
 </TD>
 </TR>
 
-<!-- START BLOCK : na_nodes -->
-<TR class="overview">
-<TD class="gray">
-Unavailable
-</TD>
-<TD class="gray">
-{na_jobs}
-</TD>
-<TD class="gray">
-{na_nodes}
-</TD>
-<TD class="gray">
-{na_cpus}
-</TD>
-</TR>
-<!-- END BLOCK : na_nodes -->
 
 <TR class="overview">
 <TD class="green">
-Free
+Unallocated
 </TD>
 <TD class="green">
 </TD>
