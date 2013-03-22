@@ -104,13 +104,13 @@ function makeHeader( $page_call, $title, $longtitle )
     global $page, $gridwalk, $clustername;
     global $parentgrid, $physical, $hostname;
     global $self, $filter, $cluster_url, $get_metric_string;
-    global $metrics, $reports, $m, $default_metric;
+    global $metrics, $reports, $m, $conf;
     global $default_refresh, $filterorder, $view;
     global $JOB_ARCHIVE, $period_start, $period_stop, $h, $id;
     global $job_start, $job_stop, $range, $r, $metricname;
     
-    if( isset($default_metric) and !isset($m) )
-        $metricname = $default_metric;
+    if( isset($conf['default_metric']) and !isset($m) )
+        $metricname = $conf['default_metric'];
     else
         if( isset( $m ) )
             $metricname = $m;
