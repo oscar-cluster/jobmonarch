@@ -150,7 +150,7 @@ if (isset($graph))
         {
             foreach( $bmetric as $mname => $mval )
             {
-                if( ( $mname == 'zplugin-monarch-rj' ) || ($mname == 'zplugin-monarch-qj') )
+                if( ( $mname == 'zplugin_monarch_rj' ) || ($mname == 'zplugin_monarch_qj') )
                 {
                     $rjqj_host      = $bhost;
                 }
@@ -159,8 +159,8 @@ if (isset($graph))
 
         $rrd_dir = $conf['rrds'] . "/$clustername/$rjqj_host/";
 
-        $rj_rrd    = $rrd_dir . "zplugin-monarch-rj.rrd";
-        $qj_rrd    = $rrd_dir . "zplugin-monarch-qj.rrd";
+        $rj_rrd    = $rrd_dir . "zplugin_monarch_rj.rrd";
+        $qj_rrd    = $rrd_dir . "zplugin_monarch_qj.rrd";
 
         $sorted_hosts    = array();
         $sorted_hosts[]    = $rjqj_host;
