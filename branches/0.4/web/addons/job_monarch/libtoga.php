@@ -342,10 +342,10 @@ class TarchRrdGraph
 
     function TarchRrdGraph( $clustername, $hostname )
     {
-        global $RRDTOOL;
+        global $conf;
         global $JOB_ARCHIVE_DIR;
 
-        $this->rrdbin        = $RRDTOOL;
+        $this->rrdbin        = $conf['rrdtool'];
         $this->rrdvalues    = array();
         $this->tarchdir        = $JOB_ARCHIVE_DIR;
         $this->clustername    = $clustername;

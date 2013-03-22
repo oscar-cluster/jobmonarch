@@ -157,7 +157,7 @@ if (isset($graph))
             }
         }
 
-        $rrd_dir = "$rrds/$clustername/$rjqj_host/";
+        $rrd_dir = $conf['rrds'] . "/$clustername/$rjqj_host/";
 
         $rj_rrd    = $rrd_dir . "zplugin-monarch-rj.rrd";
         $qj_rrd    = $rrd_dir . "zplugin-monarch-qj.rrd";
