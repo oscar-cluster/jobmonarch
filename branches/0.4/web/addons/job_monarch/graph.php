@@ -523,7 +523,7 @@ function determineXGrid( $p_start, $p_stop )
 $lower_limit = "--lower-limit 0";
 
 # Calculate time range.
-if( isset($sourcetime) )
+if ( isset($sourcetime) )
 {
     $end = $sourcetime;
     # Get_context makes start negative.
@@ -531,22 +531,28 @@ if( isset($sourcetime) )
 
     # Fix from Phil Radden, but step is not always 15 anymore.
     if ($range=="month")
+    {
         $end = floor($end / 672) * 672;
-
-    $command = $conf['rrdtool']. " graph - --start $start --end $end ".
-        "--width $width --height $height $lower_limit ".
-        "--title '$title' $extras $background ".
-        $series;
+    }
+        $command = $conf['rrdtool']. " graph - --start $start --end $end ".
+                "--width $width --height $height $lower_limit ".
+                "--title '$title' $extras $background ".
+                $series;
 }
-else 
+else
 {
     $command = $conf['rrdtool'] . " graph - --start $period_start --end $period_stop ".
-        "--width $width --height $height $lower_limit ".
-        "--title '$title' $extras $background ".
-        $series;
+               "--width $width --height $height $lower_limit --color BACK#$load_color ".
+               "--title '$title' $extras $background ".
+               $series;
 }
 
 $debug=0;
+
+if( !isset( $load_color ) )
+{
+    $load_color = '000000';
+}
 
 # Did we generate a command?   Run it.
 if($command) 

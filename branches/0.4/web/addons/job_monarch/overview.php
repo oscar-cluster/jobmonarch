@@ -1018,10 +1018,11 @@ function makeOverview()
                         $host         = $host . '.' . $domain;
                     }
                 }
+                $cpus             = 0;
 
                 $cpus             = $metrics[$host]["cpu_num"]["VAL"];
 
-                if ( !$cpus )
+                if( $cpus == 0 )
                 {
                     $cpus        = 1;
                 }
@@ -1080,7 +1081,6 @@ function makeOverview()
 
                 $val         = $metrics[$host][$metricname];
                 $class       = "metric";
-                $host_link   = "\"../../?c=$cluster_url&h=$host_url&r=job&jr=$jobrange&js=$jobstart\"";
 
                 if ( $val["TYPE"] == "timestamp" || $always_timestamp[$metricname] ) 
                 {
@@ -1100,6 +1100,7 @@ function makeOverview()
                     //printf("last job %s job start %s runningtime %s period start %s", $last_displayed_job, $jobstart, $job_runningtime, $period_start);
                     $graphargs     = ($reports[$metricname]) ? "g=$metricname&" : "m=$metricname&";
                     $graphargs     .= "z=overview-medium&c=$cluster_url&h=$host_url&l=$load_color&v=".$val['VAL']."&job_start=$job_start&period_start=$period_start&period_stop=$period_end";
+                    $host_link   = "\"?j_view=host&c=$cluster_url&h=$host_url&job&jr=$jobrange&js=$jobstart&period_start=$period_start&period_stop=$period_end\"";
                     if( $max > 0 ) 
                     {
                         $graphargs    .= "&x=$max&n=$min";
