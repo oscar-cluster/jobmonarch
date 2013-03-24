@@ -1120,8 +1120,19 @@ function makeOverview()
                     $period_start  = intval( $job_start - (intval( $runningtime * 0.10 ) ) );
                     //printf("last job %s job start %s runningtime %s period start %s", $last_displayed_job, $jobstart, $job_runningtime, $period_start);
                     $graphargs     = ($reports[$metricname]) ? "g=$metricname&" : "m=$metricname&";
-                    $graphargs     .= "z=overview-medium&c=$cluster_url&h=$host_url&l=$load_color&v=".$val['VAL']."&job_start=$job_start&period_start=$period_start&period_stop=$period_end";
-                    $host_link   = "\"?j_view=overview-host&c=$cluster_url&r=$range&h=$host_url&job_start=$jobstart&period_start=$period_start&period_stop=$period_end\"";
+                    $graphargs    .= "z=overview-medium&c=$cluster_url&r=$range&h=$host_url&l=$load_color&v=".$val['VAL']."&job_start=$job_start";
+                    $host_link     = "?j_view=overview-host&c=$cluster_url&r=$range&h=$host_url&job_start=$jobstart";
+
+                    if( $range == 'job' )
+                    {
+                        $graphargs     .= "&period_start=$period_start&period_stop=$period_end";
+                        $host_link     .= "&period_start=$period_start&period_stop=$period_end";
+                    }
+                    else
+                    {
+                        $graphargs     .= "&st=$period_end";
+                        $host_link     .= "&st=$period_end";
+                    }
                     if( $max > 0 ) 
                     {
                         $graphargs    .= "&x=$max&n=$min";
@@ -1131,7 +1142,7 @@ function makeOverview()
                 {
                     $cell    = "<td class=$class>".  "<b><a href=$host_link>$host</a></b><br>".  "<i>$metricname:</i> <b>$textval</b></td>";
                 } else {
-                    $cell    = "<td><a href=$host_link>" . "<img src=\"./graph.php?$graphargs\" " . "alt=\"$host\" border=0></a></td>";
+                    $cell    = "<td><a href=\"$host_link\">" . "<img src=\"./graph.php?$graphargs\" " . "alt=\"$host\" border=0></a></td>";
                 }
 
                 $tpl->assign( "metric_image", $cell );

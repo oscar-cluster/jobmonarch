@@ -132,7 +132,20 @@ function makeHostView()
 
     $cluster_url=rawurlencode($clustername);
     $tpl->assign("cluster_url", $cluster_url);
-    $tpl->assign("graphargs", "h=$hostname&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop");
+
+    $graphargs = "h=$hostname&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop";
+
+    if( $range == 'job' )
+    {
+        $graphargs .= "&period_start=$period_start&period_stop=$period_stop";
+    }
+    else
+    {
+        $tijd = time();
+        $graphargs .= "&st=$tijd";
+    }
+
+    $tpl->assign("graphargs", "$graphargs");
 
     # For the node view link.
     $tpl->assign("node_view","./?p=2&c=$cluster_url&h=$hostname");
@@ -158,8 +171,17 @@ function makeHostView()
         }
         else
         {
-            $graphargs = "c=$cluster_url&h=$hostname&m=$name"
-               ."&z=overview-medium&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop";
+            $graphargs = "c=$cluster_url&h=$hostname&m=$name&z=overview-medium&range=$range&job_start=$job_start&job_stop=$job_stop";
+
+            if( $range == 'job' )
+            {
+                $graphargs .= "&period_start=$period_start&period_stop=$period_stop";
+            }
+            else
+            {
+                $tijd = time();
+                $graphargs .= "&st=$tijd";
+            }
             # Adding units to graph 2003 by Jason Smith <smithj4@bnl.gov>.
             if ($v[UNITS]) 
             {

@@ -85,17 +85,14 @@ $rrd_dirs = Array();
 if (isset($graph)) 
 {
     $series = '';
-    if( isset( $period_start ) && isset( $period_stop ) )
+    if( $size == 'overview-medium' )
     {
-        if( $size == 'overview-medium' )
-        {
-            $rrd_dirs[] = $conf['rrds'] . '/' . $cluster .'/'. $hostname;
-        }
-        else
-        {
-            $trd = new TarchRrdGraph( $cluster, $hostname );
-            $rrd_dirs = $trd->getRrdDirs( $period_start, $period_stop );
-        }
+        $rrd_dirs[] = $conf['rrds'] . '/' . $cluster .'/'. $hostname;
+    }
+    else
+    {
+        $trd = new TarchRrdGraph( $cluster, $hostname );
+        $rrd_dirs = $trd->getRrdDirs( $period_start, $period_stop );
     }
 
     if($graph == "cpu_report") 
