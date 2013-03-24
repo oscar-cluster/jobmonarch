@@ -3,7 +3,7 @@
  *
  * This file is part of Jobmonarch
  *
- * Copyright (C) 2006  Ramon Bastiaans
+ * Copyright (C) 2006-2013  Ramon Bastiaans
  *
  * Jobmonarch is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,17 +33,17 @@ if( $JOB_ARCHIVE )
     $tpl->assign( "cluster_url", rawurlencode($clustername) );
 }
 
-$ds        = new DataSource();
-$myxml_data    = $ds->getData();
+$ds         = new DataSource();
+$myxml_data = $ds->getData();
 
-$data_gatherer    = new DataGatherer( $clustername );
+$data_gatherer = new DataGatherer( $clustername );
 $data_gatherer->parseXML( $myxml_data );
 
-$heartbeat    = $data_gatherer->getHeartbeat();
-$jobs        = $data_gatherer->getJobs();
-$gnodes        = $data_gatherer->getNodes();
-$cpus        = $data_gatherer->getCpus();
-$use_fqdn    = $data_gatherer->getUsingFQDN();
+$heartbeat = $data_gatherer->getHeartbeat();
+$jobs      = $data_gatherer->getJobs();
+$gnodes    = $data_gatherer->getNodes();
+$cpus      = $data_gatherer->getCpus();
+$use_fqdn  = $data_gatherer->getUsingFQDN();
 
 function setupFilterSettings() 
 {
@@ -64,9 +64,9 @@ function setupFilterSettings()
     session_start();
 
     unset( $_SESSION["data"] );
-    $_SESSION["data"]    = &$myxml_data;
+    $_SESSION["data"] = &$myxml_data;
 
-    $ic            = new ClusterImage( $myxml_data, $clustername );
+    $ic = new ClusterImage( $myxml_data, $clustername );
 
     $ic->setBig();
     $ic->setNoimage();
@@ -100,30 +100,30 @@ function setupFilterSettings()
 
 function timeToEpoch( $time ) 
 {
-    $time_fields    = explode( ':', $time );
+    $time_fields = explode( ':', $time );
 
     if( count( $time_fields ) == 3 ) 
     {
-        $hours        = $time_fields[0];
-        $minutes    = $time_fields[1];
-        $seconds    = $time_fields[2];
+        $hours   = $time_fields[0];
+        $minutes = $time_fields[1];
+        $seconds = $time_fields[2];
 
     } 
     else if( count( $time_fields ) == 2 ) 
     {
-        $hours         = 0;
-        $minutes     = $time_fields[0];
-        $seconds     = $time_fields[1];
+        $hours   = 0;
+        $minutes = $time_fields[0];
+        $seconds = $time_fields[1];
 
     } 
     else if( count( $time_fields ) == 1 ) 
     {
-        $hours         = 0;
-        $minutes     = 0;
-        $seconds     = $time_fields[0];
+        $hours   = 0;
+        $minutes = 0;
+        $seconds = $time_fields[0];
     }
 
-    $myepoch     = intval( $seconds + (intval( $minutes * 60 )) + (intval( $hours * 3600 )) );
+    $myepoch = intval( $seconds + (intval( $minutes * 60 )) + (intval( $hours * 3600 )) );
 
     return $myepoch;
 }
@@ -148,17 +148,17 @@ function colorDiffer( $first, $second )
     // Make sure these two colors differ atleast 50 R/G/B
     $min_diff = 50;
 
-    $c1r     = hexDec( colorRed( $first ) );
-    $c1g     = hexDec( colorGreen( $first ) );
-    $c1b     = hexDec( colorBlue( $first ) );
+    $c1r   = hexDec( colorRed( $first ) );
+    $c1g   = hexDec( colorGreen( $first ) );
+    $c1b   = hexDec( colorBlue( $first ) );
 
-    $c2r     = hexDec( colorRed( $second ) );
-    $c2g     = hexDec( colorGreen( $second ) );
-    $c2b     = hexDec( colorBlue( $second ) );
+    $c2r   = hexDec( colorRed( $second ) );
+    $c2g   = hexDec( colorGreen( $second ) );
+    $c2b   = hexDec( colorBlue( $second ) );
 
-    $rdiff     = ($c1r >= $c2r) ? $c1r - $c2r : $c2r - $c1r;
-    $gdiff     = ($c1g >= $c2g) ? $c1g - $c2g : $c2g - $c1g;
-    $bdiff     = ($c1b >= $c2b) ? $c1b - $c2b : $c2b - $c1b;
+    $rdiff = ($c1r >= $c2r) ? $c1r - $c2r : $c2r - $c1r;
+    $gdiff = ($c1g >= $c2g) ? $c1g - $c2g : $c2g - $c1g;
+    $bdiff = ($c1b >= $c2b) ? $c1b - $c2b : $c2b - $c1b;
 
     if( $rdiff >= $min_diff or $gdiff >= $min_diff or $bdiff >= $min_diff ) 
     {
@@ -174,27 +174,27 @@ function colorDiffer( $first, $second )
 function randomColor( $known_colors ) 
 {
     // White (000000) would be invisible
-    $start        = "004E00";
+    $start       = "004E00";
     
-    $start_red    = colorRed( $start );
-    $start_green    = colorGreen( $start );
-    $start_blue    = colorBlue( $start );
+    $start_red   = colorRed( $start );
+    $start_green = colorGreen( $start );
+    $start_blue  = colorBlue( $start );
     
-    $end        = "FFFFFF";
+    $end         = "FFFFFF";
 
-    $end_red    = colorRed( $end );
-    $end_green    = colorGreen( $end );
+    $end_red     = colorRed( $end );
+    $end_green   = colorGreen( $end );
     $end_blue    = colorBlue( $end );
 
-    $change_color     = TRUE;
+    $change_color= TRUE;
 
     while( $change_color ) 
     {
-        $change_color    = FALSE;
+        $change_color= FALSE;
 
         $new_red     = rand( hexDec( $start_red ), hexDec( $end_red ) );
-        $new_green     = rand( hexDec( $start_green ), hexDec( $end_green ) );
-        $new_blue     = rand( hexDec( $start_blue ), hexDec( $end_blue ) );
+        $new_green   = rand( hexDec( $start_green ), hexDec( $end_green ) );
+        $new_blue    = rand( hexDec( $start_blue ), hexDec( $end_blue ) );
 
         $new         = decHex( $new_red ) . decHex( $new_green ) . decHex( $new_blue );
 
@@ -218,61 +218,60 @@ function drawUserPie() { }
 
 function drawQueuePie() { }
 
-
 function drawPie() 
 {
     global $jobs, $gnodes, $piefilter, $filter, $metrics;
 
-    $nodes         = $gnodes;
+    $nodes = $gnodes;
 
     if( isset($piefilter) )    
     {
-        $pie_args    = "title=" . rawurlencode("Cluster ".$piefilter." usage");
+        $pie_args = "title=" . rawurlencode("Cluster ".$piefilter." usage");
     } 
     else 
     {
-        $pie_args     = "title=" . rawurlencode("Cluster queue usage");
+        $pie_args = "title=" . rawurlencode("Cluster queue usage");
     }
 
-    $pie_args     .= "&size=250x150";
+    $pie_args .= "&size=250x150";
 
-    $queues     = array();
-    $nr_jobs     = count( $jobs );
-    $nr_nodes     = count( $nodes );
+    $queues    = array();
+    $nr_jobs   = count( $jobs );
+    $nr_nodes  = count( $nodes );
 
-    $nr_cpus     = cluster_sum("cpu_num", $metrics);
+    $nr_cpus   = cluster_sum("cpu_num", $metrics);
 
-    $empty_cpus     = 0;
-    $used_cpus     = 0;
+    $empty_cpus= 0;
+    $used_cpus = 0;
 
-    $job_weight     = array();
+    $job_weight= array();
 
     foreach( $nodes as $node ) 
     {
-        $myjobs        = $node->getJobs();
-        $myhost        = $node->getHostname();
-        $node_cpus    = $metrics[$myhost]["cpu_num"]['VAL'];
-        $job_cpu    = 0;
+        $myjobs    = $node->getJobs();
+        $myhost    = $node->getHostname();
+        $node_cpus = $metrics[$myhost]["cpu_num"]['VAL'];
+        $job_cpu   = 0;
 
         foreach( $myjobs as $myjob ) 
         {
-            $job_cpu    += isset( $jobs[$myjob]['ppn'] ) ? $jobs[$myjob]['ppn'] : 1;
+            $job_cpu += isset( $jobs[$myjob]['ppn'] ) ? $jobs[$myjob]['ppn'] : 1;
         }
 
-        $node_freecpu    = $node_cpus - $job_cpu;
+        $node_freecpu= $node_cpus - $job_cpu;
 
-        $empty_cpus    += $node_freecpu;
+        $empty_cpus += $node_freecpu;
     }
 
-    $empty_cpus        = ( $empty_cpus >= 0 ) ? $empty_cpus : 0;
-    $used_cpus        = $nr_cpus - $empty_cpus;
+    $empty_cpus = ( $empty_cpus >= 0 ) ? $empty_cpus : 0;
+    $used_cpus  = $nr_cpus - $empty_cpus;
 
-    $empty_percentage     = $empty_cpus;
+    $empty_percentage= $empty_cpus;
 
-    $qcolors         = array();
-    $color             = randomColor( $qcolors );
-    $qcolors[]         = $color;
-    $pie_args         .= "&free=$empty_percentage,$color";
+    $qcolors   = array();
+    $color     = randomColor( $qcolors );
+    $qcolors[] = $color;
+    $pie_args .= "&free=$empty_percentage,$color";
 
     if( isset( $piefilter ) )
     {
@@ -281,14 +280,14 @@ function drawPie()
 
     foreach( $nodes as $node )
     {
-        $node_jobs     = $node->getJobs();
-        $nr_node_jobs     = count( $node_jobs );
-        $myhost     = $node->getHostname();
+        $node_jobs    = $node->getJobs();
+        $nr_node_jobs = count( $node_jobs );
+        $myhost       = $node->getHostname();
         $node_cpus    = $metrics[$myhost]["cpu_num"]['VAL'];
 
         foreach( $node_jobs as $myjob )
         {
-            $job_cpu        = isset( $jobs[$myjob]['ppn'] ) ? $jobs[$myjob]['ppn'] : 1;
+            $job_cpu = isset( $jobs[$myjob]['ppn'] ) ? $jobs[$myjob]['ppn'] : 1;
 
             // Determine the weight of this job
             // - what percentage of the cpus is in use by this job
@@ -352,7 +351,7 @@ function drawPie()
             else
             {
 
-                $qname        = $jobs[$myjob]['queue'];
+                $qname = $jobs[$myjob]['queue'];
 
                 if( !isset( $queues[$qname] ) )
                 {
@@ -377,7 +376,7 @@ function drawPie()
 
     foreach( $graphvals as $name => $totalweight) 
     {
-        $percentage     = $totalweight;
+        $percentage    = $totalweight;
         
         $color         = randomColor( $qcolors );
         $qcolors[]     = $color;
@@ -407,12 +406,12 @@ function sortJobs( $jobs, $sortby, $sortorder )
     {
         foreach( $jobs as $jobid => $jobattrs ) 
         {
-                $state        = $jobattrs['status'];
-                $owner      = $jobattrs['owner'];
-                $queue         = $jobattrs['queue'];
-                $name         = $jobattrs['name'];
-                $req_cpu     = $jobattrs['requested_time'];
-                $req_memory     = $jobattrs['requested_memory'];
+                $state     = $jobattrs['status'];
+                $owner     = $jobattrs['owner'];
+                $queue     = $jobattrs['queue'];
+                $name      = $jobattrs['name'];
+                $req_cpu   = $jobattrs['requested_time'];
+                $req_memory= $jobattrs['requested_memory'];
 
                 if( $state == 'R' )
                 {
@@ -518,43 +517,43 @@ function makeOverview()
     $tpl->assign("sortorder", $sortorder );
     $tpl->assign("sortby", $sortby );
 
-    $sorted_jobs         = sortJobs( $jobs, $sortby, $sortorder );
+    $sorted_jobs        = sortJobs( $jobs, $sortby, $sortorder );
 
-    $even             = 1;
+    $even               = 1;
 
-    $used_jobs         = 0;
-    $used_cpus         = 0;
+    $used_jobs          = 0;
+    $used_cpus          = 0;
     $used_nodes         = 0;
 
-    $queued_jobs         = 0;
-    $queued_nodes         = 0;
-    $queued_cpus         = 0;
+    $queued_jobs        = 0;
+    $queued_nodes       = 0;
+    $queued_cpus        = 0;
 
-    $total_nodes         = 0;
+    $total_nodes        = 0;
     $total_cpus         = 0;
     $total_jobs         = 0;
 
     $all_used_nodes     = array();
-    $total_used_nodes     = array();
+    $total_used_nodes   = array();
 
-    $running_name_nodes     = array();
+    $running_name_nodes = array();
 
-    $running_nodes         = 0;
-    $running_jobs         = 0;
-    $running_cpus         = 0;
+    $running_nodes      = 0;
+    $running_jobs       = 0;
+    $running_cpus       = 0;
 
-    $avail_nodes         = count( $gnodes );
+    $avail_nodes        = count( $gnodes );
     $avail_cpus         = cluster_sum("cpu_num", $metrics);
 
-    $view_cpus         = 0;
-    $view_jobs         = 0;
+    $view_cpus          = 0;
+    $view_jobs          = 0;
     $view_nodes         = 0;
 
-    $all_nodes         = 0;
-    $all_jobs         = 0;
-    $all_cpus         = 0;
+    $all_nodes          = 0;
+    $all_jobs           = 0;
+    $all_cpus           = 0;
 
-    $view_name_nodes     = array();
+    $view_name_nodes    = array();
 
     // Is the "requested memory" column enabled in the config
     //
@@ -577,12 +576,12 @@ function makeOverview()
         $tpl->newBlock( "column_header_queued" );
     }
 
-    $last_displayed_job     = null;
+    $last_displayed_job = null;
 
-    $rjqj_host        = null;
+    $rjqj_host = null;
 
-    $na_nodes        = 0;
-    $na_cpus        = 0;
+    $na_nodes  = 0;
+    $na_cpus   = 0;
 
     foreach( $metrics as $bhost => $bmetric )
     {
@@ -590,7 +589,7 @@ function makeOverview()
         {
             if( ( $mname == 'zplugin_monarch_rj' ) || ($mname == 'zplugin_monarch_qj') )
             {
-                $rjqj_host      = $bhost;
+                $rjqj_host = $bhost;
             }
         }
     }
@@ -599,8 +598,8 @@ function makeOverview()
     {
         if( $gnode->isDown() || $gnode->isOffline() )
         {
-            $na_nodes    += 1;
-            $na_cpus    += $metrics[$ghost]['cpu_num']['VAL'];
+            $na_nodes += 1;
+            $na_cpus  += $metrics[$ghost]['cpu_num']['VAL'];
         }
     }
 
@@ -631,8 +630,8 @@ function makeOverview()
             $nodes = $jobs[$jobid]['nodes'];
         }
 
-        $ppn         = isset( $jobs[$jobid]['ppn'] ) ? $jobs[$jobid]['ppn'] : 1;
-        $cpus         = $nodes * $ppn;
+        $ppn  = isset( $jobs[$jobid]['ppn'] ) ? $jobs[$jobid]['ppn'] : 1;
+        $cpus = $nodes * $ppn;
 
         if( $report_time == $heartbeat ) 
         {
@@ -693,8 +692,8 @@ function makeOverview()
                     $display_job = 0;
                 }
 
-                $queued_cpus     += $cpus;
-                $queued_nodes     += $nodes;
+                $queued_cpus  += $cpus;
+                $queued_nodes += $nodes;
 
                 $queued_jobs++;
             }
@@ -803,16 +802,16 @@ function makeOverview()
                     $tpl->gotoBlock( "node" );
                 }
 
-                $ppn             = isset( $jobs[$jobid]['ppn'] ) ? $jobs[$jobid]['ppn'] : 1;
-                $cpus             = $nodes * $ppn;
+                $ppn       = isset( $jobs[$jobid]['ppn'] ) ? $jobs[$jobid]['ppn'] : 1;
+                $cpus      = $nodes * $ppn;
 
                 $tpl->assign( "nodes", $nodes );
                 $tpl->assign( "cpus", $cpus );
 
-                $start_time         = (int) $jobs[$jobid]['start_timestamp'];
-                $job_start         = $start_time;
+                $start_time= (int) $jobs[$jobid]['start_timestamp'];
+                $job_start = $start_time;
 
-                $view_cpus         += $cpus;
+                $view_cpus += $cpus;
 
                 $view_jobs++;
 
@@ -833,13 +832,13 @@ function makeOverview()
                         {
                             if( $use_fqdn == 1)
                             {
-                                $mynode    = $shortnode.".".$jobs[$jobid]['domain'];
+                                $mynode     = $shortnode.".".$jobs[$jobid]['domain'];
                             }
-                            $myhost_href     = "./?c=".$clustername."&h=".$mynode;
-                            $mynodehosts[]     = "<A HREF=\"".$myhost_href."\">".$shortnode."</A>";
+                            $myhost_href    = "./?c=".$clustername."&h=".$mynode;
+                            $mynodehosts[]  = "<A HREF=\"".$myhost_href."\">".$shortnode."</A>";
                         }
 
-                        $nodes_hostnames     = implode( " ", $mynodehosts );
+                        $nodes_hostnames    = implode( " ", $mynodehosts );
 
                         $tpl->assign( "nodes_hostnames", $nodes_hostnames );
                         $tpl->gotoBlock( "node" );
@@ -865,7 +864,7 @@ function makeOverview()
 
                 if( $start_time ) 
                 {
-                    $runningtime         = makeTime( $report_time - $start_time );
+                    $runningtime        = makeTime( $report_time - $start_time );
                     $job_runningtime    = $heartbeat - $start_time;
 
                     $tpl->assign( "started", makeDate( $start_time ) );
@@ -876,21 +875,21 @@ function makeOverview()
     }
 
     $all_used_nodes     = array_unique( $all_used_nodes );
-    $view_name_nodes     = array_unique( $view_name_nodes );
-    $running_name_nodes     = array_unique( $running_name_nodes );
+    $view_name_nodes    = array_unique( $view_name_nodes );
+    $running_name_nodes = array_unique( $running_name_nodes );
 
     $used_nodes         = count( $all_used_nodes );
-    $view_nodes         += count( $view_name_nodes );
-    $running_nodes         += count( $running_name_nodes );
+    $view_nodes        += count( $view_name_nodes );
+    $running_nodes     += count( $running_name_nodes );
 
-    $total_nodes         = $queued_nodes + $running_nodes;
+    $total_nodes        = $queued_nodes + $running_nodes;
     $total_cpus         = $queued_cpus + $running_cpus;
     $total_jobs         = $queued_jobs + $running_jobs;
 
     $free_nodes         = $avail_nodes - $running_nodes - $na_nodes;
-    $free_nodes        = ( $free_nodes >= 0 ) ? $free_nodes : 0;
-    $free_cpus         = $avail_cpus - $running_cpus - $na_cpus;
-    $free_cpus        = ( $free_cpus >= 0 ) ? $free_cpus : 0;
+    $free_nodes         = ( $free_nodes >= 0 ) ? $free_nodes : 0;
+    $free_cpus          = $avail_cpus - $running_cpus - $na_cpus;
+    $free_cpus          = ( $free_cpus >= 0 ) ? $free_cpus : 0;
 
     $tpl->assignGlobal( "avail_nodes", $avail_nodes );
     $tpl->assignGlobal( "avail_cpus", $avail_cpus );
