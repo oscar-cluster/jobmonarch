@@ -44,8 +44,10 @@
 </TR>
 </TABLE>
 
- <HR>
-<!-- INCLUDE BLOCK : extra -->
+<a href="./?c={cluster}&h={host}">
+<IMG SRC="./image.php?c={cluster}&h={host}&j_view=hostimage" BORDER=0>
+</a>
+<hr>
 
 </TD>
 
