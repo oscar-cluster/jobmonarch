@@ -22,7 +22,7 @@
  * SVN $Id$
  */
 
-global $metrics, $rrds, $range, $start, $r, $conf;
+global $metrics, $rrds, $range, $start, $r, $conf, $m;
 $range = $r;
 
 include "./libtoga.php";
@@ -78,8 +78,6 @@ if($command)
       $command = '';
 }
 
-$trd = new TarchRrdGraph( $cluster, $hostname );
-
 $graph = $metricname;
 
 $rrd_dirs = Array();
@@ -95,6 +93,7 @@ if (isset($graph))
         }
         else
         {
+            $trd = new TarchRrdGraph( $cluster, $hostname );
             $rrd_dirs = $trd->getRrdDirs( $period_start, $period_stop );
         }
     }
@@ -369,7 +368,7 @@ if (isset($graph))
         $style = "";
 
         $subtitle = $metricname;
-        if ($context == "host") 
+        if($context == "host")
         {
             if ($size == "small")
                 $prefix = $metricname;

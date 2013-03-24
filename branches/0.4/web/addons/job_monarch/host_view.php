@@ -60,14 +60,15 @@ function makeHostView()
     global $job_start, $job_stop, $view, $conf;
 
     $rrdirs = array();
+
     if( $view == "overview-host" )
     {
-        $trd    = new TarchRrdGraph( $clustername, $hostname );
-        $rrdirs = $trd->getRrdDirs( $period_start, $period_stop );
+        $rrdirs[] = $conf['rrds'] . '/' . $clustername .'/'. $hostname;
     }
     else
     {
-        $rrdirs[] = $conf['rrds'] . '/' . $cluster .'/'. $hostname;
+        $trd    = new TarchRrdGraph( $clustername, $hostname );
+        $rrdirs = $trd->getRrdDirs( $period_start, $period_stop );
     }
 
     $longtitle    = "Batch Archive Node Report :: Powered by Job Monarch!";
@@ -75,22 +76,34 @@ function makeHostView()
 
     makeHeader( 'host_view', $title, $longtitle );
 
+    #print_r( $rrdirs);
+
     $metrics = $metrics[$hostname];
     $mymetrics = array();
 
     foreach( $rrdirs as $rrdir ) 
     {
-        $ml    = $trd->dirList( $rrdir );
-
-        foreach( $ml as $lmetr )
+        #printf("rrd dir %s\n", $rrdir );
+        if( $view == "overview-host" )
         {
-            $metrn_fields    = explode( '.', $lmetr );
+            $mymetrics = $metrics;
+            #print_r( $mymetrics );
+        }
+        else
+        {
+            #printf("archive mode\n");
+            $ml    = $trd->dirList( $rrdir );
 
-            $metrn        = $metrn_fields[0];
-
-            if( !in_array( $metrn, $mymetrics ) )
+            foreach( $ml as $lmetr )
             {
-                $mymetrics[$metrn]    = $metrics[$metrn];
+                $metrn_fields = explode( '.', $lmetr );
+
+                $metrn        = $metrn_fields[0];
+
+                if( !in_array( $metrn, $mymetrics ) )
+                {
+                    $mymetrics[$metrn]    = $metrics[$metrn];
+                }
             }
         }
     }
@@ -126,6 +139,8 @@ function makeHostView()
 
     $tpl->assign("ip", $hosts_up[IP]);
 
+    #print_r( $mymetrics );
+
     foreach ($mymetrics as $name => $v)
     {
         if ($v[TYPE] == "string" or $v[TYPE]=="timestamp" or $always_timestamp[$name])
@@ -133,7 +148,7 @@ function makeHostView()
             # Long gmetric name/values will disrupt the display here.
             if ($v[SOURCE] == "gmond") $s_metrics[$name] = $v;
         }
-        elseif ($v[SLOPE] == "zero" or $always_constant[$name])
+        else if ($v[SLOPE] == "zero" or $always_constant[$name])
         {
             $c_metrics[$name] = $v;
         }
@@ -144,7 +159,7 @@ function makeHostView()
         else
         {
             $graphargs = "c=$cluster_url&h=$hostname&m=$name"
-               ."&z=medium&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop";
+               ."&z=overview-medium&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop";
             # Adding units to graph 2003 by Jason Smith <smithj4@bnl.gov>.
             if ($v[UNITS]) 
             {

@@ -385,7 +385,7 @@ function makeHeader( $page_call, $title, $longtitle )
 
     }
 
-    if( $view == "search" or $view == "host" or $view == "overview-host") 
+    if( $view == "search" or $view == "host" ) 
     {
 
         $node_menu .= "<B>&gt;</B>\n";
