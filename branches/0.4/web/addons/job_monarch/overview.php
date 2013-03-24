@@ -887,7 +887,7 @@ function makeOverview()
         }
 
         $rjqj_str  = "<A HREF=\"./graph.php$rjqj_graphargs\">";
-        $rjqj_str .= "<IMG BORDER=0 SRC=\"./graph.php$rjqj_graphargs\">";
+        $rjqj_str .= "<IMG BORDER=0 SRC=\"./graph.php$rjqj_graphargs\" WIDTH=381 HEIGHT=137>";
         $rjqj_str .= "</A>";
 
         $tpl->gotoBlock( "_ROOT" );
@@ -1142,7 +1142,7 @@ function makeOverview()
                 {
                     $cell    = "<td class=$class>".  "<b><a href=$host_link>$host</a></b><br>".  "<i>$metricname:</i> <b>$textval</b></td>";
                 } else {
-                    $cell    = "<td><a href=\"$host_link\">" . "<img src=\"./graph.php?$graphargs\" " . "alt=\"$host\" border=0></a></td>";
+                    $cell    = "<TD><DIV ID=\"monarchimage\"><A HREF=\"$host_link\">" . "<IMG SRC=\"./graph.php?$graphargs\" " . "ALT=\"$host\" BORDER=0  WIDTH=381 HEIGHT=148></A></DIV></TD>";
                 }
 
                 $tpl->assign( "metric_image", $cell );

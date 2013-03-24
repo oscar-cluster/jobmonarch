@@ -131,11 +131,15 @@ View
 </TABLE>
 
 <BR>
+<div id="monarchimage">
 {rjqj_graph}
+</div>
 
   <TD ALIGN="CENTER"><CENTER>
 <!-- INCLUDESCRIPT BLOCK : ci_script -->
+    <div id="monarchimage">
     <IMG SRC="{clusterimage}" USEMAP="#MONARCH_CLUSTER_BIG" BORDER="0">
+    </div>
     <MAP NAME="MONARCH_CLUSTER_BIG">
 <!-- START BLOCK : node_clustermap -->
 {node_area_map}
