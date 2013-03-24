@@ -129,7 +129,7 @@ global $default_metric;
 // Ganglia's array of host metrics
 //
 global $metrics, $hosts_up;
-global $range, $start;
+global $start;
 
 global $DATETIME_FORMAT;
 

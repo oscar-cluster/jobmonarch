@@ -33,6 +33,7 @@ if( $JOB_ARCHIVE )
     $tpl->assign( "cluster_url", rawurlencode($clustername) );
 }
 
+$rjqj_start = null;
 $ds         = new DataSource();
 $myxml_data = $ds->getData();
 
@@ -603,19 +604,6 @@ function makeOverview()
         }
     }
 
-    // Running / queued amount jobs graph
-    //
-    if( $rjqj_host != null )
-    {
-
-        $rjqj_str  = "<A HREF=\"./graph.php?z=large&c=$clustername&g=job_report&r=$range&st=$cluster[LOCALTIME]\">";
-        $rjqj_str .= "<IMG BORDER=0 SRC=\"./graph.php?z=small&c=$clustername&g=job_report&r=$range&st=$cluster[LOCALTIME]\">";
-        $rjqj_str .= "</A>";
-
-        $tpl->gotoBlock( "_ROOT" );
-
-        $tpl->assign( "rjqj_graph", $rjqj_str );
-    }
 
     foreach( $sorted_jobs as $jobid => $sortdec ) 
     {
@@ -811,12 +799,22 @@ function makeOverview()
                 $start_time= (int) $jobs[$jobid]['start_timestamp'];
                 $job_start = $start_time;
 
+
                 $view_cpus += $cpus;
 
                 $view_jobs++;
 
                 if( $jobs[$jobid]['status'] == 'R' ) 
                 {
+                    if( $rjqj_start == null ) 
+                    {
+                        $rjqj_start = $start_time;
+                    }
+                    else if( $start_time < $rjqj_start )
+                    {
+                        $rjqj_start = $start_time;
+                    }
+
                     foreach( $jobs[$jobid]['nodes'] as $tempnode )
                     {
                         $view_name_nodes[]     = $tempnode;
@@ -872,6 +870,29 @@ function makeOverview()
                 }
             }
         }
+    }
+    // Running / queued amount jobs graph
+    //
+    if( $rjqj_host != null )
+    {
+        $rjqj_graphargs = "?z=medium&c=$clustername&g=job_report&r=$range";
+        if( $range == 'job' )
+        {
+            $rjqj_end = time();
+            $rjqj_graphargs .= "&period_start=$rjqj_start&period_stop=$rjqj_end";
+        }
+        else
+        {
+            $rjqj_graphargs .= "&st=$cluster[LOCALTIME]";
+        }
+
+        $rjqj_str  = "<A HREF=\"./graph.php$rjqj_graphargs\">";
+        $rjqj_str .= "<IMG BORDER=0 SRC=\"./graph.php$rjqj_graphargs\">";
+        $rjqj_str .= "</A>";
+
+        $tpl->gotoBlock( "_ROOT" );
+
+        $tpl->assign( "rjqj_graph", $rjqj_str );
     }
 
     $all_used_nodes     = array_unique( $all_used_nodes );

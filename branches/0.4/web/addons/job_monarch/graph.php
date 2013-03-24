@@ -178,7 +178,7 @@ if (isset($graph))
         $qj_rrd    = $rrd_dir . "zplugin_monarch_qj.rrd";
 
         $sorted_hosts    = array();
-        $sorted_hosts[]    = $rjqj_host;
+        $sorted_hosts[]  = $rjqj_host;
 
         $rj_str = ":'Running Jobs'";
         $qj_str = ":'Queued Jobs'";

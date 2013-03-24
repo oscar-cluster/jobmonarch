@@ -25,18 +25,18 @@
 ini_set("memory_limit","500M");
 set_time_limit(0);
 
-
 $my_dir = getcwd();
 
-global $r, $range;
-
 include_once "./libtoga.php";
+
+$r = escapeshellcmd( rawurldecode( $_GET["r"] ));
+$range = $r;
+if( !isset($range) or $range == '') $range= "job";
 
 if ( !empty( $_GET ) ) 
 {
     extract( $_GET );
 }
-
 
 global $GANGLIA_PATH;
 
@@ -51,7 +51,6 @@ $filter = array();
 if( !isset($view) ) $view = "overview";
 if( !isset($sortorder) ) $sortorder = "desc";
 if( !isset($sortby) ) $sortby = "id";
-if( !isset($range) or $range == '') $range= "job";
 
 if( isset( $filterorder ) && ($filterorder!='') ) 
 {
@@ -310,7 +309,7 @@ function makeHeader( $page_call, $title, $longtitle )
     if( array_key_exists( "id", $filter ) or isset($hostname) ) 
     {
 
-        $range = "job";
+        #$range = "job";
 
         if( $page_call != "host_view" )
         {
