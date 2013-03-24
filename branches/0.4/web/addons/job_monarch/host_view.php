@@ -57,7 +57,7 @@ function makeHostView()
     global $tpl, $metrics, $clustername, $hostname;
     global $cluster_ul, $hosts_up, $get_metric_string;
     global $cluster, $period_start, $period_stop;
-    global $job_start, $job_stop, $view, $conf;
+    global $job_start, $job_stop, $view, $conf, $range;
 
     $rrdirs = array();
 
@@ -133,7 +133,7 @@ function makeHostView()
     $cluster_url=rawurlencode($clustername);
     $tpl->assign("cluster_url", $cluster_url);
 
-    $graphargs = "h=$hostname&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop";
+    $graphargs = "h=$hostname&r=$range&job_start=$job_start&job_stop=$job_stop";
 
     if( $range == 'job' )
     {
@@ -171,7 +171,7 @@ function makeHostView()
         }
         else
         {
-            $graphargs = "c=$cluster_url&h=$hostname&m=$name&z=overview-medium&range=$range&job_start=$job_start&job_stop=$job_stop";
+            $graphargs = "c=$cluster_url&h=$hostname&m=$name&z=overview-medium&r=$range&job_start=$job_start&job_stop=$job_stop";
 
             if( $range == 'job' )
             {
