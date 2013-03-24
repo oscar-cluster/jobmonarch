@@ -335,7 +335,7 @@ function makeHeader( $page_call, $title, $longtitle )
 
         $tpl->assign("metric_menu", $metric_menu );
 
-        if( $view == "search" or $view == "host" ) 
+        if( $view == "search" or $view == "host" or $view == "overview-host" ) 
         {
             $tpl->newBlock("timeperiod");
             if( is_numeric( $period_start ) ) 
@@ -350,7 +350,7 @@ function makeHeader( $page_call, $title, $longtitle )
             $tpl->assign("period_stop", $period_stop );
             $tpl->assign("hostname", $hostname );
 
-            if( $view == "host" ) 
+            if( $view == "host" or $view == "overview-host" ) 
             {
                 $tpl->newBlock("hostview");
                 $tpl->assign("job_start", $job_start );
@@ -384,7 +384,7 @@ function makeHeader( $page_call, $title, $longtitle )
 
     }
 
-    if( $view == "search" or $view == "host" ) 
+    if( $view == "search" or $view == "host" or $view == "overview-host") 
     {
 
         $node_menu .= "<B>&gt;</B>\n";
@@ -488,6 +488,11 @@ switch( $view )
         includeHostPage();
         break;
 
+    case "overview-host":
+
+        includeHostPage();
+        break;
+
     default:
 
         includeOverview();
@@ -518,6 +523,12 @@ switch( $view )
         break;
 
     case "host":
+
+        include "./host_view.php";
+        makeHostView();
+        break;
+
+    case "overview-host":
 
         include "./host_view.php";
         makeHostView();

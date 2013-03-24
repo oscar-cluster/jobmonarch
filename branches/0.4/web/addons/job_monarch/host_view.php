@@ -3,7 +3,7 @@
  *
  * This file is part of Jobmonarch
  *
- * Copyright (C) 2006  Ramon Bastiaans
+ * Copyright (C) 2006-2013  Ramon Bastiaans
  *
  * Jobmonarch is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,13 +57,21 @@ function makeHostView()
     global $tpl, $metrics, $clustername, $hostname;
     global $cluster_ul, $hosts_up, $get_metric_string;
     global $cluster, $period_start, $period_stop;
-    global $job_start, $job_stop;
+    global $job_start, $job_stop, $view, $conf;
 
-    $trd = new TarchRrdGraph( $clustername, $hostname );
-    $rrdirs = $trd->getRrdDirs( $period_start, $period_stop );
+    $rrdirs = array();
+    if( $view == "overview-host" )
+    {
+        $trd    = new TarchRrdGraph( $clustername, $hostname );
+        $rrdirs = $trd->getRrdDirs( $period_start, $period_stop );
+    }
+    else
+    {
+        $rrdirs[] = $conf['rrds'] . '/' . $cluster .'/'. $hostname;
+    }
 
-    $longtitle = "Batch Archive Node Report :: Powered by Job Monarch!";
-    $title = "Batch Archive Node Report";
+    $longtitle    = "Batch Archive Node Report :: Powered by Job Monarch!";
+    $title        = "Batch Archive Node Report";
 
     makeHeader( 'host_view', $title, $longtitle );
 

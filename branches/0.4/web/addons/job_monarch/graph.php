@@ -522,6 +522,11 @@ function determineXGrid( $p_start, $p_stop )
 
 $lower_limit = "--lower-limit 0";
 
+if( !isset( $load_color ) or ( $load_color == '') )
+{
+    $load_color = 'FFFFFF';
+}
+
 # Calculate time range.
 if ( isset($sourcetime) )
 {
@@ -549,10 +554,6 @@ else
 
 $debug=0;
 
-if( !isset( $load_color ) )
-{
-    $load_color = '000000';
-}
 
 # Did we generate a command?   Run it.
 if($command) 
