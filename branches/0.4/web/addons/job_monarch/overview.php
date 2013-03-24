@@ -1100,7 +1100,7 @@ function makeOverview()
                     //printf("last job %s job start %s runningtime %s period start %s", $last_displayed_job, $jobstart, $job_runningtime, $period_start);
                     $graphargs     = ($reports[$metricname]) ? "g=$metricname&" : "m=$metricname&";
                     $graphargs     .= "z=overview-medium&c=$cluster_url&h=$host_url&l=$load_color&v=".$val['VAL']."&job_start=$job_start&period_start=$period_start&period_stop=$period_end";
-                    $host_link   = "\"?j_view=host&c=$cluster_url&h=$host_url&job&jr=$jobrange&js=$jobstart&period_start=$period_start&period_stop=$period_end\"";
+                    $host_link   = "\"?j_view=overview-host&c=$cluster_url&r=$range&h=$host_url&job_start=$jobstart&period_start=$period_start&period_stop=$period_end\"";
                     if( $max > 0 ) 
                     {
                         $graphargs    .= "&x=$max&n=$min";

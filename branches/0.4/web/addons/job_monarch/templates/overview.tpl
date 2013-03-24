@@ -1,7 +1,3 @@
-<P>
-All tasks of parallel and array jobs appear as a single &lsquo;job&rsquo;.
-<BR></P>
-
 <CENTER>
 <TABLE cellpadding="15">
 <TR>

@@ -119,7 +119,7 @@ function makeHostView()
 
     $cluster_url=rawurlencode($clustername);
     $tpl->assign("cluster_url", $cluster_url);
-    $tpl->assign("graphargs", "h=$hostname&$get_metric_string&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop");
+    $tpl->assign("graphargs", "h=$hostname&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop");
 
     # For the node view link.
     $tpl->assign("node_view","./?p=2&c=$cluster_url&h=$hostname");

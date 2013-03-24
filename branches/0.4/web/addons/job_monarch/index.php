@@ -51,6 +51,7 @@ $filter = array();
 if( !isset($view) ) $view = "overview";
 if( !isset($sortorder) ) $sortorder = "desc";
 if( !isset($sortby) ) $sortby = "id";
+if( !isset($range) or $range == '') $range= "job";
 
 if( isset( $filterorder ) && ($filterorder!='') ) 
 {
