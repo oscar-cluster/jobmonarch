@@ -35,15 +35,15 @@ if ( !empty( $_GET ) )
 $sourcetime = $st;
 
 # Graph specific variables
-$size = escapeshellcmd( rawurldecode( $HTTP_GET_VARS["z"] ));
-$graph = escapeshellcmd( rawurldecode( $HTTP_GET_VARS["g"] ));
-$grid = escapeshellcmd( rawurldecode( $HTTP_GET_VARS["G"] ));
-$self = escapeshellcmd( rawurldecode( $HTTP_GET_VARS["me"] ));
-$max = escapeshellcmd( rawurldecode( $HTTP_GET_VARS["x"] ));
-$min = escapeshellcmd( rawurldecode( $HTTP_GET_VARS["n"] ));
-$value = escapeshellcmd( rawurldecode( $HTTP_GET_VARS["v"] ));
-$load_color = escapeshellcmd( rawurldecode( $HTTP_GET_VARS["l"] ));
-$vlabel = escapeshellcmd( rawurldecode( $HTTP_GET_VARS["vl"] ));
+$size = escapeshellcmd( rawurldecode( $_GET["z"] ));
+$graph = escapeshellcmd( rawurldecode( $_GET["g"] ));
+$grid = escapeshellcmd( rawurldecode( $_GET["G"] ));
+$self = escapeshellcmd( rawurldecode( $_GET["me"] ));
+$max = escapeshellcmd( rawurldecode( $_GET["x"] ));
+$min = escapeshellcmd( rawurldecode( $_GET["n"] ));
+$value = escapeshellcmd( rawurldecode( $_GET["v"] ));
+$load_color = escapeshellcmd( rawurldecode( $_GET["l"] ));
+$vlabel = escapeshellcmd( rawurldecode( $_GET["vl"] ));
 
 $cluster = $c;
 $metricname = ($g) ? $g : $m;
@@ -60,11 +60,18 @@ else if ($size == "medium")
     $height = 75;
     $width = 300;
 } 
+else if ($size == "overview-medium") 
+{
+    $height = 75;
+    $width = 300;
+} 
 else 
 {
     $height = 100;
     $width = 400;
 }
+
+$jobstart_color = "FF0000";
 
 if($command) 
 {
@@ -75,12 +82,21 @@ $trd = new TarchRrdGraph( $cluster, $hostname );
 
 $graph = $metricname;
 
+$rrd_dirs = Array();
+
 if (isset($graph)) 
 {
     $series = '';
     if( isset( $period_start ) && isset( $period_stop ) )
     {
-        $rrd_dirs = $trd->getRrdDirs( $period_start, $period_stop );
+        if( $size == 'overview-medium' )
+        {
+            $rrd_dirs[] = $conf['rrds'] . '/' . $cluster .'/'. $hostname;
+        }
+        else
+        {
+            $rrd_dirs = $trd->getRrdDirs( $period_start, $period_stop );
+        }
     }
 
     if($graph == "cpu_report") 
@@ -121,17 +137,17 @@ if (isset($graph))
                 ."DEF:'cpu_nice${def_nr}'='${rrd_dir}/cpu_nice.rrd':'sum':AVERAGE "
                 ."DEF:'cpu_system${def_nr}'='${rrd_dir}/cpu_system.rrd':'sum':AVERAGE "
                 ."DEF:'cpu_idle${def_nr}'='${rrd_dir}/cpu_idle.rrd':'sum':AVERAGE "
-                ."AREA:'cpu_user${def_nr}'#${cpu_user_color}${user_str} "
-                ."STACK:'cpu_nice${def_nr}'#${cpu_nice_color}${nice_str} "
-                ."STACK:'cpu_system${def_nr}'#${cpu_system_color}${system_str} ";
+                ."AREA:'cpu_user${def_nr}'#".$conf['cpu_user_color']."${user_str} "
+                ."STACK:'cpu_nice${def_nr}'#".$conf['cpu_nice_color']."${nice_str} "
+                ."STACK:'cpu_system${def_nr}'#".$conf['cpu_system_color']."${system_str} ";
 
             if (file_exists("$rrd_dir/cpu_wio.rrd")) 
             {
                 $series .= "DEF:'cpu_wio${def_nr}'='${rrd_dir}/cpu_wio.rrd':'sum':AVERAGE "
-                    ."STACK:'cpu_wio${def_nr}'#${cpu_wio_color}${wio_str} ";
+                    ."STACK:'cpu_wio${def_nr}'#".$conf['cpu_wio_color']."${wio_str} ";
             }
 
-            $series .= "STACK:'cpu_idle${def_nr}'#${cpu_idle_color}${idle_str} ";
+            $series .= "STACK:'cpu_idle${def_nr}'#".$conf['cpu_idle_color']."${idle_str} ";
 
             $def_nr++;
         }
@@ -221,20 +237,20 @@ if (isset($graph))
                 ."DEF:'mem_buffers${def_nr}'='${rrd_dir}/mem_buffers.rrd':'sum':AVERAGE "
                 ."CDEF:'bmem_buffers${def_nr}'=mem_buffers${def_nr},1024,* "
                 ."CDEF:'bmem_used${def_nr}'='bmem_total${def_nr}','bmem_shared${def_nr}',-,'bmem_free${def_nr}',-,'bmem_cached${def_nr}',-,'bmem_buffers${def_nr}',- "
-                ."AREA:'bmem_used${def_nr}'#${mem_used_color}${memuse_str} "
-                ."STACK:'bmem_shared${def_nr}'#${mem_shared_color}${memshared_str} "
-                ."STACK:'bmem_cached${def_nr}'#${mem_cached_color}${memcached_str} "
-                ."STACK:'bmem_buffers${def_nr}'#${mem_buffered_color}${membuff_str} ";
+                ."AREA:'bmem_used${def_nr}'#".$conf['mem_used_color']."${memuse_str} "
+                ."STACK:'bmem_shared${def_nr}'#".$conf['mem_shared_color']."${memshared_str} "
+                ."STACK:'bmem_cached${def_nr}'#".$conf['mem_cached_color']."${memcached_str} "
+                ."STACK:'bmem_buffers${def_nr}'#".$conf['mem_buffered_color']."${membuff_str} ";
 
             if (file_exists("$rrd_dir/swap_total.rrd")) 
             {
                 $series .= "DEF:'swap_total${def_nr}'='${rrd_dir}/swap_total.rrd':'sum':AVERAGE "
                     ."DEF:'swap_free${def_nr}'='${rrd_dir}/swap_free.rrd':'sum':AVERAGE "
                     ."CDEF:'bmem_swapped${def_nr}'='swap_total${def_nr}','swap_free${def_nr}',-,1024,* "
-                    ."STACK:'bmem_swapped${def_nr}'#${mem_swapped_color}${memswap_str} ";
+                    ."STACK:'bmem_swapped${def_nr}'#".$conf['mem_swapped_color']."${memswap_str} ";
             }
 
-            $series .= "LINE2:'bmem_total${def_nr}'#${cpu_num_color}${total_str} ";
+            $series .= "LINE2:'bmem_total${def_nr}'#".$conf['cpu_num_color']."${total_str} ";
 
             $def_nr++;
         }
@@ -269,9 +285,9 @@ if (isset($graph))
             $series .= "DEF:'load_one${def_nr}'='${rrd_dir}/load_one.rrd':'sum':AVERAGE "
                 ."DEF:'proc_run${def_nr}'='${rrd_dir}/proc_run.rrd':'sum':AVERAGE "
                 ."DEF:'cpu_num${def_nr}'='${rrd_dir}/cpu_num.rrd':'sum':AVERAGE ";
-            $series .="AREA:'load_one${def_nr}'#${load_one_color}${load_str} ";
-            $series .="LINE2:'cpu_num${def_nr}'#${cpu_num_color}${cpu_str} ";
-            $series .="LINE2:'proc_run${def_nr}'#${proc_run_color}${run_str} ";
+            $series .="AREA:'load_one${def_nr}'#".$conf['load_one_color']."${load_str} ";
+            $series .="LINE2:'cpu_num${def_nr}'#".$conf['cpu_num_color']."${cpu_str} ";
+            $series .="LINE2:'proc_run${def_nr}'#".$conf['proc_run_color']."${run_str} ";
 
             $def_nr++;
         }
@@ -305,8 +321,8 @@ if (isset($graph))
 
             $series .= "DEF:'bytes_in${def_nr}'='${rrd_dir}/bytes_in.rrd':'sum':AVERAGE "
                 ."DEF:'bytes_out${def_nr}'='${rrd_dir}/bytes_out.rrd':'sum':AVERAGE "
-                ."LINE2:'bytes_in${def_nr}'#${mem_cached_color}${in_str} "
-                ."LINE2:'bytes_out${def_nr}'#${mem_used_color}${out_str} ";
+                ."LINE2:'bytes_in${def_nr}'#".$conf['mem_cached_color']."${in_str} "
+                ."LINE2:'bytes_out${def_nr}'#".$conf['mem_used_color']."${out_str} ";
 
             $def_nr++;
         }
@@ -340,8 +356,8 @@ if (isset($graph))
 
             $series .= "DEF:'bytes_in${def_nr}'='${rrd_dir}/pkts_in.rrd':'sum':AVERAGE "
                 ."DEF:'bytes_out${def_nr}'='${rrd_dir}/pkts_out.rrd':'sum':AVERAGE "
-                ."LINE2:'bytes_in${def_nr}'#${mem_cached_color}${in_str} "
-                ."LINE2:'bytes_out${def_nr}'#${mem_used_color}${out_str} ";
+                ."LINE2:'bytes_in${def_nr}'#".$conf['mem_cached_color']."${in_str} "
+                ."LINE2:'bytes_out${def_nr}'#".$conf['mem_used_color']."${out_str} ";
 
             $def_nr++;
         }
@@ -399,7 +415,7 @@ if (isset($graph))
 
             $rrd_file = "$rrd_dir/$metricname.rrd";
             $series .= "DEF:'sum${def_nr}'='$rrd_file':'sum':AVERAGE "
-                ."AREA:'sum${def_nr}'#${default_metric_color}${title_str} ";
+                ."AREA:'sum${def_nr}'#".$conf['default_metric_color']."${title_str} ";
 
             $def_nr++;
         }

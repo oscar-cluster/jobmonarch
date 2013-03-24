@@ -424,10 +424,10 @@ function sortJobs( $jobs, $sortby, $sortorder )
                 }
 
                 $ppn         = (int) $jobattrs['ppn'] ? $jobattrs['ppn'] : 1;
-                $cpus         = $nodes * $ppn;
-                $queued_time     = (int) $jobattrs['queued_timestamp'];
-                $start_time     = (int) $jobattrs['start_timestamp'];
-                $runningtime     = $report_time - $start_time;
+                $cpus        = $nodes * $ppn;
+                $queued_time = (int) $jobattrs['queued_timestamp'];
+                $start_time  = (int) $jobattrs['start_timestamp'];
+                $runningtime = $report_time - $start_time;
 
                 switch( $sortby ) 
                 {
@@ -507,6 +507,13 @@ function makeOverview()
     global $cluster, $use_fqdn;
 
     $metricname        = $m;
+    if( isset($conf['default_metric']) and ($metricname =='') )
+        $metricname = $conf['default_metric'];
+    else
+        if( isset( $m ) )
+            $metricname = $m;
+        else
+            $metricname = "load_one";
 
     $tpl->assign("sortorder", $sortorder );
     $tpl->assign("sortby", $sortby );
@@ -984,10 +991,10 @@ function makeOverview()
                 $stop    ="now";
             }
 
-            $sorted_hosts     = array();
+            $sorted_hosts = array();
             $hosts_up     = $jobs[$filter['id']]['nodes'];
 
-            $r         = intval($job_runningtime * 1.2);
+            $r            = intval($job_runningtime * 1.2);
 
             $jobrange     = -$r ;
             $jobstart     = $start_time;
@@ -1022,7 +1029,7 @@ function makeOverview()
 
                 $load_one         = $metrics[$host]["load_one"]['VAL'];
                 $load             = ((float) $load_one) / $cpus;
-                $host_load[$host]     = $load;
+                $host_load[$host] = $load;
 
                 $percent_hosts[load_color($load)] ++;
 
@@ -1067,14 +1074,14 @@ function makeOverview()
             {
                 $tpl->newBlock( "sorted_list" );
 
-                $host_url     = rawurlencode( $host );
-                $cluster_url     = rawurlencode( $clustername );
+                $host_url    = rawurlencode( $host );
+                $cluster_url = rawurlencode( $clustername );
 
                 $textval     = "";
 
                 $val         = $metrics[$host][$metricname];
-                $class         = "metric";
-                $host_link    = "\"../../?c=$cluster_url&h=$host_url&r=job&jr=$jobrange&js=$jobstart\"";
+                $class       = "metric";
+                $host_link   = "\"../../?c=$cluster_url&h=$host_url&r=job&jr=$jobrange&js=$jobstart\"";
 
                 if ( $val["TYPE"] == "timestamp" || $always_timestamp[$metricname] ) 
                 {
@@ -1086,9 +1093,14 @@ function makeOverview()
                 } 
                 else 
                 {
+                    $job_start     = $jobs[$last_displayed_job]['start_timestamp'];
+                    $period_end    = time();
+                    $runningtime   = time() - intval( $job_start );
                     $load_color    = load_color($host_load[$host]);
+                    $period_start  = intval( $job_start - (intval( $runningtime * 0.10 ) ) );
+                    //printf("last job %s job start %s runningtime %s period start %s", $last_displayed_job, $jobstart, $job_runningtime, $period_start);
                     $graphargs     = ($reports[$metricname]) ? "g=$metricname&" : "m=$metricname&";
-                    $graphargs     .= "z=small&c=$cluster_url&h=$host_url&l=$load_color&v=".$val['VAL']."&r=job&jr=$jobrange&js=$jobstart";
+                    $graphargs     .= "z=overview-medium&c=$cluster_url&h=$host_url&l=$load_color&v=".$val['VAL']."&job_start=$job_start&period_start=$period_start&period_stop=$period_end";
                     if( $max > 0 ) 
                     {
                         $graphargs    .= "&x=$max&n=$min";
@@ -1098,7 +1110,7 @@ function makeOverview()
                 {
                     $cell    = "<td class=$class>".  "<b><a href=$host_link>$host</a></b><br>".  "<i>$metricname:</i> <b>$textval</b></td>";
                 } else {
-                    $cell    = "<td><a href=$host_link>" . "<img src=\"../../graph.php?$graphargs\" " . "alt=\"$host\" border=0></a></td>";
+                    $cell    = "<td><a href=$host_link>" . "<img src=\"./graph.php?$graphargs\" " . "alt=\"$host\" border=0></a></td>";
                 }
 
                 $tpl->assign( "metric_image", $cell );
