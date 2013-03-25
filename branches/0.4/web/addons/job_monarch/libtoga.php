@@ -608,6 +608,7 @@ class TorqueXMLHandler
         $this->down_nodes    = array();
         $this->offline_nodes    = array();
         $this->clustername    = $clustername;
+        $this->proc_cluster = null;
         $this->fqdn        = 1;
     }
 
@@ -693,8 +694,6 @@ class TorqueXMLHandler
 
     function startElement( $parser, $name, $attrs )
     {
-        $jobs = $this->jobs;
-        $nodes = $this->nodes;
 
         if( isset( $attrs['TN'] ) )
         {
@@ -703,7 +702,7 @@ class TorqueXMLHandler
                 // Ignore dead metrics. Detect and mask failures.
                 if ( $attrs['TN'] > $attrs['TMAX'] * 4 )
                 {
-                    return;
+                    return null;
                 }
             }
         }
@@ -713,23 +712,34 @@ class TorqueXMLHandler
         if( $name == 'CLUSTER' )
         {
             $this->proc_cluster = $attrs['NAME'];
+            //printf("set proc cluster to %s\n", $attrs['NAME'] );
+            return null;
         }
-        else if( $name == 'HOST' and $this->proc_cluster == $this->clustername)
+        if( $this->proc_cluster != $this->clustername )
+        {
+            //printf("cluster does not match: %s\n", $this->clustername );
+            return null;
+        }
+
+        if( $name == 'HOST' )
         {
             $hostname = $attrs['NAME'];
 
-            $location = $attrs['LOCATION'];
+            //printf( "host %s\n", $hostname );
+            //$location = $attrs['LOCATION'];
 
-            if( !isset( $nodes[$hostname] ) )
+            if( !isset( $this->nodes[$hostname] ) )
             {
-                $nodes[$hostname] = new NodeImage( $this->proc_cluster, $hostname );
+                $this->nodes[$hostname] = new NodeImage( $this->proc_cluster, $hostname );
             }
+            return null;
         }
-        else if( $name == 'METRIC' and ( strpos( $attrs['NAME'], 'zplugin_monarch' ) !== false ) and $this->proc_cluster == $this->clustername )
+        if( $name == 'METRIC' and ( strpos( $attrs['NAME'], 'zplugin_monarch' ) !== false ) )
         {
             if( strpos( $attrs['NAME'], 'zplugin_monarch_heartbeat' ) !== false )
             {
                 $this->heartbeat['time'] = $attrs['VAL'];
+                return;
             }
             else if( strpos( $attrs['NAME'], 'zplugin_monarch_down' ) !== false )
             {
@@ -766,6 +776,7 @@ class TorqueXMLHandler
                         }
                     }
                 }
+                return;
             }
             else if( strpos( $attrs['NAME'], 'zplugin_monarch_offline' ) !== false )
             {
@@ -802,14 +813,15 @@ class TorqueXMLHandler
                         }
                     }
                 }
+                return;
             }
             else if( strpos( $attrs['NAME'], 'zplugin_monarch_job' ) !== false )
             {
                 sscanf( $attrs['NAME'], 'zplugin_monarch_job_%d_%s$', $monincr, $jobid );
 
-                if( !isset( $jobs[$jobid] ) )
+                if( !isset( $this->jobs[$jobid] ) )
                 {
-                    $jobs[$jobid] = array();
+                    $this->jobs[$jobid] = array();
                 }
 
                 $fields = explode( ' ', $attrs['VAL'] );
@@ -823,48 +835,48 @@ class TorqueXMLHandler
 
                     if( $toganame == 'nodes' )
                     {
-                        if( $jobs[$jobid]['status'] == 'R' )
+                        if( $this->jobs[$jobid]['status'] == 'R' )
                         {
-                            if( !isset( $jobs[$jobid][$toganame] ) )
+                            if( !isset( $this->jobs[$jobid][$toganame] ) )
                             {
-                                $jobs[$jobid][$toganame] = array();
+                                $this->jobs[$jobid][$toganame] = array();
                             }
 
                             $mynodes = explode( ';', $togavalue );
 
                             foreach( $mynodes as $node )
                             {
-                                if( !in_array( $node, $jobs[$jobid][$toganame] ) )
+                                if( !in_array( $node, $this->jobs[$jobid][$toganame] ) )
                                 {
-                                    array_push( $jobs[$jobid][$toganame], $node );
+                                    array_push( $this->jobs[$jobid][$toganame], $node );
                                 }
                             }
 
                         }
-                        else if( $jobs[$jobid]['status'] == 'Q' )
+                        else if( $this->jobs[$jobid]['status'] == 'Q' )
                         {
-                            $jobs[$jobid][$toganame] = $togavalue;
+                            $this->jobs[$jobid][$toganame] = $togavalue;
                         }
                     }
                     else
                     {
-                        $jobs[$jobid][$toganame] = $togavalue;
+                        $this->jobs[$jobid][$toganame] = $togavalue;
                     }
                 }
 
-                if( isset( $jobs[$jobid]['nodes'] ) )
+                if( isset( $this->jobs[$jobid]['nodes'] ) )
                 {
-                    $nr_nodes = count( $jobs[$jobid]['nodes'] );
+                    $nr_nodes = count( $this->jobs[$jobid]['nodes'] );
         
-                    if( $jobs[$jobid]['status'] == 'R' )
+                    if( $this->jobs[$jobid]['status'] == 'R' )
                     {
 
-                        if( isset( $jobs[$jobid]['domain'] ) )
+                        if( isset( $this->jobs[$jobid]['domain'] ) )
                         {
-                            $domain        = $jobs[$jobid]['domain'];
+                            $domain        = $this->jobs[$jobid]['domain'];
                             $domain_len    = 0 - strlen( $domain );
 
-                            $nodekeys     = array_keys( $nodes );
+                            $nodekeys     = array_keys( $this->nodes );
 
                             $first_host    = $nodekeys[0];
                             // Let's see if Ganglia use's FQDN or short hostnames
@@ -879,12 +891,12 @@ class TorqueXMLHandler
                             $this->fqdn    = 0;
                         }
 
-                        foreach( $jobs[$jobid]['nodes'] as $node )
+                        foreach( $this->jobs[$jobid]['nodes'] as $node )
                         {
 
                             // Only add domain name to the hostname if Ganglia is doing that too
                             //
-                            if( $this->fqdn && isset( $jobs[$jobid]['domain'] ) )
+                            if( $this->fqdn && isset( $this->jobs[$jobid]['domain'] ) )
                             {
                                 if( strpos( $node, $domain ) === false )
                                 {
@@ -899,13 +911,13 @@ class TorqueXMLHandler
                                 $host    = $node;
                             }
 
-                            if( !isset( $nodes[$host] ) )
+                            if( !isset( $this->nodes[$host] ) )
                             {
                                 $my_node = new NodeImage( $this->proc_cluster, $host );
                             }
                             else
                             {
-                                $my_node = $nodes[$host];
+                                $my_node = $this->nodes[$host];
                             }
 
                             if( !$my_node->hasJob( $jobid ) )
@@ -920,14 +932,13 @@ class TorqueXMLHandler
                                 }
                             }
 
-                            $nodes[$host] = $my_node;
+                            $this->nodes[$host] = $my_node;
                         }
                     }
                 }
             }
+            return;
         }
-        $this->jobs    = $jobs;
-        $this->nodes    = $nodes;
     }
 
     function finishUp( )
