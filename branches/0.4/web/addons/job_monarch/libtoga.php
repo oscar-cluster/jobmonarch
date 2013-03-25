@@ -862,15 +862,14 @@ class TorqueXMLHandler
                             $domain        = $jobs[$jobid]['domain'];
                             $domain_len    = 0 - strlen( $domain );
 
+                            $nodekeys     = array_keys( $nodes );
+
+                            $first_host    = $nodekeys[0];
                             // Let's see if Ganglia use's FQDN or short hostnames
                             //
-                            foreach( $nodes as $hostname => $nimage )
+                            if( substr( $first_host, $domain_len ) != $domain )
                             {
-                    
-                                if( substr( $hostname, $domain_len ) != $domain )
-                                {
-                                    $this->fqdn    = 0;
-                                }
+                                $this->fqdn    = 0;
                             }
                         }
                         else
