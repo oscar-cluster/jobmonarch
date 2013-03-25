@@ -536,6 +536,8 @@ class DataGatherer
         {
             $error = sprintf( 'XML error: %s at %d', xml_error_string( xml_get_error_code( $this->parser ) ), xml_get_current_line_number( $this->parser ) );
         }
+        $handler = &$this->xmlhandler;
+        $handler->finishUp();
     }
 
     function printInfo()
@@ -928,59 +930,56 @@ class TorqueXMLHandler
         $this->nodes    = $nodes;
     }
 
-    function stopElement( $parser, $name )
+    function finishUp( )
     {
         $nodes    = $this->nodes;
 
-        if( $name == "GANGLIA_XML" )
+        if( sizeof( $this->down_nodes ) > 0 )
         {
-            if( sizeof( $this->down_nodes ) > 0 )
+            foreach( $this->down_nodes as $reported => $dnodes )
             {
-                foreach( $this->down_nodes as $reported => $dnodes )
+                if( $reported == $this->heartbeat['time'] )
                 {
-                    if( $reported == $this->heartbeat['time'] )
+                    $domain = $dnodes[1];
+
+                    foreach( $dnodes[0] as $downhost )
                     {
-                        $domain = $dnodes[1];
+                        $downhost = $this->makeHostname( $downhost, $domain );
 
-                        foreach( $dnodes[0] as $downhost )
+                        if( isset( $nodes[$downhost] ) )
                         {
-                            $downhost = $this->makeHostname( $downhost, $domain );
-
-                            if( isset( $nodes[$downhost] ) )
-                            {
-                                // OMG PHP4 is fking stupid!
-                                // $nodes[$downhost]->setDown( 1 ) won't work here..
-                                //
-                                $mynode = $nodes[$downhost];
-                                $mynode->setDown( 1 );
-                                $nodes[$downhost] = $mynode;
-                            }
+                            // OMG PHP4 is fking stupid!
+                            // $nodes[$downhost]->setDown( 1 ) won't work here..
+                            //
+                            $mynode = $nodes[$downhost];
+                            $mynode->setDown( 1 );
+                            $nodes[$downhost] = $mynode;
                         }
                     }
                 }
             }
+        }
 
-            if( sizeof( $this->offline_nodes ) > 0 )
+        if( sizeof( $this->offline_nodes ) > 0 )
+        {
+            foreach( $this->offline_nodes as $reported => $onodes )
             {
-                foreach( $this->offline_nodes as $reported => $onodes )
+                if( $reported == $this->heartbeat['time'] )
                 {
-                    if( $reported == $this->heartbeat['time'] )
+                    $domain = $onodes[1];
+
+                    foreach( $onodes[0] as $offlinehost )
                     {
-                        $domain = $onodes[1];
+                        $offlinehost = $this->makeHostname( $offlinehost, $domain );
 
-                        foreach( $onodes[0] as $offlinehost )
+                        if( isset( $nodes[$offlinehost] ) )
                         {
-                            $offlinehost = $this->makeHostname( $offlinehost, $domain );
-
-                            if( isset( $nodes[$offlinehost] ) )
-                            {
-                                // OMG PHP4 is fking stupid!
-                                // $nodes[$offlinehost]->setDown( 1 ) won't work here..
-                                //
-                                $mynode = $nodes[$offlinehost];
-                                $mynode->setOffline( 1 );
-                                $nodes[$offlinehost] = $mynode;
-                            }
+                            // OMG PHP4 is fking stupid!
+                            // $nodes[$offlinehost]->setDown( 1 ) won't work here..
+                            //
+                            $mynode = $nodes[$offlinehost];
+                            $mynode->setOffline( 1 );
+                            $nodes[$offlinehost] = $mynode;
                         }
                     }
                 }
@@ -988,6 +987,10 @@ class TorqueXMLHandler
         }
 
         $this->nodes = $nodes;
+    }
+
+    function stopElement( $parser, $name )
+    {
     }
 
     function printInfo()
