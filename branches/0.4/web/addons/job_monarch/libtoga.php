@@ -107,11 +107,26 @@ chdir( $GANGLIA_PATH );
 
 include_once "./eval_conf.php";
 include_once "./functions.php";
-include_once "./ganglia.php";
 include_once "./get_context.php";
 
+global $GLOBALS, $conf, $metrics, $version, $rrdtool_version, $context;
+
+// ganglia start
+$metrics = array();
+$version = array();
+
+$version["webfrontend"] = $GLOBALS["ganglia_version"];
+
+# Get rrdtool version
+$rrdtool_version = array();
+exec($conf['rrdtool'], $rrdtool_version);
+$rrdtool_version = explode(" ", $rrdtool_version[0]);
+$rrdtool_version = $rrdtool_version[1];
+$version["rrdtool"] = "$rrdtool_version";
+
+// ganglia end
+
 $context = 'cluster';
-include_once "./get_ganglia.php";
 
 // Back to our PHP
 chdir( $my_dir );
@@ -128,7 +143,7 @@ global $default_metric;
 
 // Ganglia's array of host metrics
 //
-global $metrics, $hosts_up;
+global $hosts_up;
 global $start;
 
 global $DATETIME_FORMAT;
@@ -553,6 +568,11 @@ class DataGatherer
         return $handler->getUsingFQDN();
     }
 
+    function getMetrics()
+    {
+        $handler = $this->xmlhandler;
+        return $handler->getMetrics();
+    }
     function getNodes()
     {
         $handler = $this->xmlhandler;
@@ -605,11 +625,13 @@ class TorqueXMLHandler
         $this->jobs        = array();
         $this->clusters     = array();
         $this->nodes         = array();
+        $this->metrics      = array();
         $this->heartbeat     = array();
         $this->down_nodes    = array();
         $this->offline_nodes    = array();
         $this->clustername    = $clustername;
         $this->proc_cluster = null;
+        $this->proc_hostname = null;
         $this->fqdn        = 1;
     }
 
@@ -695,23 +717,16 @@ class TorqueXMLHandler
 
     function startElement( $parser, $name, $attrs )
     {
-
-        if( isset( $attrs['TN'] ) )
-        {
-            if ( $attrs['TN'] )
-            {
-                // Ignore dead metrics. Detect and mask failures.
-                if ( $attrs['TN'] > $attrs['TMAX'] * 4 )
-                {
-                    return null;
-                }
-            }
-        }
+        global $cluster, $metrics;
 
         $jobid = null;
 
         if( $name == 'CLUSTER' )
         {
+            // ganglia start
+            $cluster = $attrs;
+            // ganglia end
+
             $this->proc_cluster = $attrs['NAME'];
             //printf("set proc cluster to %s\n", $attrs['NAME'] );
             return null;
@@ -724,7 +739,27 @@ class TorqueXMLHandler
 
         if( $name == 'HOST' )
         {
+            // ganglia start
             $hostname = $attrs['NAME'];
+            $this->proc_hostname = $hostname;
+
+            # Pseudo metrics - add useful HOST attributes like gmond_started & last_reported to the metrics list:
+            $metrics[$hostname]['gmond_started']['NAME'] = "GMOND_STARTED";
+            $metrics[$hostname]['gmond_started']['VAL'] = $attrs['GMOND_STARTED'];
+            $metrics[$hostname]['gmond_started']['TYPE'] = "timestamp";
+            $metrics[$hostname]['last_reported']['NAME'] = "REPORTED";
+            $metrics[$hostname]['last_reported']['VAL'] = uptime($cluster['LOCALTIME'] - $attrs['REPORTED']);
+            $metrics[$hostname]['last_reported']['TYPE'] = "string";
+            $metrics[$hostname]['last_reported_timestamp']['NAME'] = "REPORTED TIMESTAMP";
+            $metrics[$hostname]['last_reported_timestamp']['VAL'] = $attrs['REPORTED'];
+            $metrics[$hostname]['last_reported_timestamp']['TYPE'] = "uint32";
+            $metrics[$hostname]['ip_address']['NAME'] = "IP";
+            $metrics[$hostname]['ip_address']['VAL'] = $attrs['IP'];
+            $metrics[$hostname]['ip_address']['TYPE'] = "string";
+            $metrics[$hostname]['location']['NAME'] = "LOCATION";
+            $metrics[$hostname]['location']['VAL'] = $attrs['LOCATION'];
+            $metrics[$hostname]['location']['TYPE'] = "string";
+            // ganglia end
 
             //printf( "host %s\n", $hostname );
             //$location = $attrs['LOCATION'];
@@ -735,8 +770,21 @@ class TorqueXMLHandler
             }
             return null;
         }
-        if( $name == 'METRIC' and ( strpos( $attrs['NAME'], 'zplugin_monarch' ) !== false ) )
+
+        if( $name == 'METRIC' )
         {
+            $hostname = $this->proc_hostname;
+
+            // ganglia start
+            $metricname = rawurlencode($attrs['NAME']);
+            $metrics[$hostname][$metricname] = $attrs;
+            // ganglia end
+
+            if ( strpos( $attrs['NAME'], 'zplugin_monarch' ) === false )
+            {
+                return null;
+            }
+
             if( strpos( $attrs['NAME'], 'zplugin_monarch_heartbeat' ) !== false )
             {
                 $this->heartbeat['time'] = $attrs['VAL'];

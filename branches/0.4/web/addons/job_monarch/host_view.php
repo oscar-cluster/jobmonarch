@@ -24,6 +24,19 @@
 
 include_once "./libtoga.php";
 
+$my_dir = getcwd();
+
+global $context;
+
+$context = 'cluster';
+
+chdir( $GANGLIA_PATH );
+
+include "./ganglia.php";
+include "./get_ganglia.php";
+
+chdir( $my_dir );
+
 function datetimeToEpoch( $datetime ) 
 {
 

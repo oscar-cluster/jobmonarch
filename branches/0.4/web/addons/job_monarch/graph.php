@@ -22,10 +22,23 @@
  * SVN $Id$
  */
 
-global $metrics, $rrds, $range, $start, $r, $conf, $m;
+global $rrds, $range, $start, $r, $conf, $m;
 $range = $r;
 
 include "./libtoga.php";
+
+$my_dir = getcwd();
+
+global $context;
+
+$context = 'cluster';
+
+chdir( $GANGLIA_PATH );
+
+include "./ganglia.php";
+include "./get_ganglia.php";
+
+chdir( $my_dir );
 
 if ( !empty( $_GET ) ) 
 {
