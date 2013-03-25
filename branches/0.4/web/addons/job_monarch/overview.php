@@ -46,6 +46,8 @@ $gnodes    = $data_gatherer->getNodes();
 $cpus      = $data_gatherer->getCpus();
 $use_fqdn  = $data_gatherer->getUsingFQDN();
 
+//print_r( $gnodes );
+
 function setupFilterSettings() 
 {
 
@@ -69,6 +71,8 @@ function setupFilterSettings()
 
     $ic = new ClusterImage( $myxml_data, $clustername );
 
+    $ic->setJobs( $data_gatherer->getJobs() );
+    $ic->setNodes( $data_gatherer->getNodes() );
     $ic->setBig();
     $ic->setNoimage();
     $ic->draw();

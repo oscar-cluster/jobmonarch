@@ -1310,6 +1310,8 @@ class ClusterImage
         $this->width        = 0;
         $this->height        = 0;
         $this->output        = 1;
+        $this->jobs         = null;
+        $this->nodes        = null;
     }
 
     function getWidth()
@@ -1332,6 +1334,36 @@ class ClusterImage
     {
         $this->output    = 0;
     }
+    function setJobs($jobs )
+    {
+        $this->jobs     = &$jobs;
+    }
+    function getJobs()
+    {
+        if( $this->jobs == null )
+        {
+            $mydatag = $this->dataget;
+            $mydatag->parseXML( $this->data );
+            $this->jobs = $mydatag->getJobs();
+        }
+
+        return $this->jobs;
+    }
+    function getNodes()
+    {
+        if( $this->nodes== null )
+        {
+            $mydatag = $this->dataget;
+            $mydatag->parseXML( $this->data );
+            $this->nodes = $mydatag->getNodes();
+        }
+
+        return $this->nodes;
+    }
+    function setNodes($nodes)
+    {
+        $this->nodes    = &$nodes;
+    }
     function isSmall()
     {
         return ($this->size == 's');
@@ -1348,6 +1380,8 @@ class ClusterImage
     function filterNodes( $jobs, $nodes )
     {
         $filtered_nodes = array();
+
+        //print_r( $nodes );
 
         foreach( $nodes as $node )
         {
@@ -1414,9 +1448,6 @@ class ClusterImage
             }
         }
 
-        $mydatag = $this->dataget;
-        $mydatag->parseXML( $this->data );
-
         if( $this->isSmall() )
         {
             $max_width    = $SMALL_CLUSTERIMAGE_MAXWIDTH;
@@ -1428,7 +1459,7 @@ class ClusterImage
             $node_width    = $BIG_CLUSTERIMAGE_NODEWIDTH;
         }
 
-        $nodes        = $mydatag->getNodes();
+        $nodes        = $this->getNodes();
         $nodes_hosts    = array_keys( $nodes );
 
         $nodes_nr    = count( $nodes );
@@ -1467,7 +1498,7 @@ class ClusterImage
         $this->width    = $max_width;
         $this->height    = ($y_offset + (($node_rows*$node_width)+1) );
 
-        $jobs = $mydatag->getJobs();
+        $jobs = $this->getJobs();
         $filtered_nodes = $this->filterNodes( $jobs, $nodes );
 
         if( $SORTBY_HOSTNAME != "" )
