@@ -463,23 +463,23 @@ class DataSource
 
     function DataSource()
     {
-        global $DATA_SOURCE;
+        global $DATA_SOURCE, $clustername;
 
         $ds_fields     = explode( ':', $DATA_SOURCE );
 
         $ds_ip         = $ds_fields[0];
-        $ds_port     = $ds_fields[1];
+        $ds_port       = $ds_fields[1];
 
-        $this->ip     = $ds_ip;
+        $this->ip       = $ds_ip;
         $this->port     = $ds_port;
-
+        $this->clustername = $clustername;
     }
 
     function getData()
     {
         $errstr        = '';
-        $errno        = 0;
-        $timeout    = 3;
+        $errno         = 0;
+        $timeout       = 3;
 
         $fp = fsockopen( $this->ip, $this->port, $errno, $errstr, $timeout );
 
@@ -487,6 +487,18 @@ class DataSource
         {
             echo 'Unable to connect to '.$this->ip.':'.$this->port;
             return;
+        }
+
+        if( $this->port == '8652' )
+        {
+            $request = "/$this->clustername\n";
+            $rc = fputs($fp, $request);
+            if (!$rc)
+            {
+                $error = "Could not sent request to gmetad: $errstr";
+                if ($debug) print "<br/>DEBUG: $error\n";
+                   return FALSE;
+            }
         }
 
         stream_set_timeout( $fp, 30 );
@@ -1069,7 +1081,6 @@ class NodeImage
         $this->jobs        = array();
         $this->tasks        = 0;
         $this->hostname        = $hostname;
-        $this->cpus        = $this->determineCpus();
         $this->clustername    = $cluster;
         $this->showinfo        = 1;
         $this->size        = $SMALL_CLUSTERIMAGE_NODEWIDTH;
@@ -1267,26 +1278,18 @@ class NodeImage
         }
     }
 
-    function determineCpus()
+    function determineLoad()
     {
         global $metrics;
 
         $cpus = $metrics[$this->hostname]['cpu_num']['VAL'];
-
         if (!$cpus)
         {
             $cpus=1;
         }
 
-        return $cpus;
-    }
-
-    function determineLoad()
-    {
-        global $metrics;
-
         $load_one    = $metrics[$this->hostname]['load_one']['VAL'];
-        $load        = ((float) $load_one)/$this->cpus;
+        $load        = ((float) $load_one)/$cpus;
 
         return $load;
     }
