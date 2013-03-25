@@ -491,7 +491,7 @@ class DataSource
 
         if( $this->port == '8652' )
         {
-            $request = "/$this->clustername\n";
+            $request = "/" . $this->clustername . "\n";
             $rc = fputs($fp, $request);
             if (!$rc)
             {
@@ -526,6 +526,7 @@ class DataGatherer
 
     function parseXML( $data )
     {
+
         $this->parser         = xml_parser_create();
         $this->xmlhandler     = new TorqueXMLHandler( $this->cluster );
 
