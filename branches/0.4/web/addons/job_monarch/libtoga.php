@@ -530,6 +530,7 @@ class DataGatherer
         $this->parser         = xml_parser_create();
         $this->xmlhandler     = new TorqueXMLHandler( $this->cluster );
 
+        xml_parser_set_option( $this->parser, XML_OPTION_CASE_FOLDING, 0 );
         xml_set_element_handler( $this->parser, array( &$this->xmlhandler, 'startElement' ), array( &$this->xmlhandler, 'stopElement' ) );
 
         if ( !xml_parse( $this->parser, $data ) )
