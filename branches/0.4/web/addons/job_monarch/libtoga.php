@@ -663,7 +663,7 @@ class TorqueXMLHandler
             //
             foreach( $nodes as $hostname => $nimage )
             {
-                if( substr( $hostname, $domain_len ) != $tdomain )
+                if( strpos( $hostname, $tomdain ) !== false )
                 {
                     $fqdn    = 0;
                 }
@@ -676,7 +676,7 @@ class TorqueXMLHandler
     
         if( $tdomain && $fqdn )
         {
-            if( substr( $thostname, $domain_len ) != $tdomain )
+            if( strpos( $thostname, $tdomain ) !== false )
             {
                 $thostname = $thostname . '.'.$tdomain;
             } 
@@ -723,13 +723,13 @@ class TorqueXMLHandler
                 $nodes[$hostname] = new NodeImage( $this->proc_cluster, $hostname );
             }
         }
-        else if( $name == 'METRIC' and strstr( $attrs['NAME'], 'zplugin_monarch' ) and $this->proc_cluster == $this->clustername )
+        else if( $name == 'METRIC' and ( strpos( $attrs['NAME'], 'zplugin_monarch' ) !== false ) and $this->proc_cluster == $this->clustername )
         {
-            if( strstr( $attrs['NAME'], 'zplugin_monarch_heartbeat' ) )
+            if( strpos( $attrs['NAME'], 'zplugin_monarch_heartbeat' ) !== false )
             {
                 $this->heartbeat['time'] = $attrs['VAL'];
             }
-            else if( strstr( $attrs['NAME'], 'zplugin_monarch_down' ) )
+            else if( strpos( $attrs['NAME'], 'zplugin_monarch_down' ) !== false )
             {
                 $fields        = explode( ' ', $attrs['VAL'] );
 
@@ -765,7 +765,7 @@ class TorqueXMLHandler
                     }
                 }
             }
-            else if( strstr( $attrs['NAME'], 'zplugin_monarch_offline' ) )
+            else if( strpos( $attrs['NAME'], 'zplugin_monarch_offline' ) !== false )
             {
                 $fields        = explode( ' ', $attrs['VAL'] );
 
@@ -801,7 +801,7 @@ class TorqueXMLHandler
                     }
                 }
             }
-            else if( strstr( $attrs['NAME'], 'zplugin_monarch_job' ) )
+            else if( strpos( $attrs['NAME'], 'zplugin_monarch_job' ) !== false )
             {
                 sscanf( $attrs['NAME'], 'zplugin_monarch_job_%d_%s$', $monincr, $jobid );
 
@@ -867,7 +867,7 @@ class TorqueXMLHandler
                             $first_host    = $nodekeys[0];
                             // Let's see if Ganglia use's FQDN or short hostnames
                             //
-                            if( substr( $first_host, $domain_len ) != $domain )
+                            if( strpos( $first_host, $domain ) === false )
                             {
                                 $this->fqdn    = 0;
                             }
@@ -884,7 +884,7 @@ class TorqueXMLHandler
                             //
                             if( $this->fqdn && isset( $jobs[$jobid]['domain'] ) )
                             {
-                                if( substr( $node, $domain_len ) != $domain )
+                                if( strpos( $node, $domain ) === false )
                                 {
                                     $host = $node. '.'.$domain;
                                 } else
