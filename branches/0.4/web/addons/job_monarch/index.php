@@ -3,7 +3,7 @@
  *
  * This file is part of Jobmonarch
  *
- * Copyright (C) 2006  Ramon Bastiaans
+ * Copyright (C) 2006-2013  Ramon Bastiaans
  *
  * Jobmonarch is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,10 +28,22 @@ set_time_limit(0);
 $my_dir = getcwd();
 
 include_once "./libtoga.php";
+include_once "./dwoo/dwooAutoload.php";
 
 $r = escapeshellcmd( rawurldecode( $_GET["r"] ));
 $range = $r;
 if( !isset($range) or $range == '') $range= "job";
+
+global $context;
+
+#$context = 'cluster';
+
+#chdir( $GANGLIA_PATH );
+
+#include "./ganglia.php";
+#include "./get_ganglia.php";
+
+#chdir( $my_dir );
 
 if ( !empty( $_GET ) ) 
 {
@@ -40,7 +52,7 @@ if ( !empty( $_GET ) )
 
 global $GANGLIA_PATH;
 
-include_once "./class.TemplatePower.inc.php";
+//include_once "./class.TemplatePower.inc.php";
 
 $httpvars = new HTTPVariables( $HTTP_GET_VARS, $_GET );
 $clustername = $httpvars->getClusterName();
@@ -98,8 +110,7 @@ function epochToDatetime( $epoch )
 
 function makeHeader( $page_call, $title, $longtitle ) 
 {
-
-    global $tpl, $grid, $context, $initgrid;
+    global $dwoo, $grid, $context, $initgrid;
     global $jobrange, $jobstart;
     global $page, $gridwalk, $clustername;
     global $parentgrid, $physical, $hostname;
@@ -108,6 +119,19 @@ function makeHeader( $page_call, $title, $longtitle )
     global $default_refresh, $filterorder, $view;
     global $JOB_ARCHIVE, $period_start, $period_stop, $h, $id;
     global $job_start, $job_stop, $range, $r, $metricname;
+    global $conf;
+    try
+       {
+          //$dwoo = new Dwoo($conf['dwoo_compiled_dir'], $conf['dwoo_cache_dir']);
+          $dwoo = new Dwoo( 'dwoo/compiled', 'dwoo/cache' );
+       }
+    catch (Exception $e)
+       {
+       print "<H4>There was an error initializing the Dwoo PHP Templating Engine: ".
+          $e->getMessage() . "<br><br>The compile directory should be owned and writable by the apache user.</H4>";
+          exit;
+       }
+
     
     if( isset($conf['default_metric']) and !isset($m) )
         $metricname = $conf['default_metric'];
@@ -156,32 +180,24 @@ function makeHeader( $page_call, $title, $longtitle )
     # has duplicate entries.
     list($parentgrid, $parentlink) = explode("@", $gridstack[count($gridstack)-2]);
 
-    # Setup a redirect to a remote server if you choose a grid from pulldown menu. Tell
-    # destination server that we're walking foward in the grid tree.
-    if (strstr($clustername, "http://")) 
-    {
-        $tpl->assign("refresh", "0");
-        $tpl->assign("redirect", ";URL=$clustername?gw=fwd&gs=$gridstack_url");
-        echo "<h2>Redirecting, please wait...</h2>";
-        $tpl->printToScreen();
-        exit;
-    }
-    $tpl->gotoBlock( "_ROOT" );
+    $tpl = new Dwoo_Template_File("templates/header.tpl");
+    echo $tpl;
+    $tpl_data = new Dwoo_Data();
 
     if( $view != "search" )
     {
-        $tpl->assign( "refresh", $default_refresh );
+        $tpl_data->assign( "refresh", $default_refresh );
     }
 
-    $tpl->assign( "date", date("r") );
-    $tpl->assign( "longpage_title", $longtitle );
-    $tpl->assign( "page_title", $title );
+    $tpl_data->assign( "date", date("r") );
+    $tpl_data->assign( "longpage_title", $longtitle );
+    $tpl_data->assign( "page_title", $title );
 
     # The page to go to when "Get Fresh Data" is pressed.
-    $tpl->assign("page","./");
+    $tpl_data->assign("page","./");
 
     # Templated Logo image
-    $tpl->assign("images","./templates/$template_name/images");
+    $tpl_data->assign("images","./templates/$template_name/images");
 
     #
     # Used when making graphs via graph.php. Included in most URLs
@@ -197,7 +213,7 @@ function makeHeader( $page_call, $title, $longtitle )
     $node_url=rawurlencode($hostname);
 
     # Make some information available to templates.
-    $tpl->assign("cluster_url", $cluster_url);
+    $tpl_data->assign("cluster_url", $cluster_url);
     # Build the node_menu
     $node_menu = "";
 
@@ -302,9 +318,7 @@ function makeHeader( $page_call, $title, $longtitle )
         }
     }
 
-    $tpl->gotoBlock( "_ROOT" );
-    $tpl->assignGlobal("view", $view);
-
+    $tpl_data->assign("view", $view);
 
     if( array_key_exists( "id", $filter ) or isset($hostname) ) 
     {
@@ -333,11 +347,11 @@ function makeHeader( $page_call, $title, $longtitle )
 
         }
 
-        $tpl->assign("metric_menu", $metric_menu );
+        $tpl_data->assign("metric_menu", $metric_menu );
 
         if( $view == "search" or $view == "host" or $view == "overview-host" ) 
         {
-            $tpl->newBlock("timeperiod");
+            $tpl_data->assign("timeperiod", "yes" );
             if( is_numeric( $period_start ) ) 
             {
                 $period_start = epochToDatetime( $period_start );
@@ -346,15 +360,15 @@ function makeHeader( $page_call, $title, $longtitle )
             {
                 $period_stop = epochToDatetime( $period_stop );
             }
-            $tpl->assign("period_start", $period_start );
-            $tpl->assign("period_stop", $period_stop );
-            $tpl->assign("hostname", $hostname );
+            $tpl_data->assign("period_start", $period_start );
+            $tpl_data->assign("period_stop", $period_stop );
+            $tpl_data->assign("hostname", $hostname );
 
             if( $view == "host" or $view == "overview-host" ) 
             {
-                $tpl->newBlock("hostview");
-                $tpl->assign("job_start", $job_start );
-                $tpl->assign("job_stop", $job_stop );
+                $tpl_data->assign("hostview", "yes");
+                $tpl_data->assign("job_start", $job_start );
+                $tpl_data->assign("job_stop", $job_stop );
             }
         } 
 
@@ -380,7 +394,7 @@ function makeHeader( $page_call, $title, $longtitle )
         }
         $range_menu .= "</SELECT>\n";
 
-        $tpl->assign("range_menu", $range_menu);
+        $tpl_data->assign("range_menu", $range_menu);
 
     }
 
@@ -390,122 +404,72 @@ function makeHeader( $page_call, $title, $longtitle )
         $node_menu .= "<B>&gt;</B>\n";
         $node_menu .= "<B>Jobarchive</B> ";
         $form_name = "archive_search_form";
-        $tpl->assignGlobal("form_name", $form_name );
+        $tpl_data->assign("form_name", $form_name );
 
     } 
     else 
     {
         $form_name = "toga_form";
-        $tpl->assignGlobal("form_name", $form_name );
+        $tpl_data->assign("form_name", $form_name );
     }
 
     if( $JOB_ARCHIVE && $page_call == 'overview' ) 
     {
-        $tpl->newBlock( "search" );
-        $tpl->assignGlobal( "cluster_url", rawurlencode($clustername) );
-        $tpl->assignGlobal( "cluster", $clustername );
+        $tpl_data->assign( "search", "yes" );
+        $tpl_data->assign( "cluster_url", rawurlencode($clustername) );
+        $tpl_data->assign( "cluster", $clustername );
     }
-    $tpl->gotoBlock( "_ROOT" );
-    $tpl->assignGlobal( "cluster", $clustername );
-    $tpl->assign("node_menu", $node_menu);
+    $tpl_data->assign( "cluster", $clustername );
+    $tpl_data->assign("node_menu", $node_menu);
 
     # Make sure that no data is cached..
-    header ("Expires: Mon, 26 Jul 1997 05:00:00 GMT");    # Date in the past
-    header ("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT"); # always modified
-    header ("Cache-Control: no-cache, must-revalidate");  # HTTP/1.1
-    header ("Pragma: no-cache");                          # HTTP/1.0
+    //header ("Expires: Mon, 26 Jul 1997 05:00:00 GMT");    # Date in the past
+    //header ("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT"); # always modified
+    //header ("Cache-Control: no-cache, must-revalidate");  # HTTP/1.1
+    //header ("Pragma: no-cache");                          # HTTP/1.0
+
+    $dwoo->output($tpl, $tpl_data);
 }
 
 function makeFooter() 
 {
-    global $tpl, $version, $parsetime, $monarchversion;
+    global $dwoo, $version, $parsetime, $monarchversion;
 
-    $tpl->gotoBlock( "_ROOT" );
-    $tpl->assign("webfrontend-version",$version["webfrontend"]);
-    $tpl->assign("monarch-version", $monarchversion);
+    $tpl = new Dwoo_Template_File("templates/footer.tpl");
+    $tpl_data = new Dwoo_Data();
+
+    $tpl_data->assign("webfrontendversion",$version["webfrontend"]);
+    $tpl_data->assign("monarchversion", $monarchversion);
 
     if ($version["gmetad"]) 
     {
-        $tpl->assign("webbackend-component", "gmetad");
-        $tpl->assign("webbackend-version",$version["gmetad"]);
+        $tpl_data->assign("webbackendcomponent", "gmetad");
+        $tpl_data->assign("webbackendversion",$version["gmetad"]);
     } 
     else if ($version["gmond"]) 
     {
-        $tpl->assign("webbackend-component", "gmond");
-        $tpl->assign("webbackend-version", $version["gmond"]);
+        $tpl_data->assign("webbackendcomponent", "gmond");
+        $tpl_data->assign("webbackendversion", $version["gmond"]);
     }
 
-    $tpl->assign("parsetime", sprintf("%.4f", $parsetime) . "s");
+    $tpl_data->assign("parsetime", sprintf("%.4f", $parsetime) . "s");
+
+    $dwoo->output($tpl, $tpl_data);
 }
-
-function includeSearchpage() 
-{
-    global $tpl;
-
-    $tpl->assignInclude( "main", "templates/search.tpl" );
-
-}
-
-function includeOverview() 
-{
-    global $tpl;
-
-    $tpl->assignInclude( "main", "templates/overview.tpl" );
-}
-
-function includeHostPage() 
-{
-
-    global $tpl;
-
-    $tpl->assignInclude( "main", "templates/host_view.tpl" );
-}
-
-$tpl = new TemplatePower( "templates/index.tpl" );
-
-$tpl->assignInclude( "header", "templates/header.tpl" );
 
 if( isset( $h ) and $h != '' ) 
 {
     $hostname = $h;
 }
 
-switch( $view ) 
-{
-
-    case "overview":
-
-        includeOverview();
-        break;
-
-    case "search":
-
-        includeSearchPage();
-        break;
-
-    case "host":
-
-        includeHostPage();
-        break;
-
-    case "overview-host":
-
-        includeHostPage();
-        break;
-
-    default:
-
-        includeOverview();
-        break;
-}
-
-$tpl->assignInclude( "footer", "templates/footer.tpl" );
-$tpl->prepare();
+//$tpl_data->assign( "footer", template( "templates/footer.tpl" ) );
 
 $longtitle = "Batch Report :: Powered by Job Monarch!";
 $title = "Batch Report";
-$tpl->assign("cluster_url", rawurlencode($clustername) );
-$tpl->assign("cluster", $clustername );
+//$tpl_data->assign("cluster_url", rawurlencode($clustername) );
+//$tpl_data->assign("cluster", $clustername );
+
+#makeHeader();
 
 switch( $view ) 
 {
@@ -536,10 +500,10 @@ switch( $view )
 
     default:
 
+        include "./overview.php";
         makeOverview();
         break;
 }
 
 makeFooter();
-$tpl->printToScreen();
 ?>

@@ -19,23 +19,22 @@
 <TD>Cpus</TD>
 </TR>
 
-<!-- START BLOCK : na_nodes -->
+{if "$na_nodes" == "yes"}
 <TR class="overview">
 <TD class="gray">
 Unavailable
 </TD>
 <TD class="gray">
-{na_jobs}
+{$na_jobs}
 </TD>
 <TD class="gray">
-{na_nodes}
+{$na_nodes}
 </TD>
 <TD class="gray">
-{na_cpus}
+{$na_cpus}
 </TD>
 </TR>
-<!-- END BLOCK : na_nodes -->
-
+{/if}
 
 <TR class="overview_line">
 <TD class="blue">
@@ -44,10 +43,10 @@ Capacity
 <TD class="blue">
 </TD>
 <TD class="blue">
-{avail_nodes}
+{$avail_nodes}
 </TD>
 <TD class="blue">
-{avail_cpus}
+{$avail_cpus}
 </TD>
 </TR>
 
@@ -58,13 +57,13 @@ Capacity
 Allocated
 </TD>
 <TD class="red">
-{running_jobs}
+{$running_jobs}
 </TD>
 <TD class="red">
-{running_nodes}
+{$running_nodes}
 </TD>
 <TD class="red">
-{running_cpus}
+{$running_cpus}
 </TD>
 </TR>
 
@@ -73,13 +72,13 @@ Allocated
 Queued
 </TD>
 <TD class="gray">
-{queued_jobs}
+{$queued_jobs}
 </TD>
 <TD class="gray">
-{queued_nodes}
+{$queued_nodes}
 </TD>
 <TD class="gray">
-{queued_cpus}
+{$queued_cpus}
 </TD>
 </TR>
 
@@ -88,13 +87,13 @@ Queued
 Total
 </TD>
 <TD class="brown">
-{total_jobs}
+{$total_jobs}
 </TD>
 <TD class="brown">
-{total_nodes}
+{$total_nodes}
 </TD>
 <TD class="brown">
-{total_cpus}
+{$total_cpus}
 </TD>
 </TR>
 
@@ -106,10 +105,10 @@ Unallocated
 <TD class="green">
 </TD>
 <TD class="green">
-{free_nodes}
+{$free_nodes}
 </TD>
 <TD class="green">
-{free_cpus}
+{$free_cpus}
 </TD>
 </TR>
 
@@ -118,13 +117,13 @@ Unallocated
 View
 </TD>
 <TD>
-{view_jobs}
+{$view_jobs}
 </TD>
 <TD>
-{view_nodes}
+{$view_nodes}
 </TD>
 <TD>
-{view_cpus}
+{$view_cpus}
 </TD>
 </TR>
 
@@ -132,26 +131,26 @@ View
 
 <BR>
 <div id="monarchimage">
-{rjqj_graph}
+{$rjqj_graph}
 </div>
 
   <TD ALIGN="CENTER"><CENTER>
 <!-- INCLUDESCRIPT BLOCK : ci_script -->
     <div id="monarchimage">
-    <IMG SRC="{clusterimage}" USEMAP="#MONARCH_CLUSTER_BIG" BORDER="0">
+    <IMG SRC="{$clusterimage}" USEMAP="#MONARCH_CLUSTER_BIG" BORDER="0">
     </div>
     <MAP NAME="MONARCH_CLUSTER_BIG">
-<!-- START BLOCK : node_clustermap -->
-{node_area_map}
-<!-- END BLOCK : node_clustermap -->
+{if "$nodes_clustermap" == "yes"}
+{$node_area_map}
+{/if}
     </MAP>
     <BR>
-<FONT class="footer">Last updated: {report_time}</FONT></CENTER>
+<FONT class="footer">Last updated: {$report_time}</FONT></CENTER>
   </TD>
 
   </TD>
   <TD ALIGN="CENTER">
-    <IMG SRC="{pie}">
+    <IMG SRC="{$pie}">
   </TD>
 </TR>
 </TABLE>
@@ -161,14 +160,14 @@ View
 <SCRIPT TYPE="text/javascript" SRC="libtoga.js"></SCRIPT>
 <NOSCRIPT><P>[Sorting by column header requires JavaScript]<BR><BR></P></NOSCRIPT>
 
-<INPUT TYPE="HIDDEN" NAME="sortby" VALUE="{sortby}">
-<INPUT TYPE="HIDDEN" NAME="sortorder" VALUE="{sortorder}">
-<INPUT TYPE="HIDDEN" NAME="c" VALUE="{clustername}">
-<INPUT TYPE="HIDDEN" NAME="queue" VALUE="{queue}">
-<INPUT TYPE="HIDDEN" NAME="state" VALUE="{state}">
-<INPUT TYPE="HIDDEN" NAME="owner" VALUE="{owner}">
-<INPUT TYPE="HIDDEN" NAME="id" VALUE="{id}">
-<INPUT TYPE="HIDDEN" NAME="filterorder" VALUE="{order}">
+<INPUT TYPE="HIDDEN" NAME="sortby" VALUE="{$sortby}">
+<INPUT TYPE="HIDDEN" NAME="sortorder" VALUE="{$sortorder}">
+<INPUT TYPE="HIDDEN" NAME="c" VALUE="{$clustername}">
+<INPUT TYPE="HIDDEN" NAME="queue" VALUE="{$queue}">
+<INPUT TYPE="HIDDEN" NAME="state" VALUE="{$state}">
+<INPUT TYPE="HIDDEN" NAME="owner" VALUE="{$owner}">
+<INPUT TYPE="HIDDEN" NAME="id" VALUE="{$id}">
+<INPUT TYPE="HIDDEN" NAME="filterorder" VALUE="{$order}">
 
 <TABLE WIDTH="100%" CELLPADDING="2" CELLSPACING="2" BORDER=0>
 <TR CLASS="monarch">
@@ -178,67 +177,67 @@ View
 <TH><B><A HREF="#" onClick="setSort( 'queue' )">Queue</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'name' )" ALT="Jobname" TITLE="Jobname">Name</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'req_cpu' )" ALT="Requested CPU Time (walltime)" TITLE="Requested CPU Time (walltime)">Req. CPU time</A></B></TH>
-<!-- START BLOCK : column_header_req_mem -->
+{if "$column_header_req_mem" == "yes"}
 <TH><B><A HREF="#" onClick="setSort( 'req_mem' )" ALT="Requested Memory" TITLE="Requested Memory">Req. Memory</A></B></TH>
-<!-- END BLOCK : column_header_req_mem -->
+{/if}
 <TH><B><A HREF="#" onClick="setSort( 'nodes' )" ALT="Nodes" TITLE="Nodes">N</A>/<A HREF="#" onClick="setSort( 'cpus' )" ALT="Processors" TITLE="Processors">P</A></B></TH>
-<!-- START BLOCK : column_header_queued -->
+{if "$column_header_queued" == "yes"}
 <TH><B><A HREF="#" onClick="setSort( 'queued' )">Queued</A></B></TH>
-<!-- END BLOCK : column_header_queued -->
-<!-- START BLOCK : column_header_nodes -->
+{/if}
+{if "$column_header_nodes" == "yes"}
 <TH WIDTH="11%"><B><A HREF="#" onClick="setSort( 'nodes' )" ALT="Nodes" TITLE="Nodes">Nodes</A></B></TH>
-<!-- END BLOCK : column_header_nodes -->
+{/if}
 <TH><B><A HREF="#" onClick="setSort( 'start' )">Started</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'runningtime' )">Runningtime</A></B></TH>
 </TR>
 
-<!-- START BLOCK : node -->
-  <TR CLASS="{nodeclass}">
-    <TD><A HREF="#" onClick="setFilter( 'id', '{id}' )">{id}</A></TD>
-    <TD><A HREF="#" onClick="setFilter( 'state', '{state}' )" ALT="{fullstate}" TITLE="{fullstate}">{state}</A></TD>
-    <TD><A HREF="#" onClick="setFilter( 'owner', '{owner}' )">{owner}</A></TD>
-    <TD><A HREF="#" onClick="setFilter( 'queue', '{queue}' )">{queue}</A></TD>
-    <TD ALT="{fulljobname}" TITLE="{fulljobname}">
-<!-- START BLOCK : jobname_hint_start -->
+{loop $node_list}
+  <TR CLASS="{$nodeclass}">
+    <TD><A HREF="#" onClick="setFilter( 'id', '{$id}' )">{$id}</A></TD>
+    <TD><A HREF="#" onClick="setFilter( 'state', '{$state}' )" ALT="{$fullstate}" TITLE="{$fullstate}">{$state}</A></TD>
+    <TD><A HREF="#" onClick="setFilter( 'owner', '{$owner}' )">{$owner}</A></TD>
+    <TD><A HREF="#" onClick="setFilter( 'queue', '{$queue}' )">{$queue}</A></TD>
+    <TD ALT="{$fulljobname}" TITLE="{$fulljobname}">
+{if "$jobname_hint_start" == "yes"}
     <FONT CLASS="jobname_hint">
-<!-- END BLOCK : jobname_hint_start -->
-    {name}
-<!-- START BLOCK : jobname_hint_end -->
+{/if}
+    {$name}
+{if "$jobname_hint_end" == "yes"}
     </FONT>
-<!-- END BLOCK : jobname_hint_end -->
+{/if}
     </TD>
-    <TD>{req_cpu}</TD>
-<!-- START BLOCK : column_req_mem -->
-    <TD>{req_memory}</TD>
-<!-- END BLOCK : column_req_mem -->
-    <TD>{nodes}/{cpus}</TD>
-<!-- START BLOCK : column_queued -->
-    <TD>{queued}</TD>
-<!-- END BLOCK : column_queued -->
-<!-- START BLOCK : column_nodes -->
-    <TD>{nodes_hostnames}</TD>
-<!-- END BLOCK : column_nodes -->
-    <TD>{started}</TD>
-    <TD>{runningtime}</TD>
+    <TD>{$req_cpu}</TD>
+{if "$column_req_mem" == "yes"}
+    <TD>{$req_memory}</TD>
+{/if}
+    <TD>{$nodes}/{$cpus}</TD>
+{if "$column_queued" == "yes"}
+    <TD>{$queued}</TD>
+{/if}
+{if "$column_nodes" == "yes"}
+    <TD>{$nodes_hostnames}</TD>
+{/if}
+    <TD>{$started}</TD>
+    <TD>{$runningtime}</TD>
   </TR>
-<!-- END BLOCK : node -->
+{/loop}
 </TABLE>
 </CENTER>
 
-<!-- START BLOCK : showhosts -->
+{if "$showhosts" == "yes"}
 <TABLE BORDER="0" WIDTH="100%">
 <TR>
   <TD CLASS=title COLSPAN="2">
   <FONT SIZE="-1">
   Show Hosts:
-  yes<INPUT type=radio name="sh" value="1" OnClick="toga_form.submit();" {checked1}>
-  no<INPUT type=radio name="sh" value="0" OnClick="toga_form.submit();" {checked0}>
+  yes<INPUT type=radio name="sh" value="1" OnClick="toga_form.submit();" {$checked1}>
+  no<INPUT type=radio name="sh" value="0" OnClick="toga_form.submit();" {$checked0}>
   </FONT>
   |
-  job <strong>{id}</strong> metric <strong>{metric}</strong>
+  job <strong>{$id}</strong> metric <strong>{$metric}</strong>
   |
    <FONT SIZE="-1">
-   Columns&nbsp;&nbsp;{cols_menu}
+   Columns&nbsp;&nbsp;{$cols_menu}
    </FONT>
   </TD>
 </TR>
@@ -248,9 +247,9 @@ View
 <CENTER>
 <TABLE>
 <TR>
-<!-- START BLOCK : sorted_list -->
-{metric_image}{br}
-<!-- END BLOCK : sorted_list -->
+{loop $sorted_list}
+{$metric_image}{$br}
+{/loop}
 </TR>
 </TABLE>
 
@@ -259,4 +258,4 @@ View
 
 </CENTER>
 
-<!-- END BLOCK : showhosts -->
+{/if}

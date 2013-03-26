@@ -22,15 +22,22 @@
  * SVN $Id$
  */
 
-global $GANGLIA_PATH, $clustername, $tpl, $filter, $cluster, $get_metric_string, $cluster_url, $sh;
+global $GANGLIA_PATH, $clustername, $tpl_data, $filter, $cluster, $get_metric_string, $cluster_url, $sh;
 global $hosts_up, $m, $start, $end, $filterorder, $COLUMN_REQUESTED_MEMORY, $COLUMN_QUEUED, $COLUMN_NODES, $hostname, $piefilter;
 global $longtitle, $title, $range;
 
-$tpl->assign( "clustername", $clustername );
+include_once "./dwoo/dwooAutoload.php";
+
+global $dwoo;
+
+$tpl = new Dwoo_Template_File("templates/overview.tpl");
+$tpl_data = new Dwoo_Data();
+
+$tpl_data->assign( "clustername", $clustername );
 
 if( $JOB_ARCHIVE )
 {
-    $tpl->assign( "cluster_url", rawurlencode($clustername) );
+    $tpl_data->assign( "cluster_url", rawurlencode($clustername) );
 }
 
 $rjqj_start = null;
@@ -51,15 +58,13 @@ $use_fqdn  = $data_gatherer->getUsingFQDN();
 function setupFilterSettings() 
 {
 
-    global $tpl, $filter, $clustername, $piefilter, $data_gatherer, $myxml_data, $filterorder;
+    global $tpl_data, $filter, $clustername, $piefilter, $data_gatherer, $myxml_data, $filterorder, $_SESSION;
 
     $filter_image_url = "";
 
-    $tpl->gotoBlock( "_ROOT" );
-
     foreach( $filter as $filtername => $filtervalue ) 
     {
-        $tpl->assign( $filtername, $filtervalue );
+        $tpl_data->assign( $filtername, $filtervalue );
 
         $filter_image_url    .= "&$filtername=$filtervalue";
     }
@@ -77,13 +82,12 @@ function setupFilterSettings()
     $ic->setNoimage();
     $ic->draw();
 
-    $tpl->assign( "clusterimage", "./image.php?". session_name() . "=" . session_id() ."&c=".rawurlencode($clustername)."&j_view=big-clusterimage".$filter_image_url );
+    $tpl_data->assign( "clusterimage", "./image.php?". session_name() . "=" . session_id() ."&c=".rawurlencode($clustername)."&j_view=big-clusterimage".$filter_image_url );
 
-    $tpl->newBlock( "node_clustermap" );
-    $tpl->assign( "node_area_map", $ic->getImagemapArea() );
-    $tpl->gotoBlock( "_ROOT" );
+    $tpl_data->assign( "node_clustermap", "yes" );
+    $tpl_data->assign( "node_area_map", $ic->getImagemapArea() );
 
-    $tpl->assign( "order", $filterorder );
+    $tpl_data->assign( "order", $filterorder );
 
     if( array_key_exists( "id", $filter ) ) 
     {
@@ -100,7 +104,7 @@ function setupFilterSettings()
 
     $pie    = drawPie();
 
-    $tpl->assign("pie", $pie );
+    $tpl_data->assign("pie", $pie );
 }
 
 function timeToEpoch( $time ) 
@@ -503,7 +507,7 @@ function sortJobs( $jobs, $sortby, $sortorder )
 
 function makeOverview() 
 {
-    global $jobs, $nodes, $heartbeat, $clustername, $tpl;
+    global $dwoo, $tpl, $tpl_data, $jobs, $nodes, $heartbeat, $clustername, $tpl_data;
     global $sortorder, $sortby, $filter, $sh, $hc, $m, $range;
     global $cluster_url, $get_metric_string, $host_url, $metrics;
     global $start, $end, $reports, $gnodes, $default_showhosts;
@@ -519,8 +523,8 @@ function makeOverview()
         else
             $metricname = "load_one";
 
-    $tpl->assign("sortorder", $sortorder );
-    $tpl->assign("sortby", $sortby );
+    $tpl_data->assign("sortorder", $sortorder );
+    $tpl_data->assign("sortby", $sortby );
 
     $sorted_jobs        = sortJobs( $jobs, $sortby, $sortorder );
 
@@ -564,21 +568,21 @@ function makeOverview()
     //
     if( $COLUMN_REQUESTED_MEMORY ) 
     {
-        $tpl->newBlock( "column_header_req_mem" );
+        $tpl_data->assign( "column_header_req_mem", "yes" );
     }
 
     // Is the "nodes hostnames" column enabled in the config
     //
     if( $COLUMN_NODES ) 
     {
-        $tpl->newBlock( "column_header_nodes" );
+        $tpl_data->assign( "column_header_nodes", "yes" );
     }
 
     // Is the "queued time" column enabled in the config
     //
     if( $COLUMN_QUEUED ) 
     {
-        $tpl->newBlock( "column_header_queued" );
+        $tpl_data->assign( "column_header_queued", "yes" );
     }
 
     $last_displayed_job = null;
@@ -608,6 +612,7 @@ function makeOverview()
         }
     }
 
+    $node_list = array();
 
     foreach( $sorted_jobs as $jobid => $sortdec ) 
     {
@@ -710,15 +715,17 @@ function makeOverview()
                 }
             }
 
+
             if( $display_job ) 
             {
-                $tpl->newBlock( "node" );
-                $tpl->assign( "clustername", $clustername );
-                $tpl->assign( "id", $jobid );
+                $job_loop = array();
+                $job_loop["clustername"] = $clustername;
+
+                $job_loop["id"] = $jobid;
 
                 $last_displayed_job     = $jobid;
 
-                $tpl->assign( "state", $jobs[$jobid]['status'] );
+                $job_loop["state"] = $jobs[$jobid]['status'];
 
                 $fullstate         = '';
 
@@ -731,15 +738,15 @@ function makeOverview()
                     $fullstate     = "Queued";
                 }
 
-                $tpl->assign( "fullstate", $fullstate );
+                $job_loop["fullstate"] = $fullstate;
                 
-                $tpl->assign( "owner", $jobs[$jobid]['owner'] );
-                $tpl->assign( "queue", $jobs[$jobid]['queue'] );
+                $job_loop["owner"] = $jobs[$jobid]['owner'];
+                $job_loop["queue"] = $jobs[$jobid]['queue'];
 
                 $fulljobname         = $jobs[$jobid]['name'];
-                $shortjobname         = '';
+                $shortjobname        = '';
 
-                $tpl->assign( "fulljobname", $fulljobname );
+                $job_loop["fulljobname"] = $fulljobname;
 
                 $fulljobname_fields    = explode( ' ', $fulljobname );
 
@@ -752,8 +759,8 @@ function makeOverview()
 
                 if( $capjobname ) 
                 {
-                    $tpl->newBlock( "jobname_hint_start" );
-                    $tpl->gotoBlock( "node" );
+                    //$tpl_data->assign( "jobname_hint_start", "yes" );
+                    $job_loop[ "jobname_hint_start" ] = "yes";
 
                     $shortjobname     = substr( $fulljobname, 0, 10 ) . '..';
                 } 
@@ -762,43 +769,44 @@ function makeOverview()
                     $shortjobname     = $fulljobname;
                 }
                 
-                $tpl->assign( "name", $shortjobname );
+                $job_loop["name"] = $shortjobname;
 
                 if( $capjobname ) 
                 {
-                    $tpl->newBlock( "jobname_hint_end" );
-                    $tpl->gotoBlock( "node" );
+                    //$tpl_data->assign( "jobname_hint_end", "yes" );
+                    $job_loop[ "jobname_hint_end" ] = "yes";
                 }
 
                 $domain         = $jobs[$jobid]['domain'];
 
-                $tpl->assign( "req_cpu", makeTime( timeToEpoch( $jobs[$jobid]['requested_time'] ) ) );
+                $job_loop["req_cpu"] = makeTime( timeToEpoch( $jobs[$jobid]['requested_time'] ) );
 
                 if( $COLUMN_REQUESTED_MEMORY ) 
                 {
-                    $tpl->newBlock( "column_req_mem" );
-                    $tpl->assign( "req_memory", $jobs[$jobid]['requested_memory'] );
-                    $tpl->gotoBlock( "node" );
+                    //$tpl_data->assign( "column_req_mem", "yes" );
+                    $job_loop[ "column_req_mem" ] = "yes";
+                    $job_loop["req_memory"] = $jobs[$jobid]['requested_memory'];
                 }
 
 
                 if( $COLUMN_QUEUED ) 
                 {
-                    $tpl->newBlock( "column_queued" );
-                    $tpl->assign( "queued", makeDate( $jobs[$jobid]['queued_timestamp'] ) );
-                    $tpl->gotoBlock( "node" );
+                    //$tpl_data->assign( "column_queued", "yes" );
+                    $job_loop[ "column_queued" ] = "yes";
+                    $job_loop["queued"] = makeDate( $jobs[$jobid]['queued_timestamp'] );
                 }
                 if( $COLUMN_NODES ) 
                 {
-                    $tpl->newBlock( "column_nodes" );
-                    $tpl->gotoBlock( "node" );
+                    //$tpl_data->assign( "column_nodes", "yes" );
+                    $job_loop[ "column_nodes" ] = "yes";
+                    //echo "colum nodes";
                 }
 
                 $ppn       = isset( $jobs[$jobid]['ppn'] ) ? $jobs[$jobid]['ppn'] : 1;
                 $cpus      = $nodes * $ppn;
 
-                $tpl->assign( "nodes", $nodes );
-                $tpl->assign( "cpus", $cpus );
+                $job_loop["nodes"] = $nodes;
+                $job_loop["cpus"] = $cpus;
 
                 $start_time= (int) $jobs[$jobid]['start_timestamp'];
                 $job_start = $start_time;
@@ -826,7 +834,8 @@ function makeOverview()
 
                     if( $COLUMN_NODES ) 
                     {
-                        $tpl->gotoBlock( "column_nodes" );
+                        //$tpl_data->assign( "column_nodes", "yes" );
+                        $job_loop[ "column_nodes" ] = "yes";
 
                         $mynodehosts         = array();
 
@@ -842,8 +851,7 @@ function makeOverview()
 
                         $nodes_hostnames    = implode( " ", $mynodehosts );
 
-                        $tpl->assign( "nodes_hostnames", $nodes_hostnames );
-                        $tpl->gotoBlock( "node" );
+                        $job_loop["nodes_hostnames"] = $nodes_hostnames;
                     }
                 } 
                 else if( $jobs[$jobid]['status'] == 'Q' ) 
@@ -853,13 +861,13 @@ function makeOverview()
 
                 if( $even ) 
                 {
-                    $tpl->assign( "nodeclass", "even" );
+                    $job_loop["nodeclass"] = "even";
 
                     $even         = 0;
                 } 
                 else 
                 {
-                    $tpl->assign( "nodeclass", "odd" );
+                    $job_loop["nodeclass"] = "odd";
 
                     $even         = 1;
                 }
@@ -869,10 +877,12 @@ function makeOverview()
                     $runningtime        = makeTime( $report_time - $start_time );
                     $job_runningtime    = $heartbeat - $start_time;
 
-                    $tpl->assign( "started", makeDate( $start_time ) );
-                    $tpl->assign( "runningtime", $runningtime );
+                    $job_loop["started"] = makeDate( $start_time );
+                    $job_loop["runningtime"] = $runningtime;
                 }
+                $node_list[] = $job_loop;
             }
+            $tpl_data->assign("node_list", $node_list );
         }
     }
     // Running / queued amount jobs graph
@@ -894,9 +904,7 @@ function makeOverview()
         $rjqj_str .= "<IMG BORDER=0 SRC=\"./graph.php$rjqj_graphargs\" WIDTH=381 HEIGHT=137>";
         $rjqj_str .= "</A>";
 
-        $tpl->gotoBlock( "_ROOT" );
-
-        $tpl->assign( "rjqj_graph", $rjqj_str );
+        $tpl_data->assign( "rjqj_graph", $rjqj_str );
     }
 
     $all_used_nodes     = array_unique( $all_used_nodes );
@@ -916,45 +924,43 @@ function makeOverview()
     $free_cpus          = $avail_cpus - $running_cpus - $na_cpus;
     $free_cpus          = ( $free_cpus >= 0 ) ? $free_cpus : 0;
 
-    $tpl->assignGlobal( "avail_nodes", $avail_nodes );
-    $tpl->assignGlobal( "avail_cpus", $avail_cpus );
+    $tpl_data->assign( "avail_nodes", $avail_nodes );
+    $tpl_data->assign( "avail_cpus", $avail_cpus );
 
-    $tpl->assignGlobal( "queued_nodes", $queued_nodes );
-    $tpl->assignGlobal( "queued_jobs", $queued_jobs );
-    $tpl->assignGlobal( "queued_cpus", $queued_cpus );
+    $tpl_data->assign( "queued_nodes", $queued_nodes );
+    $tpl_data->assign( "queued_jobs", $queued_jobs );
+    $tpl_data->assign( "queued_cpus", $queued_cpus );
 
     // Only display "Unavailable" in count overview there are any
     //
     if( $na_nodes > 0 )
     {
-        $tpl->newBlock( "na_nodes" );
+        $tpl_data->assign( "na_nodes", "yes");
 
-        $tpl->assignGlobal( "na_nodes", $na_nodes );
-        $tpl->assignGlobal( "na_cpus", $na_cpus );
-
-        $tpl->gotoBlock( "_ROOT" );
+        $tpl_data->assign( "na_nodes", $na_nodes );
+        $tpl_data->assign( "na_cpus", $na_cpus );
     }
 
-    $tpl->assignGlobal( "total_nodes", $total_nodes );
-    $tpl->assignGlobal( "total_jobs", $total_jobs );
-    $tpl->assignGlobal( "total_cpus", $total_cpus );
+    $tpl_data->assign( "total_nodes", $total_nodes );
+    $tpl_data->assign( "total_jobs", $total_jobs );
+    $tpl_data->assign( "total_cpus", $total_cpus );
 
-    $tpl->assignGlobal( "running_nodes", $running_nodes );
-    $tpl->assignGlobal( "running_jobs", $running_jobs );
-    $tpl->assignGlobal( "running_cpus", $running_cpus );
+    $tpl_data->assign( "running_nodes", $running_nodes );
+    $tpl_data->assign( "running_jobs", $running_jobs );
+    $tpl_data->assign( "running_cpus", $running_cpus );
 
-    $tpl->assignGlobal( "used_nodes", $used_nodes );
-    $tpl->assignGlobal( "used_jobs", $used_jobs );
-    $tpl->assignGlobal( "used_cpus", $used_cpus );
+    $tpl_data->assign( "used_nodes", $used_nodes );
+    $tpl_data->assign( "used_jobs", $used_jobs );
+    $tpl_data->assign( "used_cpus", $used_cpus );
 
-    $tpl->assignGlobal( "free_nodes", $free_nodes );
-    $tpl->assignGlobal( "free_cpus", $free_cpus );
+    $tpl_data->assign( "free_nodes", $free_nodes );
+    $tpl_data->assign( "free_cpus", $free_cpus );
 
-    $tpl->assignGlobal( "view_nodes", $view_nodes );
-    $tpl->assignGlobal( "view_jobs", $view_jobs );
-    $tpl->assignGlobal( "view_cpus", $view_cpus );
+    $tpl_data->assign( "view_nodes", $view_nodes );
+    $tpl_data->assign( "view_jobs", $view_jobs );
+    $tpl_data->assign( "view_cpus", $view_cpus );
 
-    $tpl->assignGlobal( "report_time", makeDate( $heartbeat) );
+    $tpl_data->assign( "report_time", makeDate( $heartbeat) );
 
     if( intval($view_jobs) == 1 and $start_time )
     {
@@ -975,7 +981,7 @@ function makeOverview()
 
     if( intval($view_jobs) == 1 and $start_time ) 
     {
-        $tpl->newBlock( "showhosts" );
+        $tpl_data->assign( "showhosts", "yes" );
 
         # Present a width list
         $cols_menu     = "<SELECT NAME=\"hc\" OnChange=\"toga_form.submit();\">\n";
@@ -994,15 +1000,17 @@ function makeOverview()
         }
         $cols_menu     .= "</SELECT>\n";
 
-        $tpl->assign( "metric","$metricname $units" );
-        $tpl->assign( "id", $filter['id'] );
+        $tpl_data->assign( "metric","$metricname $units" );
+        $tpl_data->assign( "id", $filter['id'] );
 
         # Host columns menu defined in header.php
-        $tpl->assign( "cols_menu", $cols_menu );
+        $tpl_data->assign( "cols_menu", $cols_menu );
 
         $showhosts     = isset($sh) ? $sh : $default_showhosts;
 
-        $tpl->assign( "checked$showhosts", "checked" );
+        $tpl_data->assign( "checked$showhosts", "checked" );
+
+        $sorted_list = array();
 
         if( $showhosts ) 
         {
@@ -1095,10 +1103,9 @@ function makeOverview()
             // Second pass to output the graphs or metrics.
             $i = 1;
 
+            $metric_loop = array();
             foreach ( $sorted_hosts as $host=>$value  ) 
             {
-                $tpl->newBlock( "sorted_list" );
-
                 $host_url    = rawurlencode( $host );
                 $cluster_url = rawurlencode( $clustername );
 
@@ -1149,14 +1156,18 @@ function makeOverview()
                     $cell    = "<TD><DIV ID=\"monarchimage\"><A HREF=\"$host_link\">" . "<IMG SRC=\"./graph.php?$graphargs\" " . "ALT=\"$host\" BORDER=0  WIDTH=381 HEIGHT=148></A></DIV></TD>";
                 }
 
-                $tpl->assign( "metric_image", $cell );
+                $metric_loop["metric_image"] = $cell;
 
                 if(! ($i++ % $hostcols) )
                 {
-                     $tpl->assign( "br", "</tr><tr>" );
+                     $metric_loop["br"] = "</tr><tr>";
                 }
+                $sorted_list[] = $metric_loop;
             }
+            $tpl_data->assign("sorted_list", $sorted_list );
         }
     }
+    $dwoo->output($tpl, $tpl_data);
 }
+
 ?>
