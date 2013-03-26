@@ -1153,15 +1153,15 @@ function makeOverview()
                 {
                     $cell    = "<td class=$class>".  "<b><a href=$host_link>$host</a></b><br>".  "<i>$metricname:</i> <b>$textval</b></td>";
                 } else {
-                    $cell    = "<TD><DIV ID=\"monarchimage\"><A HREF=\"$host_link\">" . "<IMG SRC=\"./graph.php?$graphargs\" " . "ALT=\"$host\" BORDER=0  WIDTH=381 HEIGHT=148></A></DIV></TD>";
+                    $cell    = "<A HREF=\"$host_link\">" . "<IMG SRC=\"./graph.php?$graphargs\" " . "ALT=\"$host\" BORDER=0  WIDTH=381 HEIGHT=148></A>";
                 }
 
                 $metric_loop["metric_image"] = $cell;
 
-                if(! ($i++ % $hostcols) )
-                {
-                     $metric_loop["br"] = "</tr><tr>";
-                }
+                //if(! ($i++ % $hostcols) )
+                //{
+                //     $metric_loop["br"] = "</tr><tr>";
+                //}
                 $sorted_list[] = $metric_loop;
             }
             $tpl_data->assign("sorted_list", $sorted_list );

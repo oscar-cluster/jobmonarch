@@ -3,6 +3,7 @@
     background-image:url(ajax-loader.gif);
     background-repeat:no-repeat;
     background-position: center center;
+    overflow:auto;
 }
 
 A:link

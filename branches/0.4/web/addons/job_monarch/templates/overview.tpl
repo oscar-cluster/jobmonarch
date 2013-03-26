@@ -247,9 +247,11 @@ View
 <CENTER>
 <TABLE>
 <TR>
+<div id="monarchimage">
 {loop $sorted_list}
 {$metric_image}{$br}
 {/loop}
+</div>
 </TR>
 </TABLE>
 
