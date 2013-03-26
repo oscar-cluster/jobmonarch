@@ -748,7 +748,7 @@ class TorqueXMLHandler
             $metrics[$hostname]['gmond_started']['VAL'] = $attrs['GMOND_STARTED'];
             $metrics[$hostname]['gmond_started']['TYPE'] = "timestamp";
             $metrics[$hostname]['last_reported']['NAME'] = "REPORTED";
-            $metrics[$hostname]['last_reported']['VAL'] = uptime($cluster['LOCALTIME'] - $attrs['REPORTED']);
+            $metrics[$hostname]['last_reported']['VAL'] = $attrs['REPORTED'];
             $metrics[$hostname]['last_reported']['TYPE'] = "string";
             $metrics[$hostname]['last_reported_timestamp']['NAME'] = "REPORTED TIMESTAMP";
             $metrics[$hostname]['last_reported_timestamp']['VAL'] = $attrs['REPORTED'];
@@ -925,9 +925,8 @@ class TorqueXMLHandler
                             $domain        = $this->jobs[$jobid]['domain'];
                             $domain_len    = 0 - strlen( $domain );
 
-                            $nodekeys     = array_keys( $this->nodes );
+                            $first_host    = key( array_slice($this->nodes, 0, 1, true) );
 
-                            $first_host    = $nodekeys[0];
                             // Let's see if Ganglia use's FQDN or short hostnames
                             //
                             if( strpos( $first_host, $domain ) === false )
