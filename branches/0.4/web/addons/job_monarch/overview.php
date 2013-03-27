@@ -818,13 +818,14 @@ function makeOverview()
 
                 if( $jobs[$jobid]['status'] == 'R' ) 
                 {
+                    $job_runningtime    = $heartbeat - $start_time;
                     if( $rjqj_start == null ) 
                     {
-                        $rjqj_start = $start_time;
+                        $rjqj_start = intval( $start_time - (intval( $job_runningtime * 0.10 ) ) );
                     }
                     else if( $start_time < $rjqj_start )
                     {
-                        $rjqj_start = $start_time;
+                        $rjqj_start = intval( $start_time - (intval( $job_runningtime * 0.10 ) ) );
                     }
 
                     foreach( $jobs[$jobid]['nodes'] as $tempnode )
@@ -885,6 +886,13 @@ function makeOverview()
             $tpl_data->assign("node_list", $node_list );
         }
     }
+    if( intval($view_jobs) == 1 and $start_time )
+    {
+        if( $last_displayed_job != null )
+        {
+            $filter['id'] = $last_displayed_job;
+        }
+    }
     // Running / queued amount jobs graph
     //
     if( $rjqj_host != null )
@@ -899,6 +907,11 @@ function makeOverview()
         else
         {
             $rjqj_graphargs .= "&st=$cluster[LOCALTIME]";
+        }
+        if( intval($view_jobs) == 1 and $start_time )
+        {
+            $job_start     = $jobs[$last_displayed_job]['start_timestamp'];
+            $rjqj_graphargs .= "&job_start=$start_time";
         }
 
         $rjqj_str  = "<A HREF=\"./graph.php$rjqj_graphargs\">";
@@ -963,13 +976,6 @@ function makeOverview()
 
     $tpl_data->assign( "report_time", makeDate( $heartbeat) );
 
-    if( intval($view_jobs) == 1 and $start_time )
-    {
-        if( $last_displayed_job != null )
-        {
-            $filter['id'] = $last_displayed_job;
-        }
-    }
 
     global $longtitle, $title;
 

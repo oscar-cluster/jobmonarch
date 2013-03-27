@@ -424,12 +424,16 @@ if (isset($graph))
         }
 
     }
-    if( $series != '' ) 
+}
+if( $series != '' ) 
+{
+    if ($job_start)
     {
-        if ($job_start)
-            $series .= "VRULE:${job_start}#${jobstart_color} ";
-        if ($job_stop)
-            $series .= "VRULE:${job_stop}#${jobstart_color} ";
+        $series .= "VRULE:${job_start}#${jobstart_color} ";
+    }
+    if ($job_stop)
+    {
+        $series .= "VRULE:${job_stop}#${jobstart_color} ";
     }
 }
 
