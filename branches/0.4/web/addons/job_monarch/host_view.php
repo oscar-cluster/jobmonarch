@@ -24,14 +24,14 @@
 
 include_once "./libtoga.php";
 
-$my_dir = getcwd();
-
-global $context;
-
-$context = 'cluster';
-
 if( $view == "overview-host" )
 {
+    $my_dir = getcwd();
+
+    global $context;
+
+    $context = 'cluster';
+
     chdir( $GANGLIA_PATH );
 
     include "./ganglia.php";
@@ -106,6 +106,7 @@ function makeHostView()
         if( $view == "overview-host" )
         {
             $mymetrics = $metrics;
+            unset( $mymetrics['last_reported_timestamp'] ); // Ganglia bug?
             #print_r( $mymetrics );
         }
         else
@@ -169,18 +170,18 @@ function makeHostView()
     # For the node view link.
     $tpl_data->assign("node_view","./?p=2&c=$cluster_url&h=$hostname");
 
-    $tpl_data->assign("ip", $hosts_up[IP]);
+    $tpl_data->assign("ip", $hosts_up['IP']);
 
     #print_r( $mymetrics );
 
     foreach ($mymetrics as $name => $v)
     {
-        if ($v[TYPE] == "string" or $v[TYPE]=="timestamp" or $always_timestamp[$name])
+        if ($v['TYPE'] == "string" or $v['TYPE']=="timestamp" or $always_timestamp[$name] or $v['NAME']=='last_reported_timestamp')
         {
             # Long gmetric name/values will disrupt the display here.
-            if ($v[SOURCE] == "gmond") $s_metrics[$name] = $v;
+            if ($v['SOURCE'] == "gmond") $s_metrics[$name] = $v;
         }
-        else if ($v[SLOPE] == "zero" or $always_constant[$name])
+        else if ($v['SLOPE'] == "zero" or $always_constant[$name])
         {
             $c_metrics[$name] = $v;
         }
@@ -202,25 +203,25 @@ function makeHostView()
                 $graphargs .= "&st=$tijd";
             }
             # Adding units to graph 2003 by Jason Smith <smithj4@bnl.gov>.
-            if ($v[UNITS]) 
+            if ($v['UNITS']) 
             {
-                $encodeUnits = rawurlencode($v[UNITS]);
+                $encodeUnits = rawurlencode($v['UNITS']);
                 $graphargs .= "&vl=$encodeUnits";
             }
-            $g_metrics[$name][graph] = $graphargs;
+            $g_metrics[$name]['graph'] = $graphargs;
         }
     }
     # Add the uptime metric for this host. Cannot be done in ganglia.php,
     # since it requires a fully-parsed XML tree. The classic contructor problem.
-    $s_metrics[uptime][TYPE] = "string";
-    $s_metrics[uptime][VAL] = uptime($cluster[LOCALTIME] - $metrics[boottime][VAL]);
+    $s_metrics['uptime']['TYPE'] = "string";
+    $s_metrics['uptime']['VAL'] = uptime($cluster['LOCALTIME'] - $metrics['boottime']['VAL']);
 
     # Add the gmond started timestamps & last reported time (in uptime format) from
     # the HOST tag:
-    $s_metrics[gmond_started][TYPE] = "timestamp";
-    $s_metrics[gmond_started][VAL] = $hosts_up[GMOND_STARTED];
-    $s_metrics[last_reported][TYPE] = "string";
-    $s_metrics[last_reported][VAL] = uptime($cluster[LOCALTIME] - $hosts_up[REPORTED]);
+    $s_metrics['gmond_started']['TYPE'] = "timestamp";
+    $s_metrics['gmond_started']['VAL'] = $hosts_up['GMOND_STARTED'];
+    $s_metrics['last_reported']['TYPE'] = "string";
+    $s_metrics['last_reported']['VAL'] = uptime($cluster['LOCALTIME'] - $hosts_up['REPORTED']);
 
     # Show string metrics
     if (is_array($s_metrics))
@@ -231,13 +232,13 @@ function makeHostView()
         {
             $metric_info = array();
             $metric_info["name"] = $name;
-            if( $v[TYPE]=="timestamp" or $always_timestamp[$name])
+            if( $v['TYPE']=="timestamp" or $always_timestamp[$name])
             {
-                $metric_info["value"] = date("r", $v[VAL]);
+                $metric_info["value"] = date("r", $v['VAL']);
             }
             else
             {
-                $metric_info["value"] = "$v[VAL] $v[UNITS]";
+                $metric_info["value"] = $v['VAL']." ". $v['UNITS'];
             }
             $string_metric_info_loop[] = $metric_info;
         }
@@ -253,7 +254,7 @@ function makeHostView()
         {
             $const_info = array();
             $const_infp["name"] = $name;
-            $const_info["value"] = "$v[VAL] $v[UNITS]";
+            $const_info["value"] = $v[VAL]." ". $v[UNITS];
             $const_metric_info_loop[] = $const_info;
         }
         $tpl_data->assign("const_metric_info", $const_metric_info_loop );
@@ -269,7 +270,7 @@ function makeHostView()
         foreach ( $g_metrics as $name => $v )
         {
             $metric_info = array();
-            $metric_info["graphargs"] = $v[graph];
+            $metric_info["graphargs"] = $v['graph'];
             $metric_info["alt"] = "$hostname $name";
             $vol_metric_info_loop[] = $metric_info;
         } 
