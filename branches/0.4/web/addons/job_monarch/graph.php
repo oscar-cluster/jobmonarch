@@ -440,9 +440,16 @@ if (isset($graph))
     }
 }
 
-if ($graph == "job_report")
+if($graph == "job_report")
 {
-    $title = "Last: $j_title";
+    if($range == 'job' )
+    {
+        $title = "Last: $j_title";
+    }
+    else
+    {
+        $title = "Last: $range";
+    }
 }
 else
 {

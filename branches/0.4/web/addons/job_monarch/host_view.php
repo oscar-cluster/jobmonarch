@@ -30,12 +30,15 @@ global $context;
 
 $context = 'cluster';
 
-chdir( $GANGLIA_PATH );
+if( $view == "overview-host" )
+{
+    chdir( $GANGLIA_PATH );
 
-include "./ganglia.php";
-include "./get_ganglia.php";
+    include "./ganglia.php";
+    include "./get_ganglia.php";
 
-chdir( $my_dir );
+    chdir( $my_dir );
+}
 
 function datetimeToEpoch( $datetime ) 
 {
@@ -67,10 +70,13 @@ function datetimeToEpoch( $datetime )
 function makeHostView() 
 {
 
-    global $tpl, $metrics, $clustername, $hostname;
+    global $dwoo, $metrics, $clustername, $hostname;
     global $cluster_ul, $hosts_up, $get_metric_string;
     global $cluster, $period_start, $period_stop;
     global $job_start, $job_stop, $view, $conf, $range;
+
+    $tpl = new Dwoo_Template_File("templates/host_view.tpl");
+    $tpl_data = new Dwoo_Data();
 
     $rrdirs = array();
 
@@ -123,11 +129,11 @@ function makeHostView()
 
     $hosts_up = $hosts_up[$hostname];
 
-    $tpl->assign("cluster", $clustername);
-    $tpl->assign("host", $hostname);
-    $tpl->assign("node_image", "../../".node_image($metrics));
-    $tpl->assign("sort",$sort);
-    $tpl->assign("range",$range);
+    $tpl_data->assign("cluster", $clustername);
+    $tpl_data->assign("host", $hostname);
+    $tpl_data->assign("node_image", "../../".node_image($metrics));
+    $tpl_data->assign("sort",$sort);
+    $tpl_data->assign("range",$range);
 
     if( !is_numeric( $period_start ) ) 
     {
@@ -139,12 +145,12 @@ function makeHostView()
     }
 
     if($hosts_up)
-          $tpl->assign("node_msg", "This host is up and running."); 
+          $tpl_data->assign("node_msg", "This host is up and running."); 
     else
-          $tpl->assign("node_msg", "This host is down."); 
+          $tpl_data->assign("node_msg", "This host is down."); 
 
     $cluster_url=rawurlencode($clustername);
-    $tpl->assign("cluster_url", $cluster_url);
+    $tpl_data->assign("cluster_url", $cluster_url);
 
     $graphargs = "h=$hostname&r=$range&job_start=$job_start&job_stop=$job_stop";
 
@@ -158,12 +164,12 @@ function makeHostView()
         $graphargs .= "&st=$tijd";
     }
 
-    $tpl->assign("graphargs", "$graphargs");
+    $tpl_data->assign("graphargs", "$graphargs");
 
     # For the node view link.
-    $tpl->assign("node_view","./?p=2&c=$cluster_url&h=$hostname");
+    $tpl_data->assign("node_view","./?p=2&c=$cluster_url&h=$hostname");
 
-    $tpl->assign("ip", $hosts_up[IP]);
+    $tpl_data->assign("ip", $hosts_up[IP]);
 
     #print_r( $mymetrics );
 
@@ -220,50 +226,56 @@ function makeHostView()
     if (is_array($s_metrics))
     {
         ksort($s_metrics);
+        $string_metric_info_loop = array();
         foreach ($s_metrics as $name => $v )
         {
-            $tpl->newBlock("string_metric_info");
-            $tpl->assign("name", $name);
+            $metric_info = array();
+            $metric_info["name"] = $name;
             if( $v[TYPE]=="timestamp" or $always_timestamp[$name])
             {
-                $tpl->assign("value", date("r", $v[VAL]));
+                $metric_info["value"] = date("r", $v[VAL]);
             }
             else
             {
-                $tpl->assign("value", "$v[VAL] $v[UNITS]");
+                $metric_info["value"] = "$v[VAL] $v[UNITS]";
             }
+            $string_metric_info_loop[] = $metric_info;
         }
+        $tpl_data->assign("string_metric_info", $string_metric_info_loop );
     }
 
     # Show constant metrics.
     if (is_array($c_metrics))
     {
         ksort($c_metrics);
+        $const_metric_info_loop = array();
         foreach ($c_metrics as $name => $v )
         {
-            $tpl->newBlock("const_metric_info");
-            $tpl->assign("name", $name);
-            $tpl->assign("value", "$v[VAL] $v[UNITS]");
+            $const_info = array();
+            $const_infp["name"] = $name;
+            $const_info["value"] = "$v[VAL] $v[UNITS]";
+            $const_metric_info_loop[] = $const_info;
         }
+        $tpl_data->assign("const_metric_info", $const_metric_info_loop );
     }
 
     # Show graphs.
     if (is_array($g_metrics))
     {
         ksort($g_metrics);
+        $vol_metric_info_loop = array();
 
         $i = 0;
         foreach ( $g_metrics as $name => $v )
         {
-            $tpl->newBlock("vol_metric_info");
-            $tpl->assign("graphargs", $v[graph]);
-            $tpl->assign("alt", "$hostname $name");
-            if($i++ %2)
-            {
-                $tpl->assign("br", "<BR>");
-            }
-         }
+            $metric_info = array();
+            $metric_info["graphargs"] = $v[graph];
+            $metric_info["alt"] = "$hostname $name";
+            $vol_metric_info_loop[] = $metric_info;
+        } 
+        $tpl_data->assign("vol_metric_info", $vol_metric_info_loop );
     }
+    $dwoo->output($tpl, $tpl_data);
 }
 
 ?>
