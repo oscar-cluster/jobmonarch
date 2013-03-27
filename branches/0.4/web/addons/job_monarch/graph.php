@@ -22,30 +22,9 @@
  * SVN $Id$
  */
 
-global $rrds, $range, $start, $r, $conf, $m;
-$range = $r;
+global $rrds, $start, $r, $conf, $m;
 
 include "./libtoga.php";
-
-$my_dir = getcwd();
-
-global $context;
-
-$context = 'cluster';
-
-chdir( $GANGLIA_PATH );
-
-include "./ganglia.php";
-include "./get_ganglia.php";
-
-chdir( $my_dir );
-
-if ( !empty( $_GET ) ) 
-{
-        extract( $_GET );
-}
-
-$sourcetime = $st;
 
 # Graph specific variables
 $size = escapeshellcmd( rawurldecode( $_GET["z"] ));
@@ -58,10 +37,35 @@ $value = escapeshellcmd( rawurldecode( $_GET["v"] ));
 $load_color = escapeshellcmd( rawurldecode( $_GET["l"] ));
 $vlabel = escapeshellcmd( rawurldecode( $_GET["vl"] ));
 $j_title = escapeshellcmd( rawurldecode( $_GET["t"] ));
+$hostname = escapeshellcmd( rawurldecode( $_GET["h"] ));
+$range = escapeshellcmd( rawurldecode( $_GET["r"] ));
+
+if( strpos( $size, 'overview' ) )
+{
+    $my_dir = getcwd();
+
+    global $context;
+
+    $context = 'host';
+
+    chdir( $GANGLIA_PATH );
+
+    include "./ganglia.php";
+    include "./get_ganglia.php";
+
+    chdir( $my_dir );
+}
+
+if ( !empty( $_GET ) ) 
+{
+        extract( $_GET );
+}
+
+$sourcetime = $st;
+
 
 $cluster = $c;
 $metricname = ($g) ? $g : $m;
-$hostname = $h;
 
 # Assumes we have a $start variable (set in get_context.php).
 if ($size == "small") 
@@ -172,18 +176,7 @@ if (isset($graph))
 
         $def_nr = 0;
 
-        foreach( $metrics as $bhost => $bmetric )
-        {
-            foreach( $bmetric as $mname => $mval )
-            {
-                if( ( $mname == 'zplugin_monarch_rj' ) || ($mname == 'zplugin_monarch_qj') )
-                {
-                    $rjqj_host      = $bhost;
-                }
-            }
-        }
-
-        $rrd_dir = $conf['rrds'] . "/$clustername/$rjqj_host/";
+        $rrd_dir = $conf['rrds'] . "/$clustername/$hostname/";
 
         $rj_rrd    = $rrd_dir . "zplugin_monarch_rj.rrd";
         $qj_rrd    = $rrd_dir . "zplugin_monarch_qj.rrd";

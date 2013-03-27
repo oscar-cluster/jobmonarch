@@ -889,7 +889,7 @@ function makeOverview()
     //
     if( $rjqj_host != null )
     {
-        $rjqj_graphargs = "?z=medium&c=$clustername&g=job_report&r=$range";
+        $rjqj_graphargs = "?z=overview-medium&c=$clustername&h=$rjqj_host&g=job_report&r=$range";
         if( $range == 'job' )
         {
             $rjqj_end = time();
