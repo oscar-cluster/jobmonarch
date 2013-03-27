@@ -57,6 +57,7 @@ $min = escapeshellcmd( rawurldecode( $_GET["n"] ));
 $value = escapeshellcmd( rawurldecode( $_GET["v"] ));
 $load_color = escapeshellcmd( rawurldecode( $_GET["l"] ));
 $vlabel = escapeshellcmd( rawurldecode( $_GET["vl"] ));
+$j_title = escapeshellcmd( rawurldecode( $_GET["t"] ));
 
 $cluster = $c;
 $metricname = ($g) ? $g : $m;
@@ -439,7 +440,14 @@ if (isset($graph))
     }
 }
 
-$title = "$hostname";
+if ($graph == "job_report")
+{
+    $title = "Last: $j_title";
+}
+else
+{
+    $title = "$hostname";
+}
 
 function determineXGrid( $p_start, $p_stop ) 
 {

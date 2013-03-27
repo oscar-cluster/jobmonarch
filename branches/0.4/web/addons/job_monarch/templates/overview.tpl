@@ -233,12 +233,6 @@ View
   yes<INPUT type=radio name="sh" value="1" OnClick="toga_form.submit();" {$checked1}>
   no<INPUT type=radio name="sh" value="0" OnClick="toga_form.submit();" {$checked0}>
   </FONT>
-  |
-  job <strong>{$id}</strong> metric <strong>{$metric}</strong>
-  |
-   <FONT SIZE="-1">
-   Columns&nbsp;&nbsp;{$cols_menu}
-   </FONT>
   </TD>
 </TR>
    

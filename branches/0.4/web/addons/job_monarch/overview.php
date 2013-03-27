@@ -893,7 +893,8 @@ function makeOverview()
         if( $range == 'job' )
         {
             $rjqj_end = time();
-            $rjqj_graphargs .= "&period_start=$rjqj_start&period_stop=$rjqj_end";
+            $rjqj_title = rawurlencode( makeTime( ($rjqj_end - $rjqj_start) ) );
+            $rjqj_graphargs .= "&period_start=$rjqj_start&period_stop=$rjqj_end&t=$rjqj_title";
         }
         else
         {
@@ -982,29 +983,6 @@ function makeOverview()
     if( intval($view_jobs) == 1 and $start_time ) 
     {
         $tpl_data->assign( "showhosts", "yes" );
-
-        # Present a width list
-        $cols_menu     = "<SELECT NAME=\"hc\" OnChange=\"toga_form.submit();\">\n";
-
-        $hostcols     = ($hc) ? $hc : 4;
-
-        foreach( range( 1, 25 ) as $cols ) 
-        {
-            $cols_menu    .= "<OPTION VALUE=$cols ";
-
-            if ($cols == $hostcols)
-            {
-                $cols_menu    .= "SELECTED";
-            }
-            $cols_menu    .= ">$cols\n";
-        }
-        $cols_menu     .= "</SELECT>\n";
-
-        $tpl_data->assign( "metric","$metricname $units" );
-        $tpl_data->assign( "id", $filter['id'] );
-
-        # Host columns menu defined in header.php
-        $tpl_data->assign( "cols_menu", $cols_menu );
 
         $showhosts     = isset($sh) ? $sh : $default_showhosts;
 

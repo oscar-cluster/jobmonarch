@@ -119,7 +119,7 @@ function makeHeader( $page_call, $title, $longtitle )
     global $default_refresh, $filterorder, $view;
     global $JOB_ARCHIVE, $period_start, $period_stop, $h, $id;
     global $job_start, $job_stop, $range, $r, $metricname;
-    global $conf;
+    global $conf, $show_hosts;
     try
        {
           //$dwoo = new Dwoo($conf['dwoo_compiled_dir'], $conf['dwoo_cache_dir']);
@@ -181,13 +181,7 @@ function makeHeader( $page_call, $title, $longtitle )
     list($parentgrid, $parentlink) = explode("@", $gridstack[count($gridstack)-2]);
 
     $tpl = new Dwoo_Template_File("templates/header.tpl");
-    echo $tpl;
     $tpl_data = new Dwoo_Data();
-
-    if( $view != "search" )
-    {
-        $tpl_data->assign( "refresh", $default_refresh );
-    }
 
     $tpl_data->assign( "date", date("r") );
     $tpl_data->assign( "longpage_title", $longtitle );
@@ -374,27 +368,35 @@ function makeHeader( $page_call, $title, $longtitle )
 
     }
 
-    if( $view != "search" )
+    if( array_key_exists( "id", $filter ) or isset($hostname) ) 
     {
-        $context_ranges[]="hour";
-        $context_ranges[]="day";
-        $context_ranges[]="week";
-        $context_ranges[]="month";
-        $context_ranges[]="year";
-        $context_ranges[]="job";
 
-        $range_menu = "<B>Last</B>&nbsp;&nbsp;" ."<SELECT NAME=\"r\" OnChange=\"toga_form.submit();\">\n";
-        foreach ($context_ranges as $v) 
+        #$range = "job";
+
+        if( ( $page_call != "host_view" ) && ( $view != "search" ) )
         {
-            $url=rawurlencode($v);
-            $range_menu .= "<OPTION VALUE=\"$url\" ";
-            if ($v == $range)
-                $range_menu .= "SELECTED";
-            $range_menu .= ">$v\n";
-        }
-        $range_menu .= "</SELECT>\n";
+            $context_ranges[]="hour";
+            $context_ranges[]="day";
+            $context_ranges[]="week";
+            $context_ranges[]="month";
+            $context_ranges[]="year";
+            $context_ranges[]="job";
 
-        $tpl_data->assign("range_menu", $range_menu);
+            $range_menu = "<B>Last</B>&nbsp;&nbsp;" ."<SELECT NAME=\"r\" OnChange=\"toga_form.submit();\">\n";
+            foreach ($context_ranges as $v) 
+            {
+                $url=rawurlencode($v);
+                $range_menu .= "<OPTION VALUE=\"$url\" ";
+                if ($v == $range)
+                {
+                    $range_menu .= "SELECTED";
+                }
+                $range_menu .= ">$v\n";
+            }
+            $range_menu .= "</SELECT>\n";
+
+            $tpl_data->assign("range_menu", $range_menu);
+        }
 
     }
 
