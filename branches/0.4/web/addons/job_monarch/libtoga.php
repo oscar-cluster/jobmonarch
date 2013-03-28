@@ -717,9 +717,17 @@ class TorqueXMLHandler
 
     function startElement( $parser, $name, $attrs )
     {
-        global $cluster, $metrics;
+        global $cluster, $metrics, $self, $grid;
 
         $jobid = null;
+
+        if( $name == 'GRID' )
+        {
+            $self = $attrs['NAME'];
+            $grid = $attrs;
+
+            return null;
+        }
 
         if( $name == 'CLUSTER' )
         {
