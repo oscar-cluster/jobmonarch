@@ -44,6 +44,8 @@ $rjqj_start = null;
 $ds         = new DataSource();
 $myxml_data = $ds->getData();
 
+//print_r( $myxml_data );
+
 $data_gatherer = new DataGatherer( $clustername );
 $data_gatherer->parseXML( $myxml_data );
 
@@ -58,7 +60,8 @@ $use_fqdn  = $data_gatherer->getUsingFQDN();
 function setupFilterSettings() 
 {
 
-    global $tpl_data, $filter, $clustername, $piefilter, $data_gatherer, $myxml_data, $filterorder, $_SESSION;
+    global $tpl_data, $filter, $clustername, $piefilter, $data_gatherer, $myxml_data, $filterorder, $_SESSION, $data_gatherer;
+    global $jobs, $gnodes;
 
     $filter_image_url = "";
 
@@ -76,8 +79,8 @@ function setupFilterSettings()
 
     $ic = new ClusterImage( $myxml_data, $clustername );
 
-    $ic->setJobs( $data_gatherer->getJobs() );
-    $ic->setNodes( $data_gatherer->getNodes() );
+    $ic->setJobs( $jobs );
+    $ic->setNodes( $gnodes );
     $ic->setBig();
     $ic->setNoimage();
     $ic->draw();
@@ -512,7 +515,7 @@ function makeOverview()
     global $cluster_url, $get_metric_string, $host_url, $metrics;
     global $start, $end, $reports, $gnodes, $default_showhosts;
     global $COLUMN_QUEUED, $COLUMN_REQUESTED_MEMORY, $COLUMN_NODES, $hostname;
-    global $cluster, $use_fqdn;
+    global $cluster, $use_fqdn, $myxml_data, $data_gatherer;
 
     $metricname        = $m;
     if( isset($conf['default_metric']) and ($metricname =='') )

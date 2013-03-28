@@ -1393,10 +1393,6 @@ class ClusterImage
     {
         $this->output    = 0;
     }
-    function setJobs($jobs )
-    {
-        $this->jobs     = &$jobs;
-    }
     function getJobs()
     {
         if( $this->jobs == null )
@@ -1407,6 +1403,10 @@ class ClusterImage
         }
 
         return $this->jobs;
+    }
+    function setJobs($jobs)
+    {
+        $this->jobs   = &$jobs;
     }
     function getNodes()
     {
@@ -2042,10 +2042,12 @@ class ClusterImage
     {
         $clusterimage_map    = "";
 
-        foreach( $this->nodes as $hostname => $node )
+        $nodes = &$this->getNodes();
+
+        foreach( $nodes as $node )
         {
-            $node_map        = $node->getImagemapArea();
-            $clusterimage_map    .= $node_map;
+            $node_map          = $node->getImagemapArea();
+            $clusterimage_map .= $node_map;
         }
 
         return $clusterimage_map;

@@ -140,9 +140,7 @@ View
     <IMG SRC="{$clusterimage}" USEMAP="#MONARCH_CLUSTER_BIG" BORDER="0">
     </div>
     <MAP NAME="MONARCH_CLUSTER_BIG">
-{if "$nodes_clustermap" == "yes"}
-{$node_area_map}
-{/if}
+    {$node_area_map}
     </MAP>
     <BR>
 <FONT class="footer">Last updated: {$report_time}</FONT></CENTER>
