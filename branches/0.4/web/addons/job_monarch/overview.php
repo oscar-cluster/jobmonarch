@@ -904,6 +904,11 @@ function makeOverview()
         if( $range == 'job' )
         {
             $rjqj_end = time();
+
+            if( $rjqj_start == null ) 
+            { // probably no running jobs in this view: only queued
+                $rjqj_start = $rjqj_end - (24 * 3600); // default to 1 day
+            }
             $rjqj_title = rawurlencode( makeTime( ($rjqj_end - $rjqj_start) ) );
             $rjqj_graphargs .= "&period_start=$rjqj_start&period_stop=$rjqj_end&t=$rjqj_title";
         }
