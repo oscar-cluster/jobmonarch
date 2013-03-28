@@ -1361,16 +1361,17 @@ class ClusterImage
 
     function ClusterImage( $data, $clustername )
     {
-        $this->dataget        = new DataGatherer( $clustername );
-        $this->data        = $data;
-        $this->clustername    = $clustername;
-        $this->filters        = array();
-        $this->size        = 's';
+        $this->dataget      = new DataGatherer( $clustername );
+        $this->data         = $data;
+        $this->clustername  = $clustername;
+        $this->filters      = array();
+        $this->size         = 's';
         $this->width        = 0;
-        $this->height        = 0;
-        $this->output        = 1;
+        $this->height       = 0;
+        $this->output       = 1;
         $this->jobs         = null;
         $this->nodes        = null;
+        $this->parsed       = false;
     }
 
     function getWidth()
@@ -1393,12 +1394,20 @@ class ClusterImage
     {
         $this->output    = 0;
     }
+    function checkParse()
+    {
+        if( $this->parsed == false )
+        {
+            $this->dataget->parseXML( $this->data );
+            $this->parsed = true;
+        }
+    }
     function getJobs()
     {
         if( $this->jobs == null )
         {
+            $this->checkParse();
             $mydatag = $this->dataget;
-            $mydatag->parseXML( $this->data );
             $this->jobs = $mydatag->getJobs();
         }
 
@@ -1412,8 +1421,8 @@ class ClusterImage
     {
         if( $this->nodes== null )
         {
+            $this->checkParse();
             $mydatag = $this->dataget;
-            $mydatag->parseXML( $this->data );
             $this->nodes = $mydatag->getNodes();
         }
 

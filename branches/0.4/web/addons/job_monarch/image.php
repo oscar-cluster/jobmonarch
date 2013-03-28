@@ -34,16 +34,19 @@ function checkSessionData() {
 
     session_start();
 
-    if( isset( $_SESSION["data"] ) ) {
+    if( isset( $_SESSION["data"] ) ) 
+    {
         $myxml_data    = &$_SESSION["data"];
-    } else {
-        $myxml_data    = 0;
+    } 
+    else 
+    {
+        $myxml_data    = null;
     }
 
-    if( !$myxml_data ) {
+    if( $myxml_data == null ) 
+    {
         $ds             = new DataSource();
         $myxml_data     = $ds->getData();
-
     }
     return $myxml_data;
 }
