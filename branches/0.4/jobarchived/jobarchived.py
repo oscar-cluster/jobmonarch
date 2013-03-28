@@ -849,12 +849,12 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
             metricname = str( attrs.get( 'NAME', "" ) )
 
-            if metricname == 'MONARCH-HEARTBEAT':
+            if metricname == 'zplugin_monarch_heartbeat':
                 self.heartbeat = str( attrs.get( 'VAL', "" ) )
 
-            elif metricname.find( 'MONARCH-JOB' ) != -1:
+            elif metricname.find( 'zplugin_monarch_job' ) != -1:
 
-                job_id    = metricname.split( 'MONARCH-JOB-' )[1].split( '-' )[0]
+                job_id    = metricname.split( 'zplugin_monarch_job_' )[1].split( '_' )[0]
                 val    = str( attrs.get( 'VAL', "" ) )
 
                 if not job_id in self.jobs_processed:
