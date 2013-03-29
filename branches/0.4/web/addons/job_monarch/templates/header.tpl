@@ -20,7 +20,7 @@
 
 <FORM ACTION="./" METHOD="GET" NAME="{$form_name}">
 <INPUT TYPE="HIDDEN" NAME="c" VALUE="{$cluster}">
-<INPUT TYPE="HIDDEN" NAME="view" VALUE="{$view}">
+<INPUT TYPE="HIDDEN" NAME="j_view" VALUE="{$view}">
 <TABLE WIDTH="100%">
 <TR>
   <TD ROWSPAN="2" WIDTH="150">
