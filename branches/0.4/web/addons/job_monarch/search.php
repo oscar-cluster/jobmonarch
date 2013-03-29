@@ -303,18 +303,30 @@ function makeSearchPage() {
             $node_list["name"]= $job['name'];
             $node_list["req_cpu"]= makeTime( TimeToEpoch( $job['requested_time'] ) );
 
-            if( $COLUMN_REQUESTED_MEMORY ) {
+            if( $COLUMN_REQUESTED_MEMORY ) 
+            {
                 $node_list["column_req_mem"] = "yes";
                 $node_list["req_memory"]= $job['requested_memory'];
             }
-            if( $COLUMN_NODES) {
+            if( $COLUMN_NODES) 
+            {
 
                 $job_nodes    = array();
 
                 foreach( $nodes[$foundid] as $mynode )
-                    $job_nodes[] = $mynode['hostname'];
+                {
+                    if( strpos( $mynode['hostname'], "." ) !== false )
+                    {
+                        $shorthost = explode( '.', $mynode['hostname'] );
+                        $job_nodes[] = $shorthost[0];
+                    }
+                    else
+                    {
+                        $job_nodes[] = $mynode['hostname'];
+                    }
+                }
 
-                $node_list["column_nodes"] = "yes";
+                $node_list["column_nodes_hostnames"] = "yes";
                 $nodes_hostnames = implode( " ", $job_nodes );
                 $node_list["nodes_hostnames"]= $nodes_hostnames;
             }
@@ -356,24 +368,6 @@ function makeSearchPage() {
             $showhosts = isset($sh) ? $sh : $default_showhosts;
             $tpl_data->assign("checked$showhosts", "checked");
 
-            # Present a width list
-            $cols_menu = "<SELECT NAME=\"hc\" OnChange=\"archive_search_form.submit();\">\n";
-
-            $hostcols = ($hc) ? $hc : 4;
-
-            foreach(range(1,25) as $cols) {
-                $cols_menu .= "<OPTION VALUE=$cols ";
-                if ($cols == $hostcols)
-                    $cols_menu .= "SELECTED";
-                $cols_menu .= ">$cols\n";
-            }
-            $cols_menu .= "</SELECT>\n";
-
-            $tpl_data->assign("metric","$metricname $units");
-            $tpl_data->assign("id", $id);
-            # Host columns menu defined in header.php
-            $tpl_data->assign("cols_menu", $cols_menu);
-
             if( $showhosts ) {
 
                 if( !$period_start ) // Add an extra 10% to graphstart
@@ -386,10 +380,10 @@ function makeSearchPage() {
                 else
                     $period_stop = datetimeToEpoch( $period_stop );
 
-                #        $tpl_data->gotoBlock( "timeperiod" );
+                $tpl_data->assign( "timeperiod", "yes" );
 
-                #$tpl_data->assign("period_start", epochToDatetime( $period_start ) );
-                #$tpl_data->assign("period_stop", epochToDatetime( $period_stop ) );
+                $tpl_data->assign("period_start", epochToDatetime( $period_start ) );
+                $tpl_data->assign("period_stop", epochToDatetime( $period_stop ) );
 
                 $hosts_up = array();
 
@@ -446,7 +440,7 @@ function makeSearchPage() {
                     } elseif ($val['TYPE']=="string" or $val['SLOPE']=="zero" or $always_constant[$metricname] or ($max_graphs > 0 and $i > $max_graphs )) {
                         $textval = $val['VAL']." ".$val['UNITS'];
                     } else {
-                        $graphargs = "z=small&c=$cluster_url&m=$metricname&h=$host_url&v=".$val['VAL']."&x=$max&n=$min&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop&min=$min&max=$max";
+                        $graphargs = "z=medium&c=$cluster_url&m=$metricname&h=$host_url&v=".$val['VAL']."&x=$max&n=$min&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop&min=$min&max=$max";
                     }
                     if ($textval) {
                         $cell="<td class=$class>".  "<b><a href=$host_link>$host</a></b><br>".  "<i>$metricname:</i> <b>$textval</b></td>";

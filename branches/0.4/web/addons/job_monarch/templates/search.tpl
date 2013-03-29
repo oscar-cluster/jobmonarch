@@ -242,7 +242,7 @@ function setFilter( filtername, filterval ) {
     <TD>{$req_memory}</TD>
 {/if}
     <TD>{$nodes}/{$cpus}</TD>
-{if "$column_req_mem" == "yes"}
+{if "$column_nodes_hostnames" == "yes"}
     <TD>{$nodes_hostnames}</TD>
 {/if}
     <TD>{$started}</TD>
@@ -262,25 +262,40 @@ function setFilter( filtername, filterval ) {
   yes<INPUT type=radio name="sh" value="1" OnClick="archive_search_form.submit();" {$checked1}>
   no<INPUT type=radio name="sh" value="0" OnClick="archive_search_form.submit();" {$checked0}>
   </FONT>
-  |
-  job <strong>{$id}</strong> metric <strong>{$metric}</strong>
-  |
-   <FONT SIZE="-1">
-   Columns&nbsp;&nbsp;{$cols_menu}
-   </FONT><BR>
+{if "$timeperiod" == "yes"}
+    <INPUT TYPE="HIDDEN" NAME="period_start" VALUE="{$period_start}">
+    <INPUT TYPE="HIDDEN" NAME="period_stop" VALUE="{$period_stop}">
+    <BR><BR><B>Graph/ from
+    <INPUT TYPE="text" NAME="period_start_pick" VALUE="{$period_start}" ALT="Start time" DISABLED="TRUE">
+    <a href="javascript:show_calendar('document.{$form_name}.period_start_pick', document.{$form_name}.period_start_pick.value);" alt="Click to select a date/time" title="Click to select a date/time">
+    <img src="cal.gif" width="16" height="16" border="0"></a>
+    <a href="#" onClick="javascript: document.{$form_name}.period_start_pick.value=''" alt="Click here to clear field" title="Click here to clear field">
+    <IMG SRC="redcross.jpg" BORDER=0></A>
+    to <INPUT TYPE="text" NAME="period_stop_pick" VALUE="{$period_stop}" ALT="Stop time" DISABLED="TRUE">
+    <a href="javascript:show_calendar('document.{$form_name}.period_stop_pick', document.{$form_name}.period_stop_pick.value);" alt="Click to select a date/time" title="Click to select a date/time">
+    <img src="cal.gif" width="16" height="16" border="0"></a>
+    <a href="#" onClick="javascript: document.{$form_name}.period_stop_pick.value=''" alt="Click here to clear field" title="Click here to clear field">
+    </B>
+    <IMG SRC="redcross.jpg" BORDER=0></A>
+
+{if "$hostview" == "yes"}
+    <INPUT TYPE="HIDDEN" NAME="job_start" VALUE="{$job_start}">
+    <INPUT TYPE="HIDDEN" NAME="job_stop" VALUE="{$job_stop}">
+{/if}
+    <INPUT TYPE="submit" onClick="setPeriodTimestamps();" VALUE="Refresh graphs">
+{/if}
   </TD>
 </TR>
 
 </TABLE>
 
 <CENTER>
-<TABLE>
-<TR>
+
+<div id="monarchimage">
 {loop $sorted_list}
 {$metric_image}{$br}
 {/loop}
-</TR>
-</TABLE>
+</div>
 
 </CENTER>
 

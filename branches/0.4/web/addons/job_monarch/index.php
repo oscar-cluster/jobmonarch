@@ -235,7 +235,7 @@ function makeHeader( $page_call, $title, $longtitle )
         $node_menu .= hiddenvar("c", $clustername);
     }
 
-    if (!count($metrics) && $view!='search') 
+    if (!count($metrics) && $view!='search' && $view!='host') 
     {
         echo "<h4>Cannot find any metrics for selected cluster \"$clustername\", exiting.</h4>\n";
         echo "Check ganglia XML tree (telnet $ganglia_ip $ganglia_port)\n";
@@ -343,7 +343,7 @@ function makeHeader( $page_call, $title, $longtitle )
 
         $tpl_data->assign("metric_menu", $metric_menu );
 
-        if( $view == "search" or $view == "host" or $view == "overview-host" ) 
+        if( $view == "host" or $view == "overview-host" ) 
         {
             $tpl_data->assign("timeperiod", "yes" );
             if( is_numeric( $period_start ) ) 
