@@ -133,7 +133,7 @@ def loadConfig( filename ):
 
     global DEBUG_LEVEL, USE_SYSLOG, SYSLOG_LEVEL, SYSLOG_FACILITY, GMETAD_CONF, ARCHIVE_XMLSOURCE
     global ARCHIVE_DATASOURCES, ARCHIVE_PATH, ARCHIVE_HOURS_PER_RRD, ARCHIVE_EXCLUDE_METRICS
-    global JOB_SQL_DBASE, DAEMONIZE, RRDTOOL, JOB_TIMEOUT, MODRRDTOOL
+    global JOB_SQL_DBASE, DAEMONIZE, RRDTOOL, JOB_TIMEOUT, MODRRDTOOL, JOB_SQL_PASSWORD, JOB_SQL_USER
 
     ARCHIVE_PATH        = cfg.get( 'DEFAULT', 'ARCHIVE_PATH' )
 
@@ -179,6 +179,8 @@ def loadConfig( filename ):
     ARCHIVE_EXCLUDE_METRICS    = getlist( cfg.get( 'DEFAULT', 'ARCHIVE_EXCLUDE_METRICS' ) )
 
     JOB_SQL_DBASE        = cfg.get( 'DEFAULT', 'JOB_SQL_DBASE' )
+    JOB_SQL_USER        = cfg.get( 'DEFAULT', 'JOB_SQL_USER' )
+    JOB_SQL_PASSWORD        = cfg.get( 'DEFAULT', 'JOB_SQL_PASSWORD' )
 
     JOB_TIMEOUT        = cfg.getint( 'DEFAULT', 'JOB_TIMEOUT' )
 
@@ -327,7 +329,6 @@ class DB:
         c = self.SQL.cursor()
         try:
             c.execute(q_str)
-            result = c.oidValue
 
         except psycopg2.Error, details:
             c.close()
@@ -335,7 +336,7 @@ class DB:
             raise DBError(str)
 
         c.close()
-        return result
+        return True
 
     def Commit(self):
         self.SQL.commit()
@@ -347,10 +348,12 @@ class DataSQLStore:
 
     def __init__( self, hostname, database ):
 
+        global JOB_SQL_USER, JOB_SQL_PASSWORD
+
         self.db_vars = InitVars(DataBaseName=database,
-                User='root',
+                User=JOB_SQL_USER,
                 Host=hostname,
-                Password='',
+                Password=JOB_SQL_PASSWORD,
                 Dictionary='true')
 
         try:
@@ -507,7 +510,7 @@ class DataSQLStore:
 
         elif action == 'update':
 
-            self.setDatabase( "UPDATE jobs SET %s WHERE job_id=%s" %(update_str, job_id) )
+            self.setDatabase( "UPDATE jobs SET %s WHERE job_id='%s'" %(update_str, job_id) )
 
         if len( ids ) > 0:
             self.addJobNodes( job_id, ids )
@@ -539,7 +542,7 @@ class DataSQLStore:
 
     def addJobNode( self, jobid, nodeid ):
 
-        self.setDatabase( "INSERT INTO job_nodes (job_id,node_id) VALUES ( %s,%s )" %(jobid, nodeid) )
+        self.setDatabase( "INSERT INTO job_nodes (job_id,node_id) VALUES ( '%s',%s )" %(jobid, nodeid) )
 
     def storeJobInfo( self, jobid, jobattrs ):
 
@@ -789,6 +792,8 @@ class TorqueXMLProcessor( XMLProcessor ):
             debug_msg( 1, 'torque_xml_thread(): Retrieving XML data..' )
 
             my_data    = self.myXMLSource.getData()
+            #print my_data
+            #print "size my data: %d" %len( my_data )
 
             debug_msg( 1, 'torque_xml_thread(): Done retrieving.' )
 
@@ -798,6 +803,9 @@ class TorqueXMLProcessor( XMLProcessor ):
                 xml.sax.parseString( my_data, self.myXMLHandler, self.myXMLError )
 
                 debug_msg( 1, 'ganglia_parse_thread(): Done parsing.' )
+            else:
+                debug_msg( 1, 'torque_xml_thread(): Got no data.' )
+
                 
             debug_msg( 1, 'torque_xml_thread(): Sleeping.. (%ss)' %(str( self.config.getLowestInterval() ) ) )
             time.sleep( self.config.getLowestInterval() )
@@ -813,11 +821,13 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
         self.ds            = datastore
         self.jobs_processed    = [ ]
         self.jobs_to_store    = [ ]
+        debug_msg( 1, "XML: Handler created" )
 
     def startDocument( self ):
 
         self.heartbeat    = 0
         self.elementct    = 0
+        debug_msg( 1, "XML: Start document" )
 
     def startElement( self, name, attrs ):
         """
@@ -843,7 +853,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
             elif metricname.find( 'zplugin_monarch_job' ) != -1:
 
-                job_id    = metricname.split( 'zplugin_monarch_job_' )[1].split( '_' )[0]
+                job_id    = metricname.split( 'zplugin_monarch_job_' )[1].split( '_' )[1]
                 val    = str( attrs.get( 'VAL', "" ) )
 
                 if not job_id in self.jobs_processed:
@@ -1330,9 +1340,9 @@ class GangliaXMLProcessor( XMLProcessor ):
 
         # Store metrics somewhere between every 360 and 640 seconds
         #
-        if DEBUG_LEVEL > 2:
-            #STORE_INTERVAL = 60
-            STORE_INTERVAL = random.randint( 360, 640 )
+        if DEBUG_LEVEL >= 1:
+            STORE_INTERVAL = 60
+            #STORE_INTERVAL = random.randint( 360, 640 )
         else:
             STORE_INTERVAL = random.randint( 360, 640 )
 
@@ -1351,9 +1361,9 @@ class GangliaXMLProcessor( XMLProcessor ):
 
         if store_metric_thread.isAlive():
 
-            debug_msg( 1, 'ganglia_store_thread(): storemetricthread() still running, waiting to finish..' )
+            debug_msg( 1, 'ganglia_store_thread(): storemetricthread() still running, waiting to terminate..' )
             store_metric_thread.join( STORE_TIMEOUT ) # Maximum time is for storing thread to finish
-            debug_msg( 1, 'ganglia_store_thread(): Done waiting.' )
+            debug_msg( 1, 'ganglia_store_thread(): Done waiting: terminated storemetricthread()' )
 
         debug_msg( 1, 'ganglia_store_thread(): finished.' )
 
@@ -1375,6 +1385,8 @@ class GangliaXMLProcessor( XMLProcessor ):
     def processXML( self ):
         """Process XML"""
 
+        debug_msg( 5, "Entering processXML()")
+
         try:
             parsethread = threading.Thread( None, self.parseThread, 'parsethread' )
             parsethread.start()
@@ -1390,11 +1402,13 @@ class GangliaXMLProcessor( XMLProcessor ):
 
         if parsethread.isAlive():
 
-            debug_msg( 1, 'ganglia_xml_thread(): parsethread() still running, waiting (%ss) to finish..' %PARSE_TIMEOUT )
+            debug_msg( 1, 'ganglia_xml_thread(): parsethread() still running, waiting (%ss) to terminate..' %PARSE_TIMEOUT )
             parsethread.join( PARSE_TIMEOUT ) # Maximum time for XML thread to finish
-            debug_msg( 1, 'ganglia_xml_thread(): Done waiting.' )
+            debug_msg( 1, 'ganglia_xml_thread(): Done waiting. parsethread() terminated' )
 
         debug_msg( 1, 'ganglia_xml_thread(): finished.' )
+
+        debug_msg( 5, "Leaving processXML()")
 
         return 0
 
@@ -1405,6 +1419,7 @@ class GangliaXMLProcessor( XMLProcessor ):
         debug_msg( 1, 'ganglia_parse_thread(): Retrieving XML data..' )
         
         my_data    = self.myXMLSource.getData()
+        debug_msg( 1, 'ganglia_parse_thread(): data size %d.' %len(my_data) )
 
         debug_msg( 1, 'ganglia_parse_thread(): Done retrieving.' )
 
