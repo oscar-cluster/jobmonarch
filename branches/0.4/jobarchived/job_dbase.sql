@@ -3,7 +3,7 @@ DROP TABLE nodes CASCADE;
 DROP TABLE job_nodes CASCADE;
 
 CREATE TABLE jobs (
-	job_id			INT NOT NULL UNIQUE PRIMARY KEY,
+	job_id			VARCHAR(20) NOT NULL UNIQUE PRIMARY KEY,
 	job_name		VARCHAR(100),
 	job_queue		VARCHAR(50),
 	job_owner		VARCHAR(30),
@@ -22,13 +22,13 @@ CREATE TABLE nodes (
 );
 
 CREATE TABLE job_nodes (
-	job_id			INT NOT NULL REFERENCES jobs ON DELETE CASCADE,
+	job_id			VARCHAR(20) NOT NULL REFERENCES jobs ON DELETE CASCADE,
 	node_id			INT NOT NULL REFERENCES nodes ON DELETE RESTRICT,
 	PRIMARY KEY ( job_id, node_id )
 );
 
-CREATE USER root;
-CREATE USER "www-data";
+# modify me: set a password
+#CREATE USER jobarchive WITH PASSWORD '';
 
-GRANT ALL ON jobs,nodes,job_nodes TO root,"www-data";
-GRANT ALL ON nodes_node_id_seq TO root,"www-data";
+GRANT ALL ON jobs,nodes,job_nodes TO "jobarchive";
+GRANT ALL ON nodes_node_id_seq TO "jobarchive";
