@@ -47,29 +47,29 @@ def usage( ver ):
 
 def processArgs( args ):
 
-        SHORT_L    = 'p:hvc:'
-        LONG_L    = [ 'help', 'config=', 'pidfile=', 'version' ]
+    SHORT_L    = 'p:hvc:'
+    LONG_L    = [ 'help', 'config=', 'pidfile=', 'version' ]
 
-        config_filename = '/etc/jobarchived.conf'
+    config_filename = '/etc/jobarchived.conf'
 
     global PIDFILE
 
     PIDFILE    = None
 
-        try:
+    try:
 
-                opts, args = getopt.getopt( args, SHORT_L, LONG_L )
+        opts, args = getopt.getopt( args, SHORT_L, LONG_L )
 
-        except getopt.error, detail:
+    except getopt.error, detail:
 
-                print detail
-                sys.exit(1)
+        print detail
+        sys.exit(1)
 
-        for opt, value in opts:
+    for opt, value in opts:
 
-                if opt in [ '--config', '-c' ]:
+        if opt in [ '--config', '-c' ]:
 
-                        config_filename = value
+            config_filename = value
 
         if opt in [ '--pidfile', '-p' ]:
 
@@ -174,7 +174,7 @@ def loadConfig( filename ):
 
     ARCHIVE_XMLSOURCE    = cfg.get( 'DEFAULT', 'ARCHIVE_XMLSOURCE' )
 
-        ARCHIVE_DATASOURCES    = getlist( cfg.get( 'DEFAULT', 'ARCHIVE_DATASOURCES' ) )
+    ARCHIVE_DATASOURCES    = getlist( cfg.get( 'DEFAULT', 'ARCHIVE_DATASOURCES' ) )
 
     ARCHIVE_EXCLUDE_METRICS    = getlist( cfg.get( 'DEFAULT', 'ARCHIVE_EXCLUDE_METRICS' ) )
 
@@ -208,23 +208,12 @@ from types import *
 import xml.sax, xml.sax.handler, socket, string, os, os.path, time, thread, threading, random, re
 
 try:
-    from pyPgSQL import PgSQL
+    import psycopg2
 
 except ImportError, details:
 
-    print "FATAL ERROR: pyPgSQL python module not found"
+    print "FATAL ERROR: psycopg2 python module not found"
     sys.exit( 1 )
-
-# Orginal from Andre van der Vlies <andre@vandervlies.xs4all.nl> for MySQL. Changed
-# and added some more functions for postgres.
-#       
-#
-# Changed by: Bas van der Vlies <basv@sara.nl>
-#       
-# SARA API for Postgres Database
-#
-# Changed by: Ramon Bastiaans for Job Monarch
-#
 
 class InitVars:
         Vars = {}
@@ -273,83 +262,83 @@ class DBError(Exception):
 # and return the queury in a list or dictionairy.
 #
 class DB:
-        def __init__(self, db_vars):
+    def __init__(self, db_vars):
 
-                self.dict = db_vars
+        self.dict = db_vars
 
-                if self.dict.has_key('User'):
-                        self.user = self.dict['User']
-                else:
-                        self.user = 'postgres'
+        if self.dict.has_key('User'):
+            self.user = self.dict['User']
+        else:
+            self.user = 'postgres'
 
-                if self.dict.has_key('Host'):
-                        self.host = self.dict['Host']
-                else:
-                        self.host = 'localhost'
+        if self.dict.has_key('Host'):
+            self.host = self.dict['Host']
+        else:
+            self.host = 'localhost'
 
-                if self.dict.has_key('Password'):
-                        self.passwd = self.dict['Password']
-                else:
-                        self.passwd = ''
+        if self.dict.has_key('Password'):
+            self.passwd = self.dict['Password']
+        else:
+            self.passwd = ''
 
-                if self.dict.has_key('DataBaseName'):
-                        self.db = self.dict['DataBaseName']
-                else:
-                        self.db = 'uva_cluster_db'
+        if self.dict.has_key('DataBaseName'):
+            self.db = self.dict['DataBaseName']
+        else:
+            self.db = 'jobarchive'
 
-                # connect_string = 'host:port:database:user:password:
-                dsn = "%s::%s:%s:%s" %(self.host, self.db, self.user, self.passwd)
+        # connect_string = 'host:port:database:user:password:
+        dsn = "host='%s' dbname='%s' user='%s' password='%s'" %(self.host, self.db, self.user, self.passwd)
 
-                try:
-                        self.SQL = PgSQL.connect(dsn)
-                except PgSQL.Error, details:
-                        str = "%s" %details
-                        raise DBError(str)
+        try:
+            self.SQL = psycopg2.connect(dsn)
+        except psycopg2.Error, details:
+            str = "%s" %details
+            raise DBError(str)
 
-        def __repr__(self):
-                return repr(self.result)
+    def __repr__(self):
+        return repr(self.result)
 
-        def __nonzero__(self):
-                return not(self.result == None)
+    def __nonzero__(self):
+        return not(self.result == None)
 
-        def __len__(self):
-                return len(self.result)
+    def __len__(self):
+        return len(self.result)
 
-        def __getitem__(self,i):
-                return self.result[i]
+    def __getitem__(self,i):
+        return self.result[i]
 
-        def __getslice__(self,i,j):
-                return self.result[i:j]
+    def __getslice__(self,i,j):
+        return self.result[i:j]
 
-        def Get(self, q_str):
-                c = self.SQL.cursor()
-                try:
-                        c.execute(q_str)
-                        result = c.fetchall()
-                except PgSQL.Error, details:
-                        c.close()
-                        str = "%s" %details
-                        raise DBError(str)
+    def Get(self, q_str):
+        c = self.SQL.cursor()
+        try:
+            c.execute(q_str)
+            result = c.fetchall()
+        except psycopg2.Error, details:
+            c.close()
+            str = "%s" %details
+            raise DBError(str)
 
-                c.close()
-                return result
+        c.close()
+        return result
 
-        def Set(self, q_str):
-                c = self.SQL.cursor()
-                try:
-                        c.execute(q_str)
-                        result = c.oidValue
+    def Set(self, q_str):
+        c = self.SQL.cursor()
+        try:
+            c.execute(q_str)
+            result = c.oidValue
 
-                except PgSQL.Error, details:
-                        c.close()
-                        str = "%s" %details
-                        raise DBError(str)
+        except psycopg2.Error, details:
+            c.close()
+            str = "%s" %details
+            raise DBError(str)
 
-                c.close()
-                return result
+        c.close()
+        return result
 
-        def Commit(self):
-                self.SQL.commit()
+    def Commit(self):
+        self.SQL.commit()
 
 class DataSQLStore:
 
@@ -1185,16 +1174,16 @@ class XMLGatherer:
                 self.s = None
                 continue
 
-                try:
+            try:
 
                 self.s.connect( sa )
 
-                except ( socket.error, socket.gaierror, socket.herror, socket.timeout ), msg:
+            except ( socket.error, socket.gaierror, socket.herror, socket.timeout ), msg:
 
                 self.disconnect()
                 continue
 
-                break
+            break
 
         if self.s is None:
 
@@ -1206,12 +1195,12 @@ class XMLGatherer:
             #self.s.send( '\n' )
 
             my_fp            = self.s.makefile( 'r' )
-            my_data            = my_fp.readlines()
-            my_data            = string.join( my_data, '' )
+            my_data          = my_fp.readlines()
+            my_data          = string.join( my_data, '' )
 
             self.data        = my_data
 
-            self.LAST_UPDATE    = time.time()
+            self.LAST_UPDATE = time.time()
 
         self.slot.release()
 
