@@ -22,11 +22,15 @@
  * SVN $Id$
  */
 
-global $clustername, $tpl, $m, $metric;
+include_once "./dwoo/dwooAutoload.php";
+
+global $dwoo;
+
+global $clustername, $m, $metric;
 
 function validateFormInput() {
-    global $clustername, $tpl, $id, $owner, $name, $start_from_time, $start_to_time, $queue;
-    global $end_from_time, $end_to_time, $period_start, $period_stop;
+    global $clustername, $dwoo, $id, $owner, $name, $start_from_time, $start_to_time, $queue;
+    global $end_from_time, $end_to_time, $period_start, $period_stop, $tpl_data;
 
     $error = 0;
     $error_msg = "<FONT COLOR=\"red\"><B>";
@@ -75,8 +79,8 @@ function validateFormInput() {
     $error_msg .= "</B></FONT>";
     // doe checks en set error en error_msg in case shit
 
-    if( $show_msg )
-        $tpl->assign( "form_error_msg", $error_msg );
+    //if( $show_msg )
+        //$tpl_data->assign( "form_error_msg", $error_msg );
 
     return ($error ? 0 : 1 );
 }
@@ -228,7 +232,7 @@ function sortJobs( $jobs, $nodes, $sortby, $sortorder ) {
 }
 
 function makeSearchPage() {
-    global $clustername, $tpl, $id, $owner, $name, $start_from_time, $start_to_time, $queue;
+    global $clustername, $dwoo, $id, $owner, $name, $start_from_time, $start_to_time, $queue;
     global $end_from_time, $end_to_time, $filter, $default_showhosts, $m, $hosts_up, $hc;
     global $period_start, $period_stop, $sortby, $sortorder, $COLUMN_REQUESTED_MEMORY;
     global $SEARCH_RESULT_LIMIT, $COLUMN_NODES, $metricname;
@@ -238,21 +242,24 @@ function makeSearchPage() {
 
     makeHeader( 'search', $title, $longtitle );
 
-    $tpl->assign( "cluster", $clustername );
-    $tpl->assign( "id_value", $id );
-    $tpl->assign( "owner_value", $owner);
-    $tpl->assign( "queue_value", $queue );
-    $tpl->assign( "name_value", $name );
-    $tpl->assign( "start_from_value", rawurldecode( $start_from_time ) );
-    $tpl->assign( "start_to_value", rawurldecode( $start_to_time ) );
-    $tpl->assign( "end_from_value", rawurldecode( $end_from_time ) );
-    $tpl->assign( "end_to_value", rawurldecode( $end_to_time ) );
+    $tpl = new Dwoo_Template_File("templates/search.tpl");
+    $tpl_data = new Dwoo_Data();
+
+    $tpl_data->assign( "cluster", $clustername );
+    $tpl_data->assign( "id_value", $id );
+    $tpl_data->assign( "owner_value", $owner);
+    $tpl_data->assign( "queue_value", $queue );
+    $tpl_data->assign( "name_value", $name );
+    $tpl_data->assign( "start_from_value", rawurldecode( $start_from_time ) );
+    $tpl_data->assign( "start_to_value", rawurldecode( $start_to_time ) );
+    $tpl_data->assign( "end_from_value", rawurldecode( $end_from_time ) );
+    $tpl_data->assign( "end_to_value", rawurldecode( $end_to_time ) );
 
     if( validateFormInput() ) {
 
-        $tpl->newBlock( "search_results" );
-        $tpl->assign( "sortby", $sortby);
-        $tpl->assign( "sortorder", $sortorder);
+        $tpl_data->assign( "search_results", "yes" );
+        $tpl_data->assign( "sortby", $sortby);
+        $tpl_data->assign( "sortorder", $sortorder);
         $tdb = new TarchDbase( "127.0.0.1" );
         if( $start_from_time ) $start_from_time = datetimeToEpoch( $start_from_time );
         if( $start_to_time ) $start_to_time = datetimeToEpoch( $start_to_time );
@@ -261,10 +268,8 @@ function makeSearchPage() {
         $search_ids = $tdb->searchDbase( $id, $queue, $owner, $name, $start_from_time, $start_to_time, $end_from_time, $end_to_time );
 
         if( ($tdb->resultcount) > (int) $SEARCH_RESULT_LIMIT ) {
-            $tpl->gotoBlock( "_ROOT" );
         
-            $tpl->assign( "form_error_msg", "Got " . $tdb->resultcount . " search results, output limited to last " . $SEARCH_RESULT_LIMIT . " jobs." );
-            $tpl->gotoBlock( "search_results" );
+            $tpl_data->assign( "form_error_msg", "Got " . $tdb->resultcount . " search results, output limited to last " . $SEARCH_RESULT_LIMIT . " jobs." );
         }
 
         $jobs = array();
@@ -279,31 +284,31 @@ function makeSearchPage() {
         }
 
         if( $COLUMN_REQUESTED_MEMORY ) {
-            $tpl->newBlock( "column_header_req_mem" );
+            $tpl_data->assign( "column_header_req_mem", "yes" );
         }
         if( $COLUMN_NODES ) {
-            $tpl->newBlock( "column_header_nodes" );
+            $tpl_data->assign( "column_header_nodes", "yes" );
         }
 
         $sorted_search = sortJobs( $jobs, $nodes, $sortby, $sortorder );
 
+        $node_loop = array();
         foreach( $sorted_search as $sortid ) {
 
             $job = $jobs[$sortid];
             $foundid = $job['id'];
 
-            $tpl->newBlock( "node" );
-            $tpl->assign( "id", $job['id'] );
-            $tpl->assign( "state", $job['status'] );
-            $tpl->assign( "owner", $job['owner'] );
-            $tpl->assign( "queue", $job['queue'] );
-            $tpl->assign( "name", $job['name'] );
-            $tpl->assign( "req_cpu", makeTime( TimeToEpoch( $job['requested_time'] ) ) );
+            $node_list = array();
+            $node_list["id"]= $job['id'];
+            $node_list["state"]= $job['status'];
+            $node_list["owner"]= $job['owner'];
+            $node_list["queue"]= $job['queue'];
+            $node_list["name"]= $job['name'];
+            $node_list["req_cpu"]= makeTime( TimeToEpoch( $job['requested_time'] ) );
 
             if( $COLUMN_REQUESTED_MEMORY ) {
-                $tpl->newBlock( "column_req_mem" );
-                $tpl->assign( "req_memory", $job['requested_memory'] );
-                $tpl->gotoBlock( "node" );
+                $node_list["column_req_mem"] = "yes";
+                $node_list["req_memory"]= $job['requested_memory'];
             }
             if( $COLUMN_NODES) {
 
@@ -312,45 +317,46 @@ function makeSearchPage() {
                 foreach( $nodes[$foundid] as $mynode )
                     $job_nodes[] = $mynode['hostname'];
 
-                $tpl->newBlock( "column_nodes" );
+                $node_list["column_nodes"] = "yes";
                 $nodes_hostnames = implode( " ", $job_nodes );
-                $tpl->assign( "nodes_hostnames", $nodes_hostnames );
-                $tpl->gotoBlock( "node" );
+                $node_list["nodes_hostnames"]= $nodes_hostnames;
             }
 
             $nodes_nr = count( $nodes[$foundid] );
 
             if( $even ) {
 
-                $tpl->assign("nodeclass", "even");
+                $node_list["nodeclass"]= "even";
                 $even = 0;
             } else {
 
-                $tpl->assign("nodeclass", "odd");
+                $node_list["nodeclass"]= "odd";
                 $even = 1;
             }
 
             $ppn = (int) $job['ppn'] ? $job['ppn'] : 1;
             $cpus = $nodes_nr * $ppn;
 
-            $tpl->assign( "nodes", $nodes_nr );
-            $tpl->assign( "cpus", $cpus );
+            $node_list["nodes"]= $nodes_nr;
+            $node_list["cpus"]= $cpus;
 
             $job_start = $job['start_timestamp'];
             $job_stop = $job['stop_timestamp'];
             $runningtime = intval( $job_stop - $job_start );
-            $tpl->assign( "started", makeDate( $job_start ) );
-            $tpl->assign( "finished", makeDate( $job_stop ) );
-            $tpl->assign( "runningtime", makeTime( $runningtime ) );
+            $node_list["started"]= makeDate( $job_start );
+            $node_list["finished"]= makeDate( $job_stop );
+            $node_list["runningtime"]= makeTime( $runningtime );
             
+            $node_loop[]=$node_list;
         }
+        $tpl_data->assign("node_loop", $node_loop );
 
         if( count( $search_ids ) == 1 ) {
 
-            $tpl->newBlock( "showhosts" );
+            $tpl_data->assign( "showhosts", "yes" );
 
             $showhosts = isset($sh) ? $sh : $default_showhosts;
-            $tpl->assign("checked$showhosts", "checked");
+            $tpl_data->assign("checked$showhosts", "checked");
 
             # Present a width list
             $cols_menu = "<SELECT NAME=\"hc\" OnChange=\"archive_search_form.submit();\">\n";
@@ -365,10 +371,10 @@ function makeSearchPage() {
             }
             $cols_menu .= "</SELECT>\n";
 
-            $tpl->assign("metric","$metricname $units");
-            $tpl->assign("id", $id);
+            $tpl_data->assign("metric","$metricname $units");
+            $tpl_data->assign("id", $id);
             # Host columns menu defined in header.php
-            $tpl->assign("cols_menu", $cols_menu);
+            $tpl_data->assign("cols_menu", $cols_menu);
 
             if( $showhosts ) {
 
@@ -382,12 +388,10 @@ function makeSearchPage() {
                 else
                     $period_stop = datetimeToEpoch( $period_stop );
 
-                        $tpl->gotoBlock( "timeperiod" );
+                #        $tpl_data->gotoBlock( "timeperiod" );
 
-                $tpl->assign("period_start", epochToDatetime( $period_start ) );
-                $tpl->assign("period_stop", epochToDatetime( $period_stop ) );
-
-                        $tpl->gotoBlock( "_ROOT" );
+                #$tpl_data->assign("period_start", epochToDatetime( $period_start ) );
+                #$tpl_data->assign("period_stop", epochToDatetime( $period_stop ) );
 
                 $hosts_up = array();
 
@@ -426,10 +430,11 @@ function makeSearchPage() {
                 # included in index.php.
                 list($min, $max) = find_limits($sorted_hosts, $metricname);
 
+                $sorted_loop = array();
                 # Second pass to output the graphs or metrics.
                 $i = 1;
                 foreach ( $sorted_hosts as $host=>$value  ) {
-                    $tpl->newBlock ("sorted_list");
+                    $sorted_list = array();
                     $host_url = rawurlencode($host);
                     $cluster_url = rawurlencode($clustername);
 
@@ -441,9 +446,9 @@ function makeSearchPage() {
                     if ($val['TYPE']=="timestamp" or $always_timestamp[$metricname]) {
                         $textval = date("r", $val['VAL']);
                     } elseif ($val['TYPE']=="string" or $val['SLOPE']=="zero" or $always_constant[$metricname] or ($max_graphs > 0 and $i > $max_graphs )) {
-                        $textval = "$val['VAL'] $val['UNITS']";
+                        $textval = $val['VAL']." ".$val['UNITS'];
                     } else {
-                        $graphargs = "z=small&c=$cluster_url&m=$metricname&h=$host_url&v=$val['VAL']&x=$max&n=$min&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop&min=$min&max=$max";
+                        $graphargs = "z=small&c=$cluster_url&m=$metricname&h=$host_url&v=".$val['VAL']."&x=$max&n=$min&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop&min=$min&max=$max";
                     }
                     if ($textval) {
                         $cell="<td class=$class>".  "<b><a href=$host_link>$host</a></b><br>".  "<i>$metricname:</i> <b>$textval</b></td>";
@@ -451,14 +456,18 @@ function makeSearchPage() {
                         $cell="<td><a href=$host_link>".  "<img src=\"./graph.php?$graphargs\" ".  "alt=\"$host\" border=0></a></td>";
                     }
 
-                    $tpl->assign("metric_image", $cell);
+                    $sorted_list["metric_image"]= $cell;
                     if (! ($i++ % $hostcols) )
-                         $tpl->assign ("br", "</tr><tr>");
+                         $sorted_list["br"]= "</tr><tr>";
+
+                    $sorted_loop[]=$sorted_list;
                 }
+                $tpl_data->assign("sorted_loop", $sorted_loop );
 
             }
         }
 
     }
+    $dwoo->output($tpl, $tpl_data);
 }
 ?>

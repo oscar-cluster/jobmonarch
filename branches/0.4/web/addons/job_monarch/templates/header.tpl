@@ -80,7 +80,7 @@
 
 {if "$search" == "yes"}
      <TD align="right"><CENTER>
-       <A HREF="./?c={$cluster_url}&view=search">
+       <A HREF="./?c={$cluster_url}&j_view=search">
        <B><I>Jobarchive</I></B><BR>
        <IMG SRC="./document_archive.jpg" HEIGHT=100 ALT="Search the archive for {$cluster}" TITLE="Search the archive for {$cluster}" BORDER=0></A></CENTER>
      </TD>

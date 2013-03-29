@@ -235,7 +235,7 @@ function makeHeader( $page_call, $title, $longtitle )
         $node_menu .= hiddenvar("c", $clustername);
     }
 
-    if (!count($metrics)) 
+    if (!count($metrics) && $view!='search') 
     {
         echo "<h4>Cannot find any metrics for selected cluster \"$clustername\", exiting.</h4>\n";
         echo "Check ganglia XML tree (telnet $ganglia_ip $ganglia_port)\n";
