@@ -44,14 +44,6 @@ function validateFormInput() {
         $error_msg .= "No search criteria set!";
     }
 
-    if( !is_numeric($id) and !$error and $id != '') 
-    {
-
-        $error = true;
-        $show_msg = 1;
-        $error_msg .= "Id must be a number";
-    }
-
     if( !$error and $period_start != '' ) 
     {
         $pstart_epoch = datetimeToEpoch( $period_start );

@@ -111,6 +111,7 @@ if (isset($graph))
     {
         $trd = new TarchRrdGraph( $cluster, $hostname );
         $rrd_dirs = $trd->getRrdDirs( $period_start, $period_stop );
+
     }
 
     if($graph == "cpu_report") 

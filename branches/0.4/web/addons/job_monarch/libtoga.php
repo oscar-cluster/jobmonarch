@@ -388,11 +388,11 @@ class TarchRrdGraph
         global $conf;
         global $JOB_ARCHIVE_DIR;
 
-        $this->rrdbin        = $conf['rrdtool'];
-        $this->rrdvalues    = array();
-        $this->tarchdir        = $JOB_ARCHIVE_DIR;
-        $this->clustername    = $clustername;
-        $this->hostname        = $hostname;
+        $this->rrdbin      = $conf['rrdtool'];
+        $this->rrdvalues   = array();
+        $this->tarchdir    = $JOB_ARCHIVE_DIR;
+        $this->clustername = $clustername;
+        $this->hostname    = $hostname;
     }
 
     function doCmd( $command )
