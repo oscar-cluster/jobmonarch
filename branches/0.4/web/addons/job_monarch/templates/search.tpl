@@ -196,7 +196,7 @@ function setFilter( filtername, filterval ) {
 </TABLE>
 {$form_error_msg}<BR><BR>
 
-{if "$search_results" == " yes" }
+{if "$search_results" == "yes" }
 
 <INPUT TYPE="HIDDEN" NAME="sortby" VALUE="{$sortby}">
 <INPUT TYPE="HIDDEN" NAME="sortorder" VALUE="{$sortorder}">
@@ -222,7 +222,7 @@ function setFilter( filtername, filterval ) {
 <TH><B><A HREF="#" onClick="setSort( 'runningtime' )">Runningtime</A></B></TH>
 </TR>
 
-{loop $node}
+{loop $node_list}
   <TR CLASS="{$nodeclass}">
     <TD><A HREF="#" onClick="setFilter( 'id', '{$id}' )">{$id}</A></TD>
     <TD><A HREF="#" onClick="setFilter( 'state', '{$state}' )">{$state}</A></TD>

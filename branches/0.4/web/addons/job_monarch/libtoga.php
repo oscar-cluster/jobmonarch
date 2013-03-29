@@ -96,6 +96,8 @@ global $GANGLIA_PATH;
 global $RRDTOOL;
 global $JOB_ARCHIVE_DIR;
 global $JOB_ARCHIVE_DBASE;
+global $JOB_ARCHIVE_SQL_USER;
+global $JOB_ARCHIVE_SQL_PASSWORD;
 global $skan_str;
 global $x_first, $y_first;
 global $CLUSTER_CONFS;
@@ -159,7 +161,7 @@ class TarchDbase
 {
     var $ip, $dbase, $conn;
 
-    function TarchDbase( $ip = null, $dbase = null )
+    function TarchDbase( $ip = null, $dbase = null, $user =null, $password=null )
     {
         global $CLUSTER_CONFS, $clustername;
         global $JOB_ARCHIVE_DBASE;
@@ -183,10 +185,29 @@ class TarchDbase
 
     function connect()
     {
+        global $JOB_ARCHIVE_SQL_USER, $JOB_ARCHIVE_SQL_PASSWORD;
+
+        $connect_args ='';
         if( $this->ip == null )
-            $this->conn = pg_connect( "dbname=".$this->dbase );
+        {
+            $connect_args .= "dbname=".$this->dbase;
+        }
         else
-            $this->conn = pg_connect( "host=".$this->ip." dbname=".$this->dbase );
+        {
+            $connect_args .= "host=".$this->ip." dbname=".$this->dbase;
+        }
+        if( isset($JOB_ARCHIVE_SQL_USER) )
+        {
+            $connect_args .= " user=".$JOB_ARCHIVE_SQL_USER;
+        }
+        if( isset($JOB_ARCHIVE_SQL_PASSWORD) )
+        {
+            $connect_args .= " password=".$JOB_ARCHIVE_SQL_PASSWORD;
+        }
+
+
+        $this->conn = pg_connect( $connect_args );
+
     }
 
     function searchDbase( $id = null, $queue = null, $owner = null, $name = null, $start_from_time = null, $start_to_time = null, $end_from_time = null, $end_to_time = null )
@@ -259,6 +280,8 @@ class TarchDbase
         }
 
         $ids = $this->queryDbase( $select_query );
+
+        //print_r( $ids );
 
         $ret = array();
 
@@ -334,16 +357,21 @@ class TarchDbase
     function queryDbase( $query )
     {
         $result_rows = array();
-    
-        if( !$this->conn )
+   
+        if( $this->conn == null )
         {
             $this->connect();
         }
 
+        if( $this->conn == null )
+        {
+            printf(" no connection!\n");
+        }
         $result = pg_query( $this->conn, $query );
 
         while ($row = pg_fetch_assoc($result))
         {
+            //print_r( $row );
             $result_rows[] = $row;
         }
 

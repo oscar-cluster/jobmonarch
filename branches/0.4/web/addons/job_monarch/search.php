@@ -32,14 +32,14 @@ function validateFormInput() {
     global $clustername, $dwoo, $id, $owner, $name, $start_from_time, $start_to_time, $queue;
     global $end_from_time, $end_to_time, $period_start, $period_stop, $tpl_data;
 
-    $error = 0;
+    $error = false;
     $error_msg = "<FONT COLOR=\"red\"><B>";
     $show_msg = 0;
 
     $none_set = 0;
 
     if( $id == '' and $owner== '' and $name == '' and $start_from_time == '' and $start_to_time == '' and $queue == '' and $end_from_time == '' and $end_to_time == '') {
-        $error = 1;
+        $error = true;
         $show_msg = 1;
         $error_msg .= "No search criteria set!";
     }
@@ -47,7 +47,7 @@ function validateFormInput() {
     if( !is_numeric($id) and !$error and $id != '') 
     {
 
-        $error = 1;
+        $error = true;
         $show_msg = 1;
         $error_msg .= "Id must be a number";
     }
@@ -63,12 +63,14 @@ function validateFormInput() {
             if( $pstart_epoch > $pstop_epoch ) {
 
                 $show_msg = 1;
+                $error = true;
                 $error_msg .= "Graph timeperiod reset: start date/time can't be later than end";
                 $period_stop = '';
                 $period_start = '';
             } else if( $pstop_epoch == $pstart_epoch ) {
 
                 $show_msg = 1;
+                $error = true;
                 $error_msg .= "Graph timeperiod reset: start and end date/time can't be the same";
                 $period_stop = '';
                 $period_start = '';
@@ -77,12 +79,8 @@ function validateFormInput() {
     }
 
     $error_msg .= "</B></FONT>";
-    // doe checks en set error en error_msg in case shit
 
-    //if( $show_msg )
-        //$tpl_data->assign( "form_error_msg", $error_msg );
-
-    return ($error ? 0 : 1 );
+    return array( $error_msg, $error);
 }
 
 function datetimeToEpoch( $datetime ) {
@@ -255,8 +253,14 @@ function makeSearchPage() {
     $tpl_data->assign( "end_from_value", rawurldecode( $end_from_time ) );
     $tpl_data->assign( "end_to_value", rawurldecode( $end_to_time ) );
 
-    if( validateFormInput() ) {
+    list( $form_error_msg, $form_error ) = validateFormInput();
 
+    if( $form_error == true )
+    {
+        $tpl_data->assign( "form_error_msg", $form_error_msg );
+    } 
+    else if( $form_error == false ) 
+    {
         $tpl_data->assign( "search_results", "yes" );
         $tpl_data->assign( "sortby", $sortby);
         $tpl_data->assign( "sortorder", $sortorder);
@@ -267,8 +271,9 @@ function makeSearchPage() {
         if( $end_to_time ) $end_to_time = datetimeToEpoch( $end_to_time );
         $search_ids = $tdb->searchDbase( $id, $queue, $owner, $name, $start_from_time, $start_to_time, $end_from_time, $end_to_time );
 
+        //print_r( $search_ids );
         if( ($tdb->resultcount) > (int) $SEARCH_RESULT_LIMIT ) {
-        
+       
             $tpl_data->assign( "form_error_msg", "Got " . $tdb->resultcount . " search results, output limited to last " . $SEARCH_RESULT_LIMIT . " jobs." );
         }
 
@@ -349,7 +354,8 @@ function makeSearchPage() {
             
             $node_loop[]=$node_list;
         }
-        $tpl_data->assign("node_loop", $node_loop );
+        //print_r( $node_loop );
+        $tpl_data->assign("node_list", $node_loop );
 
         if( count( $search_ids ) == 1 ) {
 
@@ -462,8 +468,7 @@ function makeSearchPage() {
 
                     $sorted_loop[]=$sorted_list;
                 }
-                $tpl_data->assign("sorted_loop", $sorted_loop );
-
+                $tpl_data->assign("sorted_list", $sorted_loop );
             }
         }
 
