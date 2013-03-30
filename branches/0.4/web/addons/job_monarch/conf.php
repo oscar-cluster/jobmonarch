@@ -21,8 +21,7 @@ $COLUMN_NODES = true;
 
 // Path to Ganglia's web frontend root
 //
-$GANGLIA_PATH = "/data/ganglia-web-current/";
-//$GANGLIA_PATH = "../..";
+$GANGLIA_PATH = "/var/www/ganglia/";
 
 // Format of how to display a date and time in human readable format
 //
@@ -84,10 +83,18 @@ $JOB_ARCHIVE = false;
 //
 $JOB_ARCHIVE_DIR = "/path/to/my/archive";
 
-// Location of the job archive database
+// Location of the job archive (postgres) database
 // [syntax: <ip>/<dbase>]
 //
-$JOB_ARCHIVE_DBASE = "127.0.0.1/jobarch";
+$JOB_ARCHIVE_DBASE = "127.0.0.1/jobarchive";
+
+// Username to connect to the SQL database
+//
+$JOB_ARCHIVE_SQL_USER = "jobarchive";
+
+// Password to connect to the SQL database: change me
+//
+//$JOB_ARCHIVE_SQL_PASSWORD = "";
 
 // Include cluster specific settings here, 
 // they will override any (global) settings above
