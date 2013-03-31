@@ -888,6 +888,8 @@ class JobXMLHandler( xml.sax.handler.ContentHandler ):
     def endDocument( self ):
         """When all metrics have gone, check if any jobs have finished"""
 
+        jobs_finished = [ ]
+
         debug_msg( 1, "XML: Processed "+str(self.elementct)+ " elements - found "+str(len(self.jobs_processed))+" jobs" )
 
         if self.heartbeat == 0:
@@ -907,10 +909,13 @@ class JobXMLHandler( xml.sax.handler.ContentHandler ):
                     continue
 
                 elif jobid not in self.jobs_processed:
+
                     # Was running previous heartbeat but not anymore: must be finished
                     self.jobAttrs[ jobid ]['status'] = 'F'
                     self.jobAttrs[ jobid ]['stop_timestamp'] = str( self.heartbeat )
                     debug_msg( 1, 'job %s appears to have finished' %jobid )
+
+                    jobs_finished.append( jobid )
 
                     if not jobid in self.jobs_to_store:
                         self.jobs_to_store.append( jobid )
@@ -918,6 +923,9 @@ class JobXMLHandler( xml.sax.handler.ContentHandler ):
                     continue
 
             elif self.jobAttrsSaved.has_key( jobid ):
+
+                # This should pretty much never happen, but hey let's be careful
+                # Perhaps if someone altered their job while in queue with qalter
 
                 if self.jobinfoChanged( jobid, jobinfo ):
 
@@ -948,7 +956,13 @@ class JobXMLHandler( xml.sax.handler.ContentHandler ):
 
                 self.ds.storeJobInfo( jobid, self.jobAttrs[ jobid ] )
 
-                self.jobAttrsSaved[ jobid ] = self.jobAttrs[ jobid ]
+                if not jobid in jobs_finished:
+
+                    self.jobAttrsSaved[ jobid ] = self.jobAttrs[ jobid ]
+
+                elif self.jobAttrsSaved.has_key( jobid ):
+
+                    del self.jobAttrsSaved[ jobid ]
 
                 if self.jobAttrs[ jobid ]['status'] == 'F':
 
@@ -960,6 +974,8 @@ class JobXMLHandler( xml.sax.handler.ContentHandler ):
             debug_msg( 1, 'job_xml_thread(): No jobs to store.' )
 
         self.jobs_processed = [ ]
+
+        # TODO: once in while check database AND self.jobAttrsSaved for stale jobs
 
     def setJobAttrs( self, old, new ):
         """
