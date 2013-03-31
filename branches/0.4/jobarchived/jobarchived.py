@@ -445,11 +445,11 @@ class DataSQLStore:
 
     def mutateJob( self, action, job_id, jobattrs ):
 
-        job_values    = [ 'name', 'queue', 'owner', 'requested_time', 'requested_memory', 'ppn', 'status', 'start_timestamp', 'stop_timestamp' ]
+        job_values     = [ 'name', 'queue', 'owner', 'requested_time', 'requested_memory', 'ppn', 'status', 'start_timestamp', 'stop_timestamp' ]
 
-        insert_col_str    = 'job_id'
-        insert_val_str    = "'%s'" %job_id
-        update_str    = None
+        insert_col_str = 'job_id'
+        insert_val_str = "'%s'" %job_id
+        update_str     = None
 
         debug_msg( 10, 'mutateJob(): %s %s' %(action,job_id))
 
@@ -769,64 +769,73 @@ class XMLProcessor:
 
         pass
 
-class TorqueXMLProcessor( XMLProcessor ):
+class JobXMLProcessor( XMLProcessor ):
     """Main class for processing XML and acting with it"""
 
     def __init__( self, XMLSource, DataStore ):
         """Setup initial XML connection and handlers"""
 
-        self.myXMLSource    = XMLSource
-        self.myXMLHandler    = TorqueXMLHandler( DataStore )
-        self.myXMLError        = XMLErrorHandler()
+        self.myXMLSource  = XMLSource
+        self.myXMLHandler = JobXMLHandler( DataStore )
+        self.myXMLError   = XMLErrorHandler()
 
-        self.config        = GangliaConfigParser( GMETAD_CONF )
+        self.config       = GangliaConfigParser( GMETAD_CONF )
+
+        self.kill_thread  = False
+
+    def killThread( self ):
+
+        self.kill_thread  = True
 
     def run( self ):
         """Main XML processing"""
 
-        debug_msg( 1, 'torque_xml_thread(): started.' )
+        debug_msg( 1, 'job_xml_thread(): started.' )
 
         while( 1 ):
 
-            #self.myXMLSource = self.mXMLGatherer.getFileObject()
-            debug_msg( 1, 'torque_xml_thread(): Retrieving XML data..' )
+            debug_msg( 1, 'job_xml_thread(): Retrieving XML data..' )
 
             my_data    = self.myXMLSource.getData()
-            #print my_data
-            #print "size my data: %d" %len( my_data )
 
-            debug_msg( 1, 'torque_xml_thread(): Done retrieving.' )
+            debug_msg( 1, 'job_xml_thread(): Done retrieving: data size %d' %len(my_data) )
 
             if my_data:
-                debug_msg( 1, 'ganglia_parse_thread(): Parsing XML..' )
+                debug_msg( 1, 'job_xml_thread(): Parsing XML..' )
 
                 xml.sax.parseString( my_data, self.myXMLHandler, self.myXMLError )
 
-                debug_msg( 1, 'ganglia_parse_thread(): Done parsing.' )
+                debug_msg( 1, 'job_xml_thread(): Done parsing.' )
             else:
-                debug_msg( 1, 'torque_xml_thread(): Got no data.' )
+                debug_msg( 1, 'job_xml_thread(): Got no data.' )
 
+            if self.kill_thread:
+
+                debug_msg( 1, 'job_xml_thread(): killed.' )
+                return None
                 
-            debug_msg( 1, 'torque_xml_thread(): Sleeping.. (%ss)' %(str( self.config.getLowestInterval() ) ) )
+            debug_msg( 1, 'job_xml_thread(): Sleeping.. (%ss)' %(str( self.config.getLowestInterval() ) ) )
             time.sleep( self.config.getLowestInterval() )
 
-class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
-    """Parse Torque's jobinfo XML from our plugin"""
-
-    jobAttrs = { }
+class JobXMLHandler( xml.sax.handler.ContentHandler ):
+    """Parse Job's jobinfo XML from our plugin"""
 
     def __init__( self, datastore ):
 
-        #self.ds            = DataSQLStore( JOB_SQL_DBASE.split( '/' )[0], JOB_SQL_DBASE.split( '/' )[1] )
-        self.ds            = datastore
-        self.jobs_processed    = [ ]
-        self.jobs_to_store    = [ ]
+        self.ds              = datastore
+        self.jobs_processed  = [ ]
+        self.jobs_to_store   = [ ]
+        self.jobAttrs        = { }
+        self.jobAttrsSaved   = { }
+
         debug_msg( 1, "XML: Handler created" )
 
     def startDocument( self ):
 
-        self.heartbeat    = 0
-        self.elementct    = 0
+        self.jobs_processed = [ ]
+        self.heartbeat      = 0
+        self.elementct      = 0
+
         debug_msg( 1, "XML: Start document" )
 
     def startElement( self, name, attrs ):
@@ -835,7 +844,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
         so there will be no specific start/end element
         just one XML statement with all info
         """
-        
+
         jobinfo = { }
 
         self.elementct    += 1
@@ -849,22 +858,13 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
             metricname = str( attrs.get( 'NAME', "" ) )
 
             if metricname == 'zplugin_monarch_heartbeat':
+
                 self.heartbeat = str( attrs.get( 'VAL', "" ) )
 
             elif metricname.find( 'zplugin_monarch_job' ) != -1:
 
-                job_id    = metricname.split( 'zplugin_monarch_job_' )[1].split( '_' )[1]
-                val    = str( attrs.get( 'VAL', "" ) )
-
-                if not job_id in self.jobs_processed:
-
-                    self.jobs_processed.append( job_id )
-
-                check_change = 0
-
-                if self.jobAttrs.has_key( job_id ):
-
-                    check_change = 1
+                job_id  = metricname.split( 'zplugin_monarch_job_' )[1].split( '_' )[1]
+                val     = str( attrs.get( 'VAL', "" ) )
 
                 valinfo = val.split( ' ' )
 
@@ -872,68 +872,94 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
                     if len( myval.split( '=' ) ) > 1:
 
-                        valname    = myval.split( '=' )[0]
-                        value    = myval.split( '=' )[1]
+                        valname = myval.split( '=' )[0]
+                        value   = myval.split( '=' )[1]
 
                         if valname == 'nodes':
+
                             value = value.split( ';' )
 
                         jobinfo[ valname ] = value
 
-                if check_change:
-                    if self.jobinfoChanged( self.jobAttrs, job_id, jobinfo ) and self.jobAttrs[ job_id ]['status'] in [ 'R', 'Q' ]:
-                        self.jobAttrs[ job_id ]['stop_timestamp']    = ''
-                        self.jobAttrs[ job_id ]                = self.setJobAttrs( self.jobAttrs[ job_id ], jobinfo )
-                        if not job_id in self.jobs_to_store:
-                            self.jobs_to_store.append( job_id )
+                self.jobAttrs[ job_id ] = jobinfo
 
-                        debug_msg( 10, 'jobinfo for job %s has changed' %job_id )
-                else:
-                    self.jobAttrs[ job_id ] = jobinfo
-
-                    if not job_id in self.jobs_to_store:
-                        self.jobs_to_store.append( job_id )
-
-                    debug_msg( 10, 'jobinfo for job %s has changed' %job_id )
+                self.jobs_processed.append( job_id )
                     
     def endDocument( self ):
         """When all metrics have gone, check if any jobs have finished"""
 
-        debug_msg( 1, "XML: Processed "+str(self.elementct)+ " elements - found "+str(len(self.jobs_to_store))+" (updated) jobs" )
+        debug_msg( 1, "XML: Processed "+str(self.elementct)+ " elements - found "+str(len(self.jobs_processed))+" jobs" )
 
-        if self.heartbeat:
-            for jobid, jobinfo in self.jobAttrs.items():
+        if self.heartbeat == 0:
+            return None
 
-                # This is an old job, not in current jobinfo list anymore
-                # it must have finished, since we _did_ get a new heartbeat
-                #
-                mytime = int( jobinfo['reported'] ) + int( jobinfo['poll_interval'] )
+        for jobid, jobinfo in self.jobAttrs.items():
 
-                if (mytime < self.heartbeat) and (jobid not in self.jobs_processed) and (jobinfo['status'] == 'R'):
+            if jobinfo['reported'] != self.heartbeat:
 
-                    if not jobid in self.jobs_processed:
-                        self.jobs_processed.append( jobid )
+                if (jobinfo['status'] != 'R'):
+                    debug_msg( 1, 'job %s report time %s does not match current heartbeat %s : ignoring job' %(jobid, jobinfo['reported'], self.heartbeat ) )
+                    del self.jobAttrs[ jobid ]
 
+                    if jobid in self.jobs_to_store:
+                        del self.jobs_to_store[ jobid ]
+
+                    continue
+
+                elif jobid not in self.jobs_processed:
+                    # Was running previous heartbeat but not anymore: must be finished
                     self.jobAttrs[ jobid ]['status'] = 'F'
                     self.jobAttrs[ jobid ]['stop_timestamp'] = str( self.heartbeat )
+                    debug_msg( 1, 'job %s appears to have finished' %jobid )
 
                     if not jobid in self.jobs_to_store:
                         self.jobs_to_store.append( jobid )
 
-            debug_msg( 1, 'torque_xml_thread(): Storing..' )
+                    continue
 
-            for jobid in self.jobs_to_store:
-                if self.jobAttrs[ jobid ]['status'] in [ 'R', 'F' ]:
+            elif self.jobAttrsSaved.has_key( jobid ):
 
-                    self.ds.storeJobInfo( jobid, self.jobAttrs[ jobid ] )
+                if self.jobinfoChanged( jobid, jobinfo ):
 
-                    if self.jobAttrs[ jobid ]['status'] == 'F':
-                        del self.jobAttrs[ jobid ]
+                    self.jobAttrs[ jobid ]['stop_timestamp'] = ''
+                    self.jobAttrs[ jobid ]                   = self.setJobAttrs( self.jobAttrs[ jobid ], jobinfo )
 
-            debug_msg( 1, 'torque_xml_thread(): Done storing.' )
+                    if not jobid in self.jobs_to_store:
 
-            self.jobs_processed    = [ ]
-            self.jobs_to_store    = [ ]
+                        self.jobs_to_store.append( jobid )
+
+                    debug_msg( 10, 'jobinfo for job %s has changed' %jobid )
+            else:
+                debug_msg( 1, 'new job %s' %jobid )
+
+                if not jobid in self.jobs_to_store:
+
+                    self.jobs_to_store.append( jobid )
+
+        debug_msg( 1, 'job_xml_thread(): Found %s updated jobs.' %len(self.jobs_to_store) )
+
+        if len( self.jobs_to_store ) > 0:
+
+            debug_msg( 1, 'job_xml_thread(): Storing jobs to database..' )
+
+            while len( self.jobs_to_store ) > 0:
+
+                jobid = self.jobs_to_store.pop( 0 )
+
+                self.ds.storeJobInfo( jobid, self.jobAttrs[ jobid ] )
+
+                self.jobAttrsSaved[ jobid ] = self.jobAttrs[ jobid ]
+
+                if self.jobAttrs[ jobid ]['status'] == 'F':
+
+                    del self.jobAttrs[ jobid ]
+
+            debug_msg( 1, 'job_xml_thread(): Done storing.' )
+
+        else:
+            debug_msg( 1, 'job_xml_thread(): No jobs to store.' )
+
+        self.jobs_processed = [ ]
 
     def setJobAttrs( self, old, new ):
         """
@@ -947,7 +973,7 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
         return old
         
 
-    def jobinfoChanged( self, jobattrs, jobid, jobinfo ):
+    def jobinfoChanged( self, jobid, jobinfo ):
         """
         Check if jobinfo has changed from jobattrs[jobid]
         if it's report time is bigger than previous one
@@ -956,20 +982,24 @@ class TorqueXMLHandler( xml.sax.handler.ContentHandler ):
 
         ignore_changes = [ 'reported' ]
 
-        if jobattrs.has_key( jobid ):
+        if self.jobAttrsSaved.has_key( jobid ):
 
             for valname, value in jobinfo.items():
 
                 if valname not in ignore_changes:
 
-                    if jobattrs[ jobid ].has_key( valname ):
+                    if self.jobAttrsSaved[ jobid ].has_key( valname ):
 
-                        if value != jobattrs[ jobid ][ valname ]:
+                        if value != self.jobAttrsSaved[ jobid ][ valname ]:
 
-                            if jobinfo['reported'] > jobattrs[ jobid ][ 'reported' ] and jobinfo['reported'] == self.heartbeat:
+                            if jobinfo['reported'] > self.jobAttrsSaved[ jobid ][ 'reported' ]:
+
+                                debug_msg( 1, "job %s field '%s' changed since saved from: %s to: %s" %( jobid, valname, value, self.jobAttrsSaved[ jobid ][ valname ] ) )
+
                                 return True
 
                     else:
+                        debug_msg( 1, "job %s did not have field '%s'" %( jobid, valname )  )
                         return True
 
         return False
@@ -1035,8 +1065,8 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 
         if name == 'GANGLIA_XML':
 
-            self.XMLSource        = str( attrs.get( 'SOURCE', "" ) )
-            self.gangliaVersion    = str( attrs.get( 'VERSION', "" ) )
+            self.XMLSource      = str( attrs.get( 'SOURCE',  "" ) )
+            self.gangliaVersion = str( attrs.get( 'VERSION', "" ) )
 
             debug_msg( 10, 'Found XML data: source %s version %s' %( self.XMLSource, self.gangliaVersion ) )
 
@@ -1049,7 +1079,7 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 
         elif name == 'CLUSTER':
 
-            self.clusterName    = str( attrs.get( 'NAME', "" ) )
+            self.clusterName = str( attrs.get( 'NAME',      "" ) )
             self.time        = str( attrs.get( 'LOCALTIME', "" ) )
 
             if not self.clusters.has_key( self.clusterName ) and self.clusterName in ARCHIVE_DATASOURCES:
@@ -1060,9 +1090,9 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 
         elif name == 'HOST' and self.clusterName in ARCHIVE_DATASOURCES:     
 
-            self.hostName        = str( attrs.get( 'NAME', "" ) )
-            self.hostIp        = str( attrs.get( 'IP', "" ) )
-            self.hostReported    = str( attrs.get( 'REPORTED', "" ) )
+            self.hostName     = str( attrs.get( 'NAME',     "" ) )
+            self.hostIp       = str( attrs.get( 'IP',       "" ) )
+            self.hostReported = str( attrs.get( 'REPORTED', "" ) )
 
             debug_msg( 10, ' | |-Host found: %s - ip %s reported %s' %( self.hostName, self.hostIp, self.hostReported ) )
 
@@ -1086,10 +1116,10 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 
             if type not in UNSUPPORTED_ARCHIVE_TYPES and not exclude_metric:
 
-                myMetric        = { }
-                myMetric['name']    = str( attrs.get( 'NAME', "" ) )
-                myMetric['val']        = str( attrs.get( 'VAL', "" ) )
-                myMetric['time']    = self.hostReported
+                myMetric         = { }
+                myMetric['name'] = str( attrs.get( 'NAME', "" ) )
+                myMetric['val']  = str( attrs.get( 'VAL',  "" ) )
+                myMetric['time'] = self.hostReported
 
                 self.clusters[ self.clusterName ].memMetric( self.hostName, myMetric )
 
@@ -1158,7 +1188,7 @@ class XMLGatherer:
 
         self.host    = host
         self.port    = port
-        self.slot       = threading.Lock()
+        self.slot    = threading.Lock()
 
         self.retrieveData()
 
@@ -1289,19 +1319,16 @@ class GangliaXMLProcessor( XMLProcessor ):
     def __init__( self, XMLSource, DataStore ):
         """Setup initial XML connection and handlers"""
 
-        self.config        = GangliaConfigParser( GMETAD_CONF )
-
-        #self.myXMLGatherer    = XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] ) 
-        #self.myXMLSource    = self.myXMLGatherer.getFileObject()
-        self.myXMLSource    = XMLSource
-        self.ds            = DataStore
-        self.myXMLHandler    = GangliaXMLHandler( self.config, self.ds )
-        self.myXMLError        = XMLErrorHandler()
+        self.config       = GangliaConfigParser( GMETAD_CONF )
+        self.myXMLSource  = XMLSource
+        self.ds           = DataStore
+        self.myXMLHandler = GangliaXMLHandler( self.config, self.ds )
+        self.myXMLError   = XMLErrorHandler()
 
     def run( self ):
         """Main XML processing; start a xml and storethread"""
 
-        xml_thread = threading.Thread( None, self.processXML, 'xmlthread' )
+        xml_thread   = threading.Thread( None, self.processXML,   'xmlthread' )
         store_thread = threading.Thread( None, self.storeMetrics, 'storethread' )
 
         while( 1 ):
@@ -1342,7 +1369,6 @@ class GangliaXMLProcessor( XMLProcessor ):
         #
         if DEBUG_LEVEL >= 1:
             STORE_INTERVAL = 60
-            #STORE_INTERVAL = random.randint( 360, 640 )
         else:
             STORE_INTERVAL = random.randint( 360, 640 )
 
@@ -1361,9 +1387,14 @@ class GangliaXMLProcessor( XMLProcessor ):
 
         if store_metric_thread.isAlive():
 
-            debug_msg( 1, 'ganglia_store_thread(): storemetricthread() still running, waiting to terminate..' )
+            debug_msg( 1, 'ganglia_store_thread(): storemetricthread() still running, waiting to finish..' )
             store_metric_thread.join( STORE_TIMEOUT ) # Maximum time is for storing thread to finish
-            debug_msg( 1, 'ganglia_store_thread(): Done waiting: terminated storemetricthread()' )
+
+            if store_metric_thread.isAlive():
+
+                debug_msg( 1, 'ganglia_store_thread(): Done waiting: storemetricthread() still running :( now what?' )
+            else:
+                debug_msg( 1, 'ganglia_store_thread(): Done waiting: storemetricthread() has finished' )
 
         debug_msg( 1, 'ganglia_store_thread(): finished.' )
 
@@ -1374,9 +1405,11 @@ class GangliaXMLProcessor( XMLProcessor ):
 
         debug_msg( 1, 'ganglia_store_metric_thread(): started.' )
         debug_msg( 1, 'ganglia_store_metric_thread(): Storing data..' )
+
         ret = self.myXMLHandler.storeMetrics()
         if ret > 0:
             debug_msg( 0, 'ganglia_store_metric_thread(): UNKNOWN ERROR %s while storing Metrics!' %str(ret) )
+
         debug_msg( 1, 'ganglia_store_metric_thread(): Done storing.' )
         debug_msg( 1, 'ganglia_store_metric_thread(): finished.' )
         
@@ -1384,8 +1417,6 @@ class GangliaXMLProcessor( XMLProcessor ):
 
     def processXML( self ):
         """Process XML"""
-
-        debug_msg( 5, "Entering processXML()")
 
         try:
             parsethread = threading.Thread( None, self.parseThread, 'parsethread' )
@@ -1402,13 +1433,15 @@ class GangliaXMLProcessor( XMLProcessor ):
 
         if parsethread.isAlive():
 
-            debug_msg( 1, 'ganglia_xml_thread(): parsethread() still running, waiting (%ss) to terminate..' %PARSE_TIMEOUT )
+            debug_msg( 1, 'ganglia_xml_thread(): parsethread() still running, waiting (%ss) to finish..' %PARSE_TIMEOUT )
             parsethread.join( PARSE_TIMEOUT ) # Maximum time for XML thread to finish
-            debug_msg( 1, 'ganglia_xml_thread(): Done waiting. parsethread() terminated' )
+
+            if parsethread.isAlive():
+                debug_msg( 1, 'ganglia_xml_thread(): Done waiting: parsethread() still running :( now what?' )
+            else:
+                debug_msg( 1, 'ganglia_xml_thread(): Done waiting: parsethread() finished' )
 
         debug_msg( 1, 'ganglia_xml_thread(): finished.' )
-
-        debug_msg( 5, "Leaving processXML()")
 
         return 0
 
@@ -1419,9 +1452,8 @@ class GangliaXMLProcessor( XMLProcessor ):
         debug_msg( 1, 'ganglia_parse_thread(): Retrieving XML data..' )
         
         my_data    = self.myXMLSource.getData()
-        debug_msg( 1, 'ganglia_parse_thread(): data size %d.' %len(my_data) )
 
-        debug_msg( 1, 'ganglia_parse_thread(): Done retrieving.' )
+        debug_msg( 1, 'ganglia_parse_thread(): Done retrieving: data size %d' %len(my_data) )
 
         if my_data:
             debug_msg( 1, 'ganglia_parse_thread(): Parsing XML..' )
@@ -1691,8 +1723,8 @@ class RRDHandler:
 
         debug_msg( 5, "Entering storeMetrics()")
 
-        count_values    = 0
-        count_metrics    = 0
+        count_values  = 0
+        count_metrics = 0
         count_bits    = 0
 
         for hostname, mymetrics in self.myMetrics.items():    
@@ -1705,8 +1737,8 @@ class RRDHandler:
 
                     count_values += 1
 
-                    count_bits    += len( dmetric['time'] )
-                    count_bits    += len( dmetric['val'] )
+                    count_bits   += len( dmetric['time'] )
+                    count_bits   += len( dmetric['val'] )
 
         count_bytes    = count_bits / 8
 
@@ -1974,22 +2006,22 @@ def daemon():
 def run():
     """Threading start"""
 
-    config        = GangliaConfigParser( GMETAD_CONF )
-    s_timeout    = int( config.getLowestInterval() - 1 )
+    config             = GangliaConfigParser( GMETAD_CONF )
+    s_timeout          = int( config.getLowestInterval() - 1 )
 
     socket.setdefaulttimeout( s_timeout )
 
     myXMLSource        = XMLGatherer( ARCHIVE_XMLSOURCE.split( ':' )[0], ARCHIVE_XMLSOURCE.split( ':' )[1] )
     myDataStore        = DataSQLStore( JOB_SQL_DBASE.split( '/' )[0], JOB_SQL_DBASE.split( '/' )[1] )
 
-    myTorqueProcessor    = TorqueXMLProcessor( myXMLSource, myDataStore )
-    myGangliaProcessor    = GangliaXMLProcessor( myXMLSource, myDataStore )
+    myJobProcessor     = JobXMLProcessor( myXMLSource, myDataStore )
+    myGangliaProcessor = GangliaXMLProcessor( myXMLSource, myDataStore )
 
     try:
-        torque_xml_thread    = threading.Thread( None, myTorqueProcessor.run, 'torque_proc_thread' )
-        ganglia_xml_thread    = threading.Thread( None, myGangliaProcessor.run, 'ganglia_proc_thread' )
+        job_xml_thread     = threading.Thread( None, myJobProcessor.run, 'job_proc_thread' )
+        ganglia_xml_thread = threading.Thread( None, myGangliaProcessor.run, 'ganglia_proc_thread' )
 
-        torque_xml_thread.start()
+        job_xml_thread.start()
         ganglia_xml_thread.start()
         
     except thread.error, msg:
