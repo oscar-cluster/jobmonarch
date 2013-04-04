@@ -868,7 +868,8 @@ class DataGatherer:
             offline_nodes = list()
         
             l        = ['state']
-        
+       
+            # TODO catch PBSError: like pq.getJobData
             for name, node in self.pq.getnodes().items():
 
                 if ( node[ 'state' ].find( "down" ) != -1 ):
