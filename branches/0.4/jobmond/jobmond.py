@@ -603,7 +603,7 @@ def loadConfig( filename ):
 
                 except ConfigParser.NoOptionError:
 
-                    debug_msg( 0, "FATAL ERROR: GMETRIC_BINARY not set and not in $PATH" )
+                    print "FATAL ERROR: GMETRIC_BINARY not set and not in $PATH"
                     sys.exit( 1 )
 
     #TODO: is this really still needed or should be automatic
@@ -621,7 +621,7 @@ def loadConfig( filename ):
 
             BATCH_API    = api_guess
         else:
-            debug_msg( 0, "FATAL ERROR: BATCH_API not set and can't make guess" )
+            print "FATAL ERROR: BATCH_API not set and can't make guess"
             sys.exit( 1 )
 
     try:
@@ -677,7 +677,7 @@ class DataProcessor:
 
             if incompatible:
 
-                debug_msg( 0, 'Gmetric version not compatible, please upgrade to at least 3.4.0' )
+                print 'Ganglia/Gmetric version not compatible, please upgrade to at least 3.4.0'
                 sys.exit( 1 )
 
     def checkGmetricVersion( self ):
@@ -1898,7 +1898,7 @@ def main():
 
         except ImportError:
 
-            debug_msg( 0, "FATAL ERROR: BATCH_API set to 'pbs' but python module 'pbs_python' is not installed" )
+            print "FATAL ERROR: BATCH_API set to 'pbs' but python module 'pbs_python' is not installed"
             sys.exit( 1 )
 
         gather = PbsDataGatherer()
@@ -1914,13 +1914,13 @@ def main():
         try:
             from lsfObject import lsfObject
         except:
-            debug_msg(0, "fatal error: BATCH_API set to 'lsf' but python module is not found or installed")
+            print "FATAL ERROR: BATCH_API set to 'lsf' but python module is not found or installed"
             sys.exit( 1)
 
         gather = LsfDataGatherer()
 
     else:
-        debug_msg( 0, "FATAL ERROR: unknown BATCH_API '" + BATCH_API + "' is not supported" )
+        print "FATAL ERROR: unknown BATCH_API '" + BATCH_API + "' is not supported"
 
         sys.exit( 1 )
 
