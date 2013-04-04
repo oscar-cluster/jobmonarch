@@ -1516,21 +1516,21 @@ class PbsDataGatherer( DataGatherer ):
 
         """Setup appropriate variables"""
 
-        self.jobs    = { }
-        self.timeoffset    = 0
-        self.dp        = DataProcessor()
+        self.jobs       = { }
+        self.timeoffset = 0
+        self.dp         = DataProcessor()
 
         self.initPbsQuery()
 
     def initPbsQuery( self ):
 
-        self.pq        = None
+        self.pq = None
 
         if( BATCH_SERVER ):
 
-            self.pq        = PBSQuery( BATCH_SERVER )
+            self.pq = PBSQuery( BATCH_SERVER )
         else:
-            self.pq        = PBSQuery()
+            self.pq = PBSQuery()
 
         try:
             self.pq.old_data_structure()
@@ -1545,12 +1545,12 @@ class PbsDataGatherer( DataGatherer ):
 
         """Gather all data on current jobs in Torque"""
 
-        joblist        = {}
-        self.cur_time    = 0
+        joblist            = {}
+        self.cur_time      = 0
 
         try:
             joblist        = self.pq.getjobs()
-            self.cur_time    = time.time()
+            self.cur_time  = time.time()
 
         except PBSError, detail:
 
@@ -1560,11 +1560,11 @@ class PbsDataGatherer( DataGatherer ):
         jobs_processed    = [ ]
 
         for name, attrs in joblist.items():
-            display_queue        = 1
-            job_id            = name.split( '.' )[0]
+            display_queue = 1
+            job_id        = name.split( '.' )[0]
 
-            name            = self.getAttr( attrs, 'Job_Name' )
-            queue            = self.getAttr( attrs, 'queue' )
+            name          = self.getAttr( attrs, 'Job_Name' )
+            queue         = self.getAttr( attrs, 'queue' )
 
             if QUEUE:
                 for q in QUEUE:
@@ -1579,37 +1579,37 @@ class PbsDataGatherer( DataGatherer ):
 
 
             owner            = self.getAttr( attrs, 'Job_Owner' ).split( '@' )[0]
-            requested_time        = self.getAttr( attrs, 'Resource_List.walltime' )
-            requested_memory    = self.getAttr( attrs, 'Resource_List.mem' )
+            requested_time   = self.getAttr( attrs, 'Resource_List.walltime' )
+            requested_memory = self.getAttr( attrs, 'Resource_List.mem' )
 
-            mynoderequest        = self.getAttr( attrs, 'Resource_List.nodes' )
+            mynoderequest    = self.getAttr( attrs, 'Resource_List.nodes' )
 
-            ppn            = ''
+            ppn = ''
 
             if mynoderequest.find( ':' ) != -1 and mynoderequest.find( 'ppn' ) != -1:
 
-                mynoderequest_fields    = mynoderequest.split( ':' )
+                mynoderequest_fields = mynoderequest.split( ':' )
 
                 for mynoderequest_field in mynoderequest_fields:
 
                     if mynoderequest_field.find( 'ppn' ) != -1:
 
-                        ppn    = mynoderequest_field.split( 'ppn=' )[1]
+                        ppn = mynoderequest_field.split( 'ppn=' )[1]
 
-            status            = self.getAttr( attrs, 'job_state' )
+            status = self.getAttr( attrs, 'job_state' )
 
             if status in [ 'Q', 'R' ]:
 
                 jobs_processed.append( job_id )
 
-            queued_timestamp    = self.getAttr( attrs, 'ctime' )
+            queued_timestamp = self.getAttr( attrs, 'ctime' )
 
             if status == 'R':
 
-                start_timestamp        = self.getAttr( attrs, 'mtime' )
-                nodes            = self.getAttr( attrs, 'exec_host' ).split( '+' )
+                start_timestamp = self.getAttr( attrs, 'mtime' )
+                nodes           = self.getAttr( attrs, 'exec_host' ).split( '+' )
 
-                nodeslist        = do_nodelist( nodes )
+                nodeslist       = do_nodelist( nodes )
 
                 if DETECT_TIME_DIFFS:
 
@@ -1619,7 +1619,7 @@ class PbsDataGatherer( DataGatherer ):
                 
                     if int( start_timestamp ) > int( int( self.cur_time ) + int( self.timeoffset ) ):
 
-                        self.timeoffset    = int( int(start_timestamp) - int(self.cur_time) )
+                        self.timeoffset = int( int(start_timestamp) - int(self.cur_time) )
 
             elif status == 'Q':
 
@@ -1635,18 +1635,18 @@ class PbsDataGatherer( DataGatherer ):
                 # For now we only count the amount of nodes request and ignore properties
                 #
 
-                start_timestamp        = ''
-                count_mynodes        = 0
+                start_timestamp = ''
+                count_mynodes   = 0
 
                 for node in mynoderequest.split( '+' ):
 
                     # Just grab the {node_count|hostname} part and ignore properties
                     #
-                    nodepart    = node.split( ':' )[0]
+                    nodepart     = node.split( ':' )[0]
 
                     # Let's assume a node_count value
                     #
-                    numeric_node    = 1
+                    numeric_node = 1
 
                     # Chop the value up into characters
                     #
@@ -1656,20 +1656,20 @@ class PbsDataGatherer( DataGatherer ):
                         #
                         if letter not in string.digits:
 
-                            numeric_node    = 0
+                            numeric_node = 0
 
                     # If this is a hostname, just count this as one (1) node
                     #
                     if not numeric_node:
 
-                        count_mynodes    = count_mynodes + 1
+                        count_mynodes = count_mynodes + 1
                     else:
 
                         # If this a number, it must be the node_count
                         # and increase our count with it's value
                         #
                         try:
-                            count_mynodes    = count_mynodes + int( nodepart )
+                            count_mynodes = count_mynodes + int( nodepart )
 
                         except ValueError, detail:
 
@@ -1682,30 +1682,30 @@ class PbsDataGatherer( DataGatherer ):
                             debug_msg( 10, 'job = ' + str( name ) )
                             debug_msg( 10, 'attrs = ' + str( attrs ) )
                         
-                nodeslist    = str( count_mynodes )
+                nodeslist       = str( count_mynodes )
             else:
-                start_timestamp    = ''
-                nodeslist    = ''
+                start_timestamp = ''
+                nodeslist       = ''
 
             myAttrs                = { }
 
-            myAttrs[ 'name' ]        = str( name )
-            myAttrs[ 'queue' ]        = str( queue )
-            myAttrs[ 'owner' ]        = str( owner )
-            myAttrs[ 'requested_time' ]    = str( requested_time )
-            myAttrs[ 'requested_memory' ]    = str( requested_memory )
-            myAttrs[ 'ppn' ]        = str( ppn )
-            myAttrs[ 'status' ]        = str( status )
-            myAttrs[ 'start_timestamp' ]    = str( start_timestamp )
-            myAttrs[ 'queued_timestamp' ]    = str( queued_timestamp )
-            myAttrs[ 'reported' ]        = str( int( int( self.cur_time ) + int( self.timeoffset ) ) )
-            myAttrs[ 'nodes' ]        = nodeslist
-            myAttrs[ 'domain' ]        = fqdn_parts( socket.getfqdn() )[1]
+            myAttrs[ 'name' ]             = str( name )
+            myAttrs[ 'queue' ]            = str( queue )
+            myAttrs[ 'owner' ]            = str( owner )
+            myAttrs[ 'requested_time' ]   = str( requested_time )
+            myAttrs[ 'requested_memory' ] = str( requested_memory )
+            myAttrs[ 'ppn' ]              = str( ppn )
+            myAttrs[ 'status' ]           = str( status )
+            myAttrs[ 'start_timestamp' ]  = str( start_timestamp )
+            myAttrs[ 'queued_timestamp' ] = str( queued_timestamp )
+            myAttrs[ 'reported' ]         = str( int( int( self.cur_time ) + int( self.timeoffset ) ) )
+            myAttrs[ 'nodes' ]            = nodeslist
+            myAttrs[ 'domain' ]           = fqdn_parts( socket.getfqdn() )[1]
             myAttrs[ 'poll_interval' ]    = str( BATCH_POLL_INTERVAL )
 
             if self.jobDataChanged( self.jobs, job_id, myAttrs ) and myAttrs['status'] in [ 'R', 'Q' ]:
 
-                self.jobs[ job_id ]    = myAttrs
+                self.jobs[ job_id ] = myAttrs
 
         for id, attrs in self.jobs.items():
 
