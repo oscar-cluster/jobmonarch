@@ -1896,9 +1896,10 @@ def main():
         try:
             from PBSQuery import PBSQuery, PBSError
 
-        except ImportError:
+        except ImportError, details:
 
-            print "FATAL ERROR: BATCH_API set to 'pbs' but python module 'pbs_python' is not installed"
+            print "FATAL ERROR: BATCH_API set to 'pbs' but python module 'pbs_python' cannot be loaded"
+            print details
             sys.exit( 1 )
 
         gather = PbsDataGatherer()
