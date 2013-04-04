@@ -25,7 +25,7 @@
 # vi :set ts=4
 
 import sys, getopt, ConfigParser, time, os, socket, string, re
-import xdrlib, socket, syslog, xml, xml.sax, shlex
+import xdrlib, socket, syslog, xml, xml.sax, shlex, os.path
 from xml.sax.handler import feature_namespaces
 from collections import deque
 from glob import glob
@@ -472,6 +472,19 @@ def loadConfig( filename ):
             my_list.append( item_txt )
 
         return my_list
+
+    if not os.path.isfile( JOBMOND_CONF ):
+
+        print "Is not a file or does not exist: '%s'" %JOBMOND_CONF
+        sys.exit( 1 )
+
+    try:
+        f = open( JOBMOND_CONF, 'r' )
+    except IOError, detail:
+        print "Cannot read config file: '%s'" %JOBMOND_CONF
+        sys.exit( 1 )
+    else:
+        f.close()
 
     cfg        = ConfigParser.ConfigParser()
 
