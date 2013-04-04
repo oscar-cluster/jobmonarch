@@ -1526,11 +1526,18 @@ class PbsDataGatherer( DataGatherer ):
 
         self.pq = None
 
-        if( BATCH_SERVER ):
+        try:
 
-            self.pq = PBSQuery( BATCH_SERVER )
-        else:
-            self.pq = PBSQuery()
+            if( BATCH_SERVER ):
+
+                self.pq = PBSQuery( BATCH_SERVER )
+            else:
+                self.pq = PBSQuery()
+
+        except PBSError, details:
+            print 'Cannot connect to pbs server'
+            print details
+            sys.exit( 1 )
 
         try:
             self.pq.old_data_structure()
