@@ -339,7 +339,12 @@ class DB:
         return True
 
     def Commit(self):
-        self.SQL.commit()
+
+        return self.SQL.commit()
+
+    def Rollback( self ):
+
+        return self.SQL.rollback()
 
 class DataSQLStore:
 
@@ -363,12 +368,22 @@ class DataSQLStore:
             sys.exit(1)
 
     def setDatabase(self, statement):
+
         ret = self.doDatabase('set', statement)
         return ret
         
     def getDatabase(self, statement):
+
         ret = self.doDatabase('get', statement)
         return ret
+
+    def doCommit( self ):
+
+        return self.dbc.Commit()
+
+    def doRollback( self ):
+
+        return self.dbc.Rollback()
 
     def doDatabase(self, type, statement):
 
@@ -376,14 +391,13 @@ class DataSQLStore:
         try:
             if type == 'set':
                 result = self.dbc.Set( statement )
-                self.dbc.Commit()
             elif type == 'get':
                 result = self.dbc.Get( statement )
                 
         except DBError, detail:
             operation = statement.split(' ')[0]
-            debug_msg( 0, 'FATAL ERROR: ' +operation+ ' on database failed while doing ['+statement+'] full msg: '+str(detail) )
-            sys.exit(1)
+            debug_msg( 0, 'ERROR: ' +operation+ ' on database failed while doing ['+statement+'] full msg: '+str(detail) )
+            return False
 
         debug_msg( 10, 'doDatabase(): result: %s' %(result) )
         return result
@@ -391,13 +405,16 @@ class DataSQLStore:
     def getJobNodeId( self, job_id, node_id ):
 
         id = self.getDatabase( "SELECT job_id,node_id FROM job_nodes WHERE job_id = '%s' AND node_id = '%s'" %(job_id, node_id) )
+        if not id:
+            return False
+
         if len( id ) > 0:
 
             if len( id[0] ) > 0 and id[0] != '':
             
-                return 1
+                return True
 
-        return 0
+        return False
 
     def getNodeId( self, hostname ):
 
@@ -439,9 +456,9 @@ class DataSQLStore:
 
         if not self.getJobId( job_id ):
 
-            self.mutateJob( 'insert', job_id, jobattrs ) 
+            return self.mutateJob( 'insert', job_id, jobattrs ) 
         else:
-            self.mutateJob( 'update', job_id, jobattrs )
+            return self.mutateJob( 'update', job_id, jobattrs )
 
     def mutateJob( self, action, job_id, jobattrs ):
 
@@ -506,14 +523,16 @@ class DataSQLStore:
 
         if action == 'insert':
 
-            self.setDatabase( "INSERT INTO jobs ( %s ) VALUES ( %s )" %( insert_col_str, insert_val_str ) )
+            db_ret = self.setDatabase( "INSERT INTO jobs ( %s ) VALUES ( %s )" %( insert_col_str, insert_val_str ) )
 
         elif action == 'update':
 
-            self.setDatabase( "UPDATE jobs SET %s WHERE job_id='%s'" %(update_str, job_id) )
+            db_ret = self.setDatabase( "UPDATE jobs SET %s WHERE job_id='%s'" %(update_str, job_id) )
 
         if len( ids ) > 0:
             self.addJobNodes( job_id, ids )
+
+        return db_ret
 
     def addNodes( self, hostnames, domain ):
 
@@ -546,7 +565,7 @@ class DataSQLStore:
 
     def storeJobInfo( self, jobid, jobattrs ):
 
-        self.addJob( jobid, jobattrs )
+        return self.addJob( jobid, jobattrs )
 
     def checkStaleJobs( self ):
 
@@ -946,15 +965,30 @@ class JobXMLHandler( xml.sax.handler.ContentHandler ):
 
         debug_msg( 1, 'job_xml_thread(): Found %s updated jobs.' %len(self.jobs_to_store) )
 
+        failed_store = [ ]
+        succes_store = [ ]
+
         if len( self.jobs_to_store ) > 0:
 
             debug_msg( 1, 'job_xml_thread(): Storing jobs to database..' )
 
-            while len( self.jobs_to_store ) > 0:
+            for n in range( 0, len(self.jobs_to_store ) ):
+
+                if len( self.jobs_to_store ) == 0:
+                    break
 
                 jobid = self.jobs_to_store.pop( 0 )
 
-                self.ds.storeJobInfo( jobid, self.jobAttrs[ jobid ] )
+                db_ok = self.ds.storeJobInfo( jobid, self.jobAttrs[ jobid ] )
+
+                if not db_ok:
+
+                    self.ds.doRollback()
+                    failed_store.append( jobid )
+                    continue
+
+                self.ds.doCommit()
+                succes_store.append( jobid )
 
                 if not jobid in jobs_finished:
 
@@ -968,7 +1002,12 @@ class JobXMLHandler( xml.sax.handler.ContentHandler ):
 
                     del self.jobAttrs[ jobid ]
 
-            debug_msg( 1, 'job_xml_thread(): Done storing.' )
+            result_str = 'succesfully stored: %s jobs' %str(len(succes_store))
+
+            if len( failed_store ) > 0:
+                result_str = result_str + ' - failed to store: %s jobs - deferred to next interval' %str(len(failed_store))
+
+            debug_msg( 1, 'job_xml_thread(): Done storing. %s' %result_str )
 
         else:
             debug_msg( 1, 'job_xml_thread(): No jobs to store.' )
