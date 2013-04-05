@@ -1542,6 +1542,7 @@ class PbsDataGatherer( DataGatherer ):
             sys.exit( 1 )
 
         try:
+            # TODO: actually use new data structure
             self.pq.old_data_structure()
 
         except AttributeError:
