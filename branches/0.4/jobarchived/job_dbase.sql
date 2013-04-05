@@ -4,9 +4,9 @@ DROP TABLE job_nodes CASCADE;
 
 CREATE TABLE jobs (
 	job_id			VARCHAR(20) NOT NULL UNIQUE PRIMARY KEY,
-	job_name		VARCHAR(100),
+	job_name		VARCHAR(255),
 	job_queue		VARCHAR(50),
-	job_owner		VARCHAR(30),
+	job_owner		VARCHAR(50),
 	job_requested_time	VARCHAR(10),
 	job_requested_memory	VARCHAR(10),
 	job_ppn			INT,
