@@ -868,9 +868,10 @@ class DataGatherer:
             offline_nodes = list()
         
             l        = ['state']
-       
-            # TODO catch PBSError: like pq.getJobData
-            for name, node in self.pq.getnodes().items():
+
+            nodelist = self.getNodeData()
+
+            for name, node in nodelist.items():
 
                 if ( node[ 'state' ].find( "down" ) != -1 ):
 
@@ -1549,6 +1550,19 @@ class PbsDataGatherer( DataGatherer ):
             #
             pass
 
+    def getNodeData( self ):
+
+        nodedict = { }
+
+        try:
+            nodedict = self.pq.getnodes()
+
+        except PBSError, detail:
+
+            debug_msg( 10, "PBS server unavailable, skipping until next polling interval: " + str( detail ) )
+
+        return nodedict
+
     def getJobData( self ):
 
         """Gather all data on current jobs in Torque"""
@@ -1562,7 +1576,7 @@ class PbsDataGatherer( DataGatherer ):
 
         except PBSError, detail:
 
-            debug_msg( 10, "Caught PBS unavailable, skipping until next polling interval: " + str( detail ) )
+            debug_msg( 10, "PBS server unavailable, skipping until next polling interval: " + str( detail ) )
             return None
 
         jobs_processed    = [ ]
