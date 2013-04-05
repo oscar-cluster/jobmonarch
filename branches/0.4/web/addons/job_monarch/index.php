@@ -222,6 +222,8 @@ function makeHeader( $page_call, $title, $longtitle )
     $node_menu .= "<B><A HREF=\"../..\">$mygrid $meta_designator</A></B> ";
     $node_menu .= "<B>&gt;</B>\n";
 
+    $tpl_data->assign("self", $mygrid);
+
     if ($physical)
     {
         $node_menu .= hiddenvar("p", $physical);
