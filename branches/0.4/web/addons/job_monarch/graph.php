@@ -89,7 +89,8 @@ else
     $width = 400;
 }
 
-$jobstart_color = "FF0000";
+$jobstart_color = "3AE302";
+$jobstop_color = "F5164A";
 
 if($command) 
 {
@@ -430,11 +431,11 @@ if( $series != '' )
 {
     if ($job_start)
     {
-        $series .= "VRULE:${job_start}#${jobstart_color} ";
+        $series .= "VRULE:${job_start}#${jobstart_color}:'job start':dashes=4,2 ";
     }
     if ($job_stop)
     {
-        $series .= "VRULE:${job_stop}#${jobstart_color} ";
+        $series .= "VRULE:${job_stop}#${jobstop_color}:'job stop':dashes=4,2 ";
     }
 }
 
