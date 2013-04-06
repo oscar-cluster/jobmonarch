@@ -97,7 +97,7 @@ if ($size == 'small') {
    $space2 = '         ';
 } else if ($size == 'medium') {
    $eol1 = '';
-   $space1 = ' ';
+   $space1 = '';
    $space2 = '';
    $extras = ' --font LEGEND:7 ';
 } else if ($size == 'overview-medium') {
@@ -214,10 +214,11 @@ if (isset($graph))
 
             foreach( $report_names as $r )
             {
+                $legend_str = ucfirst( $r );
+
                 if( $r_count == 0 )
                 {
                     $graph_str = "AREA";
-                    $legend_str = ucfirst( $r );
                 }
                 else
                 {
@@ -225,7 +226,9 @@ if (isset($graph))
                 }
                 foreach (range(0, ($s_last)) as $print_nr ) 
                 {
+
                     $series .= "${graph_str}:'cpu_${r}${print_nr}'#".$conf['cpu_'.${r}.'_color'].":'${legend_str}\g' ";
+                    $legend_str = '';
                 }
 
                 $series .= "VDEF:'${r}_last'=cpu_${r},LAST ";
@@ -245,6 +248,8 @@ if (isset($graph))
                         . "GPRINT:'${r}_min':'${space1}Min\:%6.1lf%s${eol1}' "
                         . "GPRINT:'${r}_avg':'${space2}Avg\:%6.1lf%s' "
                         . "GPRINT:'${r}_max':'${space1}Max\:%6.1lf%s\\l' ";
+                        
+                $r_count = $r_count + 1;
             }
         }
         else
@@ -323,27 +328,6 @@ if (isset($graph))
 
         foreach( $rrd_dirs as $rrd_dir ) 
         {
-            if( $def_nr == 0 ) 
-            {
-
-                $memuse_str = ":'Memory Used'";
-                $memshared_str = ":'Memory Shared'";
-                $memcached_str = ":'Memory Cached'";
-                $membuff_str = ":'Memory Buffered'";
-                $memswap_str = ":'Memory Swapped'";
-                $total_str = ":'Total In-Core Memory'";
-            } 
-            else 
-            {
-
-                $memuse_str = "";
-                $memshared_str = "";
-                $memcached_str = "";
-                $membuff_str = "";
-                $memswap_str = "";
-                $total_str = "";
-            }
-
             $series .= "DEF:'mem_total${def_nr}'='${rrd_dir}/mem_total.rrd':'sum':AVERAGE "
                 ."CDEF:'bmem_total${def_nr}'=mem_total${def_nr},1024,* "
                 ."DEF:'mem_shared${def_nr}'='${rrd_dir}/mem_shared.rrd':'sum':AVERAGE "
@@ -395,12 +379,12 @@ if (isset($graph))
             $r_count = 0;
 
             $conf['mem_buffer_color'] = $conf['mem_buffered_color'];
-            $conf['mem_swap_color'] = $conf['mem_swapped_color'];
-            $conf['mem_total_color']   = $conf['cpu_num_color'];
+            $conf['mem_swap_color']   = $conf['mem_swapped_color'];
+            $conf['mem_total_color']  = $conf['cpu_num_color'];
 
             foreach( $report_names as $r )
             {
-                $legend_str = '';
+                $legend_str = ucfirst( $r );
 
                 if( $r == "total" )
                 {
@@ -416,11 +400,8 @@ if (isset($graph))
                 }
                 foreach (range(0, ($s_last)) as $print_nr ) 
                 {
-                    if( $print_nr == 0 )
-                    {
-                        $legend_str = ucfirst( $r );
-                    }
                     $series .= "${graph_str}:'bmem_${r}${print_nr}'#".$conf['mem_'.${r}.'_color'].":'${legend_str}\g' ";
+                    $legend_str = '';
                 }
 
                 $series .= "VDEF:'${r}_last'=bmem_${r},LAST ";
