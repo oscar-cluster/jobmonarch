@@ -160,42 +160,100 @@ if (isset($graph))
         foreach( $rrd_dirs as $rrd_dir ) 
         {
 
-            if( $def_nr == 0 ) 
-            {
-
-                $user_str = ":'User CPU'";
-                $nice_str = ":'Nice CPU'";
-                $system_str = ":'System CPU'";
-                $wio_str = ":'WAIT CPU'";
-                $idle_str = ":'Idle CPU'";
-            } 
-            else 
-            {
-
-                $user_str = "";
-                $nice_str = "";
-                $system_str = "";
-                $wio_str = "";
-                $idle_str = "";
-            }
-
             $series .= "DEF:'cpu_user${def_nr}'='${rrd_dir}/cpu_user.rrd':'sum':AVERAGE "
                 ."DEF:'cpu_nice${def_nr}'='${rrd_dir}/cpu_nice.rrd':'sum':AVERAGE "
                 ."DEF:'cpu_system${def_nr}'='${rrd_dir}/cpu_system.rrd':'sum':AVERAGE "
                 ."DEF:'cpu_idle${def_nr}'='${rrd_dir}/cpu_idle.rrd':'sum':AVERAGE "
-                ."AREA:'cpu_user${def_nr}'#".$conf['cpu_user_color']."${user_str} "
-                ."STACK:'cpu_nice${def_nr}'#".$conf['cpu_nice_color']."${nice_str} "
-                ."STACK:'cpu_system${def_nr}'#".$conf['cpu_system_color']."${system_str} ";
+                ."DEF:'cpu_wio${def_nr}'='${rrd_dir}/cpu_wio.rrd':'sum':AVERAGE ";
 
-            if (file_exists("$rrd_dir/cpu_wio.rrd")) 
+            if( $conf['graphreport_stats'] )
             {
-                $series .= "DEF:'cpu_wio${def_nr}'='${rrd_dir}/cpu_wio.rrd':'sum':AVERAGE "
-                    ."STACK:'cpu_wio${def_nr}'#".$conf['cpu_wio_color']."${wio_str} ";
+                $series .= "CDEF:cpu_user${def_nr}_nonans=cpu_user${def_nr},UN,0,cpu_user${def_nr},IF ";
+                $series .= "CDEF:cpu_nice${def_nr}_nonans=cpu_nice${def_nr},UN,0,cpu_nice${def_nr},IF ";
+                $series .= "CDEF:cpu_system${def_nr}_nonans=cpu_system${def_nr},UN,0,cpu_system${def_nr},IF ";
+                $series .= "CDEF:cpu_wio${def_nr}_nonans=cpu_wio${def_nr},UN,0,cpu_wio${def_nr},IF ";
+                $series .= "CDEF:cpu_idle${def_nr}_nonans=cpu_idle${def_nr},UN,0,cpu_idle${def_nr},IF ";
             }
 
-            $series .= "STACK:'cpu_idle${def_nr}'#".$conf['cpu_idle_color']."${idle_str} ";
-
             $def_nr++;
+        }
+
+
+        if( $conf['graphreport_stats'] )
+        {
+            $s_last     = $def_nr - 1;
+            $user_sum   = "CDEF:cpu_user=cpu_user0_nonans";
+            $nice_sum   = "CDEF:cpu_nice=cpu_nice0_nonans";
+            $system_sum = "CDEF:cpu_system=cpu_system0_nonans";
+            $wio_sum    = "CDEF:cpu_wio=cpu_wio0_nonans";
+            $idle_sum   = "CDEF:cpu_idle=cpu_idle0_nonans";
+
+            if( $s_last > 1 )
+            {
+                foreach (range(1, ($s_last)) as $print_nr ) 
+                {
+                    $user_sum   .= ",cpu_user{$print_nr}_nonans,+";
+                    $nice_sum   .= ",cpu_nice{$print_nr}_nonans,+";
+                    $system_sum .= ",cpu_system{$print_nr}_nonans,+";
+                    $wio_sum    .= ",cpu_wio{$print_nr}_nonans,+";
+                    $idle_sum   .= ",cpu_idle{$print_nr}_nonans,+";
+                }
+            }
+
+            $user_sum .= " ";
+            $nice_sum .= " ";
+            $system_sum .= " ";
+            $wio_sum .= " ";
+            $idle_sum .= " ";
+
+            $series .= $user_sum . $nice_sum . $system_sum . $wio_sum . $idle_sum;
+
+            $report_names = array( "user", "nice", "system", "wio", "idle" );
+
+            $r_count = 0;
+
+            foreach( $report_names as $r )
+            {
+                if( $r_count == 0 )
+                {
+                    $graph_str = "AREA";
+                    $legend_str = ucfirst( $r );
+                }
+                else
+                {
+                    $graph_str = "STACK";
+                }
+                foreach (range(0, ($s_last)) as $print_nr ) 
+                {
+                    $series .= "${graph_str}:'cpu_${r}${print_nr}'#".$conf['cpu_'.${r}.'_color'].":'${legend_str}\g' ";
+                }
+
+                $series .= "VDEF:'${r}_last'=cpu_${r},LAST ";
+                $series .= "VDEF:'${r}_min'=cpu_${r},MINIMUM ";
+                $series .= "VDEF:'${r}_avg'=cpu_${r},AVERAGE ";
+                $series .= "VDEF:'${r}_max'=cpu_${r},MAXIMUM ";
+
+                $spacefill = '';
+
+                $spacesize = 6-strlen($r);
+                foreach ( range( 0, $spacesize ) as $whatever )
+                {
+                    $spacefill .= ' ';
+                }
+
+                $series .= "GPRINT:'${r}_last':'${spacefill}Now\:%6.1lf%s' "
+                        . "GPRINT:'${r}_min':'${space1}Min\:%6.1lf%s${eol1}' "
+                        . "GPRINT:'${r}_avg':'${space2}Avg\:%6.1lf%s' "
+                        . "GPRINT:'${r}_max':'${space1}Max\:%6.1lf%s\\l' ";
+            }
+        }
+        else
+        {
+            $series .= "AREA:'cpu_user${def_nr}'#".$conf['cpu_user_color']."${user_str} "
+                    ."STACK:'cpu_nice${def_nr}'#".$conf['cpu_nice_color']."${nice_str} "
+                    ."STACK:'cpu_system${def_nr}'#".$conf['cpu_system_color']."${system_str} "
+                    ."STACK:'cpu_wio${def_nr}'#".$conf['cpu_wio_color']."${wio_str} "
+                    ."STACK:'cpu_idle${def_nr}'#".$conf['cpu_idle_color']."${idle_str} ";
         }
 
     } 

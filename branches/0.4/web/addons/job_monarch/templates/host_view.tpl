@@ -53,11 +53,11 @@
 
 <TD ALIGN="CENTER" VALIGN="TOP" WIDTH="395">
 <div id="monarchimage">
-<IMG ALT="{$cluster_url} LOAD" SRC="./graph.php?g=load_report&z=overview-medium&c={$cluster_url}&{$graphargs}" WIDTH=381 HEIGHT=148>
-<IMG ALT="{$cluster_url} MEM" SRC="./graph.php?g=mem_report&z=overview-medium&c={$cluster_url}&{$graphargs}" WIDTH=381 HEIGHT=148>
-<IMG ALT="{$cluster_url} CPU" SRC="./graph.php?g=cpu_report&z=overview-medium&c={$cluster_url}&{$graphargs}" WIDTH=381 HEIGHT=148>
-<IMG ALT="{$cluster_url} NETWORK" SRC="./graph.php?g=network_report&z=overview-medium&c={$cluster_url}&{$graphargs}" WIDTH=381 HEIGHT=148>
-<IMG ALT="{$cluster_url} PACKETS" SRC="./graph.php?g=packet_report&z=overview-medium&c={$cluster_url}&{$graphargs}" WIDTH=381 HEIGHT=148>
+<IMG ALT="{$cluster_url} LOAD" SRC="./graph.php?g=load_report&z=overview-medium&c={$cluster_url}&{$graphargs}">
+<IMG ALT="{$cluster_url} MEM" SRC="./graph.php?g=mem_report&z=overview-medium&c={$cluster_url}&{$graphargs}">
+<IMG ALT="{$cluster_url} CPU" SRC="./graph.php?g=cpu_report&z=overview-medium&c={$cluster_url}&{$graphargs}">
+<IMG ALT="{$cluster_url} NETWORK" SRC="./graph.php?g=network_report&z=overview-medium&c={$cluster_url}&{$graphargs}">
+<IMG ALT="{$cluster_url} PACKETS" SRC="./graph.php?g=packet_report&z=overview-medium&c={$cluster_url}&{$graphargs}">
 </div>
 </TD>
 </TR>

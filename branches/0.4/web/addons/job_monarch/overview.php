@@ -1145,7 +1145,7 @@ function makeOverview()
                 {
                     $cell    = "<td class=$class>".  "<b><a href=$host_link>$host</a></b><br>".  "<i>$metricname:</i> <b>$textval</b></td>";
                 } else {
-                    $cell    = "<A HREF=\"$host_link\">" . "<IMG SRC=\"./graph.php?$graphargs\" " . "ALT=\"$host\" BORDER=0  WIDTH=381 HEIGHT=148></A>";
+                    $cell    = "<A HREF=\"$host_link\">" . "<IMG SRC=\"./graph.php?$graphargs\" " . "ALT=\"$host\" BORDER=0></A>";
                 }
 
                 $metric_loop["metric_image"] = $cell;
