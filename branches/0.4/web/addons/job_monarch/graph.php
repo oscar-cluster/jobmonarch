@@ -99,11 +99,12 @@ if ($size == 'small') {
    $eol1 = '';
    $space1 = ' ';
    $space2 = '';
+   $extras = ' --font LEGEND:7 ';
 } else if ($size == 'overview-medium') {
    $eol1   = '';
    $space1 = '';
    $space2 = '';
-   $extras = ' --font LEGEND:7';
+   $extras = ' --font LEGEND:7 ';
 } else if ($size == 'large') {
    $eol1 = '';
    $space1 = '       ';
@@ -461,6 +462,7 @@ if (isset($graph))
 
         $def_nr = 0;
 
+
         foreach( $rrd_dirs as $rrd_dir ) 
         {
 
@@ -477,9 +479,42 @@ if (isset($graph))
             $series .= "DEF:'sum${def_nr}'='$rrd_file':'sum':AVERAGE "
                 ."AREA:'sum${def_nr}'#".$conf['default_metric_color']."${title_str} ";
 
+            if( $conf['graphreport_stats'] )
+            {
+                $series .= "CDEF:sum${def_nr}_nonans=sum${def_nr},UN,0,sum${def_nr},IF ";
+            }
+
             $def_nr++;
         }
 
+        if( $conf['graphreport_stats'] )
+        {
+            $s_last         = $def_nr - 1;
+            $series_sum     = "CDEF:sum=sum0_nonans";
+
+            if( $def_nr > 1 )
+            {
+                foreach (range(1, ($s_last)) as $print_nr ) 
+                {
+                    $series_sum     .= ",sum{$print_nr}_nonans,+";
+                }
+            }
+
+            $series_sum .= " ";
+
+            $series_last    = "VDEF:'sum_last'=sum,LAST ";
+            $series_minimum = "VDEF:'sum_min'=sum,MINIMUM ";
+            $series_average = "VDEF:'sum_avg'=sum,AVERAGE ";
+            $series_maximum = "VDEF:'sum_max'=sum,MAXIMUM ";
+
+            $series .= $series_sum . $series_last . $series_minimum . $series_average . $series_maximum;
+
+            $series .= "COMMENT:\"\\n\" ";
+            $series .= "GPRINT:'sum_last':'${space1}Now\:%6.1lf%s' "
+                    . "GPRINT:'sum_min':'${space1}Min\:%6.1lf%s${eol1}' "
+                    . "GPRINT:'sum_avg':'${space2}Avg\:%6.1lf%s' "
+                    . "GPRINT:'sum_max':'${space1}Max\:%6.1lf%s\\l' ";
+        }
     }
 }
 if( $series != '' ) 
