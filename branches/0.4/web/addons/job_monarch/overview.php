@@ -923,7 +923,7 @@ function makeOverview()
         }
 
         $rjqj_str  = "<A HREF=\"./graph.php$rjqj_graphargs\">";
-        $rjqj_str .= "<IMG BORDER=0 SRC=\"./graph.php$rjqj_graphargs\" WIDTH=381 HEIGHT=137>";
+        $rjqj_str .= "<IMG BORDER=0 SRC=\"./graph.php$rjqj_graphargs\">";
         $rjqj_str .= "</A>";
 
         $tpl_data->assign( "rjqj_graph", $rjqj_str );

@@ -89,6 +89,35 @@ else
     $width = 400;
 }
 
+// RB: Perform some formatting/spacing magic.. tinkered to fit
+//
+if ($size == 'small') {
+   $eol1 = '\\l';
+   $space1 = ' ';
+   $space2 = '         ';
+} else if ($size == 'medium') {
+   $eol1 = '';
+   $space1 = ' ';
+   $space2 = '';
+} else if ($size == 'overview-medium') {
+   $eol1   = '';
+   $space1 = '';
+   $space2 = '';
+   $extras = ' --font LEGEND:7';
+} else if ($size == 'large') {
+   $eol1 = '';
+   $space1 = '       ';
+   $space2 = '       ';
+} else if ($size == 'xlarge') {
+   $eol1 = '';
+   $space1 = '             ';
+   $space2 = '             ';
+} else if ($size == 'mobile') {
+   $eol1 = '';
+   $space1 = ' ';
+   $space2 = '';
+}
+
 $jobstart_color = "3AE302";
 $jobstop_color = "F5164A";
 
@@ -190,19 +219,45 @@ if (isset($graph))
         $qj_str = ":'Queued Jobs'";
 
         $series .= "DEF:'running_jobs'='${rj_rrd}':'sum':AVERAGE "
-            ."DEF:'queued_jobs'='${qj_rrd}':'sum':AVERAGE "
+            ."DEF:'queued_jobs'='${qj_rrd}':'sum':AVERAGE ";
 
         
-            ."LINE3:'running_jobs'#ff0000${rj_str} "
-            ."LINE3:'queued_jobs'#999999${qj_str} ";
+        $series .= "LINE3:'running_jobs'#ff0000${rj_str} ";
 
+        if ( $conf['graphreport_stats'] ) 
+        {
+            $series .= "CDEF:running_pos=running_jobs,0,INF,LIMIT "
+                    . "VDEF:running_last=running_pos,LAST "
+                    . "VDEF:running_min=running_pos,MINIMUM "
+                    . "VDEF:running_avg=running_pos,AVERAGE "
+                    . "VDEF:running_max=running_pos,MAXIMUM "
+                    . "GPRINT:'running_last':' ${space1}Now\:%5.0lf' "
+                    . "GPRINT:'running_min':'${space1}Min\:%5.0lf${eol1}' "
+                    . "GPRINT:'running_avg':'${space2}Avg\:%5.0lf' "
+                    . "GPRINT:'running_max':'${space1}Max\:%5.0lf\\l' ";
+        }
+
+        $series .= "LINE3:'queued_jobs'#999999${qj_str} ";
+
+        if ( $conf['graphreport_stats'] ) 
+        {
+            $series .= "CDEF:queued_pos=queued_jobs,0,INF,LIMIT "
+                    . "VDEF:queued_last=queued_pos,LAST "
+                    . "VDEF:queued_min=queued_pos,MINIMUM "
+                    . "VDEF:queued_avg=queued_pos,AVERAGE "
+                    . "VDEF:queued_max=queued_pos,MAXIMUM "
+                    . "GPRINT:'queued_last':'  ${space1}Now\:%5.0lf' "
+                    . "GPRINT:'queued_min':'${space1}Min\:%5.0lf${eol1}' "
+                    . "GPRINT:'queued_avg':'${space2}Avg\:%5.0lf' "
+                    . "GPRINT:'queued_max':'${space1}Max\:%5.0lf\\l' ";
+        }
     } 
     else if ($graph == "mem_report") 
     {
         $style = "Memory";
 
         $lower_limit = "--lower-limit 0 --rigid";
-        $extras = "--base 1024";
+        $extras .= "--base 1024";
         $vertical_label = "--vertical-label Bytes";
 
         $def_nr = 0;
@@ -303,7 +358,7 @@ if (isset($graph))
         $style = "Network";
 
         $lower_limit = "--lower-limit 0 --rigid";
-        $extras = "--base 1024";
+        $extras .= "--base 1024";
         $vertical_label = "--vertical-label 'Bytes/sec'";
 
         $def_nr = 0;
@@ -338,7 +393,7 @@ if (isset($graph))
         $style = "Packets";
 
         $lower_limit = "--lower-limit 0 --rigid";
-        $extras = "--base 1024";
+        $extras .= "--base 1024";
         $vertical_label = "--vertical-label 'Packets/sec'";
 
         $def_nr = 0;
