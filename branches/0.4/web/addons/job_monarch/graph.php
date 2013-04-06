@@ -452,16 +452,89 @@ if (isset($graph))
                 $run_str = "";
             }
 
-            $series .= "DEF:'load_one${def_nr}'='${rrd_dir}/load_one.rrd':'sum':AVERAGE "
-                ."DEF:'proc_run${def_nr}'='${rrd_dir}/proc_run.rrd':'sum':AVERAGE "
-                ."DEF:'cpu_num${def_nr}'='${rrd_dir}/cpu_num.rrd':'sum':AVERAGE ";
-            $series .="AREA:'load_one${def_nr}'#".$conf['load_one_color']."${load_str} ";
-            $series .="LINE2:'cpu_num${def_nr}'#".$conf['cpu_num_color']."${cpu_str} ";
-            $series .="LINE2:'proc_run${def_nr}'#".$conf['proc_run_color']."${run_str} ";
+            $series .= "DEF:'load_load${def_nr}'='${rrd_dir}/load_one.rrd':'sum':AVERAGE "
+                ."DEF:'load_procs${def_nr}'='${rrd_dir}/proc_run.rrd':'sum':AVERAGE "
+                ."DEF:'load_cpus${def_nr}'='${rrd_dir}/cpu_num.rrd':'sum':AVERAGE ";
+
+            $report_names = array( "load", "procs", "cpus" );
+
+            if( $conf['graphreport_stats'] )
+            {
+                foreach( $report_names as $r )
+                {
+                    $series .= "CDEF:load_${r}${def_nr}_nonans=load_${r}${def_nr},UN,0,load_${r}${def_nr},IF ";
+                }
+            }
 
             $def_nr++;
         }
 
+        if( $conf['graphreport_stats'] )
+        {
+            $s_last     = $def_nr - 1;
+
+            foreach( $report_names as $r )
+            {
+                $cdef_sum   = "CDEF:load_${r}=load_${r}0_nonans";
+
+                if( $s_last > 1 )
+                {
+                    foreach (range(1, ($s_last)) as $print_nr ) 
+                    {
+                        $user_sum   .= ",load_${r}{$print_nr}_nonans,+";
+                    }
+                }
+                $cdef_sum .= " ";
+
+                $series   .= $cdef_sum;
+            }
+
+            $conf['load_load_color']  = $conf['load_one_color'];
+            $conf['load_procs_color'] = $conf['proc_run_color'];
+            $conf['load_cpus_color']  = $conf['cpu_num_color'];
+
+            foreach( $report_names as $r )
+            {
+                $legend_str = ucfirst( $r );
+
+                if( $r == 'load' )
+                {
+                    $graph_str  = "AREA";
+                }
+                else
+                {
+                    $graph_str  = "LINE2";
+                }
+                foreach (range(0, ($s_last)) as $print_nr ) 
+                {
+                    $series .= "${graph_str}:'load_${r}${print_nr}'#".$conf['load_'.${r}.'_color'].":'${legend_str}\g' ";
+                    $legend_str = '';
+                }
+
+                $series .= "VDEF:'${r}_last'=load_${r},LAST ";
+                $series .= "VDEF:'${r}_min'=load_${r},MINIMUM ";
+                $series .= "VDEF:'${r}_avg'=load_${r},AVERAGE ";
+                $series .= "VDEF:'${r}_max'=load_${r},MAXIMUM ";
+
+                $spacefill = '';
+
+                $spacesize = 6-strlen($r); // max length 'swapped' = 7
+                foreach ( range( 0, $spacesize ) as $whatever )
+                {
+                    $spacefill .= ' ';
+                }
+                $series .= "GPRINT:'${r}_last':'${spacefill}Now\:%6.1lf%s' "
+                        . "GPRINT:'${r}_min':'${space1}Min\:%6.1lf%s${eol1}' "
+                        . "GPRINT:'${r}_avg':'${space2}Avg\:%6.1lf%s' "
+                        . "GPRINT:'${r}_max':'${space1}Max\:%6.1lf%s\\l' ";
+            }
+        }
+        else
+        {
+            $series .="AREA:'load_one${def_nr}'#".$conf['load_one_color']."${load_str} ";
+            $series .="LINE2:'cpu_num${def_nr}'#".$conf['cpu_num_color']."${cpu_str} ";
+            $series .="LINE2:'proc_run${def_nr}'#".$conf['proc_run_color']."${run_str} ";
+        }
     } 
     else if ($graph == "network_report") 
     {
