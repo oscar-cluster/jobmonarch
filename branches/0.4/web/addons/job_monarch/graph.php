@@ -567,25 +567,82 @@ if (isset($graph))
         foreach( $rrd_dirs as $rrd_dir ) 
         {
 
-            if( $def_nr == 0 ) 
-            {
+            $series .= "DEF:'pkts_in${def_nr}'='${rrd_dir}/pkts_in.rrd':'sum':AVERAGE "
+                    ."DEF:'pkts_out${def_nr}'='${rrd_dir}/pkts_out.rrd':'sum':AVERAGE ";
 
-                $in_str = ":'In'";
-                $out_str = ":'Out'";
-            } 
-            else 
-            {
+            $report_names = array( "in", "out" );
 
-                $in_str = "";
-                $out_str = "";
+            if( $conf['graphreport_stats'] )
+            {
+                foreach( $report_names as $r )
+                {
+                    $series .= "CDEF:pkts_${r}${def_nr}_nonans=pkts_${r}${def_nr},UN,0,pkts_${r}${def_nr},IF ";
+                }
             }
 
-            $series .= "DEF:'bytes_in${def_nr}'='${rrd_dir}/pkts_in.rrd':'sum':AVERAGE "
-                ."DEF:'bytes_out${def_nr}'='${rrd_dir}/pkts_out.rrd':'sum':AVERAGE "
-                ."LINE2:'bytes_in${def_nr}'#".$conf['mem_cached_color']."${in_str} "
-                ."LINE2:'bytes_out${def_nr}'#".$conf['mem_used_color']."${out_str} ";
-
             $def_nr++;
+        }
+
+        if( $conf['graphreport_stats'] )
+        {
+            $s_last     = $def_nr - 1;
+
+            foreach( $report_names as $r )
+            {
+                $cdef_sum   = "CDEF:pkts_${r}=pkts_${r}0_nonans";
+
+                if( $s_last > 1 )
+                {
+                    foreach (range(1, ($s_last)) as $print_nr ) 
+                    {
+                        $user_sum   .= ",pkts_${r}{$print_nr}_nonans,+";
+                    }
+                }
+                $cdef_sum .= " ";
+
+                $series   .= $cdef_sum;
+            }
+
+            $r_count = 0;
+
+            $conf['pkts_out_color'] = $conf['mem_used_color'];
+            $conf['pkts_in_color']  = $conf['mem_cached_color'];
+
+            foreach( $report_names as $r )
+            {
+                $legend_str = ucfirst( $r );
+
+                $graph_str  = "LINE2";
+
+                foreach (range(0, ($s_last)) as $print_nr ) 
+                {
+                    $series .= "${graph_str}:'pkts_${r}${print_nr}'#".$conf['pkts_'.${r}.'_color'].":'${legend_str}\g' ";
+                    $legend_str = '';
+                }
+
+                $series .= "VDEF:'${r}_last'=pkts_${r},LAST ";
+                $series .= "VDEF:'${r}_min'=pkts_${r},MINIMUM ";
+                $series .= "VDEF:'${r}_avg'=pkts_${r},AVERAGE ";
+                $series .= "VDEF:'${r}_max'=pkts_${r},MAXIMUM ";
+
+                $spacefill = '';
+
+                $spacesize = 6-strlen($r); // max length 'swapped' = 7
+                foreach ( range( 0, $spacesize ) as $whatever )
+                {
+                    $spacefill .= ' ';
+                }
+                $series .= "GPRINT:'${r}_last':'${spacefill}Now\:%6.1lf%s' "
+                        . "GPRINT:'${r}_min':'${space1}Min\:%6.1lf%s${eol1}' "
+                        . "GPRINT:'${r}_avg':'${space2}Avg\:%6.1lf%s' "
+                        . "GPRINT:'${r}_max':'${space1}Max\:%6.1lf%s\\l' ";
+
+            }
+        }
+        else
+        {
+                $series .= "LINE2:'pkts_in${def_nr}'#".$conf['mem_cached_color']."'Packets In' "
+                        ."LINE2:'pkts_out${def_nr}'#".$conf['mem_used_color']."'Packets Out' ";
         }
 
     } 
