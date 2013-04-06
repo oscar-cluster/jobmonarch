@@ -323,7 +323,6 @@ if (isset($graph))
 
         foreach( $rrd_dirs as $rrd_dir ) 
         {
-
             if( $def_nr == 0 ) 
             {
 
@@ -353,26 +352,97 @@ if (isset($graph))
                 ."CDEF:'bmem_free${def_nr}'=mem_free${def_nr},1024,* "
                 ."DEF:'mem_cached${def_nr}'='${rrd_dir}/mem_cached.rrd':'sum':AVERAGE "
                 ."CDEF:'bmem_cached${def_nr}'=mem_cached${def_nr},1024,* "
-                ."DEF:'mem_buffers${def_nr}'='${rrd_dir}/mem_buffers.rrd':'sum':AVERAGE "
-                ."CDEF:'bmem_buffers${def_nr}'=mem_buffers${def_nr},1024,* "
-                ."CDEF:'bmem_used${def_nr}'='bmem_total${def_nr}','bmem_shared${def_nr}',-,'bmem_free${def_nr}',-,'bmem_cached${def_nr}',-,'bmem_buffers${def_nr}',- "
-                ."AREA:'bmem_used${def_nr}'#".$conf['mem_used_color']."${memuse_str} "
-                ."STACK:'bmem_shared${def_nr}'#".$conf['mem_shared_color']."${memshared_str} "
-                ."STACK:'bmem_cached${def_nr}'#".$conf['mem_cached_color']."${memcached_str} "
-                ."STACK:'bmem_buffers${def_nr}'#".$conf['mem_buffered_color']."${membuff_str} ";
+                ."DEF:'mem_buffer${def_nr}'='${rrd_dir}/mem_buffers.rrd':'sum':AVERAGE "
+                ."CDEF:'bmem_buffer${def_nr}'=mem_buffer${def_nr},1024,* "
+                ."CDEF:'bmem_used${def_nr}'='bmem_total${def_nr}','bmem_shared${def_nr}',-,'bmem_free${def_nr}',-,'bmem_cached${def_nr}',-,'bmem_buffer${def_nr}',- "
+                ."DEF:'swap_total${def_nr}'='${rrd_dir}/swap_total.rrd':'sum':AVERAGE "
+                ."DEF:'swap_free${def_nr}'='${rrd_dir}/swap_free.rrd':'sum':AVERAGE "
+                ."CDEF:'bmem_swap${def_nr}'='swap_total${def_nr}','swap_free${def_nr}',-,1024,* ";
 
-            if (file_exists("$rrd_dir/swap_total.rrd")) 
+            $report_names = array( "used", "shared", "cached", "buffer", "swap", "total" );
+
+            if( $conf['graphreport_stats'] )
             {
-                $series .= "DEF:'swap_total${def_nr}'='${rrd_dir}/swap_total.rrd':'sum':AVERAGE "
-                    ."DEF:'swap_free${def_nr}'='${rrd_dir}/swap_free.rrd':'sum':AVERAGE "
-                    ."CDEF:'bmem_swapped${def_nr}'='swap_total${def_nr}','swap_free${def_nr}',-,1024,* "
-                    ."STACK:'bmem_swapped${def_nr}'#".$conf['mem_swapped_color']."${memswap_str} ";
+                foreach( $report_names as $r )
+                {
+                    $series .= "CDEF:bmem_${r}${def_nr}_nonans=bmem_${r}${def_nr},UN,0,bmem_${r}${def_nr},IF ";
+                }
             }
-
-            $series .= "LINE2:'bmem_total${def_nr}'#".$conf['cpu_num_color']."${total_str} ";
 
             $def_nr++;
         }
+
+        if( $conf['graphreport_stats'] )
+        {
+            $s_last     = $def_nr - 1;
+
+            foreach( $report_names as $r )
+            {
+                $cdef_sum   = "CDEF:bmem_${r}=bmem_${r}0_nonans";
+
+                if( $s_last > 1 )
+                {
+                    foreach (range(1, ($s_last)) as $print_nr ) 
+                    {
+                        $user_sum   .= ",bmem_${r}{$print_nr}_nonans,+";
+                    }
+                }
+                $cdef_sum .= " ";
+
+                $series   .= $cdef_sum;
+            }
+
+            $r_count = 0;
+
+            $conf['mem_buffer_color'] = $conf['mem_buffered_color'];
+            $conf['mem_swap_color'] = $conf['mem_swapped_color'];
+            $conf['mem_total_color']   = $conf['cpu_num_color'];
+
+            foreach( $report_names as $r )
+            {
+                $legend_str = '';
+
+                if( $r == "total" )
+                {
+                    $graph_str  = "LINE2";
+                }
+                else if( $r_count == 0 )
+                {
+                    $graph_str  = "AREA";
+                }
+                else
+                {
+                    $graph_str  = "STACK";
+                }
+                foreach (range(0, ($s_last)) as $print_nr ) 
+                {
+                    if( $print_nr == 0 )
+                    {
+                        $legend_str = ucfirst( $r );
+                    }
+                    $series .= "${graph_str}:'bmem_${r}${print_nr}'#".$conf['mem_'.${r}.'_color'].":'${legend_str}\g' ";
+                }
+
+                $series .= "VDEF:'${r}_last'=bmem_${r},LAST ";
+                $series .= "VDEF:'${r}_min'=bmem_${r},MINIMUM ";
+                $series .= "VDEF:'${r}_avg'=bmem_${r},AVERAGE ";
+                $series .= "VDEF:'${r}_max'=bmem_${r},MAXIMUM ";
+
+                $spacefill = '';
+
+                $spacesize = 6-strlen($r); // max length 'swapped' = 7
+                foreach ( range( 0, $spacesize ) as $whatever )
+                {
+                    $spacefill .= ' ';
+                }
+                $series .= "GPRINT:'${r}_last':'${spacefill}Now\:%6.1lf%s' "
+                        . "GPRINT:'${r}_min':'${space1}Min\:%6.1lf%s${eol1}' "
+                        . "GPRINT:'${r}_avg':'${space2}Avg\:%6.1lf%s' "
+                        . "GPRINT:'${r}_max':'${space1}Max\:%6.1lf%s\\l' ";
+
+            }
+        }
+        $r_count = $r_count + 1;
 
     } 
     else if ($graph == "load_report") 
