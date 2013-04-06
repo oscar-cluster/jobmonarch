@@ -166,18 +166,18 @@ if (isset($graph))
                 ."DEF:'cpu_idle${def_nr}'='${rrd_dir}/cpu_idle.rrd':'sum':AVERAGE "
                 ."DEF:'cpu_wio${def_nr}'='${rrd_dir}/cpu_wio.rrd':'sum':AVERAGE ";
 
+            $report_names = array( "user", "nice", "system", "wio", "idle" );
+
             if( $conf['graphreport_stats'] )
             {
-                $series .= "CDEF:cpu_user${def_nr}_nonans=cpu_user${def_nr},UN,0,cpu_user${def_nr},IF ";
-                $series .= "CDEF:cpu_nice${def_nr}_nonans=cpu_nice${def_nr},UN,0,cpu_nice${def_nr},IF ";
-                $series .= "CDEF:cpu_system${def_nr}_nonans=cpu_system${def_nr},UN,0,cpu_system${def_nr},IF ";
-                $series .= "CDEF:cpu_wio${def_nr}_nonans=cpu_wio${def_nr},UN,0,cpu_wio${def_nr},IF ";
-                $series .= "CDEF:cpu_idle${def_nr}_nonans=cpu_idle${def_nr},UN,0,cpu_idle${def_nr},IF ";
+                foreach( $report_names as $r )
+                {
+                    $series .= "CDEF:cpu_${r}${def_nr}_nonans=cpu_${r}${def_nr},UN,0,cpu_${r}${def_nr},IF ";
+                }
             }
 
             $def_nr++;
         }
-
 
         if( $conf['graphreport_stats'] )
         {
@@ -208,7 +208,6 @@ if (isset($graph))
 
             $series .= $user_sum . $nice_sum . $system_sum . $wio_sum . $idle_sum;
 
-            $report_names = array( "user", "nice", "system", "wio", "idle" );
 
             $r_count = 0;
 
@@ -420,10 +419,17 @@ if (isset($graph))
                         . "GPRINT:'${r}_min':'${space1}Min\:%6.1lf%s${eol1}' "
                         . "GPRINT:'${r}_avg':'${space2}Avg\:%6.1lf%s' "
                         . "GPRINT:'${r}_max':'${space1}Max\:%6.1lf%s\\l' ";
-
+                $r_count = $r_count + 1;
             }
         }
-        $r_count = $r_count + 1;
+        else
+        {
+            $series .= "AREA:'bmem_used${def_nr}'#".$conf['mem_used_color']."${memuse_str} " 
+                    ."STACK:'bmem_shared${def_nr}'#".$conf['mem_shared_color']."${memshared_str} " 
+                    ."STACK:'bmem_cached${def_nr}'#".$conf['mem_cached_color']."${memcached_str} " 
+                    ."STACK:'bmem_buffer${def_nr}'#".$conf['mem_buffered_color']."${membuff_str} "
+                    ."STACK:'bmem_swap${def_nr}'#".$conf['mem_swapped_color']."${memswap_str} "; 
+        }
 
     } 
     else if ($graph == "load_report") 
