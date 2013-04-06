@@ -244,10 +244,10 @@ if (isset($graph))
                     $spacefill .= ' ';
                 }
 
-                $series .= "GPRINT:'${r}_last':'${spacefill}Now\:%6.1lf%s' "
-                        . "GPRINT:'${r}_min':'${space1}Min\:%6.1lf%s${eol1}' "
-                        . "GPRINT:'${r}_avg':'${space2}Avg\:%6.1lf%s' "
-                        . "GPRINT:'${r}_max':'${space1}Max\:%6.1lf%s\\l' ";
+                $series .= "GPRINT:'${r}_last':'${spacefill}Now\:%6.1lf%%' "
+                        . "GPRINT:'${r}_min':'${space1}Min\:%6.1lf%%${eol1}' "
+                        . "GPRINT:'${r}_avg':'${space2}Avg\:%6.1lf%%' "
+                        . "GPRINT:'${r}_max':'${space1}Max\:%6.1lf%%\\l' ";
                         
                 $r_count = $r_count + 1;
             }
@@ -475,26 +475,82 @@ if (isset($graph))
 
         foreach( $rrd_dirs as $rrd_dir ) 
         {
+            $series .= "DEF:'bytes_in${def_nr}'='${rrd_dir}/bytes_in.rrd':'sum':AVERAGE "
+                    ."DEF:'bytes_out${def_nr}'='${rrd_dir}/bytes_out.rrd':'sum':AVERAGE ";
 
-            if( $def_nr == 0 ) 
+            $report_names = array( "in", "out" );
+
+            if( $conf['graphreport_stats'] )
             {
-
-                $in_str = ":'In'";
-                $out_str = ":'Out'";
-            } 
-            else 
-            {
-
-                $in_str = "";
-                $out_str = "";
+                foreach( $report_names as $r )
+                {
+                    $series .= "CDEF:bytes_${r}${def_nr}_nonans=bytes_${r}${def_nr},UN,0,bytes_${r}${def_nr},IF ";
+                }
             }
 
-            $series .= "DEF:'bytes_in${def_nr}'='${rrd_dir}/bytes_in.rrd':'sum':AVERAGE "
-                ."DEF:'bytes_out${def_nr}'='${rrd_dir}/bytes_out.rrd':'sum':AVERAGE "
-                ."LINE2:'bytes_in${def_nr}'#".$conf['mem_cached_color']."${in_str} "
-                ."LINE2:'bytes_out${def_nr}'#".$conf['mem_used_color']."${out_str} ";
-
             $def_nr++;
+        }
+
+        if( $conf['graphreport_stats'] )
+        {
+            $s_last     = $def_nr - 1;
+
+            foreach( $report_names as $r )
+            {
+                $cdef_sum   = "CDEF:bytes_${r}=bytes_${r}0_nonans";
+
+                if( $s_last > 1 )
+                {
+                    foreach (range(1, ($s_last)) as $print_nr ) 
+                    {
+                        $user_sum   .= ",bytes_${r}{$print_nr}_nonans,+";
+                    }
+                }
+                $cdef_sum .= " ";
+
+                $series   .= $cdef_sum;
+            }
+
+            $r_count = 0;
+
+            $conf['bytes_out_color'] = $conf['mem_used_color'];
+            $conf['bytes_in_color']  = $conf['mem_cached_color'];
+
+            foreach( $report_names as $r )
+            {
+                $legend_str = ucfirst( $r );
+
+                $graph_str  = "LINE2";
+
+                foreach (range(0, ($s_last)) as $print_nr ) 
+                {
+                    $series .= "${graph_str}:'bytes_${r}${print_nr}'#".$conf['bytes_'.${r}.'_color'].":'${legend_str}\g' ";
+                    $legend_str = '';
+                }
+
+                $series .= "VDEF:'${r}_last'=bytes_${r},LAST ";
+                $series .= "VDEF:'${r}_min'=bytes_${r},MINIMUM ";
+                $series .= "VDEF:'${r}_avg'=bytes_${r},AVERAGE ";
+                $series .= "VDEF:'${r}_max'=bytes_${r},MAXIMUM ";
+
+                $spacefill = '';
+
+                $spacesize = 6-strlen($r); // max length 'swapped' = 7
+                foreach ( range( 0, $spacesize ) as $whatever )
+                {
+                    $spacefill .= ' ';
+                }
+                $series .= "GPRINT:'${r}_last':'${spacefill}Now\:%6.1lf%s' "
+                        . "GPRINT:'${r}_min':'${space1}Min\:%6.1lf%s${eol1}' "
+                        . "GPRINT:'${r}_avg':'${space2}Avg\:%6.1lf%s' "
+                        . "GPRINT:'${r}_max':'${space1}Max\:%6.1lf%s\\l' ";
+
+            }
+        }
+        else
+        {
+                $series .= "LINE2:'bytes_in${def_nr}'#".$conf['mem_cached_color']."'Bytes In' "
+                        ."LINE2:'bytes_out${def_nr}'#".$conf['mem_used_color']."'Bytes Out' ";
         }
 
     } 
@@ -762,14 +818,14 @@ if ( isset($sourcetime) )
         $end = floor($end / 672) * 672;
     }
         $command = $conf['rrdtool']. " graph - --start $start --end $end ".
-                "--width $width --height $height $lower_limit ".
+                "--width $width --height $height $lower_limit $vertical_label ".
                 "--title '$title' $extras $background ".
                 $series;
 }
 else
 {
     $command = $conf['rrdtool'] . " graph - --start $period_start --end $period_stop ".
-               "--width $width --height $height $lower_limit --color BACK#$load_color ".
+               "--width $width --height $height $lower_limit --color BACK#$load_color $vertical_label ".
                "--title '$title' $extras $background ".
                $series;
 }
