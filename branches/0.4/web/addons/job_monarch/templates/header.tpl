@@ -39,7 +39,6 @@
      </FONT>
      </TD>
      <TD BGCOLOR="#DDDDDD" ALIGN="RIGHT">
-     <INPUT TYPE="SUBMIT" VALUE="Get Fresh Data">
      </TD>
      <TD></TD>
   </TR>
