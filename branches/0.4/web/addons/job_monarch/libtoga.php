@@ -237,19 +237,19 @@ class TarchDbase
             }
             if( $start_from_time )
             {
-                $query_args[] = "job_start_timestamp >= $start_from_time";
+                $query_args[] = "CAST(job_start_timestamp as INT) >= $start_from_time";
             }
             if( $start_to_time )
             {
-                $query_args[] = "job_start_timestamp <= $start_to_time";
+                $query_args[] = "CAST(job_start_timestamp as INT) <= $start_to_time";
             }
             if( $end_from_time )
             {
-                $query_args[] = "job_stop_timestamp >= $end_from_time";
+                $query_args[] = "CAST(job_stop_timestamp as INT) >= $end_from_time";
             }
             if( $end_to_time )
             {
-                $query_args[] = "job_stop_timestamp <= $end_to_time";
+                $query_args[] = "CAST(job_stop_timestamp as INT) <= $end_to_time";
             }
 
             $query = "FROM jobs WHERE job_status = 'F' AND ";
