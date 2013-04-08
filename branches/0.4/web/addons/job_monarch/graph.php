@@ -243,7 +243,7 @@ if (isset($graph))
                     $spacefill .= ' ';
                 }
 
-                $series .= "GPRINT:'${r}_last':'${spacefill}Now\:%6.1lf%%' "
+                $series .= "GPRINT:'${r}_last':'${spacefill}Last\:%6.1lf%%' "
                         . "GPRINT:'${r}_min':'${space1}Min\:%6.1lf%%${eol1}' "
                         . "GPRINT:'${r}_avg':'${space2}Avg\:%6.1lf%%' "
                         . "GPRINT:'${r}_max':'${space1}Max\:%6.1lf%%\\l' ";
@@ -294,7 +294,7 @@ if (isset($graph))
                     . "VDEF:running_min=running_pos,MINIMUM "
                     . "VDEF:running_avg=running_pos,AVERAGE "
                     . "VDEF:running_max=running_pos,MAXIMUM "
-                    . "GPRINT:'running_last':' ${space1}Now\:%5.0lf' "
+                    . "GPRINT:'running_last':' ${space1}Last\:%5.0lf' "
                     . "GPRINT:'running_min':'${space1}Min\:%5.0lf${eol1}' "
                     . "GPRINT:'running_avg':'${space2}Avg\:%5.0lf' "
                     . "GPRINT:'running_max':'${space1}Max\:%5.0lf\\l' ";
@@ -309,7 +309,7 @@ if (isset($graph))
                     . "VDEF:queued_min=queued_pos,MINIMUM "
                     . "VDEF:queued_avg=queued_pos,AVERAGE "
                     . "VDEF:queued_max=queued_pos,MAXIMUM "
-                    . "GPRINT:'queued_last':'  ${space1}Now\:%5.0lf' "
+                    . "GPRINT:'queued_last':'  ${space1}Last\:%5.0lf' "
                     . "GPRINT:'queued_min':'${space1}Min\:%5.0lf${eol1}' "
                     . "GPRINT:'queued_avg':'${space2}Avg\:%5.0lf' "
                     . "GPRINT:'queued_max':'${space1}Max\:%5.0lf\\l' ";
@@ -415,7 +415,7 @@ if (isset($graph))
                 {
                     $spacefill .= ' ';
                 }
-                $series .= "GPRINT:'${r}_last':'${spacefill}Now\:%6.1lf%s' "
+                $series .= "GPRINT:'${r}_last':'${spacefill}Last\:%6.1lf%s' "
                         . "GPRINT:'${r}_min':'${space1}Min\:%6.1lf%s${eol1}' "
                         . "GPRINT:'${r}_avg':'${space2}Avg\:%6.1lf%s' "
                         . "GPRINT:'${r}_max':'${space1}Max\:%6.1lf%s\\l' ";
@@ -529,7 +529,7 @@ if (isset($graph))
                 {
                     $spacefill .= ' ';
                 }
-                $series .= "GPRINT:'${r}_last':'${spacefill}Now\:%6.1lf%s' "
+                $series .= "GPRINT:'${r}_last':'${spacefill}Last\:%6.1lf%s' "
                         . "GPRINT:'${r}_min':'${space1}Min\:%6.1lf%s${eol1}' "
                         . "GPRINT:'${r}_avg':'${space2}Avg\:%6.1lf%s' "
                         . "GPRINT:'${r}_max':'${space1}Max\:%6.1lf%s\\l' ";
@@ -619,7 +619,7 @@ if (isset($graph))
                 {
                     $spacefill .= ' ';
                 }
-                $series .= "GPRINT:'${r}_last':'${spacefill}Now\:%6.1lf%s' "
+                $series .= "GPRINT:'${r}_last':'${spacefill}Last\:%6.1lf%s' "
                         . "GPRINT:'${r}_min':'${space1}Min\:%6.1lf%s${eol1}' "
                         . "GPRINT:'${r}_avg':'${space2}Avg\:%6.1lf%s' "
                         . "GPRINT:'${r}_max':'${space1}Max\:%6.1lf%s\\l' ";
@@ -711,7 +711,7 @@ if (isset($graph))
                 {
                     $spacefill .= ' ';
                 }
-                $series .= "GPRINT:'${r}_last':'${spacefill}Now\:%6.1lf%s' "
+                $series .= "GPRINT:'${r}_last':'${spacefill}Last\:%6.1lf%s' "
                         . "GPRINT:'${r}_min':'${space1}Min\:%6.1lf%s${eol1}' "
                         . "GPRINT:'${r}_avg':'${space2}Avg\:%6.1lf%s' "
                         . "GPRINT:'${r}_max':'${space1}Max\:%6.1lf%s\\l' ";
@@ -811,7 +811,7 @@ if (isset($graph))
             $series .= $series_sum . $series_last . $series_minimum . $series_average . $series_maximum;
 
             $series .= "COMMENT:\"\\n\" ";
-            $series .= "GPRINT:'sum_last':'${space1}Now\:%6.1lf%s' "
+            $series .= "GPRINT:'sum_last':'${space1}Last\:%6.1lf%s' "
                     . "GPRINT:'sum_min':'${space1}Min\:%6.1lf%s${eol1}' "
                     . "GPRINT:'sum_avg':'${space2}Avg\:%6.1lf%s' "
                     . "GPRINT:'sum_max':'${space1}Max\:%6.1lf%s\\l' ";
