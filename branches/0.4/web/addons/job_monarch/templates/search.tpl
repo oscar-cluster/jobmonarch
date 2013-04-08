@@ -64,6 +64,7 @@ function setFilter( filtername, filterval ) {
   </TD>
 </TR>
 
+<INPUT TYPE="HIDDEN" NAME="self" VALUE="{$self}">
 </TABLE>
 
 <BR><BR>
@@ -293,7 +294,7 @@ function setFilter( filtername, filterval ) {
 
 <div id="monarchimage">
 {loop $sorted_list}
-{$metric_image}{$br}
+{$metric_image}
 {/loop}
 </div>
 

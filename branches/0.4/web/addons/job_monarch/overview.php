@@ -1117,8 +1117,8 @@ function makeOverview()
                 else 
                 {
                     $job_start     = $jobs[$last_displayed_job]['start_timestamp'];
-                    $period_end    = time();
-                    $runningtime   = time() - intval( $job_start );
+                    $period_end    = $cluster['LOCALTIME'];
+                    $runningtime   = intval( $period_end ) - intval( $job_start );
                     $load_color    = load_color($host_load[$host]);
                     $period_start  = intval( $job_start - (intval( $runningtime * 0.10 ) ) );
                     //printf("last job %s job start %s runningtime %s period start %s", $last_displayed_job, $jobstart, $job_runningtime, $period_start);

@@ -225,7 +225,7 @@ function makeSearchPage() {
     global $clustername, $dwoo, $id, $owner, $name, $start_from_time, $start_to_time, $queue;
     global $end_from_time, $end_to_time, $filter, $default_showhosts, $m, $hosts_up, $hc;
     global $period_start, $period_stop, $sortby, $sortorder, $COLUMN_REQUESTED_MEMORY;
-    global $SEARCH_RESULT_LIMIT, $COLUMN_NODES, $metricname;
+    global $SEARCH_RESULT_LIMIT, $COLUMN_NODES, $metricname, $self;
 
     $longtitle = "Batch Archive Search :: Powered by Job Monarch!";
     $title = "Batch Archive Search";
@@ -235,6 +235,7 @@ function makeSearchPage() {
     $tpl = new Dwoo_Template_File("templates/search.tpl");
     $tpl_data = new Dwoo_Data();
 
+    $tpl_data->assign( "self", $self );
     $tpl_data->assign( "cluster", $clustername );
     $tpl_data->assign( "id_value", $id );
     $tpl_data->assign( "owner_value", $owner);
@@ -433,7 +434,7 @@ function makeSearchPage() {
                     $textval = "";
                     $val = $metrics[$host][$metricname];
                     $class = "metric";
-                    $host_link="\"?j_view=host&c=$cluster_url&h=$host_url&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop\"";
+                    $host_link="\"?j_view=host&self=$self&c=$cluster_url&h=$host_url&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop\"";
 
                     if ($val['TYPE']=="timestamp" or $always_timestamp[$metricname]) {
                         $textval = date("r", $val['VAL']);
