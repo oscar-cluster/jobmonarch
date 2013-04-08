@@ -257,6 +257,7 @@ function makeSearchPage() {
         $tpl_data->assign( "search_results", "yes" );
         $tpl_data->assign( "sortby", $sortby);
         $tpl_data->assign( "sortorder", $sortorder);
+        $tpl_data->assign( "form_name", "archive_search_form" );
         $tdb = new TarchDbase( "127.0.0.1" );
         if( $start_from_time ) $start_from_time = datetimeToEpoch( $start_from_time );
         if( $start_to_time ) $start_to_time = datetimeToEpoch( $start_to_time );
