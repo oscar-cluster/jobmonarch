@@ -60,7 +60,7 @@ $view = $httpvars->getHttpVar( "j_view" );
 
 $filter = array();
 
-if( !isset($view) ) $view = "overview";
+if( !isset($view) && $clustername!='') $view = "overview";
 if( !isset($sortorder) ) $sortorder = "desc";
 if( !isset($sortby) ) $sortby = "id";
 
@@ -237,7 +237,7 @@ function makeHeader( $page_call, $title, $longtitle )
         $node_menu .= hiddenvar("c", $clustername);
     }
 
-    if (!count($metrics) && $view!='search' && $view!='host') 
+    if (!count($metrics) && $view!='' && $view!='search' && $view!='host') 
     {
         echo "<h4>Cannot find any metrics for selected cluster \"$clustername\", exiting.</h4>\n";
         echo "Check ganglia XML tree (telnet $ganglia_ip $ganglia_port)\n";
@@ -321,7 +321,7 @@ function makeHeader( $page_call, $title, $longtitle )
 
         #$range = "job";
 
-        if( $page_call != "host_view" )
+        if( ( $page_call != "host_view" ) && ( $page_call != "search" ) )
         {
 
             if (is_array($context_metrics) ) 
@@ -504,8 +504,8 @@ switch( $view )
 
     default:
 
-        include "./overview.php";
-        makeOverview();
+        include "./meta_view.php";
+        makeMetaview();
         break;
 }
 

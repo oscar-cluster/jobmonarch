@@ -225,7 +225,7 @@ function makeSearchPage() {
     global $clustername, $dwoo, $id, $owner, $name, $start_from_time, $start_to_time, $queue;
     global $end_from_time, $end_to_time, $filter, $default_showhosts, $m, $hosts_up, $hc;
     global $period_start, $period_stop, $sortby, $sortorder, $COLUMN_REQUESTED_MEMORY;
-    global $SEARCH_RESULT_LIMIT, $COLUMN_NODES, $metricname, $self;
+    global $SEARCH_RESULT_LIMIT, $COLUMN_NODES, $metricname, $self, $conf;
 
     $longtitle = "Batch Archive Search :: Powered by Job Monarch!";
     $title = "Batch Archive Search";
@@ -418,6 +418,46 @@ function makeSearchPage() {
                         asort($sorted_hosts);
                         break;
                 }
+
+                $trd = new TarchRrdGraph( $clustername, $host );
+                $rrd_dirs = $trd->getRrdDirs( $period_start, $period_stop );
+
+                $metric_menu = "<B>Metric</B>&nbsp;&nbsp;"
+                    ."<SELECT NAME=\"m\" OnChange=\"toga_form.submit();\">\n";
+
+                $archive_reports = array( "load_report", "cpu_report", "network_report", "packet_report", "mem_report" );
+                $file_metrics = $trd->dirList( $rrd_dirs[0] );
+
+                $archive_metrics = array();
+
+                foreach( $file_metrics as $k )
+                {
+                    $a_metric_file = explode( '.', $k);
+                    $archive_metrics[] = $a_metric_file[0];
+                }
+
+                $sorted_metrics = array_merge( $archive_reports, $archive_metrics );
+
+                asort( $sorted_metrics );
+
+                $selected_metric = $conf['default_metric'];
+
+                if( $metricname != '')
+                {
+                    $selected_metric = $metricname;
+                }
+
+                foreach( $sorted_metrics as $k )
+                {
+                    $url = rawurlencode($k);
+                    $metric_menu .= "<OPTION VALUE=\"$url\" ";
+                    if ($k == $selected_metric )
+                        $metric_menu .= "SELECTED";
+                    $metric_menu .= ">$k\n";
+                }
+                $metric_menu .= "</SELECT>\n";
+
+                $tpl_data->assign("metric_menu", $metric_menu );
 
                 # First pass to find the max value in all graphs for this
                 # metric. The $start,$end variables comes from get_context.php,
