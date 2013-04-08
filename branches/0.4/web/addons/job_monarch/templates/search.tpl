@@ -64,7 +64,6 @@ function setFilter( filtername, filterval ) {
   </TD>
 </TR>
 
-<INPUT TYPE="HIDDEN" NAME="self" VALUE="{$self}">
 </TABLE>
 
 <BR><BR>
