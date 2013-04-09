@@ -1901,7 +1901,7 @@ class ClusterImage
                 //
                 $colorblue    = imageColorAllocate( $image, 0, 0, 255 );
 
-                imageString( $image, $font, 2, 2, "Monarch Joblist - cluster: ".$this->clustername, $colorblue );
+                imageString( $image, $font, 2, 2, "Job Monarch: ".count($jobs)." jobs", $colorblue );
             }
 
             if( $this->isBig() && ( isset( $SORT_XLABEL ) || isset( $SORT_YLABEL ) ) )
@@ -2088,7 +2088,7 @@ class ClusterImage
             {
                 $colorblue    = imageColorAllocate( $image, 0, 0, 255 );
 
-                imageString( $image, $font, 2, 2, "Monarch Joblist - cluster: ".$this->clustername, $colorblue );
+                imageString( $image, $font, 2, 2, "Job Monarch: ".count( $jobs)." jobs", $colorblue );
             }
 
             for( $n = 0; $n < $node_rows; $n++ )
