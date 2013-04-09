@@ -504,8 +504,8 @@ switch( $view )
 
     default:
 
-        include "./meta_view.php";
-        makeMetaview();
+        include "./overview.php";
+        makeOverview();
         break;
 }
 
