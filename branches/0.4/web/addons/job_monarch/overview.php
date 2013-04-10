@@ -884,9 +884,9 @@ function makeOverview()
                     $job_loop["started"] = makeDate( $start_time );
                     $job_loop["runningtime"] = $runningtime;
                 }
-                $node_list[] = $job_loop;
+                $node_list[] = &$job_loop;
             }
-            $tpl_data->assign("node_list", $node_list );
+            $tpl_data->assign("node_list", &$node_list );
         }
     }
     if( intval($view_jobs) == 1 and $start_time )
