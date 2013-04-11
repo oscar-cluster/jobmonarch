@@ -22,9 +22,6 @@
  * SVN $Id$
  */
 
-ini_set("memory_limit","500M");
-set_time_limit(0);
-
 $my_dir = getcwd();
 
 include_once "./libtoga.php";
@@ -61,7 +58,7 @@ $view = $httpvars->getHttpVar( "j_view" );
 $filter = array();
 
 if( !isset($view) && $clustername!='') $view = "overview";
-if( !isset($sortorder) ) $sortorder = "desc";
+if( !isset($sortorder) ) $sortorder = "asc";
 if( !isset($sortby) ) $sortby = "id";
 
 if( isset( $filterorder ) && ($filterorder!='') ) 
