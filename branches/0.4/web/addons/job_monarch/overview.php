@@ -1118,7 +1118,7 @@ function makeOverview()
                     $period_start  = intval( $job_start - (intval( $runningtime * 0.10 ) ) );
                     //printf("last job %s job start %s runningtime %s period start %s", $last_displayed_job, $jobstart, $job_runningtime, $period_start);
                     $graphargs     = ($reports[$metricname]) ? "g=$metricname&" : "m=$metricname&";
-                    $graphargs    .= "z=overview-medium&c=$cluster_url&r=$range&h=$host_url&l=$load_color&v=".$val['VAL']."&job_start=$job_start";
+                    $graphargs    .= "z=overview-medium&c=$cluster_url&r=$range&h=$host_url&l=$load_color&v=".$val['VAL']."&job_start=$job_start&vl=".$val['UNITS'];
                     $host_link     = "?j_view=overview-host&c=$cluster_url&r=$range&h=$host_url&job_start=$jobstart";
 
                     if( $range == 'job' )

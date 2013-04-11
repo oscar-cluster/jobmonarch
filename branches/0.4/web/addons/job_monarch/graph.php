@@ -954,6 +954,7 @@ if ( isset($sourcetime) )
         $end = floor($end / 672) * 672;
     }
         $command = $conf['rrdtool']. " graph - --start $start --end $end ".
+                "$upper_limit $lower_limit ".
                 "--width $width --height $height $lower_limit $vertical_label ".
                 "--title '$title' $extras $background ".
                 $series;
@@ -961,6 +962,7 @@ if ( isset($sourcetime) )
 else
 {
     $command = $conf['rrdtool'] . " graph - --start $period_start --end $period_stop ".
+                "$upper_limit $lower_limit ".
                "--width $width --height $height $lower_limit --color BACK#$load_color $vertical_label ".
                "--title '$title' $extras $background ".
                $series;
