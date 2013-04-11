@@ -31,13 +31,13 @@ include_once "./dwoo/dwooAutoload.php";
 global $dwoo;
 
 $tpl = new Dwoo_Template_File("templates/overview.tpl");
-$tpl_data = new Dwoo_Data();
+$tpl_data = array();
 
-$tpl_data->assign( "clustername", $clustername );
+$tpl_data[ "clustername"]= $clustername ;
 
 if( $JOB_ARCHIVE )
 {
-    $tpl_data->assign( "cluster_url", rawurlencode($clustername) );
+    $tpl_data[ "cluster_url"]= rawurlencode($clustername) ;
 }
 
 $rjqj_start = null;
@@ -67,7 +67,7 @@ function setupFilterSettings()
 
     foreach( $filter as $filtername => $filtervalue ) 
     {
-        $tpl_data->assign( $filtername, $filtervalue );
+        $tpl_data[ $filtername ] = $filtervalue;
 
         $filter_image_url    .= "&$filtername=$filtervalue";
     }
@@ -85,12 +85,12 @@ function setupFilterSettings()
     $ic->setNoimage();
     $ic->draw();
 
-    $tpl_data->assign( "clusterimage", "./image.php?". session_name() . "=" . session_id() ."&c=".rawurlencode($clustername)."&j_view=big-clusterimage".$filter_image_url );
+    $tpl_data[ "clusterimage"]= "./image.php?". session_name() . "=" . session_id() ."&c=".rawurlencode($clustername)."&j_view=big-clusterimage".$filter_image_url;
 
-    $tpl_data->assign( "node_clustermap", "yes" );
-    $tpl_data->assign( "node_area_map", $ic->getImagemapArea() );
+    $tpl_data[ "node_clustermap"]= "yes";
+    $tpl_data[ "node_area_map"]= $ic->getImagemapArea();
 
-    $tpl_data->assign( "order", $filterorder );
+    $tpl_data[ "order"]= $filterorder;
 
     if( array_key_exists( "id", $filter ) ) 
     {
@@ -107,7 +107,7 @@ function setupFilterSettings()
 
     $pie    = drawPie();
 
-    $tpl_data->assign("pie", $pie );
+    $tpl_data["pie"]= $pie;
 }
 
 function timeToEpoch( $time ) 
@@ -526,8 +526,8 @@ function makeOverview()
         else
             $metricname = "load_one";
 
-    $tpl_data->assign("sortorder", $sortorder );
-    $tpl_data->assign("sortby", $sortby );
+    $tpl_data["sortorder"]= $sortorder;
+    $tpl_data["sortby"]= $sortby;
 
     $sorted_jobs        = sortJobs( $jobs, $sortby, $sortorder );
 
@@ -571,21 +571,21 @@ function makeOverview()
     //
     if( $COLUMN_REQUESTED_MEMORY ) 
     {
-        $tpl_data->assign( "column_header_req_mem", "yes" );
+        $tpl_data[ "column_header_req_mem"]= "yes";
     }
 
     // Is the "nodes hostnames" column enabled in the config
     //
     if( $COLUMN_NODES ) 
     {
-        $tpl_data->assign( "column_header_nodes", "yes" );
+        $tpl_data[ "column_header_nodes"]= "yes";
     }
 
     // Is the "queued time" column enabled in the config
     //
     if( $COLUMN_QUEUED ) 
     {
-        $tpl_data->assign( "column_header_queued", "yes" );
+        $tpl_data[ "column_header_queued"]= "yes" ;
     }
 
     $last_displayed_job = null;
@@ -763,7 +763,6 @@ function makeOverview()
 
                 if( $capjobname ) 
                 {
-                    //$tpl_data->assign( "jobname_hint_start", "yes" );
                     $job_loop[ "jobname_hint_start" ] = "yes";
 
                     $shortjobname     = substr( $fulljobname, 0, 10 ) . '..';
@@ -777,7 +776,6 @@ function makeOverview()
 
                 if( $capjobname ) 
                 {
-                    //$tpl_data->assign( "jobname_hint_end", "yes" );
                     $job_loop[ "jobname_hint_end" ] = "yes";
                 }
 
@@ -787,7 +785,6 @@ function makeOverview()
 
                 if( $COLUMN_REQUESTED_MEMORY ) 
                 {
-                    //$tpl_data->assign( "column_req_mem", "yes" );
                     $job_loop[ "column_req_mem" ] = "yes";
                     $job_loop["req_memory"] = $jobs[$jobid]['requested_memory'];
                 }
@@ -795,13 +792,11 @@ function makeOverview()
 
                 if( $COLUMN_QUEUED ) 
                 {
-                    //$tpl_data->assign( "column_queued", "yes" );
                     $job_loop[ "column_queued" ] = "yes";
                     $job_loop["queued"] = makeDate( $jobs[$jobid]['queued_timestamp'] );
                 }
                 if( $COLUMN_NODES ) 
                 {
-                    //$tpl_data->assign( "column_nodes", "yes" );
                     $job_loop[ "column_nodes" ] = "yes";
                     //echo "colum nodes";
                 }
@@ -839,7 +834,6 @@ function makeOverview()
 
                     if( $COLUMN_NODES ) 
                     {
-                        //$tpl_data->assign( "column_nodes", "yes" );
                         $job_loop[ "column_nodes" ] = "yes";
 
                         $mynodehosts         = array();
@@ -887,7 +881,7 @@ function makeOverview()
                 }
                 $node_list[] = &$job_loop;
             }
-            $tpl_data->assign("node_list", &$node_list );
+            $tpl_data["node_list"]= &$node_list ;
         }
     }
     if( intval($view_jobs) == 1 and $start_time )
@@ -927,7 +921,7 @@ function makeOverview()
         $rjqj_str .= "<IMG BORDER=0 SRC=\"./graph.php$rjqj_graphargs\">";
         $rjqj_str .= "</A>";
 
-        $tpl_data->assign( "rjqj_graph", $rjqj_str );
+        $tpl_data[ "rjqj_graph"]= $rjqj_str ;
     }
 
     $all_used_nodes     = array_unique( $all_used_nodes );
@@ -947,43 +941,43 @@ function makeOverview()
     $free_cpus          = $avail_cpus - $running_cpus - $na_cpus;
     $free_cpus          = ( $free_cpus >= 0 ) ? $free_cpus : 0;
 
-    $tpl_data->assign( "avail_nodes", $avail_nodes );
-    $tpl_data->assign( "avail_cpus", $avail_cpus );
+    $tpl_data[ "avail_nodes"]= $avail_nodes ;
+    $tpl_data[ "avail_cpus"]= $avail_cpus ;
 
-    $tpl_data->assign( "queued_nodes", $queued_nodes );
-    $tpl_data->assign( "queued_jobs", $queued_jobs );
-    $tpl_data->assign( "queued_cpus", $queued_cpus );
+    $tpl_data[ "queued_nodes"]= $queued_nodes ;
+    $tpl_data[ "queued_jobs"]= $queued_jobs ;
+    $tpl_data[ "queued_cpus"]= $queued_cpus ;
 
     // Only display "Unavailable" in count overview there are any
     //
     if( $na_nodes > 0 )
     {
-        $tpl_data->assign( "na_nodes", "yes");
+        $tpl_data[ "na_nodes"]= "yes";
 
-        $tpl_data->assign( "na_nodes", $na_nodes );
-        $tpl_data->assign( "na_cpus", $na_cpus );
+        $tpl_data[ "na_nodes"]= $na_nodes ;
+        $tpl_data[ "na_cpus"]= $na_cpus ;
     }
 
-    $tpl_data->assign( "total_nodes", $total_nodes );
-    $tpl_data->assign( "total_jobs", $total_jobs );
-    $tpl_data->assign( "total_cpus", $total_cpus );
+    $tpl_data[ "total_nodes"]= $total_nodes ;
+    $tpl_data[ "total_jobs"]= $total_jobs ;
+    $tpl_data[ "total_cpus"]= $total_cpus ;
 
-    $tpl_data->assign( "running_nodes", $running_nodes );
-    $tpl_data->assign( "running_jobs", $running_jobs );
-    $tpl_data->assign( "running_cpus", $running_cpus );
+    $tpl_data[ "running_nodes"]= $running_nodes ;
+    $tpl_data[ "running_jobs"]= $running_jobs ;
+    $tpl_data[ "running_cpus"]= $running_cpus ;
 
-    $tpl_data->assign( "used_nodes", $used_nodes );
-    $tpl_data->assign( "used_jobs", $used_jobs );
-    $tpl_data->assign( "used_cpus", $used_cpus );
+    $tpl_data[ "used_nodes"]= $used_nodes ;
+    $tpl_data[ "used_jobs"]= $used_jobs ;
+    $tpl_data[ "used_cpus"]= $used_cpus ;
 
-    $tpl_data->assign( "free_nodes", $free_nodes );
-    $tpl_data->assign( "free_cpus", $free_cpus );
+    $tpl_data[ "free_nodes"]= $free_nodes ;
+    $tpl_data[ "free_cpus"]= $free_cpus ;
 
-    $tpl_data->assign( "view_nodes", $view_nodes );
-    $tpl_data->assign( "view_jobs", $view_jobs );
-    $tpl_data->assign( "view_cpus", $view_cpus );
+    $tpl_data[ "view_nodes"]= $view_nodes ;
+    $tpl_data[ "view_jobs"]= $view_jobs ;
+    $tpl_data[ "view_cpus"]= $view_cpus ;
 
-    $tpl_data->assign( "report_time", makeDate( $heartbeat) );
+    $tpl_data[ "report_time"]= makeDate( $heartbeat);
 
 
     global $longtitle, $title;
@@ -997,11 +991,11 @@ function makeOverview()
 
     if( intval($view_jobs) == 1 and $start_time ) 
     {
-        $tpl_data->assign( "showhosts", "yes" );
+        $tpl_data[ "showhosts"]= "yes" ;
 
         $showhosts     = isset($sh) ? $sh : $default_showhosts;
 
-        $tpl_data->assign( "checked$showhosts", "checked" );
+        $tpl_data[ "checked$showhosts"]= "checked" ;
 
         $sorted_list = array();
 
@@ -1157,7 +1151,7 @@ function makeOverview()
                 //}
                 $sorted_list[] = $metric_loop;
             }
-            $tpl_data->assign("sorted_list", $sorted_list );
+            $tpl_data["sorted_list"]= $sorted_list ;
         }
     }
     $dwoo->output($tpl, $tpl_data);
