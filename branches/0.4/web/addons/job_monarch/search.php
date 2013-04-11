@@ -462,7 +462,7 @@ function makeSearchPage() {
                 # First pass to find the max value in all graphs for this
                 # metric. The $start,$end variables comes from get_context.php,
                 # included in index.php.
-                list($min, $max) = find_limits($sorted_hosts, $metricname);
+                #list($min, $max) = find_limits($sorted_hosts, $metricname);
 
                 $sorted_loop = array();
                 # Second pass to output the graphs or metrics.
@@ -482,7 +482,7 @@ function makeSearchPage() {
                     } elseif ($val['TYPE']=="string" or $val['SLOPE']=="zero" or $always_constant[$metricname] or ($max_graphs > 0 and $i > $max_graphs )) {
                         $textval = $val['VAL']." ".$val['UNITS'];
                     } else {
-                        $graphargs = "z=medium&c=$cluster_url&m=$metricname&h=$host_url&v=".$val['VAL']."&x=$max&n=$min&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop&min=$min&max=$max";
+                        $graphargs = "z=medium&c=$cluster_url&m=$metricname&h=$host_url&v=".$val['VAL']."&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop";
                     }
                     if ($textval) {
                         $cell="<td class=$class>".  "<b><a href=$host_link>$host</a></b><br>".  "<i>$metricname:</i> <b>$textval</b></td>";
