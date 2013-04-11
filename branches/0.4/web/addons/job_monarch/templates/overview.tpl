@@ -54,7 +54,7 @@ Capacity
 
 <TR class="overview">
 <TD class="red">
-Allocated
+Running
 </TD>
 <TD class="red">
 {$running_jobs}
@@ -100,7 +100,7 @@ Total
 
 <TR class="overview">
 <TD class="green">
-Unallocated
+Free
 </TD>
 <TD class="green">
 </TD>
