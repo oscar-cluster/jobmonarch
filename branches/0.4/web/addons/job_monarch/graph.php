@@ -148,7 +148,7 @@ if (isset($graph))
     if($graph == "cpu_report") 
     {
 
-        $style = "CPU";
+        $title = "CPU: $hostname";
 
         $upper_limit = "--upper-limit 100 --rigid";
         $lower_limit = "--lower-limit 0";
@@ -263,7 +263,7 @@ if (isset($graph))
     } 
     else if ($graph == "job_report") 
     {
-        $style = "Jobs";
+        $title = "Jobs";
 
         $lower_limit = "--lower-limit 0 --rigid";
         $vertical_label = "--vertical-label Jobs";
@@ -317,7 +317,7 @@ if (isset($graph))
     } 
     else if ($graph == "mem_report") 
     {
-        $style = "Memory";
+        $title = "Memory: $hostname";
 
         $lower_limit = "--lower-limit 0 --rigid";
         $extras .= "--base 1024";
@@ -434,7 +434,7 @@ if (isset($graph))
     } 
     else if ($graph == "load_report") 
     {
-        $style = "Load";
+        $title = "Load: $hostname";
 
         $lower_limit = "--lower-limit 0 --rigid";
         $vertical_label = "--vertical-label 'Load/Procs'";
@@ -544,7 +544,7 @@ if (isset($graph))
     } 
     else if ($graph == "network_report") 
     {
-        $style = "Network";
+        $title = "Network: $hostname";
 
         $lower_limit = "--lower-limit 0 --rigid";
         $extras .= "--base 1024";
@@ -635,7 +635,7 @@ if (isset($graph))
     } 
     else if ($graph == "packet_report") 
     {
-        $style = "Packets";
+        $title = "Packets: $hostname";
 
         $lower_limit = "--lower-limit 0 --rigid";
         $extras .= "--base 1024";
@@ -841,7 +841,7 @@ if($graph == "job_report")
         $title = "Last: $range";
     }
 }
-else
+else if( !isset( $title ) )
 {
     $title = "$hostname";
 }
