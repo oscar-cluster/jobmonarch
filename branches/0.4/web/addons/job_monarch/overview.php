@@ -410,9 +410,9 @@ function sortJobs( $jobs, $sortby, $sortorder )
         "if( \$a == \$b ) return 0;".
 
         "if (\$sortorder==\"desc\")".
-            "return ( \$a < \$b ) ? 1 : -1;".
+            "return ( \$a > \$b ) ? 1 : -1;".
         "else if (\$sortorder==\"asc\")".
-            "return ( \$a > \$b ) ? 1 : -1;" );
+            "return ( \$a < \$b ) ? 1 : -1;" );
 
     if( isset( $jobs ) && count( $jobs ) > 0 ) 
     {
@@ -498,11 +498,11 @@ function sortJobs( $jobs, $sortby, $sortorder )
 
     if( $sortorder == "asc" )
     {
-        arsort( $sorted );
+        asort( $sorted );
     }
     else if( $sortorder == "desc" )
     {
-        asort( $sorted );
+        arsort( $sorted );
     }
 
     return $sorted;
