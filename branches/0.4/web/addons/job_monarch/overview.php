@@ -721,6 +721,7 @@ function makeOverview()
 
             if( $display_job ) 
             {
+                unset( $job_loop );
                 $job_loop = array();
                 $job_loop["clustername"] = $clustername;
 
