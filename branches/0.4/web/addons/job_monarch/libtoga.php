@@ -84,7 +84,7 @@ class HTTPVariables
 
 $CLUSTER_CONFS    = array();
 
-ini_set("memory_limit","500M");
+//ini_set("memory_limit","1G");
 set_time_limit(0);
 
 // Monarch's conf
