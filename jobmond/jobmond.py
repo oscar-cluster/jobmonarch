@@ -2,7 +2,8 @@
 #
 # This file is part of Jobmonarch
 #
-# Copyright (C) 2006-2012  Ramon Bastiaans
+# Copyright (C) 2006-2013  Ramon Bastiaans
+# Copyright (C) 2007, 2009  Dave Love  (SGE code)
 # 
 # Jobmonarch is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,12 +22,15 @@
 # SVN $Id$
 #
 
+# vi :set ts=4
+
 import sys, getopt, ConfigParser, time, os, socket, string, re
-import xdrlib, socket, syslog, xml, xml.sax
-from types import *
+import xdrlib, socket, syslog, xml, xml.sax, shlex, os.path
+from xml.sax.handler import feature_namespaces
+from collections import deque
 from glob import glob
 
-VERSION='TRUNK+SVN'
+VERSION='0.4+SVN'
 
 def usage( ver ):
 
@@ -40,27 +44,27 @@ def usage( ver ):
     print '  The Job Monitoring Daemon (jobmond) reports batch jobs information and statistics'
     print '  to Ganglia, which can be viewed with Job Monarch web frontend'
     print
-    print 'Usage:   jobmond [OPTIONS]'
+    print 'Usage:    jobmond [OPTIONS]'
     print
-    print '  -c, --config=FILE  The configuration file to use (default: /etc/jobmond.conf)'
-    print '  -p, --pidfile=FILE Use pid file to store the process id'
-    print '  -h, --help     Print help and exit'
-    print '  -v, --version          Print version and exit'
+    print '  -c, --config=FILE    The configuration file to use (default: /etc/jobmond.conf)'
+    print '  -p, --pidfile=FILE    Use pid file to store the process id'
+    print '  -h, --help        Print help and exit'
+    print '  -v, --version      Print version and exit'
     print
 
 def processArgs( args ):
 
-    SHORT_L     = 'p:hvc:'
-    LONG_L      = [ 'help', 'config=', 'pidfile=', 'version' ]
+    SHORT_L      = 'p:hvc:'
+    LONG_L       = [ 'help', 'config=', 'pidfile=', 'version' ]
 
-    global PIDFILE
-    PIDFILE     = None
+    global PIDFILE, JOBMOND_CONF
+    PIDFILE      = None
 
-    config_filename = '/etc/jobmond.conf'
+    JOBMOND_CONF = '/etc/jobmond.conf'
 
     try:
 
-        opts, args  = getopt.getopt( args, SHORT_L, LONG_L )
+        opts, args    = getopt.getopt( args, SHORT_L, LONG_L )
 
     except getopt.GetoptError, detail:
 
@@ -72,11 +76,11 @@ def processArgs( args ):
 
         if opt in [ '--config', '-c' ]:
         
-            config_filename = value
+            JOBMOND_CONF = value
 
         if opt in [ '--pidfile', '-p' ]:
 
-            PIDFILE     = value
+            PIDFILE      = value
         
         if opt in [ '--help', '-h' ]:
  
@@ -88,28 +92,30 @@ def processArgs( args ):
             usage( True )
             sys.exit( 0 )
 
-    return loadConfig( config_filename )
+    return loadConfig( JOBMOND_CONF )
 
 class GangliaConfigParser:
 
-    def __init__( self, config_file ):
+    def __init__( self, filename ):
 
-        self.config_file     = config_file
-        self.include_parsers = [ ]
+        self.conf_lijst   = [ ]
+        self.conf_dict    = { }
+        self.filename     = filename
+        self.file_pointer = file( filename, 'r' )
+        self.lexx         = shlex.shlex( self.file_pointer )
+        self.lexx.whitespace_split = True
 
-        if not os.path.exists( self.config_file ):
+        self.parse()
 
-            debug_msg( 0, "FATAL ERROR: gmond config '" + self.config_file + "' not found!" )
-            sys.exit( 1 )
+    def __del__( self ):
 
-    def removeHaakjes( self, value ):
+        """
+        Cleanup: close file descriptor
+        """
 
-        clean_value = value
-        clean_value = clean_value.replace( "(", "" )
-        clean_value = clean_value.replace( ")", "" )
-        clean_value = clean_value.strip()
-
-        return clean_value
+        self.file_pointer.close()
+        del self.lexx
+        del self.conf_lijst
 
     def removeQuotes( self, value ):
 
@@ -120,151 +126,304 @@ class GangliaConfigParser:
 
         return clean_value
 
-    def removeComments( self, value ):
+    def removeBraces( self, value ):
 
         clean_value = value
-
-        if clean_value.find('#') != -1:
-
-            clean_value = value[:value.find('#')]
-
-        if clean_value.find('//') != -1:
-
-            clean_value = value[:value.find('//')]
+        clean_value = clean_value.replace( "(", "" )
+        clean_value = clean_value.replace( ')', '' )
+        clean_value = clean_value.strip()
 
         return clean_value
 
-    def getVal( self, section, valname ):
+    def parse( self ):
 
-        debug_msg( 10, "Parsing: '" + self.config_file + "' - searching for section: " + section + " value: " + valname )
+        """
+        Parse self.filename using shlex scanning.
+        - Removes /* comments */
+        - Traverses (recursively) through all include () statements
+        - Stores complete valid config tokens in self.conf_list
 
-        cfg_fp      = open( self.config_file )
-        cfg_lines   = cfg_fp.readlines()
-        cfg_fp.close()
+        i.e.:
+            ['globals',
+             '{',
+             'daemonize',
+             '=',
+             'yes',
+             'setuid',
+             '=',
+             'yes',
+             'user',
+             '=',
+             'ganglia',
+             'debug_level',
+             '=',
+             '0', 
+             <etc> ]
+        """
 
-        section_start = False
-        section_found = False
-        include_start = False
-        value         = None
-        comment_start = False
+        t = 'bogus'
+        c = False
+        i = False
 
-        acc_count     = 0
+        while t != self.lexx.eof:
+            #print 'get token'
+            t = self.lexx.get_token()
 
-        for line in cfg_lines:
+            if len( t ) >= 2:
 
-            line = line.strip()
-            debug_msg( 10, "line org: " + line )
-            line = self.removeComments( line )
-            debug_msg( 10, "line remove comments: " + line )
+                if len( t ) >= 4:
 
-            if line.find( '/*' ) != -1 and line.find( 'include', 0, 7 ):
+                    if t[:2] == '/*' and t[-2:] == '*/':
 
-                debug_msg( 10, "line comment start */: " + line )
+                        #print 'comment line'
+                        #print 'skipping: %s' %t
+                        continue
 
-                if line.find( '*/' ) != -1:
+                if t == '/*' or t[:2] == '/*':
+                    c = True
+                    #print 'comment start'
+                    #print 'skipping: %s' %t
+                    continue
 
-                    begin_line = line[:line.find('/*')]
-                    rest_line = line[(line.find('*/')+2):]
+                if t == '*/' or t[-2:] == '*/':
+                    c = False
+                    #print 'skipping: %s' %t
+                    #print 'comment end'
+                    continue
 
-                    line = begin_line + rest_line
-
-                    debug_msg( 10, "line comment end */: " + line )
-
-                else:
-
-                    line = line[:line.find('/*')]
-                    comment_start = True
-
-                    debug_msg( 10, "line find /*: " + line )
-
-                debug_msg( 10, "line find /*: " + line )
-
-            if line.find( '*/' ) != -1 and comment_start:
-
-                line = line[(line.find('*/')+2):]
-                comment_start = False
-                debug_msg( 10, "line comment end*/: " + line )
-
-            if comment_start:
-
-                debug_msg( 10, "line ignoring comment: " + line )
+            if c:
+                #print 'skipping: %s' %t
                 continue
 
-            if line.find( 'include' ) != -1:
+            if t == 'include':
+                i = True
+                #print 'include start'
+                #print 'skipping: %s' %t
+                continue
 
-                debug_msg( 10, "line include: " + line )
-                line = self.removeHaakjes( line )
-                line = self.removeQuotes( line )
-                debug_msg( 10, "line removeHaakjes: " + line )
+            if i:
 
-                include_line  = line.split(' ')[1]
+                #print 'include start: %s' %t
 
-                debug_msg( 10, "line includes: " + str( include_line ) )
+                t2 = self.removeQuotes( t )
+                t2 = self.removeBraces( t )
 
-                for include_file in glob( include_line ):
+                for in_file in glob( self.removeQuotes(t2) ):
 
-                    debug_msg( 10, "include file found: '" + include_file + "'" )
+                    #print 'including file: %s' %in_file
+                    parse_infile = GangliaConfigParser( in_file )
 
-                    include_parser = GangliaConfigParser( include_file )
-                    include_getval = include_parser.getStr( section, valname )
+                    self.conf_lijst = self.conf_lijst + parse_infile.getConfLijst()
 
-                    if include_getval:
+                    del parse_infile
 
-                        value = include_getval
-                        #break ? FIXME value can be overriden by other includes: perhaps users problem
+                i = False
+                #print 'include end'
+                #print 'skipping: %s' %t
+                continue
 
-                        debug_msg( 10, "VALUE found: '" + value + "'" )
+            #print 'keep: %s' %t
+            self.conf_lijst.append( self.removeQuotes(t) )
 
-                    del include_parser
+    def getConfLijst( self ):
 
-            if line.find( section ) != -1:
+        return self.conf_lijst
 
-                section_found   = True
+    def confListToDict( self, parent_list=None ):
 
-                debug_msg( 10, "section start: '" + section + "'" )
+        """
+        Recursively traverses a conf_list and creates dictionary from it
+        """
 
-            if line.find( '{' ) != -1 and section_found:
+        new_dict = { }
+        count    = 0
+        skip     = 0
 
-                section_start   = True
-                acc_count       = acc_count + 1
+        if not parent_list:
+            parent_list = self.conf_lijst
 
-            if line.find( '}' ) != -1 and section_found:
+        #print 'entering confListToDict(): (parent) list size %s' %len(parent_list)
 
-                acc_count       = acc_count - 1
+        for n, c in enumerate( parent_list ):
 
-                if acc_count == 0:
+            count = count + 1
 
-                    debug_msg( 10, "section closed: '" + section + "'" )
-                    section_start   = False
-                    section_found   = False
+            #print 'CL: n %d c %s' %(n, c)
 
-            if line.find( valname ) != -1 and section_start:
+            if skip > 0:
 
-                value       = string.join( line.split( '=' )[1:], '' ).strip()
+                #print '- skipped'
+                skip = skip - 1
+                continue
 
-        debug_msg( 10, "Parsing done: '" + self.config_file + "' " )
+            if (n+1) <= (len( parent_list )-1):
+
+                if parent_list[(n+1)] == '{':
+
+                    if not new_dict.has_key( c ):
+                        new_dict[ c ] = [ ]
+
+                    (temp_new_dict, skip) = self.confListToDict( parent_list[(n+2):] )
+                    new_dict[ c ].append( temp_new_dict )
+
+                if parent_list[(n+1)] == '=' and (n+2) <= (len( parent_list )-1):
+
+                    if not new_dict.has_key( c ):
+                        new_dict[ c ] = [ ]
+
+                    new_dict[ c ].append( parent_list[ (n+2) ] )
+
+                    skip = 2
+
+                if parent_list[n] == '}':
+
+                    #print 'leaving confListToDict(): new dict = %s' %new_dict
+                    return (new_dict, count)
+
+    def makeConfDict( self ):
+
+        """
+        Walks through self.conf_list and creates a dictionary based upon config values
+
+        i.e.:
+            'tcp_accept_channel': [{'acl': [{'access': [{'action': ['"allow"'],
+                                                         'ip': ['"127.0.0.1"'],
+                                                         'mask': ['32']}]}],
+                                    'port': ['8649']}],
+            'udp_recv_channel': [{'port': ['8649']}],
+            'udp_send_channel': [{'host': ['145.101.32.3'],
+                                  'port': ['8649']},
+                                 {'host': ['145.101.32.207'],
+                                  'port': ['8649']}]}
+        """
+
+        new_dict = { }
+        skip     = 0
+
+        #print 'entering makeConfDict()'
+
+        for n, c in enumerate( self.conf_lijst ):
+
+            #print 'M: n %d c %s' %(n, c)
+
+            if skip > 0:
+
+                #print '- skipped'
+                skip = skip - 1
+                continue
+
+            if (n+1) <= (len( self.conf_lijst )-1):
+
+                if self.conf_lijst[(n+1)] == '{':
+
+                    if not new_dict.has_key( c ):
+                        new_dict[ c ] = [ ]
+
+                    ( temp_new_dict, skip ) = self.confListToDict( self.conf_lijst[(n+2):] )
+                    new_dict[ c ].append( temp_new_dict )
+
+                if self.conf_lijst[(n+1)] == '=' and (n+2) <= (len( self.conf_lijst )-1):
+
+                    if not new_dict.has_key( c ):
+                        new_dict[ c ] = [ ]
+
+                    new_dict[ c ].append( self.conf_lijst[ (n+2) ] )
+
+                    skip = 2
+
+        self.conf_dict = new_dict
+        #print 'leaving makeConfDict(): conf dict size %d' %len( self.conf_dict )
+
+    def checkConfDict( self ):
+
+        if len( self.conf_lijst ) == 0:
+
+            raise Exception("Something went wrong generating conf list for %s" %self.file_name )
+
+        if len( self.conf_dict ) == 0:
+
+            self.makeConfDict()
+
+    def getConfDict( self ):
+
+        self.checkConfDict()
+        return self.conf_dict
+
+    def getUdpSendChannels( self ):
+
+        self.checkConfDict()
+
+        udp_send_channels = [ ] # IP:PORT
+
+        if not self.conf_dict.has_key( 'udp_send_channel' ):
+            return None
+
+        for u in self.conf_dict[ 'udp_send_channel' ]:
+
+            if u.has_key( 'mcast_join' ):
+
+                ip = u['mcast_join'][0]
+
+            elif u.has_key( 'host' ):
+
+                ip = u['host'][0]
+
+            port = u['port'][0]
+
+            udp_send_channels.append( ( ip, port ) )
+
+        if len( udp_send_channels ) == 0:
+            return None
+
+        return udp_send_channels
+
+    def getSectionLastOption( self, section, option ):
+
+        """
+        Get last option set in a config section that could be set multiple times in multiple (include) files.
+
+        i.e.: getSectionLastOption( 'globals', 'send_metadata_interval' )
+        """
+
+        self.checkConfDict()
+        value = None
+
+        if not self.conf_dict.has_key( section ):
+
+            return None
+
+        # Could be set multiple times in multiple (include) files: get last one set
+        for c in self.conf_dict[ section ]:
+
+                if c.has_key( option ):
+
+                    value = c[ option ][0]
 
         return value
 
+    def getClusterName( self ):
+
+        return self.getSectionLastOption( 'cluster', 'name' )
+
+    def getVal( self, section, option ):
+
+        return self.getSectionLastOption( section, option )
+
     def getInt( self, section, valname ):
 
-        value   = self.getVal( section, valname )
+        value    = self.getVal( section, valname )
 
         if not value:
-            return False
-
-        value   = self.removeQuotes( value )
+            return None
 
         return int( value )
 
     def getStr( self, section, valname ):
 
-        value   = self.getVal( section, valname )
+        value    = self.getVal( section, valname )
 
         if not value:
-            return False
-
-        value   = self.removeQuotes( value )
+            return None
 
         return str( value )
 
@@ -272,7 +431,7 @@ def findGmetric():
 
     for dir in os.path.expandvars( '$PATH' ).split( ':' ):
 
-        guess   = '%s/%s' %( dir, 'gmetric' )
+        guess    = '%s/%s' %( dir, 'gmetric' )
 
         if os.path.exists( guess ):
 
@@ -288,33 +447,46 @@ def loadConfig( filename ):
 
         for item_txt in cfg_string.split( ',' ):
 
-                sep_char = None
+            sep_char = None
 
-                item_txt = item_txt.strip()
+            item_txt = item_txt.strip()
 
-                for s_char in [ "'", '"' ]:
+            for s_char in [ "'", '"' ]:
 
-                        if item_txt.find( s_char ) != -1:
+                if item_txt.find( s_char ) != -1:
 
-                                if item_txt.count( s_char ) != 2:
+                    if item_txt.count( s_char ) != 2:
 
-                                        print 'Missing quote: %s' %item_txt
-                                        sys.exit( 1 )
+                        print 'Missing quote: %s' %item_txt
+                        sys.exit( 1 )
 
-                                else:
+                    else:
 
-                                        sep_char = s_char
-                                        break
+                        sep_char = s_char
+                        break
 
-                if sep_char:
+            if sep_char:
 
-                        item_txt = item_txt.split( sep_char )[1]
+                item_txt = item_txt.split( sep_char )[1]
 
-                my_list.append( item_txt )
+            my_list.append( item_txt )
 
         return my_list
 
-    cfg     = ConfigParser.ConfigParser()
+    if not os.path.isfile( JOBMOND_CONF ):
+
+        print "Is not a file or does not exist: '%s'" %JOBMOND_CONF
+        sys.exit( 1 )
+
+    try:
+        f = open( JOBMOND_CONF, 'r' )
+    except IOError, detail:
+        print "Cannot read config file: '%s'" %JOBMOND_CONF
+        sys.exit( 1 )
+    else:
+        f.close()
+
+    cfg        = ConfigParser.ConfigParser()
 
     cfg.read( filename )
 
@@ -322,6 +494,7 @@ def loadConfig( filename ):
     global GMOND_CONF, DETECT_TIME_DIFFS, BATCH_HOST_TRANSLATE
     global BATCH_API, QUEUE, GMETRIC_TARGET, USE_SYSLOG
     global SYSLOG_LEVEL, SYSLOG_FACILITY, GMETRIC_BINARY
+    global METRIC_MAX_VAL_LEN, GMOND_UDP_SEND_CHANNELS
 
     DEBUG_LEVEL = cfg.getint( 'DEFAULT', 'DEBUG_LEVEL' )
 
@@ -342,12 +515,12 @@ def loadConfig( filename ):
     if USE_SYSLOG:
 
         try:
-            SYSLOG_LEVEL    = cfg.getint( 'DEFAULT', 'SYSLOG_LEVEL' )
+            SYSLOG_LEVEL = cfg.getint( 'DEFAULT', 'SYSLOG_LEVEL' )
 
         except ConfigParser.NoOptionError:
 
             debug_msg( 0, 'ERROR: no option SYSLOG_LEVEL found: assuming level 0' )
-            SYSLOG_LEVEL    = 0
+            SYSLOG_LEVEL = 0
 
         try:
 
@@ -361,15 +534,15 @@ def loadConfig( filename ):
 
     try:
 
-        BATCH_SERVER        = cfg.get( 'DEFAULT', 'BATCH_SERVER' )
+        BATCH_SERVER = cfg.get( 'DEFAULT', 'BATCH_SERVER' )
 
     except ConfigParser.NoOptionError:
 
         # Backwards compatibility for old configs
         #
 
-        BATCH_SERVER        = cfg.get( 'DEFAULT', 'TORQUE_SERVER' )
-        api_guess       = 'pbs'
+        BATCH_SERVER = cfg.get( 'DEFAULT', 'TORQUE_SERVER' )
+        api_guess    = 'pbs'
     
     try:
     
@@ -381,94 +554,85 @@ def loadConfig( filename ):
         #
 
         BATCH_POLL_INTERVAL = cfg.getint( 'DEFAULT', 'TORQUE_POLL_INTERVAL' )
-        api_guess       = 'pbs'
+        api_guess           = 'pbs'
     
     try:
 
-        GMOND_CONF      = cfg.get( 'DEFAULT', 'GMOND_CONF' )
+        GMOND_CONF          = cfg.get( 'DEFAULT', 'GMOND_CONF' )
 
     except ConfigParser.NoOptionError:
 
         # Not specified: assume /etc/ganglia/gmond.conf
         #
-        GMOND_CONF      = '/etc/ganglia/gmond.conf'
+        GMOND_CONF          = '/etc/ganglia/gmond.conf'
 
-    ganglia_cfg     = GangliaConfigParser( GMOND_CONF )
+    ganglia_cfg             = GangliaConfigParser( GMOND_CONF )
+    GMETRIC_TARGET          = None
 
-    # Let's try to find the GMETRIC_TARGET ourselves first from GMOND_CONF
-    #
-    gmetric_dest_ip     = ganglia_cfg.getStr( 'udp_send_channel', 'mcast_join' )
+    GMOND_UDP_SEND_CHANNELS = ganglia_cfg.getUdpSendChannels()
 
-    if not gmetric_dest_ip:
+    if not GMOND_UDP_SEND_CHANNELS:
 
-        # Maybe unicast target then
-        #
-        gmetric_dest_ip     = ganglia_cfg.getStr( 'udp_send_channel', 'host' )
-
-        gmetric_dest_port   = ganglia_cfg.getStr( 'udp_send_channel', 'port' )
-
-    if gmetric_dest_ip and gmetric_dest_port:
-
-        GMETRIC_TARGET  = '%s:%s' %( gmetric_dest_ip, gmetric_dest_port )
-    else:
-
-        debug_msg( 0, "WARNING: Can't parse udp_send_channel from: '%s'" %GMOND_CONF )
+        debug_msg( 0, "WARNING: Can't parse udp_send_channel from: '%s' - Trying: %s" %( GMOND_CONF, JOBMOND_CONF ) )
 
         # Couldn't figure it out: let's see if it's in our jobmond.conf
         #
         try:
 
-            GMETRIC_TARGET  = cfg.get( 'DEFAULT', 'GMETRIC_TARGET' )
+            GMETRIC_TARGET    = cfg.get( 'DEFAULT', 'GMETRIC_TARGET' )
 
         # Guess not: now just give up
-        #
+        
         except ConfigParser.NoOptionError:
 
-            GMETRIC_TARGET  = None
+            GMETRIC_TARGET    = None
 
             debug_msg( 0, "ERROR: GMETRIC_TARGET not set: internal Gmetric handling aborted. Failing back to DEPRECATED use of gmond.conf/gmetric binary. This will slow down jobmond significantly!" )
 
-    gmetric_bin = findGmetric()
+            gmetric_bin    = findGmetric()
 
-    if gmetric_bin:
+            if gmetric_bin:
 
-        GMETRIC_BINARY      = gmetric_bin
-    else:
-        debug_msg( 0, "WARNING: Can't find gmetric binary anywhere in $PATH" )
+                GMETRIC_BINARY     = gmetric_bin
+            else:
+                debug_msg( 0, "WARNING: Can't find gmetric binary anywhere in $PATH" )
 
-        try:
+                try:
 
-            GMETRIC_BINARY      = cfg.get( 'DEFAULT', 'GMETRIC_BINARY' )
+                    GMETRIC_BINARY = cfg.get( 'DEFAULT', 'GMETRIC_BINARY' )
 
-        except ConfigParser.NoOptionError:
+                except ConfigParser.NoOptionError:
 
-            debug_msg( 0, "FATAL ERROR: GMETRIC_BINARY not set and not in $PATH" )
-            sys.exit( 1 )
+                    print "FATAL ERROR: GMETRIC_BINARY not set and not in $PATH"
+                    sys.exit( 1 )
 
-    DETECT_TIME_DIFFS   = cfg.getboolean( 'DEFAULT', 'DETECT_TIME_DIFFS' )
+    #TODO: is this really still needed or should be automatic
+    DETECT_TIME_DIFFS    = cfg.getboolean( 'DEFAULT', 'DETECT_TIME_DIFFS' )
 
-    BATCH_HOST_TRANSLATE    = getlist( cfg.get( 'DEFAULT', 'BATCH_HOST_TRANSLATE' ) )
+    BATCH_HOST_TRANSLATE = getlist( cfg.get( 'DEFAULT', 'BATCH_HOST_TRANSLATE' ) )
 
     try:
 
-        BATCH_API   = cfg.get( 'DEFAULT', 'BATCH_API' )
+        BATCH_API    = cfg.get( 'DEFAULT', 'BATCH_API' )
 
     except ConfigParser.NoOptionError, detail:
 
         if BATCH_SERVER and api_guess:
 
-            BATCH_API   = api_guess
+            BATCH_API    = api_guess
         else:
-            debug_msg( 0, "FATAL ERROR: BATCH_API not set and can't make guess" )
+            print "FATAL ERROR: BATCH_API not set and can't make guess"
             sys.exit( 1 )
 
     try:
 
-        QUEUE       = getlist( cfg.get( 'DEFAULT', 'QUEUE' ) )
+        QUEUE        = getlist( cfg.get( 'DEFAULT', 'QUEUE' ) )
 
     except ConfigParser.NoOptionError, detail:
 
-        QUEUE       = None
+        QUEUE        = None
+
+    METRIC_MAX_VAL_LEN = ganglia_cfg.getInt( 'globals', 'max_udp_msg_len' )
 
     return True
 
@@ -480,8 +644,6 @@ def fqdn_parts (fqdn):
 
     return (parts[0], string.join(parts[1:], "."))
 
-METRIC_MAX_VAL_LEN = 900
-
 class DataProcessor:
 
     """Class for processing of data"""
@@ -492,12 +654,12 @@ class DataProcessor:
 
         """Remember alternate binary location if supplied"""
 
-        global GMETRIC_BINARY
+        global GMETRIC_BINARY, GMOND_CONF
 
         if binary:
             self.binary = binary
 
-        if not self.binary:
+        if not self.binary and not GMETRIC_TARGET and not GMOND_UDP_SEND_CHANNELS:
             self.binary = GMETRIC_BINARY
 
         # Timeout for XML
@@ -505,32 +667,32 @@ class DataProcessor:
         # From ganglia's documentation:
         #
         # 'A metric will be deleted DMAX seconds after it is received, and
-            # DMAX=0 means eternal life.'
+        # DMAX=0 means eternal life.'
 
         self.dmax = str( int( int( BATCH_POLL_INTERVAL ) * 2 ) )
 
-        if GMOND_CONF:
+        if GMOND_CONF and not GMETRIC_TARGET and not GMOND_UDP_SEND_CHANNELS:
 
             incompatible = self.checkGmetricVersion()
 
             if incompatible:
 
-                debug_msg( 0, 'Gmetric version not compatible, please upgrade to at least 3.0.1' )
+                print 'Ganglia/Gmetric version not compatible, please upgrade to at least 3.4.0'
                 sys.exit( 1 )
 
     def checkGmetricVersion( self ):
 
         """
-        Check version of gmetric is at least 3.0.1
+        Check version of gmetric is at least 3.4.0
         for the syntax we use
         """
 
-        global METRIC_MAX_VAL_LEN
+        global METRIC_MAX_VAL_LEN, GMETRIC_TARGET
 
         incompatible    = 0
 
-        gfp     = os.popen( self.binary + ' --version' )
-        lines       = gfp.readlines()
+        gfp        = os.popen( self.binary + ' --version' )
+        lines      = gfp.readlines()
 
         gfp.close()
 
@@ -540,11 +702,11 @@ class DataProcessor:
 
             if len( line ) == 2 and str( line ).find( 'gmetric' ) != -1:
             
-                gmetric_version = line[1].split( '\n' )[0]
+                gmetric_version    = line[1].split( '\n' )[0]
 
-                version_major   = int( gmetric_version.split( '.' )[0] )
-                version_minor   = int( gmetric_version.split( '.' )[1] )
-                version_patch   = int( gmetric_version.split( '.' )[2] )
+                version_major    = int( gmetric_version.split( '.' )[0] )
+                version_minor    = int( gmetric_version.split( '.' )[1] )
+                version_patch    = int( gmetric_version.split( '.' )[2] )
 
                 incompatible    = 0
 
@@ -554,21 +716,9 @@ class DataProcessor:
                 
                 elif version_major == 3:
 
-                    if version_minor == 0:
+                    if version_minor < 4:
 
-                        if version_patch < 1:
-                        
-                            incompatible = 1
-
-                        # Gmetric 3.0.1 >< 3.0.3 had a bug in the max metric length
-                        #
-                        if version_patch < 3:
-
-                            METRIC_MAX_VAL_LEN = 900
-
-                        elif version_patch >= 3:
-
-                            METRIC_MAX_VAL_LEN = 1400
+                        incompatible = 1
 
         return incompatible
 
@@ -578,10 +728,22 @@ class DataProcessor:
 
         cmd = self.binary
 
-        if GMETRIC_TARGET:
+        if GMOND_UDP_SEND_CHANNELS:
 
-            GMETRIC_TARGET_HOST = GMETRIC_TARGET.split( ':' )[0]
-            GMETRIC_TARGET_PORT = GMETRIC_TARGET.split( ':' )[1]
+            for c_ip, c_port  in GMOND_UDP_SEND_CHANNELS:
+
+                metric_debug        = "[gmetric %s:%s] name: %s - val: %s - dmax: %s" %( str(c_ip), str(c_port), str( metricname ), str( metricval ), str( self.dmax ) )
+
+                debug_msg( 10, printTime() + ' ' + metric_debug)
+
+                gm = Gmetric( c_ip, c_port )
+
+                gm.send( str( metricname ), str( metricval ), str( self.dmax ), valtype, units )
+
+        elif GMETRIC_TARGET:
+
+            GMETRIC_TARGET_HOST    = GMETRIC_TARGET.split( ':' )[0]
+            GMETRIC_TARGET_PORT    = GMETRIC_TARGET.split( ':' )[1]
 
             metric_debug        = "[gmetric] name: %s - val: %s - dmax: %s" %( str( metricname ), str( metricval ), str( self.dmax ) )
 
@@ -597,7 +759,7 @@ class DataProcessor:
 
             except NameError:
 
-                debug_msg( 10, 'Assuming /etc/gmond.conf for gmetric cmd (omitting)' )
+                debug_msg( 10, 'Assuming /etc/ganglia/gmond.conf for gmetric cmd' )
 
             cmd = cmd + ' -n' + str( metricname )+ ' -v"' + str( metricval )+ '" -t' + str( valtype ) + ' -d' + str( self.dmax )
 
@@ -635,19 +797,15 @@ class DataGatherer:
 
             print '\t%s = %s' %( name, val )
 
-    def getAttr( self, d, name ):
+    def getAttr( self, attrs, name ):
 
         """Return certain attribute from dictionary, if exists"""
 
-        if d.has_key( name ):
+        if attrs.has_key( name ):
 
-            if type( d[ name ] ) == ListType:
-
-                return string.join( d[ name ], ' ' )
-
-            return d[ name ]
-        
-        return ''
+            return attrs[ name ]
+        else:
+            return ''
 
     def jobDataChanged( self, jobs, job_id, attrs ):
 
@@ -678,13 +836,13 @@ class DataGatherer:
 
         global BATCH_API
 
-        self.dp.multicastGmetric( 'MONARCH-HEARTBEAT', str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
+        self.dp.multicastGmetric( 'zplugin_monarch_heartbeat', str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
 
-        running_jobs    = 0
-        queued_jobs = 0
+        running_jobs = 0
+        queued_jobs  = 0
 
         # Count how many running/queued jobs we found
-                #
+        #
         for jobid, jobattrs in self.jobs.items():
 
             if jobattrs[ 'status' ] == 'Q':
@@ -696,38 +854,40 @@ class DataGatherer:
                 running_jobs += 1
 
         # Report running/queued jobs as seperate metric for a nice RRD graph
-                #
-        self.dp.multicastGmetric( 'MONARCH-RJ', str( running_jobs ), 'uint32', 'jobs' )
-        self.dp.multicastGmetric( 'MONARCH-QJ', str( queued_jobs ), 'uint32', 'jobs' )
+        #
+        self.dp.multicastGmetric( 'zplugin_monarch_rj', str( running_jobs ), 'uint32', 'jobs' )
+        self.dp.multicastGmetric( 'zplugin_monarch_qj', str( queued_jobs ), 'uint32', 'jobs' )
 
         # Report down/offline nodes in batch (PBS only ATM)
         #
         if BATCH_API == 'pbs':
 
-            domain      = fqdn_parts( socket.getfqdn() )[1]
+            domain        = fqdn_parts( socket.getfqdn() )[1]
 
-            downed_nodes    = list()
-            offline_nodes   = list()
+            downed_nodes  = list()
+            offline_nodes = list()
         
-            l       = ['state']
-        
-            for name, node in self.pq.getnodes().items():
+            l        = ['state']
 
-                if 'down' in node[ 'state' ]:
+            nodelist = self.getNodeData()
+
+            for name, node in nodelist.items():
+
+                if ( node[ 'state' ].find( "down" ) != -1 ):
 
                     downed_nodes.append( name )
 
-                if 'offline' in node[ 'state' ]:
+                if ( node[ 'state' ].find( "offline" ) != -1 ):
 
                     offline_nodes.append( name )
 
-            downnodeslist       = do_nodelist( downed_nodes )
-            offlinenodeslist    = do_nodelist( offline_nodes )
+            downnodeslist    = do_nodelist( downed_nodes )
+            offlinenodeslist = do_nodelist( offline_nodes )
 
             down_str    = 'nodes=%s domain=%s reported=%s' %( string.join( downnodeslist, ';' ), domain, str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
             offl_str    = 'nodes=%s domain=%s reported=%s' %( string.join( offlinenodeslist, ';' ), domain, str( int( int( self.cur_time ) + int( self.timeoffset ) ) ) )
-            self.dp.multicastGmetric( 'MONARCH-DOWN'   , down_str )
-            self.dp.multicastGmetric( 'MONARCH-OFFLINE', offl_str )
+            self.dp.multicastGmetric( 'zplugin_monarch_down'   , down_str )
+            self.dp.multicastGmetric( 'zplugin_monarch_offline', offl_str )
 
         # Now let's spread the knowledge
         #
@@ -735,42 +895,116 @@ class DataGatherer:
 
             # Make gmetric values for each job: respect max gmetric value length
             #
-            gmetrics     = self.compileGmetricVal( jobid, jobattrs )
+            gmetric_val        = self.compileGmetricVal( jobid, jobattrs )
+            metric_increment    = 0
 
-            for g_name, g_val in gmetrics.items():
+            # If we have more job info than max gmetric value length allows, split it up
+            # amongst multiple metrics
+            #
+            for val in gmetric_val:
 
-                self.dp.multicastGmetric( g_name, g_val )
+                metric_name = 'zplugin_monarch_job_%s_%s' %( str(metric_increment) , str( jobid ) )
+                self.dp.multicastGmetric( metric_name, val )
+
+                # Increase follow number if this jobinfo is split up amongst more than 1 gmetric
+                #
+                metric_increment    = metric_increment + 1
 
     def compileGmetricVal( self, jobid, jobattrs ):
 
-        """Create gmetric name/value pairs of jobinfo"""
+        """Create a val string for gmetric of jobinfo"""
 
-        gmetrics = { }
+        gval_lists    = [ ]
+        val_list    = { }
 
         for val_name, val_value in jobattrs.items():
 
-            gmetric_sequence = 0
+            # These are our own metric names, i.e.: status, start_timestamp, etc
+            #
+            val_list_names_len    = len( string.join( val_list.keys() ) ) + len(val_list.keys())
 
-            if len( val_value ) > METRIC_MAX_VAL_LEN:
+            # These are their corresponding values
+            #
+            val_list_vals_len    = len( string.join( val_list.values() ) ) + len(val_list.values())
 
-                while len( val_value ) > METRIC_MAX_VAL_LEN:
+            if val_name == 'nodes' and jobattrs['status'] == 'R':
 
-                    gmetric_value   = val_value[:METRIC_MAX_VAL_LEN]
-                    val_value       = val_value[METRIC_MAX_VAL_LEN:]
+                node_str = None
 
-                    gmetric_name    = 'MONARCHJOB$%s$%s$%s' %( jobid, string.upper(val_name), gmetric_sequence )
+                for node in val_value:
 
-                    gmetrics[ gmetric_name ] = gmetric_value
+                    if node_str:
 
-                    gmetric_sequence = gmetric_sequence + 1
-            else:
-                gmetric_value   = val_value
+                        node_str = node_str + ';' + node
+                    else:
+                        node_str = node
 
-                gmetric_name    = 'MONARCH$%s$%s$%s' %( jobid, string.upper(val_name), gmetric_sequence )
+                    # Make sure if we add this new info, that the total metric's value length does not exceed METRIC_MAX_VAL_LEN
+                    #
+                    if (val_list_names_len + len(val_name) ) + (val_list_vals_len + len(node_str) ) > METRIC_MAX_VAL_LEN:
 
-                gmetrics[ gmetric_name ] = gmetric_value
+                        # It's too big, we need to make a new gmetric for the additional info
+                        #
+                        val_list[ val_name ]    = node_str
 
-        return gmetrics
+                        gval_lists.append( val_list )
+
+                        val_list        = { }
+                        node_str        = None
+
+                val_list[ val_name ]    = node_str
+
+                gval_lists.append( val_list )
+
+                val_list        = { }
+
+            elif val_value != '':
+
+                # Make sure if we add this new info, that the total metric's value length does not exceed METRIC_MAX_VAL_LEN
+                #
+                if (val_list_names_len + len(val_name) ) + (val_list_vals_len + len(str(val_value)) ) > METRIC_MAX_VAL_LEN:
+
+                    # It's too big, we need to make a new gmetric for the additional info
+                    #
+                    gval_lists.append( val_list )
+
+                    val_list        = { }
+
+                val_list[ val_name ]    = val_value
+
+        if len( val_list ) > 0:
+
+            gval_lists.append( val_list )
+
+        str_list    = [ ]
+
+        # Now append the value names and values together, i.e.: stop_timestamp=value, etc
+        #
+        for val_list in gval_lists:
+
+            my_val_str    = None
+
+            for val_name, val_value in val_list.items():
+
+                if type(val_value) == list:
+
+                    val_value    = val_value.join( ',' )
+
+                if my_val_str:
+
+                    try:
+                        # fixme: It's getting
+                        # ('nodes', None) items
+                        my_val_str = my_val_str + ' ' + val_name + '=' + val_value
+                    except:
+                        pass
+
+                else:
+                    my_val_str = val_name + '=' + val_value
+
+            str_list.append( my_val_str )
+
+        return str_list
 
     def daemon( self ):
 
@@ -780,7 +1014,7 @@ class DataGatherer:
         #
         pid = os.fork()
         if pid > 0:
-                sys.exit(0)  # end parent
+            sys.exit(0)  # end parent
 
         # creates a session and sets the process group ID
         #
@@ -790,7 +1024,7 @@ class DataGatherer:
         #
         pid = os.fork()
         if pid > 0:
-                sys.exit(0)  # end parent
+            sys.exit(0)  # end parent
 
         write_pidfile()
 
@@ -817,21 +1051,183 @@ class DataGatherer:
         
             self.getJobData()
             self.submitJobData()
-            time.sleep( BATCH_POLL_INTERVAL )   
+            time.sleep( BATCH_POLL_INTERVAL )    
+
+# SGE code by Dave Love <fx@gnu.org>.  Tested with SGE 6.0u8 and 6.0u11.  May
+# work with SGE 6.1 (else should be easily fixable), but definitely doesn't
+# with 6.2.  See also the fixmes.
+
+class NoJobs (Exception):
+    """Exception raised by empty job list in qstat output."""
+    pass
+
+class SgeQstatXMLParser(xml.sax.handler.ContentHandler):
+    """SAX handler for XML output from Sun Grid Engine's `qstat'."""
+
+    def __init__(self):
+        self.value = ""
+        self.joblist = []
+        self.job = {}
+        self.queue = ""
+        self.in_joblist = False
+        self.lrequest = False
+        self.eltq = deque()
+        xml.sax.handler.ContentHandler.__init__(self)
+
+    # The structure of the output is as follows (for SGE 6.0).  It's
+    # similar for 6.1, but radically different for 6.2, and is
+    # undocumented generally.  Unfortunately it's voluminous, and probably
+    # doesn't scale to large clusters/queues.
+
+    # <detailed_job_info  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    #   <djob_info>
+    #     <qmaster_response>  <!-- job -->
+    #       ...
+    #       <JB_ja_template>  
+    #     <ulong_sublist>
+    #     ...         <!-- start_time, state ... -->
+    #     </ulong_sublist>
+    #       </JB_ja_template>  
+    #       <JB_ja_tasks>
+    #     <ulong_sublist>
+    #       ...       <!-- task info
+    #     </ulong_sublist>
+    #     ...
+    #       </JB_ja_tasks>
+    #       ...
+    #     </qmaster_response>
+    #   </djob_info>
+    #   <messages>
+    #   ...
+
+    # NB.  We might treat each task as a separate job, like
+    # straight qstat output, but the web interface expects jobs to
+    # be identified by integers, not, say, <job number>.<task>.
+
+    # So, I lied.  If the job list is empty, we get invalid XML
+    # like this, which we need to defend against:
+
+    # <unknown_jobs  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    #   <>
+    #     <ST_name>*</ST_name>
+    #   </>
+    # </unknown_jobs>
+
+    def startElement(self, name, attrs):
+        self.value = ""
+        if name == "djob_info":    # job list
+            self.in_joblist = True
+        # The job container is "qmaster_response" in SGE 6.0
+        # and 6.1, but "element" in 6.2.  This is only the very
+        # start of what's necessary for 6.2, though (sigh).
+        elif (name == "qmaster_response" or name == "element") \
+                and self.eltq[-1] == "djob_info": # job
+            self.job = {"job_state": "U", "slots": 0,
+                    "nodes": [], "queued_timestamp": "",
+                    "queued_timestamp": "", "queue": "",
+                    "ppn": "0", "RN_max": 0,
+                    # fixme in endElement
+                    "requested_memory": 0, "requested_time": 0
+                    }
+            self.joblist.append(self.job)
+        elif name == "qstat_l_requests": # resource request
+            self.lrequest = True
+        elif name == "unknown_jobs":
+            raise NoJobs
+        self.eltq.append (name)
+
+    def characters(self, ch):
+        self.value += ch
+
+    def endElement(self, name): 
+        """Snarf job elements contents into job dictionary.
+           Translate keys if appropriate."""
+
+        name_trans = {
+          "JB_job_number": "number",
+          "JB_job_name": "name", "JB_owner": "owner",
+          "queue_name": "queue", "JAT_start_time": "start_timestamp",
+          "JB_submission_time": "queued_timestamp"
+          }
+        value = self.value
+        self.eltq.pop ()
+
+        if name == "djob_info":
+            self.in_joblist = False
+            self.job = {}
+        elif name == "JAT_master_queue":
+            self.job["queue"] = value.split("@")[0]
+        elif name == "JG_qhostname":
+            if not (value in self.job["nodes"]):
+                self.job["nodes"].append(value)
+        elif name == "JG_slots": # slots in use
+            self.job["slots"] += int(value)
+        elif name == "RN_max": # requested slots (tasks or parallel)
+            self.job["RN_max"] = max (self.job["RN_max"],
+                          int(value))
+        elif name == "JAT_state": # job state (bitwise or)
+            value = int (value)
+            # Status values from sge_jobL.h
+            #define JIDLE           0x00000000
+            #define JHELD           0x00000010
+            #define JMIGRATING          0x00000020
+            #define JQUEUED         0x00000040
+            #define JRUNNING        0x00000080
+            #define JSUSPENDED          0x00000100
+            #define JTRANSFERING        0x00000200
+            #define JDELETED        0x00000400
+            #define JWAITING        0x00000800
+            #define JEXITING        0x00001000
+            #define JWRITTEN        0x00002000
+            #define JSUSPENDED_ON_THRESHOLD 0x00010000
+            #define JFINISHED           0x00010000
+            if value & 0x80:
+                self.job["status"] = "R"
+            elif value & 0x40:
+                self.job["status"] = "Q"
+            else:
+                self.job["status"] = "O" # `other'
+        elif name == "CE_name" and self.lrequest and self.value in \
+                ("h_cpu", "s_cpu", "cpu", "h_core", "s_core"):
+            # We're in a container for an interesting resource
+            # request; record which type.
+            self.lrequest = self.value
+        elif name == "CE_doubleval" and self.lrequest:
+            # if we're in a container for an interesting
+            # resource request, use the maxmimum of the hard
+            # and soft requests to record the requested CPU
+            # or core.  Fixme:  I'm not sure if this logic is
+            # right.
+            if self.lrequest in ("h_core", "s_core"):
+                self.job["requested_memory"] = \
+                    max (float (value),
+                     self.job["requested_memory"])
+            # Fixme:  Check what cpu means, c.f [hs]_cpu.
+            elif self.lrequest in ("h_cpu", "s_cpu", "cpu"):
+                self.job["requested_time"] = \
+                    max (float (value),
+                     self.job["requested_time"])
+        elif name == "qstat_l_requests":
+            self.lrequest = False
+        elif self.job and self.in_joblist:
+            if name in name_trans:
+                name = name_trans[name]
+                self.job[name] = value
 
 # Abstracted from PBS original.
+# Fixme:  Is it worth (or appropriate for PBS) sorting the result?
 #
 def do_nodelist( nodes ):
 
     """Translate node list as appropriate."""
 
-    nodeslist       = [ ]
-    my_domain       = fqdn_parts( socket.getfqdn() )[1]
+    nodeslist        = [ ]
+    my_domain        = fqdn_parts( socket.getfqdn() )[1]
 
     for node in nodes:
 
         host        = node.split( '/' )[0] # not relevant for SGE
-        h, host_domain  = fqdn_parts(host)
+        h, host_domain    = fqdn_parts(host)
 
         if host_domain == my_domain:
 
@@ -843,15 +1239,274 @@ def do_nodelist( nodes ):
 
                 if translate_pattern.find( '/' ) != -1:
 
-                    translate_orig  = \
+                    translate_orig    = \
                         translate_pattern.split( '/' )[1]
-                    translate_new   = \
+                    translate_new    = \
                         translate_pattern.split( '/' )[2]
                     host = re.sub( translate_orig,
                                translate_new, host )
             if not host in nodeslist:
                 nodeslist.append( host )
     return nodeslist
+
+class SgeDataGatherer(DataGatherer):
+
+    jobs = {}
+
+    def __init__( self ):
+        self.jobs = {}
+        self.timeoffset = 0
+        self.dp = DataProcessor()
+
+    def getJobData( self ):
+        """Gather all data on current jobs in SGE"""
+
+        import popen2
+
+        self.cur_time = 0
+        queues = ""
+        if QUEUE:    # only for specific queues
+            # Fixme:  assumes queue names don't contain single
+            # quote or comma.  Don't know what the SGE rules are.
+            queues = " -q '" + string.join (QUEUE, ",") + "'"
+        # Note the comment in SgeQstatXMLParser about scaling with
+        # this method of getting data.  I haven't found better one.
+        # Output with args `-xml -ext -f -r' is easier to parse
+        # in some ways, harder in others, but it doesn't provide
+        # the submission time (at least SGE 6.0).  The pipeline
+        # into sed corrects bogus XML observed with a configuration
+        # of SGE 6.0u8, which otherwise causes the parsing to hang.
+        piping = popen2.Popen3("qstat -u '*' -j '*' -xml | \
+sed -e 's/reported usage>/reported_usage>/g' -e 's;<\/*JATASK:.*>;;'" \
+                           + queues, True)
+        qstatparser = SgeQstatXMLParser()
+        parse_err = 0
+        try:
+            xml.sax.parse(piping.fromchild, qstatparser)
+        except NoJobs:
+            pass
+        except:
+            parse_err = 1
+        if piping.wait():
+            debug_msg(10, "qstat error, skipping until next polling interval: " + piping.childerr.readline())
+            return None
+        elif parse_err:
+            debug_msg(10, "Bad XML output from qstat"())
+            exit (1)
+        for f in piping.fromchild, piping.tochild, piping.childerr:
+            f.close()
+        self.cur_time = time.time()
+        jobs_processed = []
+        for job in qstatparser.joblist:
+            job_id = job["number"]
+            if job["status"] in [ 'Q', 'R' ]:
+                jobs_processed.append(job_id)
+            if job["status"] == "R":
+                job["nodes"] = do_nodelist (job["nodes"])
+                # Fixme: why is job["nodes"] sometimes null?
+                try:
+                    # Fixme: Is this sensible?  The
+                    # PBS-type PPN isn't something you use
+                    # with SGE.
+                    job["ppn"] = float(job["slots"]) / len(job["nodes"])
+                except:
+                    job["ppn"] = 0
+                if DETECT_TIME_DIFFS:
+                    # If a job start is later than our
+                    # current date, that must mean
+                    # the SGE server's time is later
+                    # than our local time.
+                    start_timestamp = int (job["start_timestamp"])
+                    if start_timestamp > int(self.cur_time) + int(self.timeoffset):
+
+                        self.timeoffset    = start_timestamp - int(self.cur_time)
+            else:
+                # fixme: Note sure what this should be:
+                job["ppn"] = job["RN_max"]
+                job["nodes"] = "1"
+
+            myAttrs = {}
+            for attr in ["name", "queue", "owner",
+                     "requested_time", "status",
+                     "requested_memory", "ppn",
+                     "start_timestamp", "queued_timestamp"]:
+                myAttrs[attr] = str(job[attr])
+            myAttrs["nodes"] = job["nodes"]
+            myAttrs["reported"] = str(int(self.cur_time) + int(self.timeoffset))
+            myAttrs["domain"] = fqdn_parts(socket.getfqdn())[1]
+            myAttrs["poll_interval"] = str(BATCH_POLL_INTERVAL)
+
+            if self.jobDataChanged(self.jobs, job_id, myAttrs) and myAttrs["status"] in ["R", "Q"]:
+                self.jobs[job_id] = myAttrs
+        for id, attrs in self.jobs.items():
+            if id not in jobs_processed:
+                del self.jobs[id]
+
+# LSF code by Mahmoud Hanafi <hanafim@users.sourceforge.nt>
+# Requres LSFObject http://sourceforge.net/projects/lsfobject
+#
+class LsfDataGatherer(DataGatherer):
+
+    """This is the DataGatherer for LSf"""
+
+    global lsfObject
+
+    def __init__( self ):
+
+        self.jobs = { }
+        self.timeoffset = 0
+        self.dp = DataProcessor()
+        self.initLsfQuery()
+
+    def _countDuplicatesInList( self, dupedList ):
+
+        countDupes    = { }
+
+        for item in dupedList:
+
+            if not countDupes.has_key( item ):
+
+                countDupes[ item ]    = 1
+            else:
+                countDupes[ item ]    = countDupes[ item ] + 1
+
+        dupeCountList    = [ ]
+
+        for item, count in countDupes.items():
+
+            dupeCountList.append( ( item, count ) )
+
+        return dupeCountList
+#
+#lst = ['I1','I2','I1','I3','I4','I4','I7','I7','I7','I7','I7']
+#print _countDuplicatesInList(lst)
+#[('I1', 2), ('I3', 1), ('I2', 1), ('I4', 2), ('I7', 5)]
+########################
+
+    def initLsfQuery( self ):
+        self.pq = None
+        self.pq = lsfObject.jobInfoEntObject()
+
+    def getJobData( self, known_jobs="" ):
+        """Gather all data on current jobs in LSF"""
+        if len( known_jobs ) > 0:
+            jobs = known_jobs
+        else:
+            jobs = { }
+        joblist = {}
+        joblist = self.pq.getJobInfo()
+        nodelist = ''
+
+        self.cur_time = time.time()
+
+        jobs_processed = [ ]
+
+        for name, attrs in joblist.items():
+            job_id = str(name)
+            jobs_processed.append( job_id )
+            name = self.getAttr( attrs, 'jobName' )
+            queue = self.getAttr( self.getAttr( attrs, 'submit') , 'queue' )
+            owner = self.getAttr( attrs, 'user' )
+
+### THIS IS THE rLimit List index values
+#define LSF_RLIMIT_CPU      0        /* cpu time in milliseconds */
+#define LSF_RLIMIT_FSIZE    1        /* maximum file size */
+#define LSF_RLIMIT_DATA     2        /* data size */
+#define LSF_RLIMIT_STACK    3        /* stack size */
+#define LSF_RLIMIT_CORE     4        /* core file size */
+#define LSF_RLIMIT_RSS      5        /* resident set size */
+#define LSF_RLIMIT_NOFILE   6        /* open files */
+#define LSF_RLIMIT_OPEN_MAX 7        /* (from HP-UX) */
+#define LSF_RLIMIT_VMEM     8        /* maximum swap mem */
+#define LSF_RLIMIT_SWAP     8
+#define LSF_RLIMIT_RUN      9        /* max wall-clock time limit */
+#define LSF_RLIMIT_PROCESS  10       /* process number limit */
+#define LSF_RLIMIT_THREAD   11       /* thread number limit (introduced in LSF6.0) */
+#define LSF_RLIM_NLIMITS    12       /* number of resource limits */
+
+            requested_time = self.getAttr( self.getAttr( attrs, 'submit') , 'rLimits' )[9]
+            if requested_time == -1: 
+                requested_time = ""
+            requested_memory = self.getAttr( self.getAttr( attrs, 'submit') , 'rLimits' )[8]
+            if requested_memory == -1: 
+                requested_memory = ""
+# This tries to get proc per node. We don't support this right now
+            ppn = 0 #self.getAttr( self.getAttr( attrs, 'SubmitList') , 'numProessors' )
+            requested_cpus = self.getAttr( self.getAttr( attrs, 'submit') , 'numProcessors' )
+            if requested_cpus == None or requested_cpus == "":
+                requested_cpus = 1
+
+            if QUEUE:
+                for q in QUEUE:
+                    if q == queue:
+                        display_queue = 1
+                        break
+                    else:
+                        display_queue = 0
+                        continue
+            if display_queue == 0:
+                continue
+
+            runState = self.getAttr( attrs, 'status' )
+            if runState == 4:
+                status = 'R'
+            else:
+                status = 'Q'
+            queued_timestamp = self.getAttr( attrs, 'submitTime' )
+
+            if status == 'R':
+                start_timestamp = self.getAttr( attrs, 'startTime' )
+                nodesCpu =  dict(self._countDuplicatesInList(self.getAttr( attrs, 'exHosts' )))
+                nodelist = nodesCpu.keys()
+
+                if DETECT_TIME_DIFFS:
+
+                    # If a job start if later than our current date,
+                    # that must mean the Torque server's time is later
+                    # than our local time.
+
+                    if int(start_timestamp) > int( int(self.cur_time) + int(self.timeoffset) ):
+
+                        self.timeoffset = int( int(start_timestamp) - int(self.cur_time) )
+
+            elif status == 'Q':
+                start_timestamp = ''
+                count_mynodes = 0
+                numeric_node = 1
+                nodelist = ''
+
+            myAttrs = { }
+            if name == "":
+                myAttrs['name'] = "none"
+            else:
+                myAttrs['name'] = name
+
+            myAttrs[ 'owner' ]        = owner
+            myAttrs[ 'requested_time' ]    = str(requested_time)
+            myAttrs[ 'requested_memory' ]    = str(requested_memory)
+            myAttrs[ 'requested_cpus' ]    = str(requested_cpus)
+            myAttrs[ 'ppn' ]        = str( ppn )
+            myAttrs[ 'status' ]        = status
+            myAttrs[ 'start_timestamp' ]    = str(start_timestamp)
+            myAttrs[ 'queue' ]        = str(queue)
+            myAttrs[ 'queued_timestamp' ]    = str(queued_timestamp)
+            myAttrs[ 'reported' ]        = str( int( int( self.cur_time ) + int( self.timeoffset ) ) )
+            myAttrs[ 'nodes' ]        = do_nodelist( nodelist )
+            myAttrs[ 'domain' ]        = fqdn_parts( socket.getfqdn() )[1]
+            myAttrs[ 'poll_interval' ]    = str(BATCH_POLL_INTERVAL)
+
+            if self.jobDataChanged( jobs, job_id, myAttrs ) and myAttrs['status'] in [ 'R', 'Q' ]:
+                jobs[ job_id ] = myAttrs
+
+                debug_msg( 10, printTime() + ' job %s state changed' %(job_id) )
+
+        for id, attrs in jobs.items():
+            if id not in jobs_processed:
+                # This one isn't there anymore
+                #
+                del jobs[ id ]
+        self.jobs=jobs
+
 
 class PbsDataGatherer( DataGatherer ):
 
@@ -863,100 +1518,121 @@ class PbsDataGatherer( DataGatherer ):
 
         """Setup appropriate variables"""
 
-        self.jobs   = { }
+        self.jobs       = { }
         self.timeoffset = 0
-        self.dp     = DataProcessor()
+        self.dp         = DataProcessor()
 
         self.initPbsQuery()
 
     def initPbsQuery( self ):
 
-        self.pq     = None
+        self.pq = None
 
-        if( BATCH_SERVER ):
+        try:
 
-            self.pq     = PBSQuery( BATCH_SERVER )
-        else:
-            self.pq     = PBSQuery()
+            if( BATCH_SERVER ):
+
+                self.pq = PBSQuery( BATCH_SERVER )
+            else:
+                self.pq = PBSQuery()
+
+        except PBSError, details:
+            print 'Cannot connect to pbs server'
+            print details
+            sys.exit( 1 )
+
+        try:
+            # TODO: actually use new data structure
+            self.pq.old_data_structure()
+
+        except AttributeError:
+
+            # pbs_query is older
+            #
+            pass
+
+    def getNodeData( self ):
+
+        nodedict = { }
+
+        try:
+            nodedict = self.pq.getnodes()
+
+        except PBSError, detail:
+
+            debug_msg( 10, "PBS server unavailable, skipping until next polling interval: " + str( detail ) )
+
+        return nodedict
 
     def getJobData( self ):
 
         """Gather all data on current jobs in Torque"""
 
-        joblist     = {}
-        self.cur_time   = 0
+        joblist            = {}
+        self.cur_time      = 0
 
         try:
-            joblist     = self.pq.getjobs()
-            self.cur_time   = time.time()
+            joblist        = self.pq.getjobs()
+            self.cur_time  = time.time()
 
         except PBSError, detail:
 
-            debug_msg( 10, "Caught PBS unavailable, skipping until next polling interval: " + str( detail ) )
+            debug_msg( 10, "PBS server unavailable, skipping until next polling interval: " + str( detail ) )
             return None
 
-        jobs_processed  = [ ]
+        jobs_processed    = [ ]
 
         for name, attrs in joblist.items():
-            display_queue       = 1
-            job_id          = name.split( '.' )[0]
+            display_queue = 1
+            job_id        = name.split( '.' )[0]
 
-            owner           = self.getAttr( attrs, 'Job_Owner' )
-            name            = self.getAttr( attrs, 'Job_Name' )
-            queue           = self.getAttr( attrs, 'queue' )
-            nodect          = self.getAttr( attrs['Resource_List'], 'nodect' )
+            name          = self.getAttr( attrs, 'Job_Name' )
+            queue         = self.getAttr( attrs, 'queue' )
 
-            requested_time      = self.getAttr( attrs['Resource_List'], 'walltime' )
-            requested_memory    = self.getAttr( attrs['Resource_List'], 'mem' )
+            if QUEUE:
+                for q in QUEUE:
+                    if q == queue:
+                        display_queue = 1
+                        break
+                    else:
+                        display_queue = 0
+                        continue
+            if display_queue == 0:
+                continue
 
 
-            requested_nodes     = ''
-            mynoderequest       = self.getAttr( attrs['Resource_List'], 'nodes' )
+            owner            = self.getAttr( attrs, 'Job_Owner' ).split( '@' )[0]
+            requested_time   = self.getAttr( attrs, 'Resource_List.walltime' )
+            requested_memory = self.getAttr( attrs, 'Resource_List.mem' )
 
-            ppn         = ''
-            attributes  = ''
+            mynoderequest    = self.getAttr( attrs, 'Resource_List.nodes' )
 
-            if mynoderequest.find( ':' ) != -1:
+            ppn = ''
 
-                mynoderequest_fields    = mynoderequest.split( ':' )
+            if mynoderequest.find( ':' ) != -1 and mynoderequest.find( 'ppn' ) != -1:
+
+                mynoderequest_fields = mynoderequest.split( ':' )
 
                 for mynoderequest_field in mynoderequest_fields:
-
-                    if mynoderequest_field.isdigit():
-
-                        continue #TODO add requested_nodes if is hostname(s)
 
                     if mynoderequest_field.find( 'ppn' ) != -1:
 
                         ppn = mynoderequest_field.split( 'ppn=' )[1]
 
-                    else:
+            status = self.getAttr( attrs, 'job_state' )
 
-                        if attributes == '':
-
-                            attributes = '%s' %mynoderequest_field
-                        else:
-                            attributes = '%s:%s' %( attributes, mynoderequest_field )
-
-            status          = self.getAttr( attrs, 'job_state' )
-
-            if status in [ 'Q', 'R', 'W' ]:
+            if status in [ 'Q', 'R' ]:
 
                 jobs_processed.append( job_id )
 
-            create_timestamp    = self.getAttr( attrs, 'ctime' )
-            running_nodes       = ''
-            exec_nodestr        = '' 
+            queued_timestamp = self.getAttr( attrs, 'ctime' )
 
             if status == 'R':
 
-                #start_timestamp     = self.getAttr( attrs, 'etime' )
-                start_timestamp     = self.getAttr( attrs, 'start_time' )
-                exec_nodestr        = self.getAttr( attrs, 'exec_host' )
+                start_timestamp = self.getAttr( attrs, 'mtime' )
+                nodes           = self.getAttr( attrs, 'exec_host' ).split( '+' )
 
-                nodes           = exec_nodestr.split( '+' )
                 nodeslist       = do_nodelist( nodes )
-                running_nodes   = string.join( nodeslist, ' ' )
 
                 if DETECT_TIME_DIFFS:
 
@@ -982,20 +1658,18 @@ class PbsDataGatherer( DataGatherer ):
                 # For now we only count the amount of nodes request and ignore properties
                 #
 
-                start_timestamp     = ''
-                count_mynodes       = 0
-
-                queued_timestamp    = self.getAttr( attrs, 'qtime' )
+                start_timestamp = ''
+                count_mynodes   = 0
 
                 for node in mynoderequest.split( '+' ):
 
                     # Just grab the {node_count|hostname} part and ignore properties
                     #
-                    nodepart    = node.split( ':' )[0]
+                    nodepart     = node.split( ':' )[0]
 
                     # Let's assume a node_count value
                     #
-                    numeric_node    = 1
+                    numeric_node = 1
 
                     # Chop the value up into characters
                     #
@@ -1005,20 +1679,20 @@ class PbsDataGatherer( DataGatherer ):
                         #
                         if letter not in string.digits:
 
-                            numeric_node    = 0
+                            numeric_node = 0
 
                     # If this is a hostname, just count this as one (1) node
                     #
                     if not numeric_node:
 
-                        count_mynodes   = count_mynodes + 1
+                        count_mynodes = count_mynodes + 1
                     else:
 
                         # If this a number, it must be the node_count
                         # and increase our count with it's value
                         #
                         try:
-                            count_mynodes   = count_mynodes + int( nodepart )
+                            count_mynodes = count_mynodes + int( nodepart )
 
                         except ValueError, detail:
 
@@ -1031,30 +1705,28 @@ class PbsDataGatherer( DataGatherer ):
                             debug_msg( 10, 'job = ' + str( name ) )
                             debug_msg( 10, 'attrs = ' + str( attrs ) )
                         
-                nodeslist   = str( count_mynodes )
+                nodeslist       = str( count_mynodes )
             else:
                 start_timestamp = ''
-                nodeslist   = ''
+                nodeslist       = ''
 
-            myAttrs             = { }
+            myAttrs                = { }
 
-            myAttrs[ 'name' ]              = str( name )
-            myAttrs[ 'status' ]            = str( status )
-            myAttrs[ 'queue' ]             = str( queue )
-            myAttrs[ 'owner' ]             = str( owner )
-            myAttrs[ 'nodect' ]            = str( nodect )
-            myAttrs[ 'exec.hostnames' ]    = str( running_nodes )
-            myAttrs[ 'exec.nodestr' ]      = str( exec_nodestr )
-            myAttrs[ 'req.walltime' ]      = str( requested_time )
-            myAttrs[ 'req.memory' ]        = str( requested_memory )
-            myAttrs[ 'req.nodes' ]         = str( requested_nodes )
-            myAttrs[ 'req.ppn' ]           = str( ppn )
-            myAttrs[ 'req.attributes' ]    = str( attributes )
-            myAttrs[ 'timestamp.running' ] = str( start_timestamp )
-            myAttrs[ 'timestamp.created' ] = str( create_timestamp )
-            myAttrs[ 'timestamp.queued' ]  = str( queued_timestamp )
+            myAttrs[ 'name' ]             = str( name )
+            myAttrs[ 'queue' ]            = str( queue )
+            myAttrs[ 'owner' ]            = str( owner )
+            myAttrs[ 'requested_time' ]   = str( requested_time )
+            myAttrs[ 'requested_memory' ] = str( requested_memory )
+            myAttrs[ 'ppn' ]              = str( ppn )
+            myAttrs[ 'status' ]           = str( status )
+            myAttrs[ 'start_timestamp' ]  = str( start_timestamp )
+            myAttrs[ 'queued_timestamp' ] = str( queued_timestamp )
+            myAttrs[ 'reported' ]         = str( int( int( self.cur_time ) + int( self.timeoffset ) ) )
+            myAttrs[ 'nodes' ]            = nodeslist
+            myAttrs[ 'domain' ]           = fqdn_parts( socket.getfqdn() )[1]
+            myAttrs[ 'poll_interval' ]    = str( BATCH_POLL_INTERVAL )
 
-            if self.jobDataChanged( self.jobs, job_id, myAttrs ) and myAttrs['status'] in [ 'R', 'Q', 'W' ]:
+            if self.jobDataChanged( self.jobs, job_id, myAttrs ) and myAttrs['status'] in [ 'R', 'Q' ]:
 
                 self.jobs[ job_id ] = myAttrs
 
@@ -1221,9 +1893,9 @@ def write_pidfile():
     #
     if PIDFILE:
 
-        pid = os.getpid()
+        pid    = os.getpid()
 
-        pidfile = open( PIDFILE, 'w' )
+        pidfile    = open( PIDFILE, 'w' )
 
         pidfile.write( str( pid ) )
         pidfile.close()
@@ -1247,9 +1919,10 @@ def main():
         try:
             from PBSQuery import PBSQuery, PBSError
 
-        except ImportError:
+        except ImportError, details:
 
-            debug_msg( 0, "FATAL ERROR: BATCH_API set to 'pbs' but python module 'pbs_python' is not installed" )
+            print "FATAL ERROR: BATCH_API set to 'pbs' but python module 'pbs_python' cannot be loaded"
+            print details
             sys.exit( 1 )
 
         gather = PbsDataGatherer()
@@ -1265,13 +1938,13 @@ def main():
         try:
             from lsfObject import lsfObject
         except:
-            debug_msg(0, "fatal error: BATCH_API set to 'lsf' but python module is not found or installed")
+            print "FATAL ERROR: BATCH_API set to 'lsf' but python module is not found or installed"
             sys.exit( 1)
 
         gather = LsfDataGatherer()
 
     else:
-        debug_msg( 0, "FATAL ERROR: unknown BATCH_API '" + BATCH_API + "' is not supported" )
+        print "FATAL ERROR: unknown BATCH_API '" + BATCH_API + "' is not supported"
 
         sys.exit( 1 )
 
