@@ -146,10 +146,6 @@ View
 <FONT class="footer">Last updated: {$report_time}</FONT></CENTER>
   </TD>
 
-  </TD>
-  <TD ALIGN="CENTER">
-    <IMG SRC="{$pie}">
-  </TD>
 </TR>
 </TABLE>
 
