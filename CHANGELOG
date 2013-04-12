@@ -1,6 +1,69 @@
 
 	LEGEND	f: fixed - c: changed - a: added - r: removed
 
+1.0:
+
+    jobmond)
+
+        a: now supports multiple udp send channels
+        a: now supports job arrays
+        c: updated Gmetric XDR protocol to version 3.1+ compatible
+
+        c: gmond.conf parsing has been rewritten to handle include's and 
+           multiple send channels
+        c: METRIC_MAX_VAL_LEN is now determined from gmond.conf
+        c: utilize new job monarch protocol
+
+        f: can now handle new PBSQuery / pbs_python versions
+        f: default gmond.conf search location is now /etc/ganglia/gmond.conf
+        f: fatal error's are now printed to shell upon startup, not just syslog
+        f: more error checking and miscellanious bugfixes
+
+    jobarchived)
+
+        r: no longer use pyPgSQL for postgres database
+        c: now use psycopg2 module for postgres database
+
+        a: job thread now utilizes db commits and rollbacks
+        a: now use USER/PASS authentication to database (in stead of hostbased)
+
+        c: database schema: changed job_id to varchar to support job arrays
+        c: database schema: changed job_name max length to 255, just like 
+           torque
+        c: database schema: added username/password role authentication
+        c: utilize new job monarch protocol
+
+        f: job thread no longer hangs when insert/update of a job in database 
+           fails 
+        f: rewrite of job (finished) detection: all finished jobs again 
+           properly detected
+        f: job checking now done post-parsing not while parsing
+        f: more error checking and miscellanious bugfixes
+
+    web)
+
+        r: removed Pie chart
+        r: removed TemplatePower
+        r: removed php ini_set's and time limit directive: should be handled in
+           php.ini
+        r: removed "Get Fresh Data" button: served no purpose anymore
+        a: now utilize Dwoo templates for html output
+
+        a: now use USER/PASS authentication to database (in stead of hostbased)
+        a: ClusterImage now drops a shadow below nodes
+        a: RRDs now show "Last: Min: Avg: Max:" values in legend
+
+        c: utilize new job monarch protocol
+        c: all templates rewritten from TemplatePower to Dwoo
+        c: graph.php now used for overview and archive
+        c: RRDs job start/finish line is now dashed green/red line with legend
+
+        f: some dbase fields are now CAST to INT for php since postgres now 
+           requires explicit casts
+        f: sort order descending/ascending is now correct
+        f: many, many speed and memory improvements
+        f: more error checking and miscellanious bugfixes
+
 0.4:
 
 	jobmond)
