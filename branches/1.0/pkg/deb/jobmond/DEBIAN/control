@@ -1,10 +1,10 @@
 Package: jobmonarch-jobmond
-Version: 0.2-1
+Version: 1.0-1
 Section: misc
 Priority: optional
 Architecture: all
 Essential: no
 Depends: python, pbs-python, ganglia-monitor
 Installed-Size: 44K
-Maintainer: Ramon Bastiaans <bastiaans@sara.nl>
+Maintainer: Job Monarch Development team <jobmonarch-developers@lists.sourceforge.net>
 Description: Job Monitoring Daemon
