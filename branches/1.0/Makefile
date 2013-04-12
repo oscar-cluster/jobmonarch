@@ -11,7 +11,7 @@ FAKEROOT = fakeroot
 # 
 WEBDIR = /var/www/ganglia
 
-VERSION = 0.4SVN
+VERSION = 1.0
 RELEASE = 1
 
 REQUIRED = ./jobarchived ./jobmond ./web
