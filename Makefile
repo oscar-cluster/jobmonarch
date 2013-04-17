@@ -11,7 +11,7 @@ FAKEROOT = fakeroot
 # 
 WEBDIR = /var/www/ganglia
 
-VERSION = 0.4SVN
+VERSION = 1.0
 RELEASE = 1
 
 REQUIRED = ./jobarchived ./jobmond ./web
@@ -117,7 +117,7 @@ rpm-jobmond:	${REQUIRED}
 	mv jobmonarch-jobmond-${VERSION}-${RELEASE}/jobmonarch-jobmond-${VERSION}-${RELEASE}.spec.new \
 	jobmonarch-jobmond-${VERSION}-${RELEASE}/jobmonarch-jobmond-${VERSION}-${RELEASE}.spec )
 	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}; \
-	${FAKEROOT} rpmbuild -bb jobmonarch-jobmond-${VERSION}-${RELEASE}.spec )
+	${FAKEROOT} rpmbuild --buildroot=${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE} -bb jobmonarch-jobmond-${VERSION}-${RELEASE}.spec )
 	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}.rpm ..
 
 rpm-jobarchived:	${REQUIRED}
@@ -144,7 +144,7 @@ rpm-jobarchived:	${REQUIRED}
 	mv jobmonarch-jobarchived-${VERSION}-${RELEASE}/jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec.new \
 	jobmonarch-jobarchived-${VERSION}-${RELEASE}/jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec )
 	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}; \
-	${FAKEROOT} rpmbuild -bb jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec )
+	${FAKEROOT} rpmbuild --buildroot=${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE} -bb jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec )
 	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}.rpm ..
 
 rpm-webfrontend:	${REQUIRED}
@@ -164,7 +164,7 @@ rpm-webfrontend:	${REQUIRED}
 	mv jobmonarch-webfrontend-${VERSION}-${RELEASE}/jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec.new \
 	jobmonarch-webfrontend-${VERSION}-${RELEASE}/jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec )
 	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}; \
-	${FAKEROOT} rpmbuild -bb jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec )
+	${FAKEROOT} rpmbuild --buildroot ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE} -bb jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec )
 	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}.rpm ..
 
 clean:	${TMPDIR}/.monarch_buildroot

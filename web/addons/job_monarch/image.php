@@ -19,129 +19,144 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * SVN $Id: image.php 329 2007-04-22 13:36:26Z bastiaans $
+ * SVN $Id$
  */
-
-//ini_set("memory_limit","1G");
-//set_time_limit(0);
 
 include_once "./libtoga.php";
 
-if ( !empty( $_GET ) )
-{
+if ( !empty( $_GET ) ) {
         extract( $_GET );
 }
 
-$httpvars	= new HTTPVariables( $HTTP_GET_VARS, $_GET );
-$view		= $httpvars->getHttpVar( "view" );
-$host		= $httpvars->getHttpVar( "host" );
-$query		= $httpvars->getHttpVar( "query" );
-$clustername	= $httpvars->getClusterName();
+function checkSessionData() {
 
-global $mySession, $myData, $myXML;
+    global $_SESSION;
 
-//printf( "c %s\n", $clustername );
+    session_start();
 
-$mySession      = new SessionHandler( $clustername );
-$mySession->checkSession();
+    if( isset( $_SESSION["data"] ) ) 
+    {
+        $myxml_data    = &$_SESSION["data"];
+    } 
+    else 
+    {
+        $myxml_data    = null;
+    }
 
-$session        = $mySession->getSession();
-$myXML		= $session['data'];
+    if( $myxml_data == null ) 
+    {
+        $ds             = new DataSource();
+        $myxml_data     = $ds->getData();
+    }
+    return $myxml_data;
+}
 
-$myData         = new DataGatherer( $clustername );
-$myData->parseXML( $myXML );
 
-$mySession->updatePollInterval( $myData->getPollInterval() );
-$mySession->endSession();
+$httpvars = new HTTPVariables( $HTTP_GET_VARS, $_GET );
+$view = $httpvars->getHttpVar( "j_view" );
+$clustername = $httpvars->getClusterName();
 
-//printf( "%s\n", strlen( $myXML ) );
-
-if( isset($jid) && ($jid!='')) $filter['jid']=$jid;
+if( isset($id) && ($id!='')) $filter['id']=$id;
 if( isset($state) && ($state!='')) $filter['state']=$state;
 if( isset($owner) && ($owner!='')) $filter['owner']=$owner;
 if( isset($queue) && ($queue!='')) $filter['queue']=$queue;
-if( isset($host) && ($host!='')) $filter['host']=$host;
-if( isset($query) && ($query!='')) $filter['query']=$query;
 
-function drawHostImage()
-{
-	global $clustername, $hostname, $myData;
+function drawHostImage() {
 
-	if( $myData->isJobmonRunning() )
-	{
-		$ic = new HostImage( $myData, $clustername, $hostname );
-	}
-	else
-	{
-		$ic = new EmptyImage();
-	}
+    global $clustername, $hostname, $data_gatherer;
 
-	$ic->draw();
+    $ds             = new DataSource();
+    $myxml_data     = $ds->getData();
+
+    $data_gatherer    = new DataGatherer( $clustername );
+
+    $data_gatherer->parseXML( $myxml_data );
+
+    if( $data_gatherer->isJobmonRunning() )
+        $ic = new HostImage( $data_gatherer, $clustername, $hostname );
+    else
+        $ic = new EmptyImage();
+
+    $ic->draw();
 }
 
-function drawSmallClusterImage() 
-{
-	global $clustername, $myData, $myXML;
+function drawSmallClusterImage() {
 
-	//printf( "%s\n", strlen( $myXML ) );
+    global $clustername, $data_gatherer;
 
-	if( $myData->isJobmonRunning() )
-	{
-		//$ic = new ClusterImage( $myXML, $clustername );
-		$ic = new ClusterImage( $myData, $clustername );
-		$ic->setSmall();
-		//printf( "is running\n" );
-	}
-	else
-	{
-		$ic = new EmptyImage();
-		//printf( "not running\n" );
-	}
+    $ds             = new DataSource();
+    $myxml_data     = $ds->getData();
 
-	$ic->draw();
+    $data_gatherer    = new DataGatherer( $clustername );
+
+    $data_gatherer->parseXML( $myxml_data );
+
+    if( $data_gatherer->isJobmonRunning() ) {
+        $ic = new ClusterImage( $myxml_data, $clustername );
+        $ic->setSmall();
+    } else {
+        $ic = new EmptyImage();
+    }
+
+    $ic->draw();
 }
 
-function drawBigClusterImage()
-{
-	global $filter, $clustername, $myXML, $myData;
+function drawBigClusterImage() {
 
-	//$ic = new ClusterImage( $myXML, $clustername );
-	$ic = new ClusterImage( $myData, $clustername );
-	$ic->setBig();
+    global $filter, $clustername;
 
-	if( isset( $filter ) )
-	{
-		foreach( $filter as $filtername=>$filtervalue )
-		{
-			$ic->setFilter( $filtername, $filtervalue );
-		}
-	}
-	$ic->draw();
+    $myxml_data    = checkSessionData();
+
+    $ic = new ClusterImage( $myxml_data, $clustername );
+    $ic->setBig();
+
+    if( isset( $filter ) ) {
+        foreach( $filter as $filtername=>$filtervalue ) {
+            switch( $filtername ) {
+
+                case "id":
+                    $ic->setFilter( 'jobid', $filtervalue );
+                    break;
+                case "owner":
+                    $ic->setFilter( 'owner', $filtervalue);
+                    break;
+                case "queue":
+                    $ic->setFilter( 'queue', $filtervalue);
+                    break;
+                case "state":
+                    $ic->setFilter( 'status', $filtervalue);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    $ic->draw();
 }
 
-switch( $view ) 
-{
-	case "small-clusterimage":
+switch( $view ) {
 
-		drawSmallClusterImage();
-		
-		break;
+    case "small-clusterimage":
 
-	case "big-clusterimage":
+        drawSmallClusterImage();
+        
+        break;
 
-		drawBigClusterImage();
-	
-		break;
+    case "big-clusterimage":
 
-	case "hostimage":
+        drawBigClusterImage();
+    
+        break;
 
-		drawHostImage();
-	
-		break;
+    case "hostimage":
 
-	default:
+        drawHostImage();
+    
+        break;
 
-		break;
+    default:
+
+        break;
 }
 
 ?>

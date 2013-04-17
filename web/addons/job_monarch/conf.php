@@ -21,12 +21,11 @@ $COLUMN_NODES = true;
 
 // Path to Ganglia's web frontend root
 //
-$GANGLIA_PATH = "/var/www/test-ganglia";
-//$GANGLIA_PATH = "../..";
+$GANGLIA_PATH = "/var/www/ganglia/";
 
 // Format of how to display a date and time in human readable format
 //
-$DATETIME_FORMAT = "%d %b %Y %H:%M:%S";
+$DATETIME_FORMAT = "%a %d %b %Y %H:%M:%S";
 
 // Max size of small clusterimage
 // (250 pixels is same width as Ganglia's pie chart)
@@ -40,11 +39,11 @@ $SMALL_CLUSTERIMAGE_NODEWIDTH = 7;
 // Max size of small clusterimage
 // (250 pixels is same width as Ganglia's pie chart)
 //
-$BIG_CLUSTERIMAGE_MAXWIDTH = 700;
+$BIG_CLUSTERIMAGE_MAXWIDTH = 500;
 
-// The size of a single node in the big clusterimage
+// The size of a single node in the small clusterimage
 //
-$BIG_CLUSTERIMAGE_NODEWIDTH = 14;
+$BIG_CLUSTERIMAGE_NODEWIDTH = 11;
 
 // Max size of small host image
 //
@@ -78,20 +77,24 @@ $DATA_SOURCE = '127.0.0.1:8652';
 
 // Is there a jobarchive?
 //
-$JOB_ARCHIVE = true;
+$JOB_ARCHIVE = false;
 
 // Path to the job archive rrd files
 //
 $JOB_ARCHIVE_DIR = "/path/to/my/archive";
 
-// Location of the job archive database
+// Location of the job archive (postgres) database
 // [syntax: <ip>/<dbase>]
 //
-$JOB_ARCHIVE_DBASE = "127.0.0.1/jobarch";
+$JOB_ARCHIVE_DBASE = "127.0.0.1/jobarchive";
 
-// Path to rrdtool binary
+// Username to connect to the SQL database
 //
-$RRDTOOL = "/usr/bin/rrdtool";
+$JOB_ARCHIVE_SQL_USER = "jobarchive";
+
+// Password to connect to the SQL database: change me
+//
+//$JOB_ARCHIVE_SQL_PASSWORD = "";
 
 // Include cluster specific settings here, 
 // they will override any (global) settings above
@@ -99,6 +102,4 @@ $RRDTOOL = "/usr/bin/rrdtool";
 //
 //$CLUSTER_CONFS["Example Cluster"]	= "./clusterconf/example.php";
 //
-$CLUSTER_CONFS["LISA Cluster"]          = "./clusterconf/lisa-example.php";
-$CLUSTER_CONFS["GINA Cluster"]          = "./clusterconf/gina-example.php";
 ?>
