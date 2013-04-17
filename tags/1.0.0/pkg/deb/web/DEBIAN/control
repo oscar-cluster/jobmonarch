@@ -1,0 +1,10 @@
+Package: jobmonarch-webfrontend
+Version: 1.0-1
+Section: misc
+Priority: optional
+Architecture: all
+Essential: no
+Depends: php5, php5-gd, rrdtool
+Installed-Size: 304K
+Maintainer: Job Monarch Development team <jobmonarch-developers@lists.sourceforge.net>
+Description: Job MonArch's Web Frontend
