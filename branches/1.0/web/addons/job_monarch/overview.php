@@ -49,6 +49,7 @@ $myxml_data = $ds->getData();
 $data_gatherer = new DataGatherer( $clustername );
 $data_gatherer->parseXML( $myxml_data );
 
+$parsetime = $data_gatherer->parsetime;
 $heartbeat = $data_gatherer->getHeartbeat();
 $jobs      = $data_gatherer->getJobs();
 $gnodes    = $data_gatherer->getNodes();

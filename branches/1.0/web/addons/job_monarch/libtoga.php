@@ -563,8 +563,9 @@ class DataGatherer
 
     function DataGatherer( $cluster )
     {
-        $this->cluster    = $cluster;
-        $this->httpvars = $httpvars;
+        $this->cluster   = $cluster;
+        $this->httpvars  = $httpvars;
+        $this->parsetime = 0;
     }
 
     function parseXML( $data )
@@ -572,6 +573,8 @@ class DataGatherer
 
         $this->parser         = xml_parser_create();
         $this->xmlhandler     = new TorqueXMLHandler( $this->cluster );
+
+        $start = gettimeofday();
 
         xml_parser_set_option( $this->parser, XML_OPTION_CASE_FOLDING, 0 );
         xml_set_element_handler( $this->parser, array( &$this->xmlhandler, 'startElement' ), array( &$this->xmlhandler, 'stopElement' ) );
@@ -582,6 +585,10 @@ class DataGatherer
         }
         $handler = &$this->xmlhandler;
         $handler->finishUp();
+
+        $end = gettimeofday();
+
+        $this->parsetime = ($end['sec'] + $end['usec']/1e6) - ($start['sec'] + $start['usec']/1e6);
     }
 
     function printInfo()

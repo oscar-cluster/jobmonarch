@@ -6,7 +6,9 @@
 
 Ganglia web version {$webfrontendversion}<BR>
 
+{if "$showparsetime" == "yes"}
 Downloading and parsing ganglia's XML tree took {$parsetime}.<BR>
+{/if}
 Images created with <A HREF="http://www.rrdtool.org/">RRDTool</A>.<BR>
 </FONT>
 </CENTER>
