@@ -1,0 +1,36 @@
+Source: jobmonarch
+Section: misc
+Priority: optional
+Maintainer: Olivier LAHAYE <olivier.lahaye@cea.fr>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.3
+Homepage: https://oss.trac.surfsara.nl/jobmonarch
+
+
+Package: jobmonarch-webfrontend
+Version: 1.0-1
+Architecture: all
+Essential: no
+Depends: php5, php5-gd, rrdtool
+Installed-Size: 304K
+Maintainer: Job Monarch Development team <jobmonarch-developers@lists.sourceforge.net>
+Description: Job MonArch's Web Frontend
+
+Package: jobmonarch-jobmond
+Version: 1.0-1
+Architecture: all
+Essential: no
+Depends: python, pbs-python, ganglia-monitor
+Installed-Size: 44K
+Maintainer: Job Monarch Development team <jobmonarch-developers@lists.sourceforge.net>
+Description: Job Monitoring Daemon
+
+Package: jobmonarch-jobarchived
+Version: 1.0-1
+Architecture: all
+Essential: no
+Depends: python, gmetad, rrdtool, postgresql, python-psycopg2
+Installed-Size: 76K
+Maintainer: Job Monarch Development team <jobmonarch-developers@lists.sourceforge.net>
+Description: Job Archiving Daemon
+

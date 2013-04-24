@@ -1,0 +1,12 @@
+#!/bin/sh
+
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
+if [ -x /etc/init.d/jobmond ] 
+	then
+
+		update-rc.d -f jobmond defaults
+
+fi
+
+/etc/init.d/jobmond restart

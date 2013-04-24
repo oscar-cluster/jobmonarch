@@ -1,0 +1,6 @@
+#!/bin/sh
+
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
+/etc/init.d/jobmond stop || true
+update-rc.d -f jobmond remove || true
