@@ -434,7 +434,7 @@ function makeHeader( $page_call, $title, $longtitle )
 
 function makeFooter() 
 {
-    global $dwoo, $version, $parsetime, $monarchversion;
+    global $dwoo, $version, $parsetime, $monarchversion, $view;
 
     $tpl = new Dwoo_Template_File("templates/footer.tpl");
     $tpl_data = new Dwoo_Data();
@@ -453,7 +453,11 @@ function makeFooter()
         $tpl_data->assign("webbackendversion", $version["gmond"]);
     }
 
-    $tpl_data->assign("parsetime", sprintf("%.4f", $parsetime) . "s");
+    if( isset( $parsetime ) && ($view !== "search" ) )
+    {
+        $tpl_data->assign("showparsetime", "yes" );
+        $tpl_data->assign("parsetime", sprintf("%.4f", $parsetime) . "s");
+    }
 
     $dwoo->output($tpl, $tpl_data);
 }
