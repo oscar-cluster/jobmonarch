@@ -25,7 +25,7 @@
 # vi :set ts=4
 
 import sys, getopt, ConfigParser, time, os, socket, string, re
-import xdrlib, socket, syslog, xml, xml.sax, shlex, os.path
+import xdrlib, socket, syslog, xml, xml.sax, shlex, os.path, pwd
 from xml.sax.handler import feature_namespaces
 from collections import deque
 from glob import glob
@@ -1249,6 +1249,139 @@ def do_nodelist( nodes ):
                 nodeslist.append( host )
     return nodeslist
 
+class SLURMDataGatherer( DataGatherer ):
+
+    global pyslurm
+
+    """This is the DataGatherer for SLURM"""
+
+    def __init__( self ):
+
+        """Setup appropriate variables"""
+
+        self.jobs       = { }
+        self.timeoffset = 0
+        self.dp         = DataProcessor()
+
+    def getNodeData( self ):
+
+        slurm_type = pyslurm.node()
+
+        nodedict = slurm_type.get()
+
+        return nodedict
+
+    def getJobData( self ):
+
+        """Gather all data on current jobs"""
+
+        joblist            = {}
+
+        self.cur_time  = time.time()
+
+        slurm_type = pyslurm.job()
+        joblist    = slurm_type.get()
+
+        jobs_processed    = [ ]
+
+        for name, attrs in joblist.items():
+            display_queue = 1
+            job_id        = name
+
+            name          = self.getAttr( attrs, 'name' )
+            queue         = self.getAttr( attrs, 'partition' )
+
+            if QUEUE:
+                for q in QUEUE:
+                    if q == queue:
+                        display_queue = 1
+                        break
+                    else:
+                        display_queue = 0
+                        continue
+            if display_queue == 0:
+                continue
+
+            owner_uid        = attrs[ 'user_id' ]
+            ( owner, owner_pw, owner_uid, owner_gid, owner_gecos, owner_dir, owner_shell ) = pwd.getpwuid( owner_uid )
+
+            requested_time   = self.getAttr( attrs, 'time_limit' )
+            requested_memory = self.getAttr( attrs, 'pn_min_memory' )
+
+            ppn = self.getAttr( attrs, 'ntasks_per_node' )
+
+            ( something, status_long ) = self.getAttr( attrs, 'job_state' )
+
+            status = 'Q'
+
+            if status_long == 'RUNNING':
+
+                status = 'R'
+
+            elif status_long == 'COMPLETED':
+
+                continue
+
+            jobs_processed.append( job_id )
+
+            queued_timestamp = self.getAttr( attrs, 'submit_time' )
+
+            start_timestamp = ''
+            nodeslist       = ''
+
+            if status == 'R':
+
+                start_timestamp = self.getAttr( attrs, 'start_time' )
+                nodes           = attrs[ 'alloc_node' ].split(',')
+
+                nodeslist       = do_nodelist( nodes )
+
+                if DETECT_TIME_DIFFS:
+
+                    # If a job start if later than our current date,
+                    # that must mean the Torque server's time is later
+                    # than our local time.
+                
+                    if int( start_timestamp ) > int( int( self.cur_time ) + int( self.timeoffset ) ):
+
+                        self.timeoffset = int( int(start_timestamp) - int(self.cur_time) )
+
+            elif status == 'Q':
+
+                nodeslist       = str( attrs[ 'num_nodes' ] )
+
+            else:
+                start_timestamp = ''
+                nodeslist       = ''
+
+            myAttrs                = { }
+
+            myAttrs[ 'name' ]             = str( name )
+            myAttrs[ 'queue' ]            = str( queue )
+            myAttrs[ 'owner' ]            = str( owner )
+            myAttrs[ 'requested_time' ]   = str( requested_time )
+            myAttrs[ 'requested_memory' ] = str( requested_memory )
+            myAttrs[ 'ppn' ]              = str( ppn )
+            myAttrs[ 'status' ]           = str( status )
+            myAttrs[ 'start_timestamp' ]  = str( start_timestamp )
+            myAttrs[ 'queued_timestamp' ] = str( queued_timestamp )
+            myAttrs[ 'reported' ]         = str( int( int( self.cur_time ) + int( self.timeoffset ) ) )
+            myAttrs[ 'nodes' ]            = nodeslist
+            myAttrs[ 'domain' ]           = fqdn_parts( socket.getfqdn() )[1]
+            myAttrs[ 'poll_interval' ]    = str( BATCH_POLL_INTERVAL )
+
+            if self.jobDataChanged( self.jobs, job_id, myAttrs ) and myAttrs['status'] in [ 'R', 'Q' ]:
+
+                self.jobs[ job_id ] = myAttrs
+
+        for id, attrs in self.jobs.items():
+
+            if id not in jobs_processed:
+
+                # This one isn't there anymore; toedeledoki!
+                #
+                del self.jobs[ id ]
+
 class SgeDataGatherer(DataGatherer):
 
     jobs = {}
@@ -1904,7 +2037,7 @@ def main():
 
     """Application start"""
 
-    global PBSQuery, PBSError, lsfObject
+    global PBSQuery, PBSError, lsfObject, pyslurm
     global SYSLOG_FACILITY, USE_SYSLOG, BATCH_API, DAEMONIZE
 
     if not processArgs( sys.argv[1:] ):
@@ -1942,6 +2075,16 @@ def main():
             sys.exit( 1)
 
         gather = LsfDataGatherer()
+
+    elif BATCH_API == 'slurm':
+
+        try:
+            import pyslurm
+        except:
+            print "FATAL ERROR: BATCH_API set to 'slurm' but python module is not found or installed"
+            sys.exit( 1)
+
+        gather = SLURMDataGatherer()
 
     else:
         print "FATAL ERROR: unknown BATCH_API '" + BATCH_API + "' is not supported"
