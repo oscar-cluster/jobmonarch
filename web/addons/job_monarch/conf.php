@@ -81,7 +81,7 @@ $JOB_ARCHIVE = false;
 
 // Path to the job archive rrd files
 //
-$JOB_ARCHIVE_DIR = "/path/to/my/archive";
+$JOB_ARCHIVE_DIR = "/var/lib/jobarchive";
 
 // Location of the job archive (postgres) database
 // [syntax: <ip>/<dbase>]
