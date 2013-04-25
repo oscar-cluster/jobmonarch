@@ -2,7 +2,15 @@
 %define debug_package %{nil}
 %define __check_files %{nil}
 
-%define gangliaroot        %{_datadir}/ganglia
+%if 0%{?suse_version}
+%define web_prefixdir /srv/www/htdocs/ganglia
+%else
+%define web_prefixdir %{custom_web_prefixdir}
+%endif
+
+%{!?custom_web_prefixdir: %define web_prefixdir /var/www/html/ganglia}
+
+%define gangliaroot        %{web_prefixdir}/ganglia
 %define gangliatemplatedir %{gangliaroot}/templates
 %define gangliaaddonsdir   %{gangliaroot}/addons
 
@@ -141,6 +149,8 @@ if [ "$1" = 1 ]; then
     sed -i -e '/^.*modify me:.*$/d' -e 's/^#CREATE/CREATE/g' -e "s/'';/'$DB_PASSWD';/g" %{_datadir}/jobarchived/job_dbase.sql
     # Set the password in the jobarchived config.
     sed -i -s "s/^#JOB_SQL_PASSWORD.*$/JOB_SQL_PASSWORD\t\t: $DB_PASSWD/g" %{_sysconfdir}/jobarchived.conf
+    # Set the password in the ganglia conf.php
+    sed -i -e "s|^//\$JOB_ARCHIVE_SQL_PASSWORD.*|\$JOB_ARCHIVE_SQL_PASSWORD = \"$DB_PASSWD\"|g" %{gangliaaddonsdir}/job_monarch/conf.php
     # Create the database
     su -l postgres -c "%{_bindir}/createdb jobarchive"
     # Ccreate the tables.
