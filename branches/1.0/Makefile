@@ -1,16 +1,24 @@
 # Where to build
 #
 TMPDIR = /tmp
-DESTDIR = /usr/local
 
-# Clear this if you don't want to use ${FAKEROOT}
-#
-FAKEROOT = fakeroot
+# Where to install
+DESTDIR = 
+
+# Install prefix
+PREFIX = /usr/local
 
 # What is the location of the Ganglia web frontend
 # i.e.: where to we install Job Monarch's web frontend addon
 # 
-WEBDIR = /var/www/ganglia
+GANGLIA_ROOT = $(PREFIX)/ganglia
+
+# Where jobarchived RRDS are stored
+JOBARCHIVE_RRDS = $(PREFIX)/jobmonarch
+
+# Clear this if you don't want to use ${FAKEROOT}
+#
+FAKEROOT = fakeroot
 
 VERSION = 1.0
 RELEASE = 1
@@ -24,42 +32,61 @@ all:	tarball deb rpm
 
 tarball:	tarball-gzip tarball-bzip
 
-tarball-gzip:	${REQUIRED} rpmspec
+tarball-gzip:	${REQUIRED} ./pkg/rpm/jobmonarch.spec
 	mkdir -p ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}
 	( rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
 	. ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION} )
 	( cd ${TMPDIR}/.monarch_buildroot; tar zcvf ganglia_jobmonarch-${VERSION}.tar.gz ./ganglia_jobmonarch-${VERSION} )
 	mv ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}.tar.gz ..
 
-tarball-bzip:	${REQUIRED} rpmspec
+tarball-bzip:	${REQUIRED} ./pkg/rpm/jobmonarch.spec
 	mkdir -p ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}
 	( rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
 	. ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION} )
 	( cd ${TMPDIR}/.monarch_buildroot; tar jcvf ganglia_jobmonarch-${VERSION}.tar.bz2 ./ganglia_jobmonarch-${VERSION} )
 	mv ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}.tar.bz2 ..
 
-rpmspec: pkg/rpm/jobmonarch.spec.in
-	sed -e 's/__VERSION__/$(VERSION)/g' -e 's/__RELEASE__/$(RELEASE)/g' ./pkg/rpm/jobmonarch.spec.in > jobmonarch.spec
+rpmspec: ./pkg/rpm/jobmonarch.spec
 
-debpkgdir: pkg/deb/debian
-	rsync -a --exclude=.svn pkg/deb/debian debian
+./pkg/rpm/jobmonarch.spec: pkg/rpm/jobmonarch.spec.in
+	sed -e 's/__VERSION__/$(VERSION)/g' -e 's/__RELEASE__/$(RELEASE)/g' ./pkg/rpm/jobmonarch.spec.in > ./pkg/rpm/jobmonarch.spec
+
+debian: pkg/deb/debian
+	rsync -a --exclude=.svn pkg/deb/debian ./
 	sed -i -e 's/^Version:.*$//Version: $(VERSION)-$(RELEASE)/g' ./debian/control
 
 rpm: tarball-bzip
 	rpmbuild -tb ../ganglia_jobmonarch-${VERSION}.tar.bz2
 
-deb: debpkgdir
+deb: debian
 	dpkg-buildpackage -b
 
 install:
-	# Files in SBIN_DIR
-	install -m 0755 -d $(DESTDIR)/usr/sbin
-	install -m 0755 jobmond/jobmond.py $(DESTDIR)/usr/sbin/
-	install -m 0755 jobarchived/jobarchived.py $(DESTDIR)/usr/sbin/
-	(cd $(DESTDIR)/usr/sbin/; ln -s jobmond.py jobmond; ln -s jobarchived.py jobarchived)
-	#
-	# Files specific to distros if /etc/sysconfig => rpm else (/etc/default => debian)
-	if test -d /etc/sysconfig; then \
+	@#
+	@# Set the correct GANGLIA_PATH.
+	@#
+	@echo "\nUsing $(GANGLIA_ROOT) as Ganglia root installation path. If it's not what"
+	@echo "you want, use make GANGLIA_ROOT=/path/to/your/ganglia/root ."
+	@sed -i -e 's|/var/www/ganglia/|$(GANGLIA_ROOT)/|g' web/addons/job_monarch/conf.php
+	@#
+	@# Set the correct JOBARCHIVE_RRDS in jobarchve.conf and ganglia conf.php
+	@#
+	@echo "\nUsing $(JOBARCHIVE_RRDS) as jobarchive path to  store rrds files. If it's not what"
+	@echo "you want, use make JOBARCHIVE_RRDS=/path/to/you/jobarchived/rrdsfiles ."
+	@sed -i -e 's|/var/lib/jobarchive|$(JOBARCHIVE_RRDS)|g' jobarchived/jobarchived.conf web/addons/job_monarch/conf.php
+	@#
+	@# Files in SBIN_DIR
+	@#
+	@echo "\nInstalling jobmond.py and jobarchived.py to $(PREFIX)/sbin"
+	@install -m 0755 -d $(DESTDIR)$(PREFIX)/sbin
+	@install -m 0755 jobmond/jobmond.py $(DESTDIR)$(PREFIX)/sbin/
+	@install -m 0755 jobarchived/jobarchived.py $(DESTDIR)$(PREFIX)/sbin/
+	@(cd $(DESTDIR)$(PREFIX)/sbin/; ln -s jobmond.py jobmond; ln -s jobarchived.py jobarchived)
+	@#
+	@# Files specific to distros if /etc/sysconfig => rpm else (/etc/default => debian)
+	@#
+	@echo "\nInstalling service files in $(DESTDIR)/etc"
+	@if test -d /etc/sysconfig; then \
 		install -m 0755 -d $(DESTDIR)/etc/rc.d/init.d; \
 		install -m 0755 pkg/rpm/init.d/jobmond $(DESTDIR)/etc/rc.d/init.d/; \
 		install -m 0755 pkg/rpm/init.d/jobarchived $(DESTDIR)/etc/rc.d/init.d/; \
@@ -74,40 +101,37 @@ install:
 		install -m 0755 pkg/deb/default/jobmond $(DESTDIR)/etc/default; \
 		install -m 0755 pkg/deb/default/jobarchived $(DESTDIR)/etc/default; \
 	fi
-	#
-	# Files in /etc
-	#
-	install -m 0644 jobmond/jobmond.conf $(DESTDIR)/etc; \
-	install -m 0644 jobarchived/jobarchived.conf $(DESTDIR)/etc; \
-	#
-	# Files in /usr/share
-	#
-	install -m 0755 -d $(DESTDIR)/usr/share/jobarchived/
-	install -m 0755 jobarchived/job_dbase.sql $(DESTDIR)/usr/share/jobarchived/
-	#
-	# Create the /var/lib/jobarchive directory where rrds are stored.
-	#
-	install -m 0755 -d $(DESTDIR)/var/lib/jobarchive/
-	#
-	# Files for ganglia (adapt to rpm or deb or unknown ganglia packaging)
-	#
-	if test -d /etc/sysconfig; then \
-		install -m 0755 -d $(DESTDIR)/usr/share/ganglia; \
-		(cd web; rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php . $(DESTDIR)/usr/share/ganglia); \
-	elif test -d /etc/default; then \
-		install -m 0755 -d $(DESTDIR)/usr/share/ganglia-webfrontend; \
-		(cd web; rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php . $(DESTDIR)/usr/share/ganglia-webfrontend); \
-	else \
-		install -m 0755 -d $(DESTDIR)/$(WEBDIR); \
-		(cd web; rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php . $(DESTDIR)/$(WEBDIR)); \
-	fi
-
+	@#
+	@# Files in /etc
+	@#
+	@echo "\nInstalling config files jobmond.conf jobarchived.conf in $(DESTDIR)/etc"
+	@install -m 0644 jobmond/jobmond.conf $(DESTDIR)/etc
+	@install -m 0644 jobarchived/jobarchived.conf $(DESTDIR)/etc
+	@#
+	@# Files in /usr/share
+	@#
+	@echo "\nInstalling job_dbase.sql in $(PREFIX)/share/jobarchived"
+	@install -m 0755 -d $(DESTDIR)$(PREFIX)/share/jobarchived
+	@install -m 0755 jobarchived/job_dbase.sql $(DESTDIR)$(PREFIX)/share/jobarchived/
+	@#
+	@# Create the /var/lib/jobarchive directory where rrds are stored.
+	@#
+	@echo "\nCreating the directory where RRDs will be stored: $(JOBARCHIVE_RRDS)"
+	@install -m 0755 -d $(DESTDIR)$(JOBARCHIVE_RRDS)
+	@#
+	@# Files for ganglia (adapt to rpm or deb or unknown ganglia packaging)
+	@#
+	@echo "\nInstalling Ganglia web interface to $(GANGLIA_ROOT) ."
+	@install -m 0755 -d $(DESTDIR)$(GANGLIA_ROOT)
+	@(cd web; rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php . $(DESTDIR)$(GANGLIA_ROOT)/)
+	@#
+	@echo "\nInstallation complete.\n"
 
 deb-webfrontend:	${REQUIRED}
 	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/${WEBDIR} >/dev/null
+	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/${GANGLIA_ROOT} >/dev/null
 	( cd web; rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
-	. ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/${WEBDIR} )
+	. ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/${GANGLIA_ROOT} )
 	( cd pkg/deb/web/DEBIAN; \
 	rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
 	. ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN )
@@ -164,5 +188,5 @@ deb-jobmond:	${REQUIRED}
 
 clean:
 	rm -rf ${TMPDIR}/.monarch_buildroot
-	rm -rf ./jobmonarch.spec
+	rm -rf ./pkg/rpm/jobmonarch.spec
 	rm -rf ./debian

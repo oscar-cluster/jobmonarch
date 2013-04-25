@@ -51,9 +51,10 @@ This package is the meta package that for installation of all jobmonarche compon
 Summary: jobarchived is the archiving daemon for jobmonarch.
 Requires: postgresql >= 8.1.22
 Requires: postgresql-server >= 8.1.22
+Requires: ganglia-gmond
 Requires: python >= 2.5
-Requires: python-rrdtool
 Requires: python-psycopg2
+Requires: rrdtool-python rrdtool
 
 %description -n jobmonarch-jobarchived
 jobmonach-jobarchived is the Job Archiving Daemon. It listens to Ganglia's
@@ -66,6 +67,7 @@ view all it's statistics.
 Summary: jobmond is the job monitoring daemon for jobmonarch.
 Requires: python >= 2.5
 Requires: pbs_python
+Requires: ganglia-gmetad
 # Requires: lsf_python
 
 %description -n jobmonarch-jobmond
@@ -74,8 +76,10 @@ batch statistics on jobs/nodes and submits them into Ganglia's XML stream.
 
 %package -n jobmonarch-webfrontend
 Summary: webfrontend is the ganglia webfrontend for jobmonarch.
-Requires: ganglia-gmetad >= 3.5.0 ganglia-web >= 3.5.7
+Requires: ganglia-web >= 3.5.7
 Requires: jobmonarch-jobmond = 1.0
+Requires: php-gd
+Requires: php-pgsql
 
 %description -n jobmonarch-webfrontend
  The Job Monarch web frontend interfaces with the
@@ -91,60 +95,60 @@ navigation and usage is intuitive.
 %install
 rm -rf $RPM_BUILD_ROOT
 
-# Set the correct GANGLIA_PATH.
-sed -i -e 's|/var/www/ganglia/|%{gangliaroot}/|g' web/addons/job_monarch/conf.php
 
 # Fix rrdtool web link in footer:
-sed -i -e 's|http:/www.rrdtool.com/|http:/oss.oetiker.ch/rrdtool/|g' ./web/addons/job_monarch/templates/footer.tpl
+#sed -i -e 's|http:/www.rrdtool.com/|http:/oss.oetiker.ch/rrdtool/|g' ./web/addons/job_monarch/templates/footer.tpl
 
-%__make install DESTDIR=$RPM_BUILD_ROOT
+# Install files in RPM_BUILD_ROOT
+%__make install \
+        PREFIX=/usr \
+        GANGLIA_ROOT=%{gangliaroot} \
+        JOBARCHIVE_RRDS=%{_sharedstatedir}/jobarchive \
+        DESTDIR=$RPM_BUILD_ROOT
 
-# Create the directory structure.
-#install -m 0755 -d $RPM_BUILD_ROOT/%{_sbindir}
-#install -m 0755 -d $RPM_BUILD_ROOT%{_initrddir}
-#install -m 0755 -d $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig
-#install -m 0755 -d $RPM_BUILD_ROOT%{gangliatemplatedir}
-#install -m 0755 -d $RPM_BUILD_ROOT%{gangliaaddonsdir}
-#install -m 0755 -d $RPM_BUILD_ROOT%{_datadir}/jobarchived/
-#install -m 0755 -d $RPM_BUILD_ROOT%{_sharedstatedir}/jobarchived/
-
-# Install jobmond files
-#install -m 0644 jobmond/jobmond.conf $RPM_BUILD_ROOT%{_sysconfdir}/
-#install -m 0755 jobmond/jobmond.py $RPM_BUILD_ROOT/%{_sbindir}/
-#install -m 0755 pkg/rpm/init.d/jobmond $RPM_BUILD_ROOT%{_initrddir}/
-#install -m 0755 pkg/rpm/sysconfig/jobmond $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/
-#(cd $RPM_BUILD_ROOT/%{_sbindir}/; ln -s jobmond.py jobmond)
-
-# Install jobarchived files
-#install -m 0644 jobarchived/jobarchived.conf $RPM_BUILD_ROOT%{_sysconfdir}/
-#install -m 0755 jobarchived/jobarchived.py $RPM_BUILD_ROOT/%{_sbindir}/
-#install -m 0755 pkg/rpm/init.d/jobarchived $RPM_BUILD_ROOT%{_initrddir}/
-#install -m 0755 pkg/rpm/sysconfig/jobarchived $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/
-#install -m 0755 jobarchived/job_dbase.sql $RPM_BUILD_ROOT%{_datadir}/jobarchived/
-#(cd $RPM_BUILD_ROOT/%{_sbindir}/; ln -s jobarchived.py jobarchived)
-
-# Install gangliaweb interface
-#cp %{gangliatemplatedir}/default/images/logo.jpg web/templates/job_monarch/images
-#cp -r web/templates/job_monarch $RPM_BUILD_ROOT%{gangliatemplatedir}/job_monarch
-#cp -r web/addons/job_monarch $RPM_BUILD_ROOT%{gangliaaddonsdir}/job_monarch
 
 %clean
 %__rm -rf $RPM_BUILD_ROOT
 
 %post -n jobmonarch-jobmond
-if [ -x /sbin/chkconfig ]; then
+# $1 = 1 => install ($1 = 2 => upgrade)
+if [ "$1" = 1 ]; then
     /sbin/chkconfig --add jobmond
+    /sbin/service jobmond start
+elif [ "$1" = 2 ]; then
+    /sbin/service jobmond restart
 fi
 
 %post -n jobmonarch-jobarchived
-if [ -x /sbin/chkconfig ]; then
-    if [ ! -d /var/lib/pgsql/data/base ]; then
-        /sbin/service postgresql initdb
+# $1 = 1 => install ($1 = 2 => upgrade)
+if [ "$1" = 1 ]; then
+    if [ -x /usr/sbin/systemctl ]; then
+        if [ ! -d %{_sharedstatedir}/pgsql/data/base ]; then
+            %{_bindir}/postgresql-setup initdb
+        fi
+        %{_sbindir}/systemctl enable postgresql
+        %{_sbindir}/systemctl start postgresql
+    elif [ -x /sbin/chkconfig ]; then
+        if [ ! -d %{_sharedstatedir}/pgsql/data/base ]; then
+            /sbin/service postgresql initdb
+        fi
+	/sbin/chkconfig --level 235 postgresql on
+        /sbin/service postgresql start
     fi
-    /sbin/service postgresql start
-    su -l postgres -c "/usr/bin/createdb jobarchive"
-    su -l postgres -c "/usr/bin/psql -f /usr/share/jobarchived/job_dbase.sql jobarchive"
+    # Generate a 8 char password for the database:
+    export DB_PASSWD=$(tr -dc A-Za-z0-9_< /dev/urandom |head -c 8 | xargs)
+    # Set the password in the SQL script 
+    sed -i -e '/^.*modify me:.*$/d' -e 's/^#CREATE/CREATE/g' -e "s/'';/'$DB_PASSWD';/g" %{_datadir}/jobarchived/job_dbase.sql
+    # Set the password in the jobarchived config.
+    sed -i -s "s/^#JOB_SQL_PASSWORD.*$/JOB_SQL_PASSWORD\t\t: $DB_PASSWD/g" %{_sysconfdir}/jobarchived.conf
+    # Create the database
+    su -l postgres -c "%{_bindir}/createdb jobarchive"
+    # Ccreate the tables.
+    su -l postgres -c "%{_bindir}/psql -f %{_datadir}/jobarchived/job_dbase.sql jobarchive"
     /sbin/chkconfig --add jobarchived
+    /sbin/service jobarchived start
+elif [ "$1" = 2 ]; then
+    /sbin/service jobarchived restart
 fi
 
 %post -n jobmonarch-webfrontend
@@ -173,8 +177,8 @@ fi
 if [ "$1" = 0 ]; then
     echo "Make sure to set your Ganglia template to previous config now"
     echo ""
-    echo "In your Ganglia conf.php, remove this line:"
-    echo "\$template_name = \"job_monarch\";"
+    echo "In your Ganglia conf.php, restore your previous template:"
+    echo "\$template_name = \"default\";"
 fi
 
 %files
@@ -182,7 +186,7 @@ fi
 
 %files -n jobmonarch-jobmond
 %doc jobmond/examples
-%config %{_sysconfdir}/jobmond.conf
+%config(noreplace) %{_sysconfdir}/jobmond.conf
 %{_sysconfdir}/sysconfig/jobmond
 %{_initrddir}/jobmond
 %{_sbindir}/jobmond.py
@@ -190,7 +194,7 @@ fi
 
 %files -n jobmonarch-jobarchived
 %doc jobarchived/examples
-%config %{_sysconfdir}/jobarchived.conf
+%config(noreplace) %{_sysconfdir}/jobarchived.conf
 %{_sysconfdir}/sysconfig/jobarchived
 %{_initrddir}/jobarchived
 %dir %{_datadir}/jobarchived
@@ -206,7 +210,7 @@ fi
 %{gangliatemplatedir}/job_monarch/host_extra.tpl
 %dir %{gangliatemplatedir}/job_monarch/images
 %{gangliatemplatedir}/job_monarch/images/logo.jpg
-%config %{gangliaaddonsdir}/job_monarch/conf.php
+%config(noreplace) %{gangliaaddonsdir}/job_monarch/conf.php
 %{gangliaaddonsdir}/job_monarch/ajax-loader.gif
 %{gangliaaddonsdir}/job_monarch/cal.gif
 %{gangliaaddonsdir}/job_monarch/clusterconf
@@ -374,6 +378,7 @@ fi
 - Use make install to install the files
 - Fix the correct gangliaroot path
 - Fix the correct jobarchive rrd file path.
+- Generate a password for the database and update config files accordingly.
 
 * Tue Apr 23 2013 Olivier Lahaye <olivier.lahaye@free.fr> 1.0-2
 - Package missing files (/etc/sysconfig/{job{mond,archived}} and /etc/init.d scripts)
