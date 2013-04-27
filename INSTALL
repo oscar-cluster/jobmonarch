@@ -106,6 +106,8 @@ REQUIREMENTS
 		- php-pgsql v4.x.x
 		  (should come with Postgres)
 
+		- php-mbstring
+
 		- GD v2.x
 		  http://www.boutell.com/gd/
 
