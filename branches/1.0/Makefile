@@ -128,67 +128,8 @@ install:
 	@#
 	@echo "\nInstallation complete.\n"
 
-deb-webfrontend:	${REQUIRED}
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/${GANGLIA_ROOT} >/dev/null
-	( cd web; rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
-	. ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/${GANGLIA_ROOT} )
-	( cd pkg/deb/web/DEBIAN; \
-	rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
-	. ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN )
-	( cd ${TMPDIR}/.monarch_buildroot/; cat jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control \
-	| sed "s/^Version:.*$//Version: ${VERSION}-${RELEASE}/g" >jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control.new; \
-	mv jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control.new \
-	jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control )
-	( cd ${TMPDIR}/.monarch_buildroot/; ${FAKEROOT} dpkg -b jobmonarch-webfrontend_${VERSION}-${RELEASE} )
-	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}.deb ..
-
-deb-jobarchived:	${REQUIRED}
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/etc/init.d >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/etc/default >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/usr/sbin >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/usr/share/jobarchived >/dev/null
-	install -m 755 jobarchived/jobarchived.py ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/usr/sbin
-	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/usr/sbin; \
-	ln -s jobarchived.py jobarchived || true)
-	install jobarchived/jobarchived.conf ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/etc
-	install pkg/deb/init.d/jobarchived ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/etc/init.d
-	install pkg/deb/default/jobarchived ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/etc/default
-	install jobarchived/job_dbase.sql \
-	${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/usr/share/jobarchived
-	( cd pkg/deb/jobarchived/DEBIAN; \
-	rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
-	. ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN )
-	( cd ${TMPDIR}/.monarch_buildroot/; cat jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control \
-	| sed "s/^Version:.*$//Version: ${VERSION}-${RELEASE}/g" >jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control.new; \
-	mv jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control.new \
-	jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control )
-	( cd ${TMPDIR}/.monarch_buildroot/; ${FAKEROOT} dpkg -b jobmonarch-jobarchived_${VERSION}-${RELEASE} )
-	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}.deb ..
-
-deb-jobmond:	${REQUIRED}
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/etc/init.d >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/etc/default >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/usr/sbin >/dev/null
-	install -m 755 jobmond/jobmond.py ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/usr/sbin
-	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/usr/sbin; \
-	ln -s jobmond.py jobmond || true)
-	install jobmond/jobmond.conf ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/etc
-	install pkg/deb/init.d/jobmond ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/etc/init.d
-	install pkg/deb/default/jobmond ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/etc/default
-	( cd pkg/deb/jobmond/DEBIAN; \
-	rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
-	. ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN )
-	( cd ${TMPDIR}/.monarch_buildroot/; cat jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control \
-	| sed "s/^Version:.*$//Version: ${VERSION}-${RELEASE}/g" >jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control.new; \
-	mv jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control.new jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control )
-	( cd ${TMPDIR}/.monarch_buildroot/; ${FAKEROOT} dpkg -b jobmonarch-jobmond_${VERSION}-${RELEASE} )
-	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}.deb ..
-
 clean:
-	rm -rf ${TMPDIR}/.monarch_buildroot
-	rm -rf ./pkg/rpm/jobmonarch.spec
-	rm -rf ./debian/{files,*.log,jobmonarch-jobmond/,jobmonarch-jobarchived/,jobmonarch-webfrontend/,tmp/}
-	rm -f web/addons/job_monarch/conf.php
+	@rm -rf ${TMPDIR}/.monarch_buildroot
+	@rm -rf ./pkg/rpm/jobmonarch.spec
+	@(cd ./debian; rm -rf files *.log *.substvars jobmonarch/ jobmonarch-jobmond/ jobmonarch-jobarchived/ jobmonarch-webfrontend/ tmp/)
+	@rm -f web/addons/job_monarch/conf.php
