@@ -10,7 +10,7 @@
 
 %{!?custom_web_prefixdir: %define web_prefixdir /var/www/html/ganglia}
 
-%define gangliaroot        %{web_prefixdir}/ganglia
+%define gangliaroot        %{web_prefixdir}
 %define gangliatemplatedir %{gangliaroot}/templates
 %define gangliaaddonsdir   %{gangliaroot}/addons
 
@@ -25,17 +25,10 @@ Group: Applications/Base
 Source: ganglia_jobmonarch-%{version}.tar.bz2
 BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}
+BuildRequires: fakeroot
 Requires: jobmonarch-jobarchived jobmonarch-jobmond jobmonarch-webfrontend
 
-# Following requires were moved to the config.xml file in order to keep the
-# RPM distro-independent
-#Requires: mysql-client python-mysql
-#%if %suse_version
-#Requires: php5-gd >= 2.0 php5-mbstring
-#%else
-#Requires: php-gd >= 2.0 php-mbstring
-#%endif
-#AutoReqProv: no
+AutoReqProv: no
 
 %description
 Job Monarch is a set of tools to monitor and optionally archive (batch)job
@@ -86,8 +79,13 @@ batch statistics on jobs/nodes and submits them into Ganglia's XML stream.
 Summary: webfrontend is the ganglia webfrontend for jobmonarch.
 Requires: ganglia-web >= 3.5.7
 Requires: jobmonarch-jobmond = 1.0
-Requires: php-gd
+Requires: php >= 5.3.0
 Requires: php-pgsql
+%if 0%{?suse_version}
+Requires: php5-gd >= 2.0 php5-mbstring
+%else
+Requires: php-gd >= 2.0 php-mbstring
+%endif
 
 %description -n jobmonarch-webfrontend
  The Job Monarch web frontend interfaces with the
@@ -108,12 +106,13 @@ rm -rf $RPM_BUILD_ROOT
 #sed -i -e 's|http:/www.rrdtool.com/|http:/oss.oetiker.ch/rrdtool/|g' ./web/addons/job_monarch/templates/footer.tpl
 
 # Install files in RPM_BUILD_ROOT
-%__make install \
+fakeroot %__make install \
         PREFIX=/usr \
         GANGLIA_ROOT=%{gangliaroot} \
+        GANGLIA_USER=ganglia.ganglia \
+        HTTPD_USER=apache.apache \
         JOBARCHIVE_RRDS=%{_sharedstatedir}/jobarchive \
         DESTDIR=$RPM_BUILD_ROOT
-
 
 %clean
 %__rm -rf $RPM_BUILD_ROOT
@@ -122,27 +121,13 @@ rm -rf $RPM_BUILD_ROOT
 # $1 = 1 => install ($1 = 2 => upgrade)
 if [ "$1" = 1 ]; then
     /sbin/chkconfig --add jobmond
-    /sbin/service jobmond start
 elif [ "$1" = 2 ]; then
-    /sbin/service jobmond restart
+    /sbin/service jobmond condrestart
 fi
 
 %post -n jobmonarch-jobarchived
 # $1 = 1 => install ($1 = 2 => upgrade)
 if [ "$1" = 1 ]; then
-    if [ -x /usr/sbin/systemctl ]; then
-        if [ ! -d %{_sharedstatedir}/pgsql/data/base ]; then
-            %{_bindir}/postgresql-setup initdb
-        fi
-        %{_sbindir}/systemctl enable postgresql
-        %{_sbindir}/systemctl start postgresql
-    elif [ -x /sbin/chkconfig ]; then
-        if [ ! -d %{_sharedstatedir}/pgsql/data/base ]; then
-            /sbin/service postgresql initdb
-        fi
-	/sbin/chkconfig --level 235 postgresql on
-        /sbin/service postgresql start
-    fi
     # Generate a 8 char password for the database:
     export DB_PASSWD=$(tr -dc A-Za-z0-9_< /dev/urandom |head -c 8 | xargs)
     # Set the password in the SQL script 
@@ -151,14 +136,10 @@ if [ "$1" = 1 ]; then
     sed -i -s "s/^#JOB_SQL_PASSWORD.*$/JOB_SQL_PASSWORD\t\t: $DB_PASSWD/g" %{_sysconfdir}/jobarchived.conf
     # Set the password in the ganglia conf.php
     sed -i -e "s|^//\$JOB_ARCHIVE_SQL_PASSWORD.*|\$JOB_ARCHIVE_SQL_PASSWORD = \"$DB_PASSWD\"|g" %{gangliaaddonsdir}/job_monarch/conf.php
-    # Create the database
-    su -l postgres -c "%{_bindir}/createdb jobarchive"
-    # Ccreate the tables.
-    su -l postgres -c "%{_bindir}/psql -f %{_datadir}/jobarchived/job_dbase.sql jobarchive"
+    # Enable the service
     /sbin/chkconfig --add jobarchived
-    /sbin/service jobarchived start
 elif [ "$1" = 2 ]; then
-    /sbin/service jobarchived restart
+    /sbin/service jobarchived condrestart
 fi
 
 %post -n jobmonarch-webfrontend
@@ -297,7 +278,7 @@ fi
 %{gangliaaddonsdir}/job_monarch/dwoo/plugins/builtin/functions/whitespace.php
 %{gangliaaddonsdir}/job_monarch/dwoo/plugins/builtin/functions/count_words.php
 %{gangliaaddonsdir}/job_monarch/dwoo/plugins/builtin/functions/date_format.php
-%dir %{gangliaaddonsdir}/job_monarch/dwoo/compiled
+%dir %attr(755,apache,apache) %{gangliaaddonsdir}/job_monarch/dwoo/compiled
 %dir %{gangliaaddonsdir}/job_monarch/dwoo/cache
 %dir %{gangliaaddonsdir}/job_monarch/dwoo/Dwoo
 %{gangliaaddonsdir}/job_monarch/dwoo/Dwoo/IPluginProxy.php
@@ -389,6 +370,7 @@ fi
 - Fix the correct gangliaroot path
 - Fix the correct jobarchive rrd file path.
 - Generate a password for the database and update config files accordingly.
+- Set the correct permissions for %{gangliaaddonsdir}/job_monarch/dwoo/compiled
 
 * Tue Apr 23 2013 Olivier Lahaye <olivier.lahaye@free.fr> 1.0-2
 - Package missing files (/etc/sysconfig/{job{mond,archived}} and /etc/init.d scripts)
