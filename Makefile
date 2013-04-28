@@ -27,10 +27,7 @@ RELEASE = 1
 
 REQUIRED = ./jobarchived ./jobmond ./web
 
-deb:	tarball-bzip
-rpm:	tarball-bzip
-
-all:	tarball deb rpm
+all:
 
 tarball:	tarball-gzip tarball-bzip
 
@@ -69,7 +66,7 @@ install:
 	@#
 	@echo "\nUsing $(GANGLIA_ROOT) as Ganglia root installation path. If it's not what"
 	@echo "you want, use make GANGLIA_ROOT=/path/to/your/ganglia/root ."
-	@sed -i -e 's|/var/www/ganglia/|$(GANGLIA_ROOT)/|g' web/addons/job_monarch/conf.php
+	@sed -e 's|__GANGLIA_ROOT__|$(GANGLIA_ROOT)/|g' web/conf.php.in > web/addons/job_monarch/conf.php
 	@#
 	@# Set the correct JOBARCHIVE_RRDS in jobarchve.conf and ganglia conf.php
 	@#
@@ -127,7 +124,7 @@ install:
 	@install -m 0755 -d $(DESTDIR)$(GANGLIA_ROOT)
 	@chown -R $(GANGLIA_USER) ./web
 	@chown $(HTTPD_USER) ./web/addons/job_monarch/dwoo/compiled
-	@(cd web; rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php . $(DESTDIR)$(GANGLIA_ROOT)/)
+	@(cd web; rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php ./addons ./templates $(DESTDIR)$(GANGLIA_ROOT)/)
 	@#
 	@echo "\nInstallation complete.\n"
 
@@ -194,3 +191,4 @@ clean:
 	rm -rf ${TMPDIR}/.monarch_buildroot
 	rm -rf ./pkg/rpm/jobmonarch.spec
 	rm -rf ./debian/{files,*.log,jobmonarch-jobmond/,jobmonarch-jobarchived/,jobmonarch-webfrontend/,tmp/}
+	rm -f web/addons/job_monarch/conf.php
