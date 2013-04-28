@@ -53,18 +53,15 @@ rpmspec: ./pkg/rpm/jobmonarch.spec
 ./pkg/rpm/jobmonarch.spec: pkg/rpm/jobmonarch.spec.in
 	sed -e 's/__VERSION__/$(VERSION)/g' -e 's/__RELEASE__/$(RELEASE)/g' ./pkg/rpm/jobmonarch.spec.in > ./pkg/rpm/jobmonarch.spec
 
-debian: pkg/deb/debian
-	rsync -a --exclude=.svn pkg/deb/debian ./
-	sed -i -e 's/^Version:.*$//Version: $(VERSION)-$(RELEASE)/g' ./debian/control
-
 rpm: tarball-bzip
 	rpmbuild -tb ../ganglia_jobmonarch-${VERSION}.tar.bz2
 
 srpm: tarball-bzip
 	rpmbuild -ts --define '%dist %{nil}' ../ganglia_jobmonarch-${VERSION}.tar.bz2
 
-deb: debian
-	dpkg-buildpackage -b
+deb: ${REQUIRED} ./debian
+	# FIXME set $(VERSION)-$(RELEASE) in ./debian/changelog
+	dpkg-buildpackage -b -uc -us
 
 install:
 	@#
@@ -196,4 +193,4 @@ deb-jobmond:	${REQUIRED}
 clean:
 	rm -rf ${TMPDIR}/.monarch_buildroot
 	rm -rf ./pkg/rpm/jobmonarch.spec
-	rm -rf ./debian
+	rm -rf ./debian/{files,*.log,jobmonarch-jobmond/,jobmonarch-jobarchived/,jobmonarch-webfrontend/,tmp/}

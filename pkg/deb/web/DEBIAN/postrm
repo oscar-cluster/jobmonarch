@@ -1,3 +1,0 @@
-#!/bin/sh
-
-echo "Dont forget to set your Ganglia template back to default"
