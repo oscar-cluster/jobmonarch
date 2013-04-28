@@ -1,0 +1,7 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	dh_auto_install -- PREFIX=/usr GANGLIA_ROOT=/usr/share/ganglia-webfrontend GANGLIA_USER=ganglia HTTPD_USER=www-data JOBARCHIVE_RRDS=/var/lib/jobarchive
