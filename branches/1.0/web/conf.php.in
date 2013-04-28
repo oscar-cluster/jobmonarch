@@ -21,7 +21,7 @@ $COLUMN_NODES = true;
 
 // Path to Ganglia's web frontend root
 //
-$GANGLIA_PATH = "/var/www/ganglia/";
+$GANGLIA_PATH = "__GANGLIA_ROOT__";
 
 // Format of how to display a date and time in human readable format
 //
