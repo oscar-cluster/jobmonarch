@@ -12,6 +12,8 @@ PREFIX = /usr/local
 # i.e.: where to we install Job Monarch's web frontend addon
 # 
 GANGLIA_ROOT = $(PREFIX)/ganglia
+GANGLIA_USER = ganglia.ganglia
+HTTPD_USER   = apache.apache
 
 # Where jobarchived RRDS are stored
 JOBARCHIVE_RRDS = $(PREFIX)/jobmonarch
@@ -57,6 +59,9 @@ debian: pkg/deb/debian
 
 rpm: tarball-bzip
 	rpmbuild -tb ../ganglia_jobmonarch-${VERSION}.tar.bz2
+
+srpm: tarball-bzip
+	rpmbuild -ts --define '%dist %{nil}' ../ganglia_jobmonarch-${VERSION}.tar.bz2
 
 deb: debian
 	dpkg-buildpackage -b
@@ -119,10 +124,12 @@ install:
 	@echo "\nCreating the directory where RRDs will be stored: $(JOBARCHIVE_RRDS)"
 	@install -m 0755 -d $(DESTDIR)$(JOBARCHIVE_RRDS)
 	@#
-	@# Files for ganglia (adapt to rpm or deb or unknown ganglia packaging)
+	@# Files for ganglia
 	@#
 	@echo "\nInstalling Ganglia web interface to $(GANGLIA_ROOT) ."
 	@install -m 0755 -d $(DESTDIR)$(GANGLIA_ROOT)
+	@chown -R $(GANGLIA_USER) ./web
+	@chown $(HTTPD_USER) ./web/addons/job_monarch/dwoo/compiled
 	@(cd web; rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php . $(DESTDIR)$(GANGLIA_ROOT)/)
 	@#
 	@echo "\nInstallation complete.\n"
