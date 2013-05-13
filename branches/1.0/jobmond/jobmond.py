@@ -1315,7 +1315,14 @@ class SLURMDataGatherer( DataGatherer ):
             else:
                 requested_memory = min_memory
 
-            ppn = self.getAttr( attrs, 'ntasks_per_node' )
+            min_cpus = self.getAttr( attrs, 'pn_min_cpus' )
+
+            if min_cpus == 0:
+
+                ppn = ''
+
+            else:
+                ppn = min_cpus
 
             ( something, status_long ) = self.getAttr( attrs, 'job_state' )
 
