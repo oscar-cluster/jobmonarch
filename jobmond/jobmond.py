@@ -1306,7 +1306,14 @@ class SLURMDataGatherer( DataGatherer ):
             ( owner, owner_pw, owner_uid, owner_gid, owner_gecos, owner_dir, owner_shell ) = pwd.getpwuid( owner_uid )
 
             requested_time   = self.getAttr( attrs, 'time_limit' )
-            requested_memory = self.getAttr( attrs, 'pn_min_memory' )
+            min_memory       = self.getAttr( attrs, 'pn_min_memory' )
+
+            if min_memory == 0:
+
+                requested_memory = ''
+
+            else:
+                requested_memory = min_memory
 
             ppn = self.getAttr( attrs, 'ntasks_per_node' )
 
