@@ -2079,7 +2079,7 @@ def main():
     """Application start"""
 
     global PBSQuery, PBSError, lsfObject, pyslurm
-    global SYSLOG_FACILITY, USE_SYSLOG, BATCH_API, DAEMONIZE
+    global SYSLOG_FACILITY, USE_SYSLOG, BATCH_API, DAEMONIZE, BATCH_SERVER
 
     if not processArgs( sys.argv[1:] ):
 
@@ -2095,7 +2095,7 @@ def main():
 
         except ImportError, details:
 
-            print "FATAL ERROR: BATCH_API set to 'pbs' but python module 'pbs_python' cannot be loaded"
+            print "FATAL ERROR: BATCH_API set to 'pbs' but python module 'pbs_python' is not found or installed"
             print details
             sys.exit( 1 )
 
@@ -2103,27 +2103,48 @@ def main():
 
     elif BATCH_API == 'sge':
 
+        if BATCH_SERVER != 'localhost':
+
+            # Print and log, but continue execution
+            err_msg = "WARNING: BATCH_API 'sge' ignores BATCH_SERVER (can only be 'localhost')"
+            print err_msg
+            debug_msg( 0, err_msg )
+
         # Tested with SGE 6.0u11.
         #
         gather = SgeDataGatherer()
 
     elif BATCH_API == 'lsf':
 
+        if BATCH_SERVER != 'localhost':
+
+            # Print and log, but continue execution
+            err_msg = "WARNING: BATCH_API 'lsf' ignores BATCH_SERVER (can only be 'localhost')"
+            print err_msg
+            debug_msg( 0, err_msg )
+
         try:
             from lsfObject import lsfObject
         except:
-            print "FATAL ERROR: BATCH_API set to 'lsf' but python module is not found or installed"
-            sys.exit( 1)
+            print "FATAL ERROR: BATCH_API set to 'lsf' but python module 'lsfObject' is not found or installed"
+            sys.exit( 1 )
 
         gather = LsfDataGatherer()
 
     elif BATCH_API == 'slurm':
 
+        if BATCH_SERVER != 'localhost':
+
+            # Print and log, but continue execution
+            err_msg = "WARNING: BATCH_API 'slurm' ignores BATCH_SERVER (can only be 'localhost')"
+            print err_msg
+            debug_msg( 0, err_msg )
+
         try:
             import pyslurm
         except:
             print "FATAL ERROR: BATCH_API set to 'slurm' but python module is not found or installed"
-            sys.exit( 1)
+            sys.exit( 1 )
 
         gather = SLURMDataGatherer()
 
