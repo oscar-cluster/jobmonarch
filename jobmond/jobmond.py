@@ -69,7 +69,7 @@ def processArgs( args ):
     except getopt.GetoptError, detail:
 
         print detail
-        usage()
+        usage( False )
         sys.exit( 1 )
 
     for opt, value in opts:
@@ -1332,9 +1332,36 @@ class SLURMDataGatherer( DataGatherer ):
             if status == 'R':
 
                 start_timestamp = self.getAttr( attrs, 'start_time' )
-                nodes           = attrs[ 'alloc_node' ].split(',')
+                nodes           = attrs[ 'nodes' ]
 
-                nodeslist       = do_nodelist( nodes )
+                if not nodes:
+
+                    # This should not happen
+
+                    # Something wrong: running but 'nodes' returned empty by pyslurm
+                    # Possible pyslurm bug: abort/quit/warning
+
+                    err_msg = 'FATAL ERROR: job %s running but nodes returned empty: pyslurm bugged?' %job_id
+
+                    print err_msg
+                    debug_msg( 0, err_msg )
+                    sys.exit(1)
+
+                my_nodelist = [ ]
+
+                slurm_hostlist  = pyslurm.hostlist()
+                slurm_hostlist.create( nodes )
+                slurm_hostlist.uniq()
+
+                while slurm_hostlist.count() > 0:
+
+                    my_nodelist.append( slurm_hostlist.pop() )
+
+                slurm_hostlist.destroy()
+
+                del slurm_hostlist
+
+                nodeslist       = do_nodelist( my_nodelist )
 
                 if DETECT_TIME_DIFFS:
 
