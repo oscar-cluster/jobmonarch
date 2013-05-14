@@ -1540,31 +1540,34 @@ class GangliaConfigParser:
 
                 if line.find( 'data_source' ) != -1 and line[0] != '#':
 
-                    source        = { }
-                    source['name']    = line.split( '"' )[1]
-                    source_words    = line.split( '"' )[2].split( ' ' )
+                    source                = { }
+                    source['name']        = line.split( '"' )[1]
+                    source_value_words    = line.split( '"' )[2].split( ' ' )
 
-                    for word in source_words:
+                    check_interval        = source_value_words[0]
 
-                        valid_interval = 1
+                    try:
 
-                        for letter in word:
+                        source['interval'] = int( check_interval )
+                        debug_msg( 9, 'polling interval for %s = %s' %(source['name'], str( source['interval'] ) ) )
+                    except ValueError:
 
-                            if letter not in string.digits:
-
-                                valid_interval = 0
-
-                        if valid_interval and len(word) > 0:
-
-                            source['interval'] = word
-                            debug_msg( 9, 'polling interval for %s = %s' %(source['name'], source['interval'] ) )
-    
-                    # No interval found, use Ganglia's default    
-                    if not source.has_key( 'interval' ):
                         source['interval'] = 15
                         debug_msg( 9, 'polling interval for %s defaulted to 15' %(source['name']) )
 
                     self.sources.append( source )
+
+        readcfg.close()
+
+    def clusterExists( self, source_name ):
+
+        for source in self.sources:
+
+            if source['name'] == source_name:
+
+                return True
+
+        return False
 
     def getInterval( self, source_name ):
         """Return interval for source_name"""
@@ -1978,7 +1981,7 @@ class RRDHandler:
 
         if not os.path.exists( rrd_file ):
 
-            interval    = self.config.getInterval( self.cluster )
+            interval     = self.config.getInterval( self.cluster )
             heartbeat    = 8 * int( interval )
 
             params        = [ ]
@@ -2061,7 +2064,17 @@ def daemon():
 def run():
     """Threading start"""
 
+    global ARCHIVE_DATASOURCES
+
     config             = GangliaConfigParser( GMETAD_CONF )
+
+    for ds in ARCHIVE_DATASOURCES:
+
+        if not config.clusterExists( ds ):
+
+            print "FATAL ERROR: Data source with name '%s' not found in %s" %( ds, GMETAD_CONF )
+            sys.exit( 1 )
+
     s_timeout          = int( config.getLowestInterval() - 1 )
 
     socket.setdefaulttimeout( s_timeout )
