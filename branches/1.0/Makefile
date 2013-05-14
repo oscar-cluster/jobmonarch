@@ -124,6 +124,8 @@ install:
 	@install -m 0755 -d $(DESTDIR)$(GANGLIA_ROOT)
 	@chown -R $(GANGLIA_USER) ./web
 	@chown $(HTTPD_USER) ./web/addons/job_monarch/dwoo/compiled
+	@chown $(HTTPD_USER) ./web/addons/job_monarch/dwoo/cache
+	@chmod 775 ./web/addons/job_monarch/dwoo/cache
 	@(cd web; rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php ./addons ./templates $(DESTDIR)$(GANGLIA_ROOT)/)
 	@#
 	@echo "\nInstallation complete.\n"
