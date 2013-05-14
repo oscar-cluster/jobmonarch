@@ -278,8 +278,8 @@ fi
 %{gangliaaddonsdir}/job_monarch/dwoo/plugins/builtin/functions/whitespace.php
 %{gangliaaddonsdir}/job_monarch/dwoo/plugins/builtin/functions/count_words.php
 %{gangliaaddonsdir}/job_monarch/dwoo/plugins/builtin/functions/date_format.php
-%dir %attr(755,apache,apache) %{gangliaaddonsdir}/job_monarch/dwoo/compiled
-%dir %{gangliaaddonsdir}/job_monarch/dwoo/cache
+%dir %attr(775,apache,apache) %{gangliaaddonsdir}/job_monarch/dwoo/compiled
+%dir %attr(775,apache,apache) %{gangliaaddonsdir}/job_monarch/dwoo/cache
 %dir %{gangliaaddonsdir}/job_monarch/dwoo/Dwoo
 %{gangliaaddonsdir}/job_monarch/dwoo/Dwoo/IPluginProxy.php
 %{gangliaaddonsdir}/job_monarch/dwoo/Dwoo/Filter.php
