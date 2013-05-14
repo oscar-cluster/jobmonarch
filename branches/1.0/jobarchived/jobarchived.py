@@ -567,7 +567,9 @@ class DataSQLStore:
 
         return self.addJob( jobid, jobattrs )
 
-    def checkStaleJobs( self ):
+    def checkTimedoutJobs( self ):
+
+        debug_msg( 1, 'Housekeeping: checking database for timed out jobs..' )
 
         # Locate all jobs in the database that are not set to finished
         #
@@ -579,27 +581,22 @@ class DataSQLStore:
 
             return None
 
-        cleanjobs    = [ ]
-        timeoutjobs    = [ ]
+        timeoutjobs  = [ ]
 
-        jobtimeout_sec    = JOB_TIMEOUT * (60 * 60)
-        cur_time    = time.time()
+        jobtimeout_sec = JOB_TIMEOUT * (60 * 60)
+        cur_time       = time.time()
 
         for row in r:
 
-            job_id            = row[0]
-            job_requested_time    = row[4]
-            job_status        = row[7]
-            job_start_timestamp    = row[8]
+            job_id              = row[0]
+            job_requested_time  = row[4]
+            job_status          = row[7]
+            job_start_timestamp = row[8]
 
             # If it was set to queued and we didn't see it started
             # there's not point in keeping it around
             #
-            if job_status == 'Q' or not job_start_timestamp:
-
-                cleanjobs.append( job_id )
-
-            else:
+            if job_status == 'R' and job_start_timestamp:
 
                 start_timestamp = int( job_start_timestamp )
 
@@ -616,16 +613,9 @@ class DataSQLStore:
                     
                     timeoutjobs.append( (job_id, job_start_timestamp, rtime_epoch) )
 
-        debug_msg( 1, 'Found ' + str( len( cleanjobs ) ) + ' stale jobs in database: deleting entries' )
+        debug_msg( 1, 'Housekeeping: Found ' + str( len( timeoutjobs ) ) + ' timed out jobs in database: closing entries' )
 
-        # Purge these from database
-        #
-        for j in cleanjobs:
-
-            q = "DELETE FROM jobs WHERE job_id = '" + str( j ) + "'"
-            self.setDatabase( q )
-
-        debug_msg( 1, 'Found ' + str( len( timeoutjobs ) ) + ' timed out jobs in database: closing entries' )
+        ret_jobids_clean = [ ]
 
         # Close these jobs in the database
         # update the stop_timestamp to: start_timestamp + requested wallclock
@@ -638,8 +628,64 @@ class DataSQLStore:
             if r:
                 new_end_timestamp    = int( s ) + r
 
-            q = "UPDATE jobs SET job_status='F',job_stop_timestamp = '" + str( new_end_timestamp ) + "' WHERE job_id = '" + str(i) + "'"
+                q = "UPDATE jobs SET job_status='F',job_stop_timestamp = '" + str( new_end_timestamp ) + "' WHERE job_id = '" + str(i) + "'"
+                self.setDatabase( q )
+            else:
+
+                # Requested walltime unknown: cannot guess end time: sorry delete them
+                q = "DELETE FROM jobs WHERE job_id = '" + str( i ) + "'"
+                self.setDatabase( q )
+
+            ret_jobids_clean.append( i )
+
+        debug_msg( 1, 'Housekeeping: done.' )
+
+        return ret_jobids_clean
+
+    def checkStaleJobs( self ):
+
+        debug_msg( 1, 'Housekeeping: checking database for stale jobs..' )
+
+        # Locate all jobs in the database that are not set to finished
+        #
+        q = "SELECT * from jobs WHERE job_status != 'F'"
+
+        r = self.getDatabase( q )
+
+        if len( r ) == 0:
+
+            return None
+
+        cleanjobs      = [ ]
+
+        cur_time       = time.time()
+
+        for row in r:
+
+            job_id              = row[0]
+            job_requested_time  = row[4]
+            job_status          = row[7]
+            job_start_timestamp = row[8]
+
+            # If it was set to queued and we didn't see it started
+            # there's not point in keeping it around
+            #
+            if job_status == 'Q' or not job_start_timestamp:
+
+                cleanjobs.append( job_id )
+
+        debug_msg( 1, 'Housekeeping: Found ' + str( len( cleanjobs ) ) + ' stale jobs in database: deleting entries' )
+
+        # Purge these from database
+        #
+        for j in cleanjobs:
+
+            q = "DELETE FROM jobs WHERE job_id = '" + str( j ) + "'"
             self.setDatabase( q )
+
+        debug_msg( 1, 'Housekeeping: done.' )
+
+        return cleanjobs
 
 class RRDMutator:
     """A class for performing RRD mutations"""
@@ -847,6 +893,11 @@ class JobXMLHandler( xml.sax.handler.ContentHandler ):
         self.jobAttrs        = { }
         self.jobAttrsSaved   = { }
 
+        self.iteration       = 0
+
+        self.ds.checkTimedoutJobs()
+        self.ds.checkStaleJobs()
+
         debug_msg( 1, "XML: Handler created" )
 
     def startDocument( self ):
@@ -854,8 +905,19 @@ class JobXMLHandler( xml.sax.handler.ContentHandler ):
         self.jobs_processed = [ ]
         self.heartbeat      = 0
         self.elementct      = 0
+        self.iteration      = self.iteration + 1
 
-        debug_msg( 1, "XML: Start document" )
+        if self.iteration > 20:
+
+            timedout_jobs = self.ds.checkTimedoutJobs()
+            self.iteration = 0
+
+            for j in timedout_jobs:
+
+                del self.jobAttrs[ j ]
+                del self.jobAttrsSaved[ j ]
+
+        debug_msg( 1, "XML: Start document: iteration %s" %str(self.iteration) )
 
     def startElement( self, name, attrs ):
         """
@@ -1065,21 +1127,13 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
     def __init__( self, config, datastore ):
         """Setup initial variables and gather info on existing rrd archive"""
 
-        self.config    = config
-        self.clusters    = { }
-        self.ds        = datastore
+        self.config          = config
+        self.clusters        = { }
+        self.ds              = datastore
 
-        debug_msg( 1, 'Checking database..' )
-
-        global DEBUG_LEVEL
-
-        if DEBUG_LEVEL <= 2:
-            self.ds.checkStaleJobs()
-
-        debug_msg( 1, 'Check done.' )
-        debug_msg( 1, 'Checking rrd archive..' )
+        debug_msg( 1, 'Housekeeping: checking RRD archive (may take a while)..' )
         self.gatherClusters()
-        debug_msg( 1, 'Check done.' )
+        debug_msg( 1, 'Housekeeping: RRD check complete.' )
 
     def gatherClusters( self ):
         """Find all existing clusters in archive dir"""
@@ -1425,7 +1479,7 @@ class GangliaXMLProcessor( XMLProcessor ):
         if DEBUG_LEVEL >= 1:
             STORE_INTERVAL = 60
         else:
-            STORE_INTERVAL = random.randint( 360, 640 )
+            STORE_INTERVAL = random.randint( 300, 600 )
 
         try:
             store_metric_thread = threading.Thread( None, self.storeThread, 'store_metric_thread' )
