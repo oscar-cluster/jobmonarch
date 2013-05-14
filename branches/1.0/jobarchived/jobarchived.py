@@ -47,14 +47,14 @@ def usage( ver ):
 
 def processArgs( args ):
 
-    SHORT_L    = 'p:hvc:'
+    SHORT_L   = 'p:hvc:'
     LONG_L    = [ 'help', 'config=', 'pidfile=', 'version' ]
 
     config_filename = '/etc/jobarchived.conf'
 
     global PIDFILE
 
-    PIDFILE    = None
+    PIDFILE   = None
 
     try:
 
@@ -135,17 +135,17 @@ def loadConfig( filename ):
     global ARCHIVE_DATASOURCES, ARCHIVE_PATH, ARCHIVE_HOURS_PER_RRD, ARCHIVE_EXCLUDE_METRICS
     global JOB_SQL_DBASE, DAEMONIZE, RRDTOOL, JOB_TIMEOUT, MODRRDTOOL, JOB_SQL_PASSWORD, JOB_SQL_USER
 
-    ARCHIVE_PATH        = cfg.get( 'DEFAULT', 'ARCHIVE_PATH' )
+    ARCHIVE_PATH           = cfg.get( 'DEFAULT', 'ARCHIVE_PATH' )
 
-    ARCHIVE_HOURS_PER_RRD    = cfg.getint( 'DEFAULT', 'ARCHIVE_HOURS_PER_RRD' )
+    ARCHIVE_HOURS_PER_RRD  = cfg.getint( 'DEFAULT', 'ARCHIVE_HOURS_PER_RRD' )
 
-    DEBUG_LEVEL        = cfg.getint( 'DEFAULT', 'DEBUG_LEVEL' )
+    DEBUG_LEVEL            = cfg.getint( 'DEFAULT', 'DEBUG_LEVEL' )
 
-    USE_SYSLOG        = cfg.getboolean( 'DEFAULT', 'USE_SYSLOG' )
+    USE_SYSLOG             = cfg.getboolean( 'DEFAULT', 'USE_SYSLOG' )
 
-    SYSLOG_LEVEL        = cfg.getint( 'DEFAULT', 'SYSLOG_LEVEL' )
+    SYSLOG_LEVEL           = cfg.getint( 'DEFAULT', 'SYSLOG_LEVEL' )
 
-    MODRRDTOOL        = False
+    MODRRDTOOL             = False
 
     try:
         global rrdtool
@@ -170,22 +170,21 @@ def loadConfig( filename ):
         print 'Unknown syslog facility'
         sys.exit( 1 )
 
-    GMETAD_CONF        = cfg.get( 'DEFAULT', 'GMETAD_CONF' )
+    GMETAD_CONF             = cfg.get( 'DEFAULT', 'GMETAD_CONF' )
 
-    ARCHIVE_XMLSOURCE    = cfg.get( 'DEFAULT', 'ARCHIVE_XMLSOURCE' )
+    ARCHIVE_XMLSOURCE       = cfg.get( 'DEFAULT', 'ARCHIVE_XMLSOURCE' )
 
-    ARCHIVE_DATASOURCES    = getlist( cfg.get( 'DEFAULT', 'ARCHIVE_DATASOURCES' ) )
+    ARCHIVE_DATASOURCES     = getlist( cfg.get( 'DEFAULT', 'ARCHIVE_DATASOURCES' ) )
 
-    ARCHIVE_EXCLUDE_METRICS    = getlist( cfg.get( 'DEFAULT', 'ARCHIVE_EXCLUDE_METRICS' ) )
+    ARCHIVE_EXCLUDE_METRICS = getlist( cfg.get( 'DEFAULT', 'ARCHIVE_EXCLUDE_METRICS' ) )
 
-    JOB_SQL_DBASE        = cfg.get( 'DEFAULT', 'JOB_SQL_DBASE' )
-    JOB_SQL_USER        = cfg.get( 'DEFAULT', 'JOB_SQL_USER' )
+    JOB_SQL_DBASE           = cfg.get( 'DEFAULT', 'JOB_SQL_DBASE' )
+    JOB_SQL_USER            = cfg.get( 'DEFAULT', 'JOB_SQL_USER' )
     JOB_SQL_PASSWORD        = cfg.get( 'DEFAULT', 'JOB_SQL_PASSWORD' )
 
-    JOB_TIMEOUT        = cfg.getint( 'DEFAULT', 'JOB_TIMEOUT' )
+    JOB_TIMEOUT             = cfg.getint( 'DEFAULT', 'JOB_TIMEOUT' )
 
-    DAEMONIZE        = cfg.getboolean( 'DEFAULT', 'DAEMONIZE' )
-
+    DAEMONIZE               = cfg.getboolean( 'DEFAULT', 'DAEMONIZE' )
 
     return True
 
@@ -1182,7 +1181,7 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
         elif name == 'GRID':
 
             self.gridName    = str( attrs.get( 'NAME', "" ) )
-            self.time    = str( attrs.get( 'LOCALTIME', "" ) )
+            self.time        = str( attrs.get( 'LOCALTIME', "" ) )
 
             debug_msg( 10, '`-Grid found: %s' %( self.gridName ) )
 
@@ -1275,8 +1274,8 @@ class XMLErrorHandler( xml.sax.handler.ErrorHandler ):
 class XMLGatherer:
     """Setup a connection and file object to Ganglia's XML"""
 
-    s        = None
-    fd        = None
+    s           = None
+    fd          = None
     data        = None
     slot        = None
 
@@ -1304,11 +1303,11 @@ class XMLGatherer:
     def retrieveData( self ):
         """Setup connection to XML source"""
 
-        self.update_now    = True
+        self.update_now = True
 
         self.slot.acquire()
 
-        self.data    = None
+        self.data       = None
 
         for res in socket.getaddrinfo( self.host, self.port, socket.AF_UNSPEC, socket.SOCK_STREAM ):
 
@@ -1654,8 +1653,8 @@ class GangliaConfigParser:
 class RRDHandler:
     """Class for handling RRD activity"""
 
-    myMetrics = { }
-    lastStored = { }
+    myMetrics   = { }
+    lastStored  = { }
     timeserials = { }
     slot = None
 
@@ -1664,9 +1663,9 @@ class RRDHandler:
 
         global MODRRDTOOL
 
-        self.block    = 0
-        self.cluster    = cluster
-        self.config    = config
+        self.block   = 0
+        self.cluster = cluster
+        self.config  = config
         self.slot    = threading.Lock()
 
         if MODRRDTOOL:
@@ -1698,7 +1697,7 @@ class RRDHandler:
         for host in hosts:
 
             host_dir    = cluster_dir + '/' + host
-            dirlist        = os.listdir( host_dir )
+            dirlist     = os.listdir( host_dir )
 
             for dir in dirlist:
 
@@ -1754,8 +1753,8 @@ class RRDHandler:
             else:
                 self.myMetrics[ host ][ metric['name'] ] = [ ]
         else:
-            self.myMetrics[ host ]                = { }
-            self.myMetrics[ host ][ metric['name'] ]    = [ ]
+            self.myMetrics[ host ]                   = { }
+            self.myMetrics[ host ][ metric['name'] ] = [ ]
 
         # Push new metric onto stack
         # atomic code; only 1 thread at a time may access the stack
@@ -1930,8 +1929,8 @@ class RRDHandler:
     def makeRrdPath( self, host, metricname, timeserial ):
         """Make a RRD location/path and filename"""
 
-        rrd_dir        = '%s/%s/%s/%s'    %( check_dir(ARCHIVE_PATH), self.cluster, host, timeserial )
-        rrd_file    = '%s/%s.rrd'    %( rrd_dir, metricname )
+        rrd_dir  = '%s/%s/%s/%s'    %( check_dir(ARCHIVE_PATH), self.cluster, host, timeserial )
+        rrd_file = '%s/%s.rrd'    %( rrd_dir, metricname )
 
         return rrd_dir, rrd_file
 
@@ -1985,9 +1984,9 @@ class RRDHandler:
 
             if metric['name'] == metricname:
 
-                period        = self.determinePeriod( host, metric['time'] )    
+                period       = self.determinePeriod( host, metric['time'] )    
 
-                archive_secs    = ARCHIVE_HOURS_PER_RRD * (60 * 60)
+                archive_secs = ARCHIVE_HOURS_PER_RRD * (60 * 60)
 
                 if (int( metric['time'] ) - int( period ) ) > archive_secs:
 
@@ -2038,7 +2037,7 @@ class RRDHandler:
             interval     = self.config.getInterval( self.cluster )
             heartbeat    = 8 * int( interval )
 
-            params        = [ ]
+            params       = [ ]
 
             params.append( '--step' )
             params.append( str( interval ) )
@@ -2061,9 +2060,9 @@ class RRDHandler:
 
         debug_msg( 9, 'rrdupdate: using timeserial %s for %s/%s' %( timeserial, host, metricname ) )
 
-        rrd_dir, rrd_file    = self.makeRrdPath( host, metricname, timeserial )
+        rrd_dir, rrd_file = self.makeRrdPath( host, metricname, timeserial )
 
-        update_list        = self.makeUpdateList( host, metriclist )
+        update_list       = self.makeUpdateList( host, metriclist )
 
         if len( update_list ) > 0:
             ret = self.rrdm.update( str(rrd_file), update_list )
