@@ -706,48 +706,23 @@ class TorqueXMLHandler
 
     function makeHostname( $thostname, $tdomain=null )
     {
-        // Should hostname be FQDN or short w/o domain
-        //
-        $nodes = &$this->nodes;
-
-        $fqdn = 1;
-
-        //$tdomain = explode( '.', $thostname );
-        //
-        // TODO?: extract domain from hostname or something?
-
-        if( $tdomain )
+        if( $this->fqdn && isset( $tdomain ) )
         {
-            $domain_len    = 0 - strlen( $tdomain );
-
-            // Let's see if Ganglia use's FQDN or short hostnames
-            //
-            foreach( $nodes as $hostname => $nimage )
+            if( strpos( $thostname, $tdomain ) === false )
             {
-                if( strpos( $hostname, $tomdain ) !== false )
-                {
-                    $fqdn    = 0;
-                }
+                $mhost = $thostname . '.' . $tdomain;
+            } 
+            else
+            {
+                $mhost = $thostname;
             }
         }
         else
         {
-            $fqdn    = 0;
-        }
-    
-        if( $tdomain && $fqdn )
-        {
-            if( strpos( $thostname, $tdomain ) !== false )
-            {
-                $thostname = $thostname . '.'.$tdomain;
-            } 
-            else
-            {
-                $thostname = $thostname;
-            }
+            $mhost = $thostname;
         }
 
-        return $thostname;
+        return $mhost;
     }
 
     function startElement( $parser, $name, $attrs )
@@ -989,7 +964,8 @@ class TorqueXMLHandler
                                 if( strpos( $node, $domain ) === false )
                                 {
                                     $host = $node. '.'.$domain;
-                                } else
+                                } 
+                                else
                                 {
                                     $host = $node;
                                 }
