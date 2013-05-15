@@ -27,8 +27,8 @@ CREATE TABLE job_nodes (
 	PRIMARY KEY ( job_id, node_id )
 );
 
-# modify me: set a password
-#CREATE USER jobarchive WITH PASSWORD '';
+-- modify me: set a password
+-- CREATE USER jobarchive WITH PASSWORD '';
 
 GRANT ALL ON jobs,nodes,job_nodes TO "jobarchive";
 GRANT ALL ON nodes_node_id_seq TO "jobarchive";
