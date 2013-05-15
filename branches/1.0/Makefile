@@ -47,7 +47,7 @@ tarball-bzip:	${REQUIRED} ./pkg/rpm/jobmonarch.spec
 
 rpmspec: ./pkg/rpm/jobmonarch.spec
 
-./pkg/rpm/jobmonarch.spec: pkg/rpm/jobmonarch.spec.in
+./pkg/rpm/jobmonarch.spec: pkg/rpm/jobmonarch.spec.in Makefile
 	sed -e 's/__VERSION__/$(VERSION)/g' -e 's/__RELEASE__/$(RELEASE)/g' ./pkg/rpm/jobmonarch.spec.in > ./pkg/rpm/jobmonarch.spec
 
 rpm: tarball-bzip
