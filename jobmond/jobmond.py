@@ -538,12 +538,9 @@ def loadConfig( filename ):
 
     except ConfigParser.NoOptionError:
 
-        # Backwards compatibility for old configs
-        #
+        # Not required for all API's: only pbs api allows remote connections
+        BATCH_SERVER = None
 
-        BATCH_SERVER = cfg.get( 'DEFAULT', 'TORQUE_SERVER' )
-        api_guess    = 'pbs'
-    
     try:
     
         BATCH_POLL_INTERVAL = cfg.getint( 'DEFAULT', 'BATCH_POLL_INTERVAL' )
@@ -617,12 +614,8 @@ def loadConfig( filename ):
 
     except ConfigParser.NoOptionError, detail:
 
-        if BATCH_SERVER and api_guess:
-
-            BATCH_API    = api_guess
-        else:
-            print "FATAL ERROR: BATCH_API not set and can't make guess"
-            sys.exit( 1 )
+        print "FATAL ERROR: BATCH_API not set"
+        sys.exit( 1 )
 
     try:
 
