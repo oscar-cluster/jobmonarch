@@ -64,19 +64,22 @@ install:
 	@#
 	@# Set the correct GANGLIA_PATH.
 	@#
-	@echo "\nUsing $(GANGLIA_ROOT) as Ganglia root installation path. If it's not what"
+	@echo
+	@echo "Using $(GANGLIA_ROOT) as Ganglia root installation path. If it's not what"
 	@echo "you want, use make GANGLIA_ROOT=/path/to/your/ganglia/root ."
 	@sed -e 's|__GANGLIA_ROOT__|$(GANGLIA_ROOT)/|g' web/conf.php.in > web/addons/job_monarch/conf.php
 	@#
 	@# Set the correct JOBARCHIVE_RRDS in jobarchve.conf and ganglia conf.php
 	@#
-	@echo "\nUsing $(JOBARCHIVE_RRDS) as jobarchive path to  store rrds files. If it's not what"
+	@echo
+	@echo "Using $(JOBARCHIVE_RRDS) as jobarchive path to  store rrds files. If it's not what"
 	@echo "you want, use make JOBARCHIVE_RRDS=/path/to/you/jobarchived/rrdsfiles ."
 	@sed -i -e 's|/var/lib/jobarchive|$(JOBARCHIVE_RRDS)|g' jobarchived/jobarchived.conf web/addons/job_monarch/conf.php
 	@#
 	@# Files in SBIN_DIR
 	@#
-	@echo "\nInstalling jobmond.py and jobarchived.py to $(PREFIX)/sbin"
+	@echo
+	@echo "Installing jobmond.py and jobarchived.py to $(PREFIX)/sbin"
 	@install -m 0755 -d $(DESTDIR)$(PREFIX)/sbin
 	@install -m 0755 jobmond/jobmond.py $(DESTDIR)$(PREFIX)/sbin/
 	@install -m 0755 jobarchived/jobarchived.py $(DESTDIR)$(PREFIX)/sbin/
@@ -84,7 +87,8 @@ install:
 	@#
 	@# Files specific to distros if /etc/sysconfig => rpm else (/etc/default => debian)
 	@#
-	@echo "\nInstalling service files in $(DESTDIR)/etc"
+	@echo
+	@echo "Installing service files in /etc"
 	@if test -d /etc/sysconfig; then \
 		install -m 0755 -d $(DESTDIR)/etc/rc.d/init.d; \
 		install -m 0755 pkg/rpm/init.d/jobmond $(DESTDIR)/etc/rc.d/init.d/; \
@@ -103,24 +107,28 @@ install:
 	@#
 	@# Files in /etc
 	@#
-	@echo "\nInstalling config files jobmond.conf jobarchived.conf in $(DESTDIR)/etc"
+	@echo
+	@echo "Installing config files jobmond.conf jobarchived.conf in /etc"
 	@install -m 0644 jobmond/jobmond.conf $(DESTDIR)/etc
 	@install -m 0644 jobarchived/jobarchived.conf $(DESTDIR)/etc
 	@#
 	@# Files in /usr/share
 	@#
-	@echo "\nInstalling job_dbase.sql in $(PREFIX)/share/jobarchived"
+	@echo
+	@echo "Installing job_dbase.sql in $(PREFIX)/share/jobarchived"
 	@install -m 0755 -d $(DESTDIR)$(PREFIX)/share/jobarchived
 	@install -m 0755 jobarchived/job_dbase.sql $(DESTDIR)$(PREFIX)/share/jobarchived/
 	@#
 	@# Create the /var/lib/jobarchive directory where rrds are stored.
 	@#
-	@echo "\nCreating the directory where RRDs will be stored: $(JOBARCHIVE_RRDS)"
+	@echo
+	@echo "Creating the directory where RRDs will be stored: $(JOBARCHIVE_RRDS)"
 	@install -m 0755 -d $(DESTDIR)$(JOBARCHIVE_RRDS)
 	@#
 	@# Files for ganglia
 	@#
-	@echo "\nInstalling Ganglia web interface to $(GANGLIA_ROOT) ."
+	@echo
+	@echo "Installing Ganglia web interface to $(GANGLIA_ROOT) ."
 	@install -m 0755 -d $(DESTDIR)$(GANGLIA_ROOT)
 	@chown -R $(GANGLIA_USER) ./web
 	@chown $(HTTPD_USER) ./web/addons/job_monarch/dwoo/compiled
@@ -128,7 +136,9 @@ install:
 	@chmod 775 ./web/addons/job_monarch/dwoo/cache
 	@(cd web; rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php ./addons ./templates $(DESTDIR)$(GANGLIA_ROOT)/)
 	@#
-	@echo "\nInstallation complete.\n"
+	@echo
+	@echo "Installation complete."
+	@echo
 
 clean:
 	@rm -rf ${TMPDIR}/.monarch_buildroot
