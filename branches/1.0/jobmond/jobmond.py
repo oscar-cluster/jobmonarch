@@ -853,7 +853,7 @@ class DataGatherer:
 
         # Report down/offline nodes in batch (PBS only ATM)
         #
-        if BATCH_API == 'pbs':
+        if BATCH_API in [ 'pbs', 'slurm' ]:
 
             domain        = fqdn_parts( socket.getfqdn() )[1]
 
@@ -1258,9 +1258,23 @@ class SLURMDataGatherer( DataGatherer ):
 
     def getNodeData( self ):
 
-        slurm_type = pyslurm.node()
+        slurm_type  = pyslurm.node()
 
-        nodedict = slurm_type.get()
+        slurm_nodes = slurm_type.get()
+
+        nodedict    = { }
+
+        for node, attrs in slurm_nodes.items():
+
+            ( num_state, name_state ) = attrs['node_state'] 
+
+            if name_state == 'DOWN':
+
+                nodedict[ node ] = { 'state' : 'down' }
+
+            elif name_state == 'DRAIN':
+
+                nodedict[ node ] = { 'state' : 'offline' }
 
         return nodedict
 
