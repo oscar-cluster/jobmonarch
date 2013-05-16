@@ -100,7 +100,7 @@ Total
 
 <TR class="overview">
 <TD class="green">
-Free
+Unallocated
 </TD>
 <TD class="green">
 </TD>
