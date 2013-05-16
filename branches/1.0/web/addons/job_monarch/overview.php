@@ -54,7 +54,6 @@ $heartbeat = $data_gatherer->getHeartbeat();
 $jobs      = $data_gatherer->getJobs();
 $gnodes    = $data_gatherer->getNodes();
 $cpus      = $data_gatherer->getCpus();
-$use_fqdn  = $data_gatherer->getUsingFQDN();
 
 //print_r( $gnodes );
 
@@ -466,19 +465,10 @@ function makeOverview()
                 {
                     $running_name_nodes[] = $tempnode;
 
+                    $hostnode = $data_gatherer->makeHostname( $tempnode, $jobs[$jobid]['domain'] );
+
                     if( isset( $hostname ) && $hostname != '' ) 
                     {
-                        $domain_len     = 0 - strlen( $jobs[$jobid]['domain'] );
-                        $hostnode     = $tempnode;
-
-                        if( $use_fqdn == 1)
-                        {
-                            if( substr( $hostnode, $domain_len ) != $jobs[$jobid]['domain'] ) 
-                            {
-                                $hostnode = $hostnode. '.'. $jobs[$jobid]['domain'];
-                            }
-                        }
-
                         if( $hostname == $hostnode ) 
                         {
                             $found_node_job = 1;
@@ -647,10 +637,8 @@ function makeOverview()
 
                         foreach( $jobs[$jobid]['nodes'] as $shortnode ) 
                         {
-                            if( $use_fqdn == 1)
-                            {
-                                $mynode     = $shortnode.".".$jobs[$jobid]['domain'];
-                            }
+                            $domain         = $jobs[$jobid]['domain'];
+                            $mynode         = $data_gatherer->makeHostname( $shortnode, $domain );
                             $myhost_href    = "./?c=".$clustername."&h=".$mynode;
                             $mynodehosts[]  = "<A HREF=\"".$myhost_href."\">".$shortnode."</A>";
                         }
@@ -836,15 +824,8 @@ function makeOverview()
                 
             foreach ( $hosts_up as $host ) 
             {
-                $domain_len         = 0 - strlen( $domain );
+                $host             = $data_gatherer->makeHostname( $host, $domain );
 
-                if( $use_fqdn )
-                {
-                    if( substr( $host, $domain_len ) != $domain ) 
-                    {
-                        $host         = $host . '.' . $domain;
-                    }
-                }
                 $cpus             = 0;
 
                 $cpus             = $metrics[$host]["cpu_num"]["VAL"];
