@@ -146,10 +146,12 @@ elif [ "$1" = 2 ]; then
 fi
 
 %post -n jobmonarch-webfrontend
-echo "Make sure to set your Ganglia template to job_monarch now"
-echo ""
-echo "In your Ganglia conf.php, set this line:"
-echo "\$template_name = \"job_monarch\";"
+if [ "$1" = 1 ]; then
+    echo "Make sure to set your Ganglia template to job_monarch now"
+    echo ""
+    echo "In your Ganglia conf.php, set this line:"
+    echo "\$template_name = \"job_monarch\";"
+fi
 
 %preun -n jobmonarch-jobmond
 if [ "$1" = 0 ]; then
