@@ -2,11 +2,27 @@
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
-if [ -x /etc/init.d/jobmond ] 
-	then
+set -e
 
-		update-rc.d -f jobmond defaults
+case "$1" in
+    configure)
+        # Only on install (not during upgrade)
 
-fi
+        if [ -x /etc/init.d/jobmond ]
+        then
+            update-rc.d -f jobmond defaults
+        fi
 
-/etc/init.d/jobmond restart
+        echo ""
+        echo "Additional manual changes are required to setup jobmond:"
+        echo ""
+        echo "Edit /etc/jobmond.conf to reflect your local settings and setup:"
+        echo "   - BATCH_API: pbs, slurm, sge (experimental), lsf (experimental)"
+        echo ""
+
+        ;;
+    *)
+        ;;
+esac
+
+exit 0
