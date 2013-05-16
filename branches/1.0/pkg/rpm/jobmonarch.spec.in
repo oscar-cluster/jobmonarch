@@ -134,7 +134,14 @@ fi
 %post -n jobmonarch-jobmond
 # $1 = 1 => install ($1 = 2 => upgrade)
 if [ "$1" = 1 ]; then
+    # Enable the service
     /sbin/chkconfig --add jobmond
+    echo ""
+    echo "Additional manual changes are required to setup jobmond:"
+    echo ""
+    echo "Edit /etc/jobmond.conf to reflect your local settings and setup:"
+    echo "   - BATCH_API: pbs, slurm, sge (experimental), lsf (experimental)"
+    echo ""
 elif [ "$1" = 2 ]; then
     /sbin/service jobmond condrestart
 fi
@@ -144,6 +151,21 @@ fi
 if [ "$1" = 1 ]; then
     # Enable the service
     /sbin/chkconfig --add jobarchived
+    echo ""
+    echo "Additional manual changes are required to setup jobarchived:"
+    echo ""
+    echo "1) Edit /etc/jobarchived.conf to reflect your local settings and setup:"
+    echo "   - ARCHIVE_DATASOURCES and ARCHIVE_PATH"
+    echo ""
+    echo "2) Create a 'jobarchive' database and create jobarchived's tables:" 
+    echo "   - createdb jobarchive"
+    echo "   - psql -f /usr/share/jobarchived/job_dbase.sql jobarchive"
+    echo "   - Update /var/lib/pgsql/data/pg_hba.conf by adding the following lines:"
+    echo "     local   jobarchive      jobarchive                              trust"
+    echo "     host    jobarchive      jobarchive      127.0.0.1/32            trust"
+    echo "     host    jobarchive      jobarchive      ::1/128                 trust"
+    echo "   - Restart the postgresql service"
+    echo ""
 elif [ "$1" = 2 ]; then
     echo "Restarting jobarchived if needed..."
     /sbin/service jobarchived condrestart
