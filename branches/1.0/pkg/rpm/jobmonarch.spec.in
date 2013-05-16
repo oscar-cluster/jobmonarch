@@ -117,15 +117,7 @@ fakeroot %__make install \
 %clean
 %__rm -rf $RPM_BUILD_ROOT
 
-%post -n jobmonarch-jobmond
-# $1 = 1 => install ($1 = 2 => upgrade)
-if [ "$1" = 1 ]; then
-    /sbin/chkconfig --add jobmond
-elif [ "$1" = 2 ]; then
-    /sbin/service jobmond condrestart
-fi
-
-%post -n jobmonarch-jobarchived
+%post
 # $1 = 1 => install ($1 = 2 => upgrade)
 if [ "$1" = 1 ]; then
     echo "Generating random password and updating apropriate files"
@@ -137,6 +129,19 @@ if [ "$1" = 1 ]; then
     sed -i -e "s/^#JOB_SQL_PASSWORD.*$/JOB_SQL_PASSWORD\t\t: $DB_PASSWD/g" %{_sysconfdir}/jobarchived.conf
     # Set the password in the ganglia conf.php
     sed -i -e "s|^//\$JOB_ARCHIVE_SQL_PASSWORD.*|\$JOB_ARCHIVE_SQL_PASSWORD = \"$DB_PASSWD\"|g" %{gangliaaddonsdir}/job_monarch/conf.php
+fi
+
+%post -n jobmonarch-jobmond
+# $1 = 1 => install ($1 = 2 => upgrade)
+if [ "$1" = 1 ]; then
+    /sbin/chkconfig --add jobmond
+elif [ "$1" = 2 ]; then
+    /sbin/service jobmond condrestart
+fi
+
+%post -n jobmonarch-jobarchived
+# $1 = 1 => install ($1 = 2 => upgrade)
+if [ "$1" = 1 ]; then
     # Enable the service
     /sbin/chkconfig --add jobarchived
 elif [ "$1" = 2 ]; then
