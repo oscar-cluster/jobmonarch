@@ -2,5 +2,16 @@
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
-/etc/init.d/jobmond stop || true
-update-rc.d -f jobmond remove || true
+set -e
+
+case "$1" in
+    remove|deconfigure)
+        # Only on removal (not during upgrade)
+        /etc/init.d/jobmond stop || true
+        update-rc.d -f jobmond remove || true
+        ;;
+    *)
+        ;;
+esac
+
+exit 0

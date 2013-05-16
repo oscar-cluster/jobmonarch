@@ -2,7 +2,16 @@
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
-/etc/init.d/jobarchived stop || true
-update-rc.d -f jobarchived remove || true
+set -e
+
+case "$1" in
+    remove|deconfigure)
+        # Only on removal (not during upgrade)
+        /etc/init.d/jobarchived stop || true
+        update-rc.d -f jobarchived remove || true
+        ;;
+    *)
+        ;;
+esac
 
 exit 0
