@@ -19,7 +19,7 @@
 <TD>Cpus</TD>
 </TR>
 
-{if "$na_nodes" == "yes"}
+{if "$show_na_nodes" == "yes"}
 <TR class="overview">
 <TD class="gray">
 Unavailable
