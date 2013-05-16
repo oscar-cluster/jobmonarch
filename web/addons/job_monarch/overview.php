@@ -747,7 +747,7 @@ function makeOverview()
     //
     if( $na_nodes > 0 )
     {
-        $tpl_data[ "na_nodes"]= "yes";
+        $tpl_data[ "show_na_nodes"]= "yes";
 
         $tpl_data[ "na_nodes"]= $na_nodes ;
         $tpl_data[ "na_cpus"]= $na_cpus ;
