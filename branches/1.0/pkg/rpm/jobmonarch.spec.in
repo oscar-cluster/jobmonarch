@@ -20,7 +20,7 @@ Version: __VERSION__
 URL: https://oss.trac.surfsara.nl/jobmonarch
 Release: __RELEASE__%{?dist}
 License: GPL
-Packager: Olivier Lahaye <olivier.lahaye@cea.fr>
+Packager: Job Monarch Development team <jobmonarch-developers@lists.sourceforge.net>
 Group: Applications/Base
 Source: ganglia_jobmonarch-%{version}.tar.bz2
 BuildArch: noarch
