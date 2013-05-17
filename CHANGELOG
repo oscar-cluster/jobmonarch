@@ -1,6 +1,39 @@
 
 	LEGEND	f: fixed - c: changed - a: added - r: removed
 
+1.1:
+
+    web)
+
+        c: rewritten short versus FQDN hostname detection: now works properly 
+           with ganglia hosts not using FQDN hostnames
+        f: display of xml parsetime for overview. no longer display parsetime 
+           for archive (no parsing done)
+        f: down/offline nodes are now properly marked in cluster image again
+        f: bug where "Unavailable" row would not be shown in overview summary 
+           table
+
+    packaging)
+
+        c: completely redone and rewritten by Olivier Lahaye - thanks!
+
+    jobmond)
+
+        a: now supports SLURM Workload Manager!
+        a: warning if connecting to remote BATCH_SERVER is not supported by 
+           selected BATCH_API
+        f: bug where incorrect commandline option would trigger traceback in 
+           usage()
+
+    jobarchived)
+
+        a: now performs regular database Housekeeping every 20 job XML 
+           iterations (previously only once at startup)
+        a: now checks if ARCHIVE_DATASOURCES are present in gmetad.conf
+        f: prevent an Exception to occur when determining datasource polling 
+           interval
+        f: bug where config file handle was not closed
+
 1.0:
 
     jobmond)
