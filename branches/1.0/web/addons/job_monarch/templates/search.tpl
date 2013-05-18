@@ -186,7 +186,7 @@ function setFilter( filtername, filterval ) {
   <TD></TD>
   <TD></TD>
   <TD></TD>
-  <TD></TD>
+  <TD><input type="checkbox" name="include_running" {$running_checked}>Include running jobs</TD>
   <TD>
   <INPUT TYPE="submit" VALUE="Search archive" onClick="setSearchTimestamps();">
   </TD>
