@@ -5,6 +5,7 @@
 
     web)
 
+        a: archive search now has "include running jobs" option
         c: rewritten short versus FQDN hostname detection: now works properly 
            with ganglia hosts not using FQDN hostnames
         f: display of xml parsetime for overview. no longer display parsetime 
