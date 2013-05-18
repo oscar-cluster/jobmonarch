@@ -225,7 +225,8 @@ function makeSearchPage() {
     global $clustername, $dwoo, $id, $owner, $name, $start_from_time, $start_to_time, $queue;
     global $end_from_time, $end_to_time, $filter, $default_showhosts, $m, $hosts_up, $hc;
     global $period_start, $period_stop, $sortby, $sortorder, $COLUMN_REQUESTED_MEMORY;
-    global $SEARCH_RESULT_LIMIT, $COLUMN_NODES, $metricname, $self, $conf;
+    global $SEARCH_RESULT_LIMIT, $COLUMN_NODES, $metricname, $self, $conf, $include_running;
+
 
     $longtitle = "Batch Archive Search :: Powered by Job Monarch!";
     $title = "Batch Archive Search";
@@ -235,6 +236,11 @@ function makeSearchPage() {
     $tpl = new Dwoo_Template_File("templates/search.tpl");
     $tpl_data = new Dwoo_Data();
 
+    if( in_array( $include_running, array('on','checked','true','yes') ) )
+    {
+        $include_running = true;
+        $tpl_data->assign( "running_checked", "checked='on'" );
+    }
     $tpl_data->assign( "self", $self );
     $tpl_data->assign( "cluster", $clustername );
     $tpl_data->assign( "id_value", $id );
@@ -263,7 +269,7 @@ function makeSearchPage() {
         if( $start_to_time ) $start_to_time = datetimeToEpoch( $start_to_time );
         if( $end_from_time ) $end_from_time = datetimeToEpoch( $end_from_time );
         if( $end_to_time ) $end_to_time = datetimeToEpoch( $end_to_time );
-        $search_ids = $tdb->searchDbase( $id, $queue, $owner, $name, $start_from_time, $start_to_time, $end_from_time, $end_to_time );
+        $search_ids = $tdb->searchDbase( $id, $queue, $owner, $name, $start_from_time, $start_to_time, $end_from_time, $end_to_time, $include_running );
 
         //print_r( $search_ids );
         if( ($tdb->resultcount) > (int) $SEARCH_RESULT_LIMIT ) {
@@ -353,9 +359,21 @@ function makeSearchPage() {
 
             $job_start = $job['start_timestamp'];
             $job_stop = $job['stop_timestamp'];
-            $runningtime = intval( $job_stop - $job_start );
+
+            if( $job['status'] == 'R' )
+            {
+                $period_stop = time();
+                $runningtime = $period_stop - intval( $job_start );
+                $period_start = intval( $job_start - (intval( $runningtime * 0.10 ) ) );
+                $node_list["finished"]= '';
+            }
+            else
+            {
+                $runningtime = intval( $job_stop - $job_start );
+                $node_list["finished"]= makeDate( $job_stop );
+            }
+
             $node_list["started"]= makeDate( $job_start );
-            $node_list["finished"]= makeDate( $job_stop );
             $node_list["runningtime"]= makeTime( $runningtime );
             
             $node_loop[]=$node_list;
@@ -370,17 +388,35 @@ function makeSearchPage() {
             $showhosts = isset($sh) ? $sh : $default_showhosts;
             $tpl_data->assign("checked$showhosts", "checked");
 
-            if( $showhosts ) {
-
-                if( !$period_start ) // Add an extra 10% to graphstart
+            if( $showhosts ) 
+            {
+                if( $job['status'] == 'R' )
+                {
+                    $period_stop = time();
+                    $runningtime = $period_stop - intval( $job_start );
                     $period_start = intval( $job_start - (intval( $runningtime * 0.10 ) ) );
+                }
                 else
-                    $period_start = datetimeToEpoch( $period_start );
+                {
+                    if( !$period_start ) // Add an extra 10% to graphstart
+                    {
+                        $period_start = intval( $job_start - (intval( $runningtime * 0.10 ) ) );
+                    }
+                    else
+                    {
+                        $period_start = datetimeToEpoch( $period_start );
+                    }
 
-                if( !$period_stop ) // Add an extra 10% to graphend
-                    $period_stop = intval( $job_stop + (intval( $runningtime * 0.10 ) ) );
-                else
-                    $period_stop = datetimeToEpoch( $period_stop );
+                    if( !$period_stop ) // Add an extra 10% to graphend
+                    {
+                        $period_stop = intval( $job_stop + (intval( $runningtime * 0.10 ) ) );
+                    }
+                    else
+                    {
+                        $period_stop = datetimeToEpoch( $period_stop );
+                    }
+                }
+
 
                 $tpl_data->assign( "timeperiod", "yes" );
 

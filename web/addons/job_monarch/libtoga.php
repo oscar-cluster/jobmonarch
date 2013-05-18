@@ -210,13 +210,22 @@ class TarchDbase
 
     }
 
-    function searchDbase( $id = null, $queue = null, $owner = null, $name = null, $start_from_time = null, $start_to_time = null, $end_from_time = null, $end_to_time = null )
+    function searchDbase( $id = null, $queue = null, $owner = null, $name = null, $start_from_time = null, $start_to_time = null, $end_from_time = null, $end_to_time = null, $include_running = false )
     {
         global $SEARCH_RESULT_LIMIT;
 
+        if( $include_running )
+        {
+            $status_query = " AND job_status != 'Q'";
+        }
+        else
+        {
+            $status_query = " AND job_status = 'F'";
+        }
+
         if( $id )
         {
-            $select_query = "SELECT job_id FROM jobs WHERE job_id = '$id' AND job_status = 'F'";
+            $select_query = "SELECT job_id FROM jobs WHERE job_id = '$id'" . $status_query;
             $this->resultcount = 1;
         }
         else
@@ -252,7 +261,7 @@ class TarchDbase
                 $query_args[] = "CAST(job_stop_timestamp as INT) <= $end_to_time";
             }
 
-            $query = "FROM jobs WHERE job_status = 'F' AND ";
+            $query = "FROM jobs WHERE ";
             $extra_query_args = '';
 
             foreach( $query_args as $myquery )
@@ -266,7 +275,7 @@ class TarchDbase
                     $extra_query_args .= " AND ".$myquery;
                 }
             }
-            $query .= $extra_query_args;
+            $query .= $extra_query_args . $status_query;
 
             $count_result_idname = "COUNT(job_id)";
             $select_result_idname = "job_id";
