@@ -34,7 +34,7 @@ Description: Job Archiving Daemon
 Package: jobmonarch-webfrontend
 Architecture: all
 Essential: no
-Depends: php5, php5-gd (>= 2.0), php-pgsql (>= 4.0.0), ganglia-webfrontend (>=3.0.1)
+Depends: php5, php5-gd (>= 2.0), php5-pgsql (>= 4.0.0), ganglia-webfrontend (>=3.0.1)
 Description: Job MonArch's Web Frontend
  Job-Monarch is a set of tools to monitor and optionally archive (batch) job
  information. It is a addon for the Ganglia monitoring system and plugs into an
