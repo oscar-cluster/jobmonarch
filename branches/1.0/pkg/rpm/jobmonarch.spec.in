@@ -77,9 +77,12 @@ Requires: jobmonarch-jobmond = 1.0
 Requires: php >= 5.3.0
 Requires: php-pgsql
 %if 0%{?suse_version}
-Requires: php5-gd >= 2.0 php5-mbstring
+Requires: php5-gd >= 2.0
 %else
-Requires: php-gd >= 2.0 php-mbstring
+Requires: php-gd >= 2.0
+# php-mbstring, while required by Dwoo is not needed by jobmonarch-webfrontend as
+# it doesn't uses Dwoo functions that require mbstring.
+#Requires: php-mbstring
 %endif
 
 %description -n jobmonarch-webfrontend
