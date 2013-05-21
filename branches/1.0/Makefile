@@ -31,14 +31,14 @@ all:
 
 tarball:	tarball-gzip tarball-bzip
 
-tarball-gzip:	${REQUIRED} ./pkg/rpm/jobmonarch.spec
+tarball-gzip:	${REQUIRED} ./pkg/rpm/jobmonarch.spec ./debian/changelog
 	mkdir -p ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}
 	( rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
 	. ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION} )
 	( cd ${TMPDIR}/.monarch_buildroot; tar zcvf ganglia_jobmonarch-${VERSION}.tar.gz ./ganglia_jobmonarch-${VERSION} )
 	mv ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}.tar.gz ..
 
-tarball-bzip:	${REQUIRED} ./pkg/rpm/jobmonarch.spec
+tarball-bzip:	${REQUIRED} ./pkg/rpm/jobmonarch.spec ./debian/changelog
 	mkdir -p ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}
 	( rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
 	. ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION} )
@@ -48,7 +48,7 @@ tarball-bzip:	${REQUIRED} ./pkg/rpm/jobmonarch.spec
 rpmspec: ./pkg/rpm/jobmonarch.spec
 
 ./pkg/rpm/jobmonarch.spec: pkg/rpm/jobmonarch.spec.in Makefile
-	sed -e 's/__VERSION__/$(VERSION)/g' -e 's/__RELEASE__/$(RELEASE)/g' ./pkg/rpm/jobmonarch.spec.in > ./pkg/rpm/jobmonarch.spec
+	sed -e 's/__VERSION__/${VERSION}/g' -e 's/__RELEASE__/${RELEASE}/g' ./pkg/rpm/jobmonarch.spec.in > ./pkg/rpm/jobmonarch.spec
 
 rpm: tarball-bzip
 	rpmbuild -tb ../ganglia_jobmonarch-${VERSION}.tar.bz2
@@ -56,8 +56,12 @@ rpm: tarball-bzip
 srpm: tarball-bzip
 	rpmbuild -ts --define '%dist %{nil}' ../ganglia_jobmonarch-${VERSION}.tar.bz2
 
-deb: ${REQUIRED} ./debian
-	# FIXME set $(VERSION)-$(RELEASE) in ./debian/changelog
+debchangelog: ./debian/changelog
+
+./debian/changelog: ./debian/changelog.in Makefile
+	sed -e 's/__VERSION__/${VERSION}/g' -e 's/__RELEASE__/${RELEASE}/g' ./debian/changelog.in > ./debian/changelog
+
+deb: ${REQUIRED} ./debian ./debian/changelog
 	dpkg-buildpackage -b -uc -us
 
 install:
