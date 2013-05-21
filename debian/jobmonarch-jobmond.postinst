@@ -16,8 +16,13 @@ case "$1" in
         echo ""
         echo "Additional manual changes are required to setup jobmond:"
         echo ""
-        echo "Edit /etc/jobmond.conf to reflect your local settings and setup:"
+        echo "1) Edit /etc/jobmond.conf to reflect your local settings and setup:"
         echo "   - BATCH_API: pbs, slurm, sge (experimental), lsf (experimental)"
+        echo "2) Install the python interface to the selected batch queuing system"
+        echo "   - python-pbs (for pbs or torque)"
+        echo "   - python-pyslurm (for slurm)"
+        echo "   - pythongrid (for sge)"
+        echo "   - python-pylsf (for lsf)"
         echo ""
 
         ;;
