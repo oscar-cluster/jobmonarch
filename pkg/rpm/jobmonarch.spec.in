@@ -30,7 +30,7 @@ BuildRequires: fakeroot
 AutoReqProv: no
 
 %description
-Job Monarch is a set of tools to monitor and optionally archive (batch)job
+Job Monarch is a set of tools to monitor and optionally archive (batch) job
 information. It is a addon for the Ganglia monitoring system and plugs into an
 existing Ganglia setup.
 
@@ -45,7 +45,7 @@ Requires: rrdtool-python rrdtool
 Requires: jobmonarch-webfrontend
 
 %description -n jobmonarch-jobarchived
-Job-Monarch is a set of tools to monitor and optionally archive (batch)job
+Job-Monarch is a set of tools to monitor and optionally archive (batch) job
 information. It is a addon for the Ganglia monitoring system and plugs into an
 existing Ganglia setup.
 jobarchived is the Job-Monarch's job archiving daemon. It listens to Ganglia's
@@ -64,7 +64,7 @@ Requires: ganglia-gmetad
 #Requires(hint): pythongrid
 
 %description -n jobmonarch-jobmond
-Job-Monarch is a set of tools to monitor and optionally archive (batch)job
+Job-Monarch is a set of tools to monitor and optionally archive (batch) job
 information. It is a addon for the Ganglia monitoring system and plugs into an
 existing Ganglia setup.
 jobmond is the Job-Monarch's job monitoring daemon that gathers PBS/Torque/SLURM/LSF/SGE
@@ -125,8 +125,8 @@ if [ "$1" = 1 ]; then
     echo ""
     echo "1) Edit /etc/jobmond.conf to reflect your local settings and setup:"
     echo "   - BATCH_API: pbs, slurm, sge (experimental), lsf (experimental)"
-    echo "2) Install the python interface to the selected batch system"
-    echo "   - pbs_python (for pbs)"
+    echo "2) Install the python interface to the selected batch queuing system"
+    echo "   - pbs_python (for pbs or torque)"
     echo "   - python-pyslurm (for slurm)"
     echo "   - pythongrid (for sge)"
     echo "   - python-pylsf (for lsf)"
