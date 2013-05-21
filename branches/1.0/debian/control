@@ -20,7 +20,7 @@ Description: Job Monitoring Daemon
 Package: jobmonarch-jobarchived
 Architecture: all
 Essential: no
-Depends: ${python:Depends} (>=2.3), gmetad (>=3.0.1), rrdtool (>=1.0), postgresql (>= 8.1.22), python-rrdtool, python-psycopg2 jobmonarch-webfrontend
+Depends: ${python:Depends} (>=2.3), gmetad (>=3.0.1), rrdtool (>=1.0), postgresql (>= 8.1.22), python-rrdtool, python-psycopg2, jobmonarch-webfrontend
 Description: Job Archiving Daemon
  Job-Monarch is a set of tools to monitor and optionally archive (batch) job
  information. It is a addon for the Ganglia monitoring system and plugs into an
