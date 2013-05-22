@@ -52,12 +52,12 @@ $(TMPDIR)/.monarch_buildroot: ${REQUIRED} Makefile
 
 tarball-gzip:	$(TMPDIR)/.monarch_buildroot ${REQUIRED}
 	@( cd ${TMPDIR}/.monarch_buildroot; tar zcf $(TMPDIR)/ganglia_jobmonarch-${VERSION}.tar.gz ./ganglia_jobmonarch-${VERSION} )
-	@mv -f ${TMPDIR}/ganglia_jobmonarch-${VERSION}.tar.gz ..
+	@mv -f ${TMPDIR}/ganglia_jobmonarch-${VERSION}.tar.gz .. 2> /dev/null || true
 	@echo "Wrote: ../ganglia_jobmonarch-${VERSION}.tar.gz"
 
 tarball-bzip:	$(TMPDIR)/.monarch_buildroot ${REQUIRED}
 	@( cd ${TMPDIR}/.monarch_buildroot; tar jcf ${TMPDIR}/ganglia_jobmonarch-${VERSION}.tar.bz2 ./ganglia_jobmonarch-${VERSION} )
-	@mv -f ${TMPDIR}/ganglia_jobmonarch-${VERSION}.tar.bz2 ..
+	@mv -f ${TMPDIR}/ganglia_jobmonarch-${VERSION}.tar.bz2 .. 2> /dev/null || true
 	@echo "Wrote: ../ganglia_jobmonarch-${VERSION}.tar.bz2"
 
 rpm: tarball-bzip
