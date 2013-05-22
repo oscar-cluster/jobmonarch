@@ -30,7 +30,7 @@ from xml.sax.handler import feature_namespaces
 from collections import deque
 from glob import glob
 
-VERSION='1.0'
+VERSION='1.1'
 
 def usage( ver ):
 
