@@ -51,26 +51,25 @@ $(TMPDIR)/.monarch_buildroot: ${REQUIRED} Makefile
 
 
 tarball-gzip:	$(TMPDIR)/.monarch_buildroot ${REQUIRED}
-	@( cd ${TMPDIR}/.monarch_buildroot; tar zcf ${TMPDIR}/ganglia_jobmonarch-${VERSION}.tar.gz ./ganglia_jobmonarch-${VERSION} )
-	@rm -rf ${TMPDIR}/.monarch_buildroot
+	@( cd ${TMPDIR}/.monarch_buildroot; tar zcf $(TMPDIR)/ganglia_jobmonarch-${VERSION}.tar.gz ./ganglia_jobmonarch-${VERSION} )
+	@mv -f ${TMPDIR}/ganglia_jobmonarch-${VERSION}.tar.gz ..
 	@echo "Wrote: ../ganglia_jobmonarch-${VERSION}.tar.gz"
 
 tarball-bzip:	$(TMPDIR)/.monarch_buildroot ${REQUIRED}
-	@( cd ${TMPDIR}/.monarch_buildroot; tar jcf ganglia_jobmonarch-${VERSION}.tar.bz2 ./ganglia_jobmonarch-${VERSION} )
-	@mv -f ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}.tar.bz2 ..
-	@rm -rf ${TMPDIR}/.monarch_buildroot
+	@( cd ${TMPDIR}/.monarch_buildroot; tar jcf ${TMPDIR}/ganglia_jobmonarch-${VERSION}.tar.bz2 ./ganglia_jobmonarch-${VERSION} )
+	@mv -f ${TMPDIR}/ganglia_jobmonarch-${VERSION}.tar.bz2 ..
 	@echo "Wrote: ../ganglia_jobmonarch-${VERSION}.tar.bz2"
 
 rpm: tarball-bzip
 	# Binary package will reflect most distro where ganglia default location is /usr/share/ganglia
-	rpmbuild -tb --define '%custom_web_prefixdir /usr/share/ganglia' ../ganglia_jobmonarch-${VERSION}.tar.bz2
+	@LC_ALL=C rpmbuild -tb --define '%custom_web_prefixdir /usr/share/ganglia' ../ganglia_jobmonarch-${VERSION}.tar.bz2|grep "Wrote: "
 
 srpm: tarball-bzip
-	rpmbuild -ts --define '%dist %{nil}' ../ganglia_jobmonarch-${VERSION}.tar.bz2
+	@LC_ALL=C rpmbuild -ts --define '%dist %{nil}' ../ganglia_jobmonarch-${VERSION}.tar.bz2|grep "Wrote: "
 
 deb: ${REQUIRED} $(TMPDIR)/.monarch_buildroot ./debian
 	@( cd ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}; dpkg-buildpackage -b -uc -us )
-	@mv ${TMPDIR}/.monarch_buildroot/jobmonarch*$(VERSION)*.deb ..
+	@mv ${TMPDIR}/.monarch_buildroot/jobmonarch-*_$(VERSION)-$(RELEASE)_all.deb ..
 	@rm -rf ${TMPDIR}/.monarch_buildroot
 	@echo "Wrote:"
 	@ls -1 ../jobmonarch*$(VERSION)*.deb
@@ -162,3 +161,8 @@ install:  ${REQUIRED}
 clean:
 	@(cd ./debian; rm -rf files *.log *.substvars jobmonarch/ jobmonarch-jobmond/ jobmonarch-jobarchived/ jobmonarch-webfrontend/ tmp/)
 	@rm -f web/addons/job_monarch/conf.php
+
+clean_all:	clean
+	@# Cannot include this in clean otherwise, dpkg-buildpackage will commit scuicide.
+	@rm -rf ${TMPDIR}/.monarch_buildroot
+
