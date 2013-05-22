@@ -8,7 +8,8 @@
 %define web_prefixdir %{custom_web_prefixdir}
 %endif
 
-%{!?custom_web_prefixdir: %define web_prefixdir /var/www/html/ganglia}
+#{!?custom_web_prefixdir: %define web_prefixdir /var/www/html/ganglia}
+%{!?custom_web_prefixdir: %define web_prefixdir /usr/share/ganglia}
 
 %define gangliaroot        %{web_prefixdir}
 %define gangliatemplatedir %{gangliaroot}/templates
