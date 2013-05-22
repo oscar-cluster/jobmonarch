@@ -31,7 +31,7 @@ RELEASE = 1
 
 REQUIRED = ./jobarchived ./jobmond ./web
 
-all:
+all:	tarball rpm srpm deb
 
 tarball:	tarball-gzip tarball-bzip
 
@@ -53,6 +53,9 @@ rpmspec: ./pkg/rpm/jobmonarch.spec
 
 ./pkg/rpm/jobmonarch.spec: pkg/rpm/jobmonarch.spec.in Makefile
 	sed -e 's/__VERSION__/${VERSION}/g' -e 's/__RELEASE__/${RELEASE}/g' ./pkg/rpm/jobmonarch.spec.in > ./pkg/rpm/jobmonarch.spec
+	@if test -r /etc/debian_version; then \
+		sed -i -e '/BuildRequires/d' ./pkg/rpm/jobmonarch.spec; \
+	fi
 
 rpm: tarball-bzip
 	rpmbuild -tb ../ganglia_jobmonarch-${VERSION}.tar.bz2
