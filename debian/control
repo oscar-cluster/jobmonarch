@@ -9,7 +9,7 @@ Homepage: https://oss.trac.surfsara.nl/jobmonarch
 Package: jobmonarch-jobmond
 Architecture: all
 Essential: no
-Depends: ${python:Depends} (>=2.3), ganglia-monitor (>=3.0.1)
+Depends: ${python:Depends} (>=2.3), ganglia-monitor (>=3.3.8)
 Description: Job Monitoring Daemon
  Job-Monarch is a set of tools to monitor and optionally archive (batch) job
  information. It is a addon for the Ganglia monitoring system and plugs into an
@@ -20,7 +20,7 @@ Description: Job Monitoring Daemon
 Package: jobmonarch-jobarchived
 Architecture: all
 Essential: no
-Depends: ${python:Depends} (>=2.3), gmetad (>=3.0.1), rrdtool (>=1.0), postgresql (>= 8.1.22), python-rrdtool, python-psycopg2, jobmonarch-webfrontend
+Depends: ${python:Depends} (>=2.3), gmetad (>=3.3.8), rrdtool (>=1.0), postgresql (>= 8.1.22), python-rrdtool, python-psycopg2, jobmonarch-webfrontend
 Description: Job Archiving Daemon
  Job-Monarch is a set of tools to monitor and optionally archive (batch) job
  information. It is a addon for the Ganglia monitoring system and plugs into an
@@ -34,7 +34,7 @@ Description: Job Archiving Daemon
 Package: jobmonarch-webfrontend
 Architecture: all
 Essential: no
-Depends: php5, php5-gd (>= 2.0), php5-pgsql (>= 4.0.0), ganglia-webfrontend (>=3.1.7)
+Depends: php5, php5-gd (>= 2.0), php5-pgsql (>= 4.0.0), ganglia-webfrontend (>=3.3.8)
 Description: Job MonArch's Web Frontend
  Job-Monarch is a set of tools to monitor and optionally archive (batch) job
  information. It is a addon for the Ganglia monitoring system and plugs into an
