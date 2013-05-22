@@ -31,11 +31,14 @@ RELEASE = 1
 
 REQUIRED = ./jobarchived ./jobmond ./web
 
-all:	tarball rpm srpm deb
+all:
+	@echo "Nothing to build."
+	@echo "possible targets are: tarball, tarball-gzip, tarball-bzip, rpm, srpm, deb, clean"
 
 tarball:	tarball-gzip tarball-bzip
 
 $(TMPDIR)/.monarch_buildroot: ${REQUIRED} Makefile
+	@rm -rf ${TMPDIR}/.monarch_buildroot
 	@mkdir -p ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}
 	@( rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
 	. ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION} )
@@ -48,14 +51,13 @@ $(TMPDIR)/.monarch_buildroot: ${REQUIRED} Makefile
 
 
 tarball-gzip:	$(TMPDIR)/.monarch_buildroot ${REQUIRED}
-	@( cd ${TMPDIR}/.monarch_buildroot; tar zcf ganglia_jobmonarch-${VERSION}.tar.gz ./ganglia_jobmonarch-${VERSION} )
-	@mv ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}.tar.gz ..
+	@( cd ${TMPDIR}/.monarch_buildroot; tar zcf ${TMPDIR}/ganglia_jobmonarch-${VERSION}.tar.gz ./ganglia_jobmonarch-${VERSION} )
 	@rm -rf ${TMPDIR}/.monarch_buildroot
 	@echo "Wrote: ../ganglia_jobmonarch-${VERSION}.tar.gz"
 
 tarball-bzip:	$(TMPDIR)/.monarch_buildroot ${REQUIRED}
 	@( cd ${TMPDIR}/.monarch_buildroot; tar jcf ganglia_jobmonarch-${VERSION}.tar.bz2 ./ganglia_jobmonarch-${VERSION} )
-	@mv ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}.tar.bz2 ..
+	@mv -f ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}.tar.bz2 ..
 	@rm -rf ${TMPDIR}/.monarch_buildroot
 	@echo "Wrote: ../ganglia_jobmonarch-${VERSION}.tar.bz2"
 
@@ -66,11 +68,9 @@ rpm: tarball-bzip
 srpm: tarball-bzip
 	rpmbuild -ts --define '%dist %{nil}' ../ganglia_jobmonarch-${VERSION}.tar.bz2
 
-debchangelog: ./debian/changelog
-
 deb: ${REQUIRED} $(TMPDIR)/.monarch_buildroot ./debian
 	@( cd ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}; dpkg-buildpackage -b -uc -us )
-	@mv ${TMPDIR}/ganglia_jobmonarch-${VERSION}/jobmonarch*$(VERSION)*.deb ..
+	@mv ${TMPDIR}/.monarch_buildroot/jobmonarch*$(VERSION)*.deb ..
 	@rm -rf ${TMPDIR}/.monarch_buildroot
 	@echo "Wrote:"
 	@ls -1 ../jobmonarch*$(VERSION)*.deb
@@ -160,6 +160,5 @@ install:  ${REQUIRED}
 	@echo
 
 clean:
-	@rm -rf ${TMPDIR}/.monarch_buildroot
 	@(cd ./debian; rm -rf files *.log *.substvars jobmonarch/ jobmonarch-jobmond/ jobmonarch-jobarchived/ jobmonarch-webfrontend/ tmp/)
 	@rm -f web/addons/job_monarch/conf.php
