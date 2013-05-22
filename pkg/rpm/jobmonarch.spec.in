@@ -37,6 +37,12 @@ existing Ganglia setup.
 
 %package -n jobmonarch-jobarchived
 Summary: jobarchived is the archiving daemon for jobmonarch.
+Version: __VERSION__
+URL: https://oss.trac.surfsara.nl/jobmonarch
+Release: __RELEASE__%{?dist}
+License: GPL
+Packager: Job Monarch Development team <jobmonarch-developers@lists.sourceforge.net>
+Group: Applications/Base
 Requires: postgresql >= 8.1.22
 Requires: postgresql-server >= 8.1.22
 Requires: ganglia-gmetad >= 3.3.8
@@ -57,6 +63,12 @@ view all it's statistics.
 
 %package -n jobmonarch-jobmond
 Summary: jobmond is the job monitoring daemon for jobmonarch.
+Version: __VERSION__
+URL: https://oss.trac.surfsara.nl/jobmonarch
+Release: __RELEASE__%{?dist}
+License: GPL
+Packager: Job Monarch Development team <jobmonarch-developers@lists.sourceforge.net>
+Group: Applications/Base
 Requires: python >= 2.5
 Requires: ganglia-gmond >= 3.3.8
 #Requires(hint): pbs_python
@@ -72,6 +84,12 @@ batch statistics on jobs/nodes and submits them into Ganglia's XML stream.
 
 %package -n jobmonarch-webfrontend
 Summary: webfrontend is the ganglia webfrontend for jobmonarch.
+Version: __VERSION__
+URL: https://oss.trac.surfsara.nl/jobmonarch
+Release: __RELEASE__%{?dist}
+License: GPL
+Packager: Job Monarch Development team <jobmonarch-developers@lists.sourceforge.net>
+Group: Applications/Base
 Requires: ganglia-web >= 3.3.8
 Requires: php >= 5.3.0
 Requires: php-pgsql
