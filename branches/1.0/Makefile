@@ -22,7 +22,7 @@ JOBARCHIVE_RRDS = $(PREFIX)/jobmonarch
 #
 FAKEROOT = fakeroot
 
-VERSION = 1.0
+VERSION = 1.1
 RELEASE = 1
 
 REQUIRED = ./jobarchived ./jobmond ./web
