@@ -89,11 +89,11 @@ install:
 	@install -m 0755 jobarchived/jobarchived.py $(DESTDIR)$(PREFIX)/sbin/
 	@(cd $(DESTDIR)$(PREFIX)/sbin/; ln -s jobmond.py jobmond; ln -s jobarchived.py jobarchived)
 	@#
-	@# Files specific to distros if /etc/sysconfig => rpm else (/etc/default => debian)
+	@# Files specific to distros if /etc/redhat_release => rpm else (/etc/debian_version => debian)
 	@#
 	@echo
 	@echo "Installing service files in /etc"
-	@if test -d /etc/sysconfig; then \
+	@if test -r /etc/redhat_release; then \
 		install -m 0755 -d $(DESTDIR)/etc/rc.d/init.d; \
 		install -m 0755 pkg/rpm/init.d/jobmond $(DESTDIR)/etc/rc.d/init.d/; \
 		install -m 0755 pkg/rpm/init.d/jobarchived $(DESTDIR)/etc/rc.d/init.d/; \
