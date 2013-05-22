@@ -1,3 +1,5 @@
+SET client_min_messages TO PANIC;
+
 CREATE TABLE jobs (
 	job_id			VARCHAR(20) NOT NULL UNIQUE PRIMARY KEY,
 	job_name		VARCHAR(255),
