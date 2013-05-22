@@ -92,6 +92,10 @@ install: @#
     @#
     @echo
     @echo "Installing service files in /etc"
+    @sed -i -e 's/DAEMON=.*/DAEMON=${DESTDIR}${PREFIX}\/sbin\/jobmond/g' pkg/deb/init.d/jobmond
+    @sed -i -e 's/DAEMON=.*/DAEMON=${DESTDIR}${PREFIX}\/sbin\/jobarchived/g' pkg/deb/init.d/jobarchived
+    @sed -i -e 's/DAEMON=.*/DAEMON=${DESTDIR}${PREFIX}\/sbin\/jobmond/g' pkg/rpm/init.d/jobmond
+    @sed -i -e 's/DAEMON=.*/DAEMON=${DESTDIR}${PREFIX}\/sbin\/jobarchived/g' pkg/rpm/init.d/jobarchived
     @if test -r /etc/redhat_release; then \
         install -m 0755 -d $(DESTDIR)/etc/rc.d/init.d; \
         install -m 0755 pkg/rpm/init.d/jobmond $(DESTDIR)/etc/rc.d/init.d/; \
