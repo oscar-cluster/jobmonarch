@@ -69,10 +69,11 @@ srpm: tarball-bzip
 debchangelog: ./debian/changelog
 
 deb: ${REQUIRED} $(TMPDIR)/.monarch_buildroot ./debian
-	@( cd ${TMPDIR}/.monarch_buildroot; dpkg-buildpackage -b -uc -us )
+	@( cd ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}; dpkg-buildpackage -b -uc -us )
+	@mv ${TMPDIR}/ganglia_jobmonarch-${VERSION}/jobmonarch*$(VERSION)*.deb ..
 	@rm -rf ${TMPDIR}/.monarch_buildroot
 	@echo "Wrote:"
-	@ls -1 ${TMPDIR}/jobmonarch*$(VERSION)*.deb
+	@ls -1 ../jobmonarch*$(VERSION)*.deb
 
 install:  ${REQUIRED}
 	@#
