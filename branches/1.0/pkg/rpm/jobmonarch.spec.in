@@ -38,7 +38,7 @@ existing Ganglia setup.
 Summary: jobarchived is the archiving daemon for jobmonarch.
 Requires: postgresql >= 8.1.22
 Requires: postgresql-server >= 8.1.22
-Requires: ganglia-gmetad
+Requires: ganglia-gmetad >= 3.3.8
 Requires: python >= 2.5
 Requires: python-psycopg2
 Requires: rrdtool-python rrdtool
@@ -57,7 +57,7 @@ view all it's statistics.
 %package -n jobmonarch-jobmond
 Summary: jobmond is the job monitoring daemon for jobmonarch.
 Requires: python >= 2.5
-Requires: ganglia-gmond
+Requires: ganglia-gmond >= 3.3.8
 #Requires(hint): pbs_python
 #Requires(hint): python-pylsf
 #Requires(hint): python-pyslurm
@@ -71,8 +71,7 @@ batch statistics on jobs/nodes and submits them into Ganglia's XML stream.
 
 %package -n jobmonarch-webfrontend
 Summary: webfrontend is the ganglia webfrontend for jobmonarch.
-Requires: ganglia-web >= 3.1.7
-Requires: jobmonarch-jobmond = 1.0
+Requires: ganglia-web >= 3.3.8
 Requires: php >= 5.3.0
 Requires: php-pgsql
 %if 0%{?suse_version}
