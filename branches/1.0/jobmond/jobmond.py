@@ -670,13 +670,13 @@ class DataProcessor:
 
             if incompatible:
 
-                print 'Ganglia/Gmetric version not compatible, please upgrade to at least 3.4.0'
+                print 'Ganglia/Gmetric version not compatible, please upgrade to at least 3.3.8'
                 sys.exit( 1 )
 
     def checkGmetricVersion( self ):
 
         """
-        Check version of gmetric is at least 3.4.0
+        Check version of gmetric is at least 3.3.8
         for the syntax we use
         """
 
@@ -709,7 +709,11 @@ class DataProcessor:
                 
                 elif version_major == 3:
 
-                    if version_minor < 4:
+                    if version_minor < 3:
+
+                        incompatible = 1
+
+                    elif version_patch < 8:
 
                         incompatible = 1
 
