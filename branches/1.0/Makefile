@@ -152,7 +152,8 @@ install:  ${REQUIRED}
 	@echo "Installation complete."
 	@echo
 
-clean: @rm -rf ${TMPDIR}/.monarch_buildroot
+clean:
+	@rm -rf ${TMPDIR}/.monarch_buildroot
 	@rm -rf ./pkg/rpm/jobmonarch.spec
 	@(cd ./debian; rm -rf files *.log *.substvars jobmonarch/ jobmonarch-jobmond/ jobmonarch-jobarchived/ jobmonarch-webfrontend/ tmp/)
 	@rm -f web/addons/job_monarch/conf.php
