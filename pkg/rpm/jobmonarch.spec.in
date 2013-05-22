@@ -393,6 +393,11 @@ fi
 %{gangliaaddonsdir}/job_monarch/ts_validatetime.js
 %{gangliaaddonsdir}/job_monarch/version.php
 
+%changelog
+* Wed May 22 2013 Ramon Bastiaans <ramon.bastiaans@surfsara.nl> 1.1-1
+- update to 1.1
+- set version requirement for Ganglia
+- removed jobmond dep from webfrontend pkg
 
 %changelog
 * Wed Apr 24 2013 Olivier Lahaye <olivier.lahaye@free.fr> 1.0-3
