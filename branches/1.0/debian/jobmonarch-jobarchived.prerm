@@ -5,7 +5,10 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin
 set -e
 
 case "$1" in
-    remove|deconfigure)
+    deconfigure)
+        /etc/init.d/jobarchived stop || true
+        ;;
+    remove)
         # Only on removal (not during upgrade)
         /etc/init.d/jobarchived stop || true
         update-rc.d -f jobarchived remove || true
