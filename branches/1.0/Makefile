@@ -40,7 +40,7 @@ tarball:	tarball-gzip tarball-bzip
 $(TMPDIR)/.monarch_buildroot: ${REQUIRED} Makefile
 	@rm -rf ${TMPDIR}/.monarch_buildroot
 	@mkdir -p ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}
-	@( rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
+	@( rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php --exclude=svn-commit.tmp \
 	. ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION} )
 	@sed -i -e 's|__VERSION__|$(VERSION)|g' -e 's/__RELEASE__/$(RELEASE)/g' \
 		${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}/jobmond/jobmond.py \
