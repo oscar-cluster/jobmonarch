@@ -8,6 +8,10 @@ DESTDIR =
 # Install prefix
 PREFIX = /usr/local
 
+BIN_DIR = $(PREFIX)/sbin
+JOBMOND = $(BIN_DIR)/jobmond
+JOBARCHIVED = $(BIN_DIR)/jobarchived
+
 # What is the location of the Ganglia web frontend
 # i.e.: where to we install Job Monarch's web frontend addon
 # 
@@ -64,7 +68,8 @@ debchangelog: ./debian/changelog
 deb: ${REQUIRED} ./debian ./debian/changelog
 	dpkg-buildpackage -b -uc -us
 
-install: @#
+install:  ${REQUIRED}
+	@#
 	@# Set the correct GANGLIA_PATH.
 	@#
 	@echo
@@ -83,19 +88,19 @@ install: @#
 	@#
 	@echo
 	@echo "Installing jobmond.py and jobarchived.py to $(PREFIX)/sbin"
-	@install -m 0755 -d $(DESTDIR)$(PREFIX)/sbin
-	@install -m 0755 jobmond/jobmond.py $(DESTDIR)$(PREFIX)/sbin/
-	@install -m 0755 jobarchived/jobarchived.py $(DESTDIR)$(PREFIX)/sbin/
-	@(cd $(DESTDIR)$(PREFIX)/sbin/; ln -s jobmond.py jobmond; ln -s jobarchived.py jobarchived)
+	@install -m 0755 -d $(DESTDIR)$(PREFIX)/sbin || true
+	@install -m 0755 jobmond/jobmond.py $(DESTDIR)$(PREFIX)/sbin/ || true
+	@install -m 0755 jobarchived/jobarchived.py $(DESTDIR)$(PREFIX)/sbin/ || true
+	@(cd $(DESTDIR)$(PREFIX)/sbin/; ln -s jobmond.py jobmond; ln -s jobarchived.py jobarchived) || true
 	@#
 	@# Files specific to distros if /etc/redhat_release => rpm else (/etc/debian_version => debian)
 	@#
 	@echo
 	@echo "Installing service files in /etc"
-	@sed -i -e 's/DAEMON=.*/DAEMON=${DESTDIR}${PREFIX}\/sbin\/jobmond/g' pkg/deb/init.d/jobmond
-	@sed -i -e 's/DAEMON=.*/DAEMON=${DESTDIR}${PREFIX}\/sbin\/jobarchived/g' pkg/deb/init.d/jobarchived
-	@sed -i -e 's/DAEMON=.*/DAEMON=${DESTDIR}${PREFIX}\/sbin\/jobmond/g' pkg/rpm/init.d/jobmond
-	@sed -i -e 's/DAEMON=.*/DAEMON=${DESTDIR}${PREFIX}\/sbin\/jobarchived/g' pkg/rpm/init.d/jobarchived
+	@sed -i -e 's|DAEMON=.*|DAEMON=$(JOBMOND)|g' pkg/deb/init.d/jobmond
+	@sed -i -e 's|DAEMON=.*|DAEMON=$(JOBARCHIVED)|g' pkg/deb/init.d/jobarchived
+	@sed -i -e 's|DAEMON=.*|DAEMON=$(JOBMOND)|g' pkg/rpm/init.d/jobmond
+	@sed -i -e 's|DAEMON=.*|DAEMON=$(JOBARCHIVED)|g' pkg/rpm/init.d/jobarchived
 	@if test -r /etc/redhat_release; then \
 		install -m 0755 -d $(DESTDIR)/etc/rc.d/init.d; \
 		install -m 0755 pkg/rpm/init.d/jobmond $(DESTDIR)/etc/rc.d/init.d/; \
