@@ -96,7 +96,7 @@ install:  ${REQUIRED}
 	@install -m 0755 jobarchived/jobarchived.py $(DESTDIR)$(PREFIX)/sbin/ || true
 	@(cd $(DESTDIR)$(PREFIX)/sbin/; ln -s jobmond.py jobmond; ln -s jobarchived.py jobarchived) || true
 	@#
-	@# Files specific to distros if /etc/redhat_release => rpm else (/etc/debian_version => debian)
+	@# Files specific to distros if /etc/redhat-release => rpm else (/etc/debian_version => debian)
 	@#
 	@echo
 	@echo "Installing service files in /etc"
@@ -104,7 +104,7 @@ install:  ${REQUIRED}
 	@sed -i -e 's|DAEMON=.*|DAEMON=$(JOBARCHIVED)|g' pkg/deb/init.d/jobarchived
 	@sed -i -e 's|DAEMON=.*|DAEMON=$(JOBMOND)|g' pkg/rpm/init.d/jobmond
 	@sed -i -e 's|DAEMON=.*|DAEMON=$(JOBARCHIVED)|g' pkg/rpm/init.d/jobarchived
-	@if test -r /etc/redhat_release; then \
+	@if test -r /etc/redhat-release; then \
 		install -m 0755 -d $(DESTDIR)/etc/rc.d/init.d; \
 		install -m 0755 pkg/rpm/init.d/jobmond $(DESTDIR)/etc/rc.d/init.d/; \
 		install -m 0755 pkg/rpm/init.d/jobarchived $(DESTDIR)/etc/rc.d/init.d/; \
