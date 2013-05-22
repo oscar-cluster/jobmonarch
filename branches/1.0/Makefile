@@ -35,41 +35,44 @@ all:	tarball rpm srpm deb
 
 tarball:	tarball-gzip tarball-bzip
 
-tarball-gzip:	${REQUIRED} ./pkg/rpm/jobmonarch.spec ./debian/changelog
-	mkdir -p ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}
-	( rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
+$(TMPDIR)/.monarch_buildroot: ${REQUIRED} Makefile
+	@mkdir -p ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}
+	@( rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
 	. ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION} )
-	( cd ${TMPDIR}/.monarch_buildroot; tar zcvf ganglia_jobmonarch-${VERSION}.tar.gz ./ganglia_jobmonarch-${VERSION} )
-	mv ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}.tar.gz ..
+	@sed -i -e 's|__VERSION__|$(VERSION)|g' -e 's/__RELEASE__/$(RELEASE)/g' \
+		${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}/jobmond/jobmond.py \
+		${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}/jobarchived/jobarchived.py \
+		${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}/web/addons/job_monarch/version.php \
+		${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}/pkg/rpm/jobmonarch.spec \
+		${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}/debian/changelog
 
-tarball-bzip:	${REQUIRED} ./pkg/rpm/jobmonarch.spec ./debian/changelog
-	mkdir -p ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}
-	( rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
-	. ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION} )
-	( cd ${TMPDIR}/.monarch_buildroot; tar jcvf ganglia_jobmonarch-${VERSION}.tar.bz2 ./ganglia_jobmonarch-${VERSION} )
-	mv ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}.tar.bz2 ..
 
-rpmspec: ./pkg/rpm/jobmonarch.spec
+tarball-gzip:	$(TMPDIR)/.monarch_buildroot ${REQUIRED}
+	@( cd ${TMPDIR}/.monarch_buildroot; tar zcf ganglia_jobmonarch-${VERSION}.tar.gz ./ganglia_jobmonarch-${VERSION} )
+	@mv ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}.tar.gz ..
+	@rm -rf ${TMPDIR}/.monarch_buildroot
+	@echo "Wrote: ../ganglia_jobmonarch-${VERSION}.tar.gz"
 
-./pkg/rpm/jobmonarch.spec: pkg/rpm/jobmonarch.spec.in Makefile
-	sed -e 's/__VERSION__/${VERSION}/g' -e 's/__RELEASE__/${RELEASE}/g' ./pkg/rpm/jobmonarch.spec.in > ./pkg/rpm/jobmonarch.spec
-	@if test -r /etc/debian_version; then \
-		sed -i -e '/BuildRequires/d' ./pkg/rpm/jobmonarch.spec; \
-	fi
+tarball-bzip:	$(TMPDIR)/.monarch_buildroot ${REQUIRED}
+	@( cd ${TMPDIR}/.monarch_buildroot; tar jcf ganglia_jobmonarch-${VERSION}.tar.bz2 ./ganglia_jobmonarch-${VERSION} )
+	@mv ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}.tar.bz2 ..
+	@rm -rf ${TMPDIR}/.monarch_buildroot
+	@echo "Wrote: ../ganglia_jobmonarch-${VERSION}.tar.bz2"
 
 rpm: tarball-bzip
-	rpmbuild -tb ../ganglia_jobmonarch-${VERSION}.tar.bz2
+	# Binary package will reflect most distro where ganglia default location is /usr/share/ganglia
+	rpmbuild -tb --define '%custom_web_prefixdir /usr/share/ganglia' ../ganglia_jobmonarch-${VERSION}.tar.bz2
 
 srpm: tarball-bzip
 	rpmbuild -ts --define '%dist %{nil}' ../ganglia_jobmonarch-${VERSION}.tar.bz2
 
 debchangelog: ./debian/changelog
 
-./debian/changelog: ./debian/changelog.in Makefile
-	sed -e 's/__VERSION__/${VERSION}/g' -e 's/__RELEASE__/${RELEASE}/g' ./debian/changelog.in > ./debian/changelog
-
-deb: ${REQUIRED} ./debian ./debian/changelog
-	dpkg-buildpackage -b -uc -us
+deb: ${REQUIRED} $(TMPDIR)/.monarch_buildroot ./debian
+	@( cd ${TMPDIR}/.monarch_buildroot; dpkg-buildpackage -b -uc -us )
+	@rm -rf ${TMPDIR}/.monarch_buildroot
+	@echo "Wrote:"
+	@ls -1 ${TMPDIR}/jobmonarch*$(VERSION)*.deb
 
 install:  ${REQUIRED}
 	@#
@@ -157,6 +160,5 @@ install:  ${REQUIRED}
 
 clean:
 	@rm -rf ${TMPDIR}/.monarch_buildroot
-	@rm -rf ./pkg/rpm/jobmonarch.spec
 	@(cd ./debian; rm -rf files *.log *.substvars jobmonarch/ jobmonarch-jobmond/ jobmonarch-jobarchived/ jobmonarch-webfrontend/ tmp/)
 	@rm -f web/addons/job_monarch/conf.php

@@ -23,7 +23,7 @@
 
 import getopt, syslog, ConfigParser, sys
 
-VERSION='1.1'
+VERSION='__VERSION__'
 
 def usage( ver ):
 
