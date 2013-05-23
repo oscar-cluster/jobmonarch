@@ -94,41 +94,36 @@ install:  ${REQUIRED}
 	@#
 	@echo
 	@echo "Installing jobmond.py and jobarchived.py to $(PREFIX)/sbin"
-	@install -m 0755 -d $(DESTDIR)$(PREFIX)/sbin || true
-	@install -m 0755 jobmond/jobmond.py $(DESTDIR)$(PREFIX)/sbin/ || true
-	@install -m 0755 jobarchived/jobarchived.py $(DESTDIR)$(PREFIX)/sbin/ || true
-	@(cd $(DESTDIR)$(PREFIX)/sbin/; ln -s jobmond.py jobmond; ln -s jobarchived.py jobarchived) || true
+	@install -m 0755 -d $(DESTDIR)$(PREFIX)/sbin
+	@install -m 0755 jobmond/jobmond.py $(DESTDIR)$(PREFIX)/sbin/
+	@install -m 0755 jobarchived/jobarchived.py $(DESTDIR)$(PREFIX)/sbin/
+	@(cd $(DESTDIR)$(PREFIX)/sbin/; ln -s jobmond.py jobmond; ln -s jobarchived.py jobarchived)
+	@#
+	@# Files in /etc
+	@#
+	@echo
+	@echo "Installing config files jobmond.conf jobarchived.conf in /etc"
+	@install -m 0755 -d $(DESTDIR)/etc
+	@install -m 0644 jobmond/jobmond.conf $(DESTDIR)/etc/
+	@install -m 0644 jobarchived/jobarchived.conf $(DESTDIR)/etc/
 	@#
 	@# Files specific to distros if /etc/redhat-release => rpm else (/etc/debian_version => debian)
 	@#
-	@echo
-	@echo "Installing service files in /etc"
-	@sed -i -e 's|DAEMON=.*|DAEMON=$(JOBMOND)|g' pkg/deb/init.d/jobmond
-	@sed -i -e 's|DAEMON=.*|DAEMON=$(JOBARCHIVED)|g' pkg/deb/init.d/jobarchived
-	@sed -i -e 's|DAEMON=.*|DAEMON=$(JOBMOND)|g' pkg/rpm/init.d/jobmond
-	@sed -i -e 's|DAEMON=.*|DAEMON=$(JOBARCHIVED)|g' pkg/rpm/init.d/jobarchived
 	@if test -r /etc/redhat-release; then \
+		echo; \
+		echo "Red Hat detected: installing RPM service files in /etc"; \
+		sed -i -e 's|DAEMON=.*|DAEMON=$(JOBMOND)|g' pkg/rpm/init.d/jobmond; \
+		sed -i -e 's|DAEMON=.*|DAEMON=$(JOBARCHIVED)|g' pkg/rpm/init.d/jobarchived; \
 		install -m 0755 -d $(DESTDIR)/etc/rc.d/init.d; \
 		install -m 0755 pkg/rpm/init.d/jobmond $(DESTDIR)/etc/rc.d/init.d/; \
 		install -m 0755 pkg/rpm/init.d/jobarchived $(DESTDIR)/etc/rc.d/init.d/; \
 		install -m 0755 -d $(DESTDIR)/etc/sysconfig; \
 		install -m 0755 pkg/rpm/sysconfig/jobmond $(DESTDIR)/etc/sysconfig; \
 		install -m 0755 pkg/rpm/sysconfig/jobarchived $(DESTDIR)/etc/sysconfig; \
-	else \
-		install -m 0755 -d $(DESTDIR)/etc/init.d; \
-		install -m 0755 pkg/deb/init.d/jobmond $(DESTDIR)/etc/init.d/; \
-		install -m 0755 pkg/deb/init.d/jobarchived $(DESTDIR)/etc/init.d/; \
-		install -m 0755 -d $(DESTDIR)/etc/default; \
-		install -m 0755 pkg/deb/default/jobmond $(DESTDIR)/etc/default; \
-		install -m 0755 pkg/deb/default/jobarchived $(DESTDIR)/etc/default; \
+    else \
+		sed -i -e 's|DAEMON=.*|DAEMON=$(JOBMOND)|g' debian/jobmonarch-jobmond.init; \
+		sed -i -e 's|DAEMON=.*|DAEMON=$(JOBARCHIVED)|g' debian/jobmonarch-jobarchived.init; \
 	fi
-	@#
-	@# Files in /etc
-	@#
-	@echo
-	@echo "Installing config files jobmond.conf jobarchived.conf in /etc"
-	@install -m 0644 jobmond/jobmond.conf $(DESTDIR)/etc
-	@install -m 0644 jobarchived/jobarchived.conf $(DESTDIR)/etc
 	@#
 	@# Files in /usr/share
 	@#
