@@ -1,0 +1,31 @@
+#!/bin/sh
+
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
+set -e
+
+if [ -z "$2" ]
+then
+    # Only on install (not during upgrade)
+
+    if [ -x /etc/init.d/jobmond ]
+    then
+        update-rc.d -f jobmond defaults
+    fi
+
+    echo ""
+    echo "Additional manual changes are required to setup jobmond:"
+    echo ""
+    echo "1) Edit /etc/jobmond.conf to reflect your local settings and setup:"
+    echo "   - BATCH_API: pbs, slurm, sge (experimental), lsf (experimental)"
+    echo "2) Install the python interface to the selected batch queuing system"
+    echo "   - pbs-python (for pbs or torque)"
+    echo "   - python-pyslurm (for slurm)"
+    echo "   - python-pylsf (for lsf)"
+    echo ""
+else
+    # This is a upgrade
+    :
+fi
+
+exit 0

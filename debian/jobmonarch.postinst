@@ -1,0 +1,24 @@
+#!/bin/sh
+
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
+set -e
+
+if [ -z "$2" ]
+then
+    # Only on install (not during upgrade)
+    echo "Generating random password and updating apropriate files"
+    # Generate a 8 char password for the database:
+    export DB_PASSWD=$(tr -dc A-Za-z0-9_< /dev/urandom |head -c 8 | xargs)
+    # Set the password in the SQL script 
+    sed -i -e '/^.*modify me:.*$/d' -e 's/^-- ALTER/ALTER/g' -e "s/'';/'$DB_PASSWD';/g" %{_datadir}/jobarchived/job_dbase.sql
+    # Set the password in the jobarchived config.
+    sed -i -e "s/^#JOB_SQL_PASSWORD.*$/JOB_SQL_PASSWORD\t\t: $DB_PASSWD/g" %{_sysconfdir}/jobarchived.conf
+    # Set the password in the ganglia conf.php
+    sed -i -e "s|^//\$JOB_ARCHIVE_SQL_PASSWORD.*|\$JOB_ARCHIVE_SQL_PASSWORD = \"$DB_PASSWD\"|g" %{gangliaaddonsdir}/job_monarch/conf.php
+else
+    # this is a upgrade
+    :
+fi
+
+exit 0
