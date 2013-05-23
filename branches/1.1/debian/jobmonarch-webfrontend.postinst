@@ -1,0 +1,19 @@
+#!/bin/sh
+
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
+set -e
+
+if [ -z "$2" ]
+then
+    # Only on install (not upgrade)
+    echo "Make sure to set your Ganglia template to job_monarch now"
+    echo "" 
+    echo "In your Ganglia conf.php, set this line:"
+    echo "\$template_name = \"job_monarch\";"
+else
+    # This is a upgrade
+    :
+fi
+
+exit 0
