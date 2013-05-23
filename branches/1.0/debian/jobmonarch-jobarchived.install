@@ -1,5 +1,2 @@
-etc/jobarchived.conf
-etc/default/jobarchived
-etc/init.d/jobarchived
-usr/sbin/jobarchived.py
-
+/etc/jobarchived.conf
+/usr/sbin/jobarchived.py

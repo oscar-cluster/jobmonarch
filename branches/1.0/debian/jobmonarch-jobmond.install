@@ -1,4 +1,2 @@
-etc/jobmond.conf
-etc/default/jobmond
-etc/init.d/jobmond
-usr/sbin/jobmond.py
+/usr/sbin/jobmond.py
+/etc/jobmond.conf
