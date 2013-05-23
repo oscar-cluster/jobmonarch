@@ -1,76 +1,97 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <HTML>
 <HEAD>
-<TITLE>Ganglia :: {longpage_title}</TITLE>
+<TITLE>Ganglia :: {$longpage_title}</TITLE>
 <META http-equiv="Content-type" content="text/html; charset=utf-8">
+<META http-equiv="refresh" content="{$refresh}{$redirect}" >
+<LINK rel="stylesheet" href="./styles.css" type="text/css">
+<SCRIPT LANGUAGE="javascript" SRC="ts_picker.js"></SCRIPT>
+<SCRIPT LANGUAGE="javascript">
 
-<link rel="stylesheet" href="./lib/lightbox2/css/lightbox.css" type="text/css" media="screen" />
+        function setPeriodTimestamps() {
 
-<script type="text/javascript" src="./lib/lightbox2/js/prototype.js"></script>
-<script type="text/javascript" src="./lib/lightbox2/js/scriptaculous.js?load=effects,builder"></script>
-<script type="text/javascript" src="./lib/lightbox2/js/lightbox.js"></script>
+                document.{$form_name}.period_start.value = document.{$form_name}.period_start_pick.value;
+                document.{$form_name}.period_stop.value = document.{$form_name}.period_stop_pick.value;
+        }
 
-<link rel="stylesheet" type="text/css" href="./lib/extjs/resources/css/ext-all.css" />
-<link rel="stylesheet" type="text/css" href="./css/styles.css" />
-<link rel="stylesheet" type="text/css" href="./lib/extjs/tab-scroller-menu.css" />
-
-<script type="text/javascript" src="./lib/extjs/adapter/ext/ext-base.js"></script>
-<!-- <script type="text/javascript" src="./lib/extjs/adapter/ext/ext-base-debug.js"></script> -->
-<script type="text/javascript" src="./lib/extjs/adapter/ext/ext-base-debug.js"></script>
-<script type="text/javascript" src="./lib/extjs/ext-all.js"></script>
-<!-- <script type="text/javascript" src="./lib/extjs/ext-all-debug.js"></script> -->
-<script type="text/javascript" src="./lib/extjs/ext-all-debug.js"></script>
-<script type="text/javascript" src="./lib/extjs/searchfield.js"></script>
-<script type="text/javascript" src="./lib/extjs/StatusBar.js"></script>
-<script type="text/javascript" src="./lib/extjs/ProgressBarPager.js"></script>
-<script type="text/javascript" src="./lib/extjs/TabScrollerMenu.js"></script>
-<script type="text/javascript" src="./lib/extjs/BufferView.js"></script>
-<script type="text/javascript" src="./js/monarch.js"></script>
-<script type="text/javascript">
-
-Ext.onReady( function()
-{
-	Ext.QuickTips.init();
-
-	JobProxy.on('beforeload', function(p, params) 
-	{
-		params['c']			= '{cluster}';
-		params['{session_name}']	= '{session_id}';
-		newparams			= joinMyArray( params, myfilters );
-		myparams			= newparams;
-		params				= newparams;
-	});
-
-	ClusterImageArgs['{session_name}']	= '{session_id}';
-	ClusterImageArgs['c']			= '{cluster}';
-
-	GraphSummaryWindow.show();
-
-	ClusterImageWindow.html			= '<IMG ID="clusterimage" SRC="./image.php?{session_name}={session_id}" USEMAP="#MONARCH_CLUSTER_BIG" BORDER="0">';
-	ClusterImageWindow.show();
-	setClusterImagePosition();
-	reloadClusterImage();
-
-	JobListingWindow.setTitle( "{cluster} Jobs Overview" );
-	JobListingWindow.show();
-	//achorJobListing();
-	setJobListingPosition();
-	reloadJobStore();
-
-	Ext.get( 'rjqjgraph' ).update( '<IMG ID="rjqj_graph" SRC="{rjqj_graph}" BORDER=0>' );
-	//Ext.get( 'pie' ).update( '<IMG ID="pie" SRC="./image.php?{session_name}={session_id}&c={uue_clustername}&view=big-clusterimage" BORDER=0>' );
-});
-</script>
-
-
+</SCRIPT>
 </HEAD>
-<BODY CLASS="background">
+<BODY BGCOLOR="#FFFFFF">
 
-<font size="1" color="blue">
-Job Monarch version {monarch-version}<BR />
-</font>
-<A HREF="https://subtrac.sara.nl/oss/jobmonarch/" TARGET="_blank"><IMG SRC="./jobmonarch.gif" ALT="Job Monarch" BORDER="0"></A>
+<FORM ACTION="./" METHOD="GET" NAME="{$form_name}">
+<INPUT TYPE="HIDDEN" NAME="c" VALUE="{$cluster}">
+<INPUT TYPE="HIDDEN" NAME="self" VALUE="{$self}">
+<INPUT TYPE="HIDDEN" NAME="j_view" VALUE="{$view}">
+<TABLE WIDTH="100%">
+<TR>
+  <TD ROWSPAN="2" WIDTH="150">
+  <A HREF="https://subtrac.sara.nl/oss/jobmonarch/">
+  <IMG SRC="./jobmonarch.gif" 
+      ALT="Ganglia" BORDER="0"></A>
+  </TD>
+  <TD VALIGN="TOP">
 
-    <MAP NAME="MONARCH_CLUSTER_BIG">
-    {node_area_map}
-    </MAP> 
+  <TABLE WIDTH="100%" CELLPADDING="8" CELLSPACING="0" BORDER=0>
+  <TR BGCOLOR="#DDDDDD">
+     <TD BGCOLOR="#DDDDDD">
+     <FONT SIZE="+1">
+     <B>{$page_title} for {$date}</B>
+     </FONT>
+     </TD>
+     <TD BGCOLOR="#DDDDDD" ALIGN="RIGHT">
+     </TD>
+     <TD></TD>
+  </TR>
+  <TR>
+     <TD COLSPAN=1>
+     {$metric_menu} &nbsp;&nbsp;
+     {$range_menu}&nbsp;&nbsp;
+     {$sort_menu}&nbsp;&nbsp;
+{if "$timeperiod" == "yes"}
+    <INPUT TYPE="HIDDEN" NAME="period_start" VALUE="{$period_start}">
+    <INPUT TYPE="HIDDEN" NAME="period_stop" VALUE="{$period_stop}">
+    <INPUT TYPE="HIDDEN" NAME="h" VALUE="{$hostname}">
+    <BR><BR><B>Graph/ from
+    <INPUT TYPE="text" NAME="period_start_pick" VALUE="{$period_start}" ALT="Start time" DISABLED="TRUE">
+    <a href="javascript:show_calendar('document.{$form_name}.period_start_pick', document.{$form_name}.period_start_pick.value);" alt="Click to select a date/time" title="Click to select a date/time">
+    <img src="cal.gif" width="16" height="16" border="0"></a>
+    <a href="#" onClick="javascript: document.{$form_name}.period_start_pick.value=''" alt="Click here to clear field" title="Click here to clear field">
+    <IMG SRC="redcross.jpg" BORDER=0></A>
+    to <INPUT TYPE="text" NAME="period_stop_pick" VALUE="{$period_stop}" ALT="Stop time" DISABLED="TRUE">
+    <a href="javascript:show_calendar('document.{$form_name}.period_stop_pick', document.{$form_name}.period_stop_pick.value);" alt="Click to select a date/time" title="Click to select a date/time">
+    <img src="cal.gif" width="16" height="16" border="0"></a>
+    <a href="#" onClick="javascript: document.{$form_name}.period_stop_pick.value=''" alt="Click here to clear field" title="Click here to clear field">
+    </B>
+    <IMG SRC="redcross.jpg" BORDER=0></A>
+
+{if "$hostview" == "yes"}
+    <INPUT TYPE="HIDDEN" NAME="job_start" VALUE="{$job_start}">
+    <INPUT TYPE="HIDDEN" NAME="job_stop" VALUE="{$job_stop}">
+{/if}
+    <INPUT TYPE="submit" onClick="setPeriodTimestamps();" VALUE="Refresh graphs">
+{/if}
+     </TD>
+     <TD>
+      <B>{$alt_view}</B>
+     </TD>
+
+  </TR>
+  </TABLE>
+
+{if "$search" == "yes"}
+     <TD align="right"><CENTER>
+       <A HREF="./?c={$cluster_url}&j_view=search&self={$self}">
+       <B><I>Jobarchive</I></B><BR>
+       <IMG SRC="./document_archive.jpg" HEIGHT=100 ALT="Search the archive for {$cluster}" TITLE="Search the archive for {$cluster}" BORDER=0></A></CENTER>
+     </TD>
+{/if}
+
+  </TD>
+</TR>
+</TABLE> 
+
+<FONT SIZE="+1">
+{$node_menu}
+</FONT>
+
+<HR SIZE="1" NOSHADE>
