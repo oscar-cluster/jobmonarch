@@ -1,0 +1,53 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:             jobmond
+# Required-Start:       $local_fs $remote_fs $network $time
+# Required-Stop:        $local_fs $remote_fs $network $time
+# Should-Start:         $syslog
+# Should-Stop:          $syslog
+# Default-Start:        2 3 4 5
+# Default-Stop:         0 1 6
+# Short-Description:    Job Monitor Daemon
+### END INIT INFO
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/sbin/jobmond
+NAME=jobmond
+DESC="Job Monitor Daemon"
+
+PIDFILE="/var/run/$NAME.pid"
+
+test -x $DAEMON || return 0
+
+OPTIONS=""
+
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+case "$1" in
+  start)
+	echo -n "Starting $DESC: "
+	start-stop-daemon --start --quiet --startas "$DAEMON" --pidfile "$PIDFILE" -- \
+		--pidfile="$PIDFILE" $OPTIONS || { echo "start failed."; exit 0; }
+	echo "$NAME."
+	exit 0
+	;;
+  stop)
+	echo -n "Stopping $DESC: "
+        start-stop-daemon --stop --quiet --pidfile "$PIDFILE" \
+                --signal 9 2>&1 > /dev/null || { rm -f "$PIDFILE"; echo "not running."; exit 0; }
+	echo "$NAME."
+	rm -f "$PIDFILE"
+	exit 0
+	;;
+  restart|force-reload)
+	$0 stop
+	$0 start
+	;;
+  *)
+	echo "Usage: $N {start|stop|restart}" >&2
+	exit 1
+	;;
+esac
+
+exit 0
