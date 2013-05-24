@@ -88,7 +88,7 @@ install:  ${REQUIRED}
 	@echo
 	@echo "Using $(JOBARCHIVE_RRDS) as jobarchive path to  store rrds files. If it's not what"
 	@echo "you want, use make JOBARCHIVE_RRDS=/path/to/you/jobarchived/rrdsfiles ."
-	@sed -i -e 's|/var/lib/jobarchive|$(JOBARCHIVE_RRDS)|g' jobarchived/jobarchived.conf web/addons/job_monarch/conf.php
+	@sed -i -e 's|__JOBARCHIVE_RRDS__|$(JOBARCHIVE_RRDS)|g' jobarchived/jobarchived.conf web/addons/job_monarch/conf.php
 	@#
 	@# Files in SBIN_DIR
 	@#
