@@ -869,6 +869,10 @@ class JobXMLProcessor( XMLProcessor ):
 
                 xml.sax.parseString( my_data, self.myXMLHandler, self.myXMLError )
 
+                if self.myXMLError.isFatal():
+
+                    sys.exit( 1 )
+
                 debug_msg( 1, 'job_xml_thread(): Done parsing.' )
             else:
                 debug_msg( 1, 'job_xml_thread(): Got no data.' )
@@ -1250,6 +1254,10 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 
 class XMLErrorHandler( xml.sax.handler.ErrorHandler ):
 
+    def __init__( self ):
+
+        self.me_fatal = False
+
     def error( self, exception ):
         """Recoverable error"""
 
@@ -1262,11 +1270,17 @@ class XMLErrorHandler( xml.sax.handler.ErrorHandler ):
 
         # Ignore 'no element found' errors
         if exception_str.find( 'no element found' ) != -1:
+
             debug_msg( 0, 'No XML data found: Socket not (re)connected or datasource not available.' )
             return 0
 
+        self.me_fatal = True
+
         debug_msg( 0, 'FATAL ERROR: Non-recoverable XML error ' + str( exception ) )
-        sys.exit( 1 )
+
+    def isFatal( self ):
+
+        return self.me_fatal
 
     def warning( self, exception ):
         """Warning"""
