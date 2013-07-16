@@ -911,10 +911,12 @@ class JobXMLHandler( xml.sax.handler.ContentHandler ):
             timedout_jobs = self.ds.checkTimedoutJobs()
             self.iteration = 0
 
-            for j in timedout_jobs:
+            if timedout_jobs != None:
 
-                del self.jobAttrs[ j ]
-                del self.jobAttrsSaved[ j ]
+                for j in timedout_jobs:
+
+                    del self.jobAttrs[ j ]
+                    del self.jobAttrsSaved[ j ]
 
         debug_msg( 1, "XML: Start document: iteration %s" %str(self.iteration) )
 
