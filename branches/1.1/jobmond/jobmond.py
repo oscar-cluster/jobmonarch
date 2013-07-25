@@ -606,7 +606,13 @@ def loadConfig( filename ):
     #TODO: is this really still needed or should be automatic
     DETECT_TIME_DIFFS    = cfg.getboolean( 'DEFAULT', 'DETECT_TIME_DIFFS' )
 
-    BATCH_HOST_TRANSLATE = getlist( cfg.get( 'DEFAULT', 'BATCH_HOST_TRANSLATE' ) )
+    try:
+        BATCH_HOST_TRANSLATE = getlist( cfg.get( 'DEFAULT', 'BATCH_HOST_TRANSLATE' ) )
+
+    except ConfigParser.NoOptionError:
+
+        BATCH_HOST_TRANSLATE = [ ]
+        pass
 
     try:
 
