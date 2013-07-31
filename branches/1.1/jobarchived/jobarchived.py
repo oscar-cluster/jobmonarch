@@ -931,8 +931,6 @@ class JobXMLHandler( xml.sax.handler.ContentHandler ):
         just one XML statement with all info
         """
 
-        global ARCHIVE_DATASOURCES
-
         jobinfo = { }
 
         self.elementct    += 1
@@ -1026,7 +1024,7 @@ class JobXMLHandler( xml.sax.handler.ContentHandler ):
 
                     debug_msg( 10, 'jobinfo for job %s has changed' %jobid )
             else:
-                debug_msg( 10, 'new job %s' %jobid )
+                debug_msg( 1, 'new job %s' %jobid )
 
                 if not jobid in self.jobs_to_store:
 
@@ -1145,8 +1143,6 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
     def gatherClusters( self ):
         """Find all existing clusters in archive dir"""
 
-        global ARCHIVE_DATASOURCES
-
         archive_dir    = check_dir(ARCHIVE_PATH)
 
         hosts        = [ ]
@@ -1176,14 +1172,10 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 
                     self.clusters[ clustername ] = RRDHandler( self.config, clustername )
 
-                    debug_msg( 9, 'Found cluster dir: %s' %( clustername ) )
-
-        debug_msg( 9, "Found "+str(len(self.clusters.keys()))+" cluster dirs" )
+        debug_msg( 9, "Found "+str(len(self.clusters.keys()))+" clusters" )
 
     def startElement( self, name, attrs ):
         """Memorize appropriate data from xml start tags"""
-
-        global ARCHIVE_DATASOURCES
 
         if name == 'GANGLIA_XML':
 
@@ -1208,7 +1200,7 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 
                 self.clusters[ self.clusterName ] = RRDHandler( self.config, self.clusterName )
 
-            debug_msg( 10, ' |-Cluster found: %s' %( self.clusterName ) )
+                debug_msg( 10, ' |-Cluster found: %s' %( self.clusterName ) )
 
         elif name == 'HOST' and self.clusterName in ARCHIVE_DATASOURCES:     
 
@@ -1245,7 +1237,6 @@ class GangliaXMLHandler( xml.sax.handler.ContentHandler ):
 
                 self.clusters[ self.clusterName ].memMetric( self.hostName, myMetric )
 
-                debug_msg( 9, 'added metric %s from host %s to cluster %s' %( myMetric['name'], self.hostName, self.clusterName ) )
                 debug_msg( 11, ' | | |-metric: %s:%s' %( myMetric['name'], myMetric['val'] ) )
 
     def storeMetrics( self ):
@@ -1678,6 +1669,10 @@ class GangliaConfigParser:
 class RRDHandler:
     """Class for handling RRD activity"""
 
+    myMetrics   = { }
+    lastStored  = { }
+    timeserials = { }
+    slot = None
 
     def __init__( self, config, cluster ):
         """Setup initial variables"""
@@ -1688,9 +1683,6 @@ class RRDHandler:
         self.cluster = cluster
         self.config  = config
         self.slot    = threading.Lock()
-        self.myMetrics   = { }
-        self.lastStored  = { }
-        self.timeserials = { }
 
         if MODRRDTOOL:
 
