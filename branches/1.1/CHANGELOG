@@ -3,6 +3,12 @@
 
 1.1.1:
 
+    packaging)
+
+        f: Correctly set the JOBARCHIVE_RRDS in both jobarchived.conf anf 
+           web/conf.php.in
+        f: debian init.d script names in post/pre pkg corrected to new name
+
     web)
 
         c: column nodes renamed to: hosts
