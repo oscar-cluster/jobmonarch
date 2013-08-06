@@ -5,9 +5,10 @@
 
     packaging)
 
-        f: Correctly set the JOBARCHIVE_RRDS in both jobarchived.conf anf 
+        f: correctly set the JOBARCHIVE_RRDS in both jobarchived.conf and
            web/conf.php.in
         f: debian init.d script names in post/pre pkg corrected to new name
+        f: debian postrm was incorrectly trying redhat conditional restart
 
     web)
 
