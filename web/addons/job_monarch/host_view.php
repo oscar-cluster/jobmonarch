@@ -3,7 +3,7 @@
  *
  * This file is part of Jobmonarch
  *
- * Copyright (C) 2006  Ramon Bastiaans
+ * Copyright (C) 2006-2013  Ramon Bastiaans
  *
  * Jobmonarch is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,18 +19,30 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * SVN $Id: host_view.php 412 2007-07-06 14:36:09Z bastiaans $
+ * SVN $Id$
  */
 
 include_once "./libtoga.php";
 
-//$tpl = new TemplatePower( "templates/host_view.tpl" );
-//$tpl->assignInclude("extra", "templates/host_extra.tpl");
-//$tpl->prepare();
+if( $view == "overview-host" )
+{
+    $my_dir = getcwd();
 
-function datetimeToEpoch( $datetime ) {
+    global $context;
 
-        //printf("datetime = %s\n", $datetime );
+    $context = 'cluster';
+
+    chdir( $GANGLIA_PATH );
+
+    include "./ganglia.php";
+    include "./get_ganglia.php";
+
+    chdir( $my_dir );
+}
+
+function datetimeToEpoch( $datetime ) 
+{
+
         $datetime_fields = explode( ' ', $datetime );
 
         $date = $datetime_fields[0];
@@ -50,178 +62,221 @@ function datetimeToEpoch( $datetime ) {
         $minutes = $time_fields[1];
         $seconds = $time_fields[2];
 
-        //printf( "hours = %s minutes = %s seconds = %s\n", $hours, $minutes, $seconds );
-
         $timestamp = mktime( $hours, $minutes, $seconds, $months, $days, $years );
-
-        //printf( "timestamp = %s\n", $timestamp );
 
         return $timestamp;
 }
 
-function makeHostView() {
+function makeHostView() 
+{
 
-	global $tpl, $metrics, $clustername, $hostname;
-	global $cluster_ul, $hosts_up, $get_metric_string;
-	global $cluster, $period_start, $period_stop;
-	global $job_start, $job_stop;
+    global $dwoo, $metrics, $clustername, $hostname;
+    global $cluster_ul, $hosts_up, $get_metric_string;
+    global $cluster, $period_start, $period_stop;
+    global $job_start, $job_stop, $view, $conf, $range;
 
-	//print_r( $metrics );
+    $tpl = new Dwoo_Template_File("templates/host_view.tpl");
+    $tpl_data = new Dwoo_Data();
 
-	//printf( "c %s\n", $clustername );
+    $rrdirs = array();
 
-	$trd = new TarchRrdGraph( $clustername, $hostname );
-	$rrdirs = $trd->getRrdDirs( $period_start, $period_stop );
+    if( $view == "overview-host" )
+    {
+        $rrdirs[] = $conf['rrds'] . '/' . $clustername .'/'. $hostname;
+    }
+    else
+    {
+        $trd    = new TarchRrdGraph( $clustername, $hostname );
+        $rrdirs = $trd->getRrdDirs( $period_start, $period_stop );
+    }
 
-	$longtitle = "Batch Archive Node Report :: Powered by Job Monarch!";
-	$title = "Batch Archive Node Report";
+    $longtitle    = "Batch Archive Node Report :: Powered by Job Monarch!";
+    $title        = "Batch Archive Node Report";
 
-	makeHeader( 'host_view', $title, $longtitle );
+    makeHeader( 'host_view', $title, $longtitle );
 
-	$metrics = $metrics[$hostname];
-	$mymetrics = array();
+    #print_r( $rrdirs);
 
-	foreach( $rrdirs as $rrdir ) 
-	{
-		$ml	= $trd->dirList( $rrdir );
+    $metrics = $metrics[$hostname];
+    $mymetrics = array();
 
-		foreach( $ml as $lmetr )
-		{
-			$metrn_fields	= explode( '.', $lmetr );
+    foreach( $rrdirs as $rrdir ) 
+    {
+        #printf("rrd dir %s\n", $rrdir );
+        if( $view == "overview-host" )
+        {
+            $mymetrics = $metrics;
+            unset( $mymetrics['last_reported_timestamp'] ); // Ganglia bug?
+            #print_r( $mymetrics );
+        }
+        else
+        {
+            #printf("archive mode\n");
+            $ml    = $trd->dirList( $rrdir );
 
-			$metrn		= $metrn_fields[0];
+            foreach( $ml as $lmetr )
+            {
+                $metrn_fields = explode( '.', $lmetr );
 
-			if( !in_array( $metrn, $mymetrics ) )
-			{
-				$mymetrics[$metrn]	= $metrics[$metrn];
-			}
-		}
-	}
+                $metrn        = $metrn_fields[0];
 
-	$hosts_up = $hosts_up[$hostname];
-	//print_r( $hosts_up );
+                if( !in_array( $metrn, $mymetrics ) )
+                {
+                    $mymetrics[$metrn]    = $metrics[$metrn];
+                }
+            }
+        }
+    }
 
-	$tpl->assign("cluster", $clustername);
-	$tpl->assign("host", $hostname);
-	$tpl->assign("node_image", "../../".node_image($metrics));
-	$tpl->assign("sort",$sort);
-	$tpl->assign("range",$range);
+    $hosts_up = $hosts_up[$hostname];
 
-	if( !is_numeric( $period_start ) ) {
-		$period_start = datetimeToEpoch( $period_start );
-	}
-	if( !is_numeric( $period_stop ) ) {
-		$period_stop = datetimeToEpoch( $period_stop );
-	}
+    $tpl_data->assign("cluster", $clustername);
+    $tpl_data->assign("host", $hostname);
+    $tpl_data->assign("node_image", "../../".node_image($metrics));
+    $tpl_data->assign("sort",$sort);
+    $tpl_data->assign("range",$range);
 
-	if($hosts_up)
-	      $tpl->assign("node_msg", "This host is up and running."); 
-	else
-	      $tpl->assign("node_msg", "This host is down."); 
+    if( !is_numeric( $period_start ) ) 
+    {
+        $period_start = datetimeToEpoch( $period_start );
+    }
+    if( !is_numeric( $period_stop ) ) 
+    {
+        $period_stop = datetimeToEpoch( $period_stop );
+    }
 
-	$cluster_url=rawurlencode($clustername);
-	$tpl->assign("cluster_url", $cluster_url);
-	//$tpl->assign("graphargs", "h=$hostname&$get_metric_string&st=$cluster[LOCALTIME]&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop");
-	$tpl->assign("graphargs", "h=$hostname&$get_metric_string&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop");
+    if($hosts_up)
+          $tpl_data->assign("node_msg", "This host is up and running."); 
+    else
+          $tpl_data->assign("node_msg", "This host is down."); 
 
-	# For the node view link.
-	$tpl->assign("node_view","./?p=2&c=$cluster_url&h=$hostname");
+    $cluster_url=rawurlencode($clustername);
+    $tpl_data->assign("cluster_url", $cluster_url);
 
-	//# No reason to go on if this node is down.
-	//if ($hosts_down)
-	//   {
-	//      $tpl->printToScreen();
-	//      return;
-	//   }
+    $graphargs = "h=$hostname&r=$range&job_start=$job_start&job_stop=$job_stop";
 
-	$tpl->assign("ip", $hosts_up[IP]);
+    if( $range == 'job' )
+    {
+        $graphargs .= "&period_start=$period_start&period_stop=$period_stop";
+    }
+    else
+    {
+        $tijd = time();
+        $graphargs .= "&st=$tijd";
+    }
 
-	foreach ($mymetrics as $name => $v)
-	   {
-	       if ($v[TYPE] == "string" or $v[TYPE]=="timestamp" or $always_timestamp[$name])
-		  {
-		     # Long gmetric name/values will disrupt the display here.
-		     if ($v[SOURCE] == "gmond") $s_metrics[$name] = $v;
-		  }
-	       elseif ($v[SLOPE] == "zero" or $always_constant[$name])
-		  {
-		     $c_metrics[$name] = $v;
-		  }
-	       else if ($reports[$metric])
-		  continue;
-	       else
-		  {
-		     //$graphargs = "c=$cluster_url&h=$hostname&v=$v[VAL]&m=$name"
-		     //  ."&z=medium&st=$cluster[LOCALTIME]&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop";
-		     $graphargs = "c=$cluster_url&h=$hostname&m=$name"
-		       ."&z=medium&job_start=$job_start&job_stop=$job_stop&period_start=$period_start&period_stop=$period_stop";
-		     # Adding units to graph 2003 by Jason Smith <smithj4@bnl.gov>.
-		     if ($v[UNITS]) {
-			$encodeUnits = rawurlencode($v[UNITS]);
-			$graphargs .= "&vl=$encodeUnits";
-		     }
-		     $g_metrics[$name][graph] = $graphargs;
-          }
-	   }
-	# Add the uptime metric for this host. Cannot be done in ganglia.php,
-	# since it requires a fully-parsed XML tree. The classic contructor problem.
-	$s_metrics[uptime][TYPE] = "string";
-	$s_metrics[uptime][VAL] = uptime($cluster[LOCALTIME] - $metrics[boottime][VAL]);
+    $tpl_data->assign("graphargs", "$graphargs");
 
-	# Add the gmond started timestamps & last reported time (in uptime format) from
-	# the HOST tag:
-	$s_metrics[gmond_started][TYPE] = "timestamp";
-	$s_metrics[gmond_started][VAL] = $hosts_up[GMOND_STARTED];
-	$s_metrics[last_reported][TYPE] = "string";
-	$s_metrics[last_reported][VAL] = uptime($cluster[LOCALTIME] - $hosts_up[REPORTED]);
+    # For the node view link.
+    $tpl_data->assign("node_view","./?p=2&c=$cluster_url&h=$hostname");
 
-	# Show string metrics
-	if (is_array($s_metrics))
-	   {
-	      ksort($s_metrics);
-	      foreach ($s_metrics as $name => $v )
-	     {
-		$tpl->newBlock("string_metric_info");
-		$tpl->assign("name", $name);
-		if( $v[TYPE]=="timestamp" or $always_timestamp[$name])
-		   {
-		      $tpl->assign("value", date("r", $v[VAL]));
-		   }
-		else
-		   {
-		      $tpl->assign("value", "$v[VAL] $v[UNITS]");
-		   }
-	     }
-	   }
+    $tpl_data->assign("ip", $hosts_up['IP']);
 
-	# Show constant metrics.
-	if (is_array($c_metrics))
-	   {
-	      ksort($c_metrics);
-	      foreach ($c_metrics as $name => $v )
-	     {
-		$tpl->newBlock("const_metric_info");
-		$tpl->assign("name", $name);
-		$tpl->assign("value", "$v[VAL] $v[UNITS]");
-	     }
-	   }
+    #print_r( $mymetrics );
 
-	# Show graphs.
-	if (is_array($g_metrics))
-	   {
-	      ksort($g_metrics);
+    foreach ($mymetrics as $name => $v)
+    {
+        if ($v['TYPE'] == "string" or $v['TYPE']=="timestamp" or $always_timestamp[$name] or $v['NAME']=='last_reported_timestamp')
+        {
+            # Long gmetric name/values will disrupt the display here.
+            if ($v['SOURCE'] == "gmond") $s_metrics[$name] = $v;
+        }
+        else if ($v['SLOPE'] == "zero" or $always_constant[$name])
+        {
+            $c_metrics[$name] = $v;
+        }
+        else if ($reports[$metric])
+        {
+            continue;
+        }
+        else
+        {
+            $graphargs = "c=$cluster_url&h=$hostname&m=$name&z=overview-medium&r=$range&job_start=$job_start&job_stop=$job_stop";
 
-	      $i = 0;
-	      foreach ( $g_metrics as $name => $v )
-		 {
-		    $tpl->newBlock("vol_metric_info");
-		    $tpl->assign("graphargs", $v[graph]);
-		    $tpl->assign("alt", "$hostname $name");
-		    if($i++ %2)
-		       $tpl->assign("br", "<BR>");
-		 }
-	   }
+            if( $range == 'job' )
+            {
+                $graphargs .= "&period_start=$period_start&period_stop=$period_stop";
+            }
+            else
+            {
+                $tijd = time();
+                $graphargs .= "&st=$tijd";
+            }
+            # Adding units to graph 2003 by Jason Smith <smithj4@bnl.gov>.
+            if ($v['UNITS']) 
+            {
+                $encodeUnits = rawurlencode($v['UNITS']);
+                $graphargs .= "&vl=$encodeUnits";
+            }
+            $g_metrics[$name]['graph'] = $graphargs;
+        }
+    }
+    # Add the uptime metric for this host. Cannot be done in ganglia.php,
+    # since it requires a fully-parsed XML tree. The classic contructor problem.
+    $s_metrics['uptime']['TYPE'] = "string";
+    $s_metrics['uptime']['VAL'] = uptime($cluster['LOCALTIME'] - $metrics['boottime']['VAL']);
+
+    # Add the gmond started timestamps & last reported time (in uptime format) from
+    # the HOST tag:
+    $s_metrics['gmond_started']['TYPE'] = "timestamp";
+    $s_metrics['gmond_started']['VAL'] = $hosts_up['GMOND_STARTED'];
+    $s_metrics['last_reported']['TYPE'] = "string";
+    $s_metrics['last_reported']['VAL'] = uptime($cluster['LOCALTIME'] - $hosts_up['REPORTED']);
+
+    # Show string metrics
+    if (is_array($s_metrics))
+    {
+        ksort($s_metrics);
+        $string_metric_info_loop = array();
+        foreach ($s_metrics as $name => $v )
+        {
+            $metric_info = array();
+            $metric_info["name"] = $name;
+            if( $v['TYPE']=="timestamp" or $always_timestamp[$name])
+            {
+                $metric_info["value"] = date("r", $v['VAL']);
+            }
+            else
+            {
+                $metric_info["value"] = $v['VAL']." ". $v['UNITS'];
+            }
+            $string_metric_info_loop[] = $metric_info;
+        }
+        $tpl_data->assign("string_metric_info", $string_metric_info_loop );
+    }
+
+    # Show constant metrics.
+    if (is_array($c_metrics))
+    {
+        ksort($c_metrics);
+        $const_metric_info_loop = array();
+        foreach ($c_metrics as $name => $v )
+        {
+            $const_info = array();
+            $const_infp["name"] = $name;
+            $const_info["value"] = $v[VAL]." ". $v[UNITS];
+            $const_metric_info_loop[] = $const_info;
+        }
+        $tpl_data->assign("const_metric_info", $const_metric_info_loop );
+    }
+
+    # Show graphs.
+    if (is_array($g_metrics))
+    {
+        ksort($g_metrics);
+        $vol_metric_info_loop = array();
+
+        $i = 0;
+        foreach ( $g_metrics as $name => $v )
+        {
+            $metric_info = array();
+            $metric_info["graphargs"] = $v['graph'];
+            $metric_info["alt"] = "$hostname $name";
+            $vol_metric_info_loop[] = $metric_info;
+        } 
+        $tpl_data->assign("vol_metric_info", $vol_metric_info_loop );
+    }
+    $dwoo->output($tpl, $tpl_data);
 }
 
-	//$tpl->printToScreen();
 ?>

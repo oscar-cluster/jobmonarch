@@ -92,7 +92,7 @@ REQUIREMENTS
 		- py-rrdtool
 		  http://sourceforge.net/projects/py-rrdtool/
 
-		- python-pgsql v4.x.x
+		- python-psycopg2
 		  http://sourceforge.net/projects/pypgsql/
 
 		- gmetad v3.x.x
@@ -105,6 +105,8 @@ REQUIREMENTS
 
 		- php-pgsql v4.x.x
 		  (should come with Postgres)
+
+		- php-mbstring
 
 		- GD v2.x
 		  http://www.boutell.com/gd/

@@ -1,0 +1,38 @@
+#!/bin/sh
+
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
+set -e
+
+if [ -z "$2" ]
+then
+    # Only on install (not during upgrade)
+
+    if [ -x /etc/init.d/jobmonarch-jobarchived ]
+    then
+        update-rc.d -f jobmonarch-jobarchived defaults
+    fi
+
+    echo ""
+    echo "Additional manual changes are required to setup jobarchived:"
+    echo ""
+    echo "1) Edit /etc/jobarchived.conf to reflect your local settings and setup:"
+    echo "   - ARCHIVE_DATASOURCES and ARCHIVE_PATH"
+    echo ""
+    echo "2) Create a 'jobarchive' database and create jobarchived's tables:" 
+    echo "   - createdb jobarchive"
+    echo "   - psql -f /usr/share/jobarchived/job_dbase.sql jobarchive"
+    echo "   - Update /var/lib/pgsql/data/pg_hba.conf by adding the following lines:"
+    echo "     local   jobarchive      jobarchive                              trust"
+    echo "     host    jobarchive      jobarchive      127.0.0.1/32            trust"
+    echo "     host    jobarchive      jobarchive      ::1/128                 trust"
+    echo "   - Restart the postgresql service"
+    echo ""
+else
+    # This is a upgrade
+    :
+fi
+
+exit 0
+
+
