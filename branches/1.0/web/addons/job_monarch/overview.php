@@ -234,10 +234,14 @@ function sortJobs( $jobs, $sortby, $sortorder )
                 if( $state == 'R' )
                 {
                     $nodes = count( $jobattrs['nodes'] );
+
+                    $job_hosts = $jobattrs['nodes'][0];
+
                 }
                 else
                 {
                     $nodes = $jobattrs['nodes'];
+                    $job_hosts = '';
                 }
 
                 $ppn         = (int) $jobattrs['ppn'] ? $jobattrs['ppn'] : 1;
@@ -278,6 +282,10 @@ function sortJobs( $jobs, $sortby, $sortorder )
 
                     case "nodes":
                         $sorted[$jobid] = $nodes;
+                        break;
+
+                    case "hosts":
+                        $sorted[$jobid] = $job_hosts;
                         break;
 
                     case "cpus":
