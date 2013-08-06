@@ -5,7 +5,7 @@ set -e
 case "$1" in
     upgrade)
         # If the service is running, restart it.
-        /etc/init.d/jobmonarch-jobarchived condrestart || true
+        /etc/init.d/jobmonarch-jobarchived restart || true
         ;;
     *)
         ;;
