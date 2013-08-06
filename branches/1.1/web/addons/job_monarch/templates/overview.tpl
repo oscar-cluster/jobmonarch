@@ -179,7 +179,7 @@ View
 <TH><B><A HREF="#" onClick="setSort( 'queued' )">Queued</A></B></TH>
 {/if}
 {if "$column_header_nodes" == "yes"}
-<TH WIDTH="11%"><B><A HREF="#" onClick="setSort( 'nodes' )" ALT="Nodes" TITLE="Nodes">Nodes</A></B></TH>
+<TH WIDTH="11%"><B><A HREF="#" onClick="setSort( 'hosts' )" ALT="Hosts" TITLE="Hosts">Hosts</A></B></TH>
 {/if}
 <TH><B><A HREF="#" onClick="setSort( 'start' )">Started</A></B></TH>
 <TH><B><A HREF="#" onClick="setSort( 'runningtime' )">Runningtime</A></B></TH>
