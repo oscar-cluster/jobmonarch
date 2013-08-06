@@ -210,16 +210,6 @@ function sortJobs( $jobs, $sortby, $sortorder )
 {
     $sorted    = array();
 
-    $cmp    = create_function( '$a, $b', 
-        "global \$sortby, \$sortorder;".
-
-        "if( \$a == \$b ) return 0;".
-
-        "if (\$sortorder==\"desc\")".
-            "return ( \$a > \$b ) ? 1 : -1;".
-        "else if (\$sortorder==\"asc\")".
-            "return ( \$a < \$b ) ? 1 : -1;" );
-
     if( isset( $jobs ) && count( $jobs ) > 0 ) 
     {
         foreach( $jobs as $jobid => $jobattrs ) 
