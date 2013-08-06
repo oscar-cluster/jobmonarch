@@ -1,6 +1,23 @@
 
 	LEGEND	f: fixed - c: changed - a: added - r: removed
 
+1.1.1:
+
+    web)
+
+        c: column nodes renamed to: hosts
+        a: sorting by hosts now implemented
+
+    jobarchived)
+
+        f: now properly exits on fatal xml errors
+        f: prevent exception to occur when no timed out jobs are found during
+           Housekeeping
+
+    jobmond)
+
+        f: BATCH_HOST_TRANSLATE no longer required in jobmond.conf
+
 1.1:
 
     web)
