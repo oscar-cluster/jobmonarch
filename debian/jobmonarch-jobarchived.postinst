@@ -8,9 +8,9 @@ if [ -z "$2" ]
 then
     # Only on install (not during upgrade)
 
-    if [ -x /etc/init.d/jobarchived ]
+    if [ -x /etc/init.d/jobmonarch-jobarchived ]
     then
-        update-rc.d -f jobarchived defaults
+        update-rc.d -f jobmonarch-jobarchived defaults
     fi
 
     echo ""

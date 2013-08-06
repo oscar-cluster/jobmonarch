@@ -6,12 +6,12 @@ set -e
 
 case "$1" in
     deconfigure)
-        /etc/init.d/jobmond stop || true
+        /etc/init.d/jobmonarch-jobmond stop || true
         ;;
     remove)
         # Only on removal (not during upgrade)
-        /etc/init.d/jobmond stop || true
-        update-rc.d -f jobmond remove || true
+        /etc/init.d/jobmonarch-jobmond stop || true
+        update-rc.d -f jobmonarch-jobmond remove || true
         ;;
     *)
         ;;

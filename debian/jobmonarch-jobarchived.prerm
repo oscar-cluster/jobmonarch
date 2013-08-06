@@ -6,12 +6,12 @@ set -e
 
 case "$1" in
     deconfigure)
-        /etc/init.d/jobarchived stop || true
+        /etc/init.d/jobmonarch-jobarchived stop || true
         ;;
     remove)
         # Only on removal (not during upgrade)
-        /etc/init.d/jobarchived stop || true
-        update-rc.d -f jobarchived remove || true
+        /etc/init.d/jobmonarch-jobarchived stop || true
+        update-rc.d -f jobmonarch-jobarchived remove || true
         ;;
     *)
         ;;

@@ -8,9 +8,9 @@ if [ -z "$2" ]
 then
     # Only on install (not during upgrade)
 
-    if [ -x /etc/init.d/jobmond ]
+    if [ -x /etc/init.d/jobmonarch-jobmond ]
     then
-        update-rc.d -f jobmond defaults
+        update-rc.d -f jobmonarch-jobmond defaults
     fi
 
     echo ""
