@@ -14,6 +14,9 @@
 %define gangliatemplatedir %{gangliaroot}/templates
 %define gangliaaddonsdir   %{gangliaroot}/addons
 
+%define gangliauser        %{custom_gangliauser}
+%{!?custom_gangliauser: %define gangliauser ganglia.ganglia}
+
 Summary: Tools and addons to Ganglia to monitor and archive batch job info
 Name: jobmonarch
 Version: __VERSION__
@@ -126,7 +129,7 @@ rm -rf $RPM_BUILD_ROOT
 fakeroot %__make install \
         PREFIX=/usr \
         GANGLIA_ROOT=%{gangliaroot} \
-        GANGLIA_USER=ganglia.ganglia \
+        GANGLIA_USER=%{gangliauser} \
         HTTPD_USER=apache.apache \
         JOBARCHIVE_RRDS=%{_sharedstatedir}/jobarchive \
         DESTDIR=$RPM_BUILD_ROOT
@@ -412,6 +415,10 @@ fi
 %{gangliaaddonsdir}/job_monarch/version.php
 
 %changelog
+* Fri Sep 20 2013 Olivier Lahaye <olivier.lahaye@free.fr> 1.1.1-1
+- update to 1.1.1
+- Allow for custom ganglia user. (default: ganglia.ganglia)
+
 * Wed May 22 2013 Ramon Bastiaans <ramon.bastiaans@surfsara.nl> 1.1-1
 - update to 1.1
 - set version requirement for Ganglia
