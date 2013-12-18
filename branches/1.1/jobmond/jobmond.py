@@ -29,6 +29,7 @@ import xdrlib, socket, syslog, xml, xml.sax, shlex, os.path, pwd
 from xml.sax.handler import feature_namespaces
 from collections import deque
 from glob import glob
+import cgi
 
 VERSION='__VERSION__'
 
@@ -998,12 +999,12 @@ class DataGatherer:
                     try:
                         # fixme: It's getting
                         # ('nodes', None) items
-                        my_val_str = my_val_str + ' ' + val_name + '=' + val_value
+                        my_val_str = my_val_str + ' ' + val_name + '=' + cgi.encode(val_value)
                     except:
                         pass
 
                 else:
-                    my_val_str = val_name + '=' + val_value
+                    my_val_str = val_name + '=' + cgi.encode(val_value)
 
             str_list.append( my_val_str )
 
