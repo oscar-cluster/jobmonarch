@@ -999,12 +999,12 @@ class DataGatherer:
                     try:
                         # fixme: It's getting
                         # ('nodes', None) items
-                        my_val_str = my_val_str + ' ' + val_name + '=' + cgi.encode(val_value)
+                        my_val_str = my_val_str + ' ' + val_name + '=' + cgi.escape(val_value)
                     except:
                         pass
 
                 else:
-                    my_val_str = val_name + '=' + cgi.encode(val_value)
+                    my_val_str = val_name + '=' + cgi.escape(val_value)
 
             str_list.append( my_val_str )
 
