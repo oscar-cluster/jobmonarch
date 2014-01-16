@@ -29,7 +29,6 @@ import xdrlib, socket, syslog, xml, xml.sax, shlex, os.path, pwd
 from xml.sax.handler import feature_namespaces
 from collections import deque
 from glob import glob
-import cgi
 
 VERSION='__VERSION__'
 
@@ -94,6 +93,23 @@ def processArgs( args ):
             sys.exit( 0 )
 
     return loadConfig( JOBMOND_CONF )
+
+html_escape_table = {
+    "&": "_",
+    '"': "_",
+    "'": "_",
+    ">": "_",
+    "<": "_",
+}
+
+# If this is too slow: 
+# - re.sub(r'[\&|\>\<\'\"]','_', variable )
+# - re.sub(r'[\&\>\<\'\"]','_', variable )
+# - and even faster: compile regex
+
+def html_escape(text):
+    """Produce entities within text."""
+    return string.join((html_escape_table.get(c,c) for c in text), '')
 
 class GangliaConfigParser:
 
@@ -999,12 +1015,12 @@ class DataGatherer:
                     try:
                         # fixme: It's getting
                         # ('nodes', None) items
-                        my_val_str = my_val_str + ' ' + val_name + '=' + cgi.escape(val_value)
+                        my_val_str = my_val_str + ' ' + val_name + '=' + html_escape(val_value)
                     except:
                         pass
 
                 else:
-                    my_val_str = val_name + '=' + cgi.escape(val_value)
+                    my_val_str = val_name + '=' + html_escape(val_value)
 
             str_list.append( my_val_str )
 
