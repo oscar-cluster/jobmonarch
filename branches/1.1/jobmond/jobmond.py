@@ -696,6 +696,15 @@ class DataProcessor:
                 print 'Ganglia/Gmetric version not compatible, please upgrade to at least 3.3.8'
                 sys.exit( 1 )
 
+        self.gmetric_send_instances = { }
+
+
+    def __del__( self ):
+
+        for send_instance in self.gmetric_send_instances:
+
+            del send_instance
+
     def checkGmetricVersion( self ):
 
         """
@@ -756,9 +765,11 @@ class DataProcessor:
 
                 debug_msg( 10, printTime() + ' ' + metric_debug)
 
-                gm = Gmetric( c_ip, c_port )
+                if not self.gmetric_send_instances.has_key( (c_ip, c_port) ):
 
-                gm.send( str( metricname ), str( metricval ), str( self.dmax ), valtype, units )
+                    self.gmetric_send_instances[ (c_ip, c_port) ] = Gmetric( c_ip, c_port )
+
+                self.gmetric_send_instances[ (c_ip, c_port) ].send( str( metricname ), str( metricval ), str( self.dmax ), valtype, units )
 
         elif GMETRIC_TARGET:
 
@@ -769,9 +780,11 @@ class DataProcessor:
 
             debug_msg( 10, printTime() + ' ' + metric_debug)
 
-            gm = Gmetric( GMETRIC_TARGET_HOST, GMETRIC_TARGET_PORT )
+            if not self.gmetric_send_instances.has_key( (GMETRIC_TARGET_HOST, GMETRIC_TARGET_PORT) ):
 
-            gm.send( str( metricname ), str( metricval ), str( self.dmax ), valtype, units )
+                self.gmetric_send_instances[ (GMETRIC_TARGET_HOST, GMETRIC_TARGET_PORT) ] = Gmetric( GMETRIC_TARGET_HOST, GMETRIC_TARGET_PORT )
+
+            self.gmetric_send_instances[ (GMETRIC_TARGET_HOST, GMETRIC_TARGET_PORT) ].send( str( metricname ), str( metricval ), str( self.dmax ), valtype, units )
 
         else:
             try:
@@ -1981,6 +1994,10 @@ class Gmetric:
         self.hostport   = ( host, int( port ) )
         self.slopestr   = 'both'
         self.tmax       = 60
+
+    def __del__( self ):
+
+        self.socket.close()
 
     def checkHostProtocol( self, ip ):
 
