@@ -1,6 +1,0 @@
-#!/bin/sh
-
-echo "Make sure to set your Ganglia template to job_monarch now"
-echo "" 
-echo "In your Ganglia conf.php, set this line:"
-echo "$template_name = \"job_monarch\";"

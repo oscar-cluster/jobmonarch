@@ -1,4 +1,10 @@
-/* The Ganglia Web-frontend Cascading Style Sheet. */
+#monarchimage img {
+    background-color:#FFF;
+    background-image:url(ajax-loader.gif);
+    background-repeat:no-repeat;
+    background-position: center center;
+    overflow:auto;
+}
 
 A:link
 {

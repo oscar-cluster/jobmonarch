@@ -1,0 +1,16 @@
+#!/bin/sh
+
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
+set -e
+
+case "$1" in
+    remove)
+        # Only on removal (not during upgrade)
+        echo "Dont forget to set your Ganglia template back to default"
+        ;;
+    *)
+        ;;
+esac
+
+exit 0

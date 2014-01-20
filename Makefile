@@ -2,170 +2,162 @@
 #
 TMPDIR = /tmp
 
-# Clear this if you don't want to use ${FAKEROOT}
-#
-FAKEROOT = fakeroot
+# Where to install
+DESTDIR = 
+
+# Install prefix
+PREFIX = /usr/local
+
+BIN_DIR = $(PREFIX)/sbin
+JOBMOND = $(BIN_DIR)/jobmond
+JOBARCHIVED = $(BIN_DIR)/jobarchived
 
 # What is the location of the Ganglia web frontend
 # i.e.: where to we install Job Monarch's web frontend addon
 # 
-WEBDIR = /var/www/ganglia
+GANGLIA_ROOT = $(PREFIX)/ganglia
+GANGLIA_USER = ganglia.ganglia
+HTTPD_USER   = apache.apache
 
-VERSION = 0.4SVN
+# Where jobarchived RRDS are stored
+JOBARCHIVE_RRDS = $(PREFIX)/jobmonarch
+
+# Clear this if you don't want to use ${FAKEROOT}
+#
+FAKEROOT = fakeroot
+
+VERSION = 1.1.2
 RELEASE = 1
 
 REQUIRED = ./jobarchived ./jobmond ./web
 
-deb:	deb-jobmond deb-jobarchived deb-webfrontend
-rpm:	rpm-jobmond rpm-jobarchived rpm-webfrontend
-
-all:	tarball deb rpm
+all:
+	@echo "Nothing to build."
+	@echo "possible targets are: tarball, tarball-gzip, tarball-bzip, rpm, srpm, deb, clean"
 
 tarball:	tarball-gzip tarball-bzip
 
-tarball-gzip:	${REQUIRED}
-	mkdir -p ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}
-	( rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
+$(TMPDIR)/.monarch_buildroot: ${REQUIRED} Makefile
+	@rm -rf ${TMPDIR}/.monarch_buildroot
+	@mkdir -p ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}
+	@( rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php --exclude=svn-commit.tmp \
 	. ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION} )
-	( cd ${TMPDIR}/.monarch_buildroot; tar zcvf ganglia_jobmonarch-${VERSION}.tar.gz ./ganglia_jobmonarch-${VERSION} )
-	mv ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}.tar.gz ..
+	@sed -i -e 's|__VERSION__|$(VERSION)|g' -e 's/__RELEASE__/$(RELEASE)/g' \
+		${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}/jobmond/jobmond.py \
+		${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}/jobarchived/jobarchived.py \
+		${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}/web/addons/job_monarch/version.php \
+		${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}/pkg/rpm/jobmonarch.spec \
+		${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}/debian/changelog
 
-tarball-bzip:	${REQUIRED}
-	mkdir -p ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}
-	( rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
-	. ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION} )
-	( cd ${TMPDIR}/.monarch_buildroot; tar jcvf ganglia_jobmonarch-${VERSION}.tar.bz2 ./ganglia_jobmonarch-${VERSION} )
-	mv ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}.tar.bz2 ..
 
-deb-webfrontend:	${REQUIRED}
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/${WEBDIR} >/dev/null
-	( cd web; rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
-	. ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/${WEBDIR} )
-	( cd pkg/deb/web/DEBIAN; \
-	rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
-	. ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN )
-	( cd ${TMPDIR}/.monarch_buildroot/; cat jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control \
-	| sed "s/^Version:.*$//Version: ${VERSION}-${RELEASE}/g" >jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control.new; \
-	mv jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control.new \
-	jobmonarch-webfrontend_${VERSION}-${RELEASE}/DEBIAN/control )
-	( cd ${TMPDIR}/.monarch_buildroot/; ${FAKEROOT} dpkg -b jobmonarch-webfrontend_${VERSION}-${RELEASE} )
-	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend_${VERSION}-${RELEASE}.deb ..
+tarball-gzip:	$(TMPDIR)/.monarch_buildroot ${REQUIRED}
+	@( cd ${TMPDIR}/.monarch_buildroot; tar zcf $(TMPDIR)/ganglia_jobmonarch-${VERSION}.tar.gz ./ganglia_jobmonarch-${VERSION} )
+	@mv -f ${TMPDIR}/ganglia_jobmonarch-${VERSION}.tar.gz .. 2> /dev/null || true
+	@echo "Wrote: ../ganglia_jobmonarch-${VERSION}.tar.gz"
 
-deb-jobarchived:	${REQUIRED}
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/etc/init.d >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/etc/default >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/usr/sbin >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/usr/share/jobarchived >/dev/null
-	install -m 755 jobarchived/jobarchived.py ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/usr/sbin
-	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/usr/sbin; \
-	ln -s jobarchived.py jobarchived || true)
-	install jobarchived/jobarchived.conf ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/etc
-	install pkg/deb/init.d/jobarchived ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/etc/init.d
-	install pkg/deb/default/jobarchived ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/etc/default
-	install jobarchived/job_dbase.sql \
-	${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/usr/share/jobarchived
-	( cd pkg/deb/jobarchived/DEBIAN; \
-	rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
-	. ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN )
-	( cd ${TMPDIR}/.monarch_buildroot/; cat jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control \
-	| sed "s/^Version:.*$//Version: ${VERSION}-${RELEASE}/g" >jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control.new; \
-	mv jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control.new \
-	jobmonarch-jobarchived_${VERSION}-${RELEASE}/DEBIAN/control )
-	( cd ${TMPDIR}/.monarch_buildroot/; ${FAKEROOT} dpkg -b jobmonarch-jobarchived_${VERSION}-${RELEASE} )
-	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived_${VERSION}-${RELEASE}.deb ..
+tarball-bzip:	$(TMPDIR)/.monarch_buildroot ${REQUIRED}
+	@( cd ${TMPDIR}/.monarch_buildroot; tar jcf ${TMPDIR}/ganglia_jobmonarch-${VERSION}.tar.bz2 ./ganglia_jobmonarch-${VERSION} )
+	@mv -f ${TMPDIR}/ganglia_jobmonarch-${VERSION}.tar.bz2 .. 2> /dev/null || true
+	@echo "Wrote: ../ganglia_jobmonarch-${VERSION}.tar.bz2"
 
-deb-jobmond:	${REQUIRED}
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/etc/init.d >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/etc/default >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/usr/sbin >/dev/null
-	install -m 755 jobmond/jobmond.py ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/usr/sbin
-	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/usr/sbin; \
-	ln -s jobmond.py jobmond || true)
-	install jobmond/jobmond.conf ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/etc
-	install pkg/deb/init.d/jobmond ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/etc/init.d
-	install pkg/deb/default/jobmond ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/etc/default
-	( cd pkg/deb/jobmond/DEBIAN; \
-	rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
-	. ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN )
-	( cd ${TMPDIR}/.monarch_buildroot/; cat jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control \
-	| sed "s/^Version:.*$//Version: ${VERSION}-${RELEASE}/g" >jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control.new; \
-	mv jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control.new jobmonarch-jobmond_${VERSION}-${RELEASE}/DEBIAN/control )
-	( cd ${TMPDIR}/.monarch_buildroot/; ${FAKEROOT} dpkg -b jobmonarch-jobmond_${VERSION}-${RELEASE} )
-	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond_${VERSION}-${RELEASE}.deb ..
+rpm: tarball-bzip
+	# Binary package will reflect most distro where ganglia default location is /usr/share/ganglia
+	@LC_ALL=C rpmbuild -tb --define '%custom_web_prefixdir /usr/share/ganglia' ../ganglia_jobmonarch-${VERSION}.tar.bz2|grep "Wrote: "
 
-rpm-jobmond:	${REQUIRED}
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/etc/init.d >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/etc/sysconfig >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/usr/sbin >/dev/null
-	install -m 755 jobmond/jobmond.py ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/usr/sbin
-	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/usr/sbin; \
-	ln -s jobmond.py jobmond || true)
-	install jobmond/jobmond.conf ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/etc
-	install pkg/rpm/init.d/jobmond ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/etc/init.d
-	install pkg/rpm/sysconfig/jobmond ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/etc/sysconfig
-	cp pkg/rpm/jobmonarch-jobmond.spec \
-	${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}/jobmonarch-jobmond-${VERSION}-${RELEASE}.spec
-	( cd ${TMPDIR}/.monarch_buildroot/; \
-	cat jobmonarch-jobmond-${VERSION}-${RELEASE}/jobmonarch-jobmond-${VERSION}-${RELEASE}.spec \
-	| sed "s/^Buildroot:.*$//Buildroot: \${TMPDIR}\/\.monarch_buildroot\/jobmonarch-jobmond-${VERSION}-${RELEASE}/g" \
-	| sed "s/^Version:.*$//Version: ${VERSION}/g" \
-	| sed "s/^Release:.*$//Release: ${RELEASE}/g" \
-	>jobmonarch-jobmond-${VERSION}-${RELEASE}/jobmonarch-jobmond-${VERSION}-${RELEASE}.spec.new; \
-	mv jobmonarch-jobmond-${VERSION}-${RELEASE}/jobmonarch-jobmond-${VERSION}-${RELEASE}.spec.new \
-	jobmonarch-jobmond-${VERSION}-${RELEASE}/jobmonarch-jobmond-${VERSION}-${RELEASE}.spec )
-	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}; \
-	${FAKEROOT} rpmbuild -bb jobmonarch-jobmond-${VERSION}-${RELEASE}.spec )
-	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-jobmond-${VERSION}-${RELEASE}.rpm ..
+srpm: tarball-bzip
+	@LC_ALL=C rpmbuild -ts --define '%dist %{nil}' ../ganglia_jobmonarch-${VERSION}.tar.bz2|grep "Wrote: "
 
-rpm-jobarchived:	${REQUIRED}
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/etc/init.d >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/etc/sysconfig >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/usr/sbin >/dev/null
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/usr/share/jobarchived >/dev/null
-	install -m 755 jobarchived/jobarchived.py ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/usr/sbin
-	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/usr/sbin; \
-	ln -s jobarchived.py jobarchived || true)
-	install jobarchived/jobarchived.conf ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/etc
-	install pkg/rpm/init.d/jobarchived ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/etc/init.d
-	install pkg/rpm/sysconfig/jobarchived ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/etc/sysconfig
-	install jobarchived/job_dbase.sql \
-	${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/usr/share/jobarchived
-	cp pkg/rpm/jobmonarch-jobarchived.spec \
-	${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}/jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec
-	( cd ${TMPDIR}/.monarch_buildroot/; \
-	cat jobmonarch-jobarchived-${VERSION}-${RELEASE}/jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec \
-	| sed "s/^Buildroot:.*$//Buildroot: \${TMPDIR}\/\.monarch_buildroot\/jobmonarch-jobarchived-${VERSION}-${RELEASE}/g" \
-	| sed "s/^Version:.*$//Version: ${VERSION}/g" \
-	| sed "s/^Release:.*$//Release: ${RELEASE}/g" \
-	>jobmonarch-jobarchived-${VERSION}-${RELEASE}/jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec.new; \
-	mv jobmonarch-jobarchived-${VERSION}-${RELEASE}/jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec.new \
-	jobmonarch-jobarchived-${VERSION}-${RELEASE}/jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec )
-	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}; \
-	${FAKEROOT} rpmbuild -bb jobmonarch-jobarchived-${VERSION}-${RELEASE}.spec )
-	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-jobarchived-${VERSION}-${RELEASE}.rpm ..
+deb: ${REQUIRED} $(TMPDIR)/.monarch_buildroot ./debian
+	@( cd ${TMPDIR}/.monarch_buildroot/ganglia_jobmonarch-${VERSION}; dpkg-buildpackage -b -uc -us )
+	@mv ${TMPDIR}/.monarch_buildroot/jobmonarch-*_$(VERSION)-$(RELEASE)_all.deb ..
+	@rm -rf ${TMPDIR}/.monarch_buildroot
+	@echo "Wrote:"
+	@ls -1 ../jobmonarch*$(VERSION)*.deb
 
-rpm-webfrontend:	${REQUIRED}
-	mkdir -p ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}/${WEBDIR} >/dev/null
-	( cd web; \
-	rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php \
-	. ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}/${WEBDIR} )
-	cp pkg/rpm/jobmonarch-webfrontend.spec \
-	${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}/jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec
-	( cd ${TMPDIR}/.monarch_buildroot/; \
-	cat jobmonarch-webfrontend-${VERSION}-${RELEASE}/jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec \
-	| sed "s/^Buildroot:.*$//Buildroot: \${TMPDIR}\/\.monarch_buildroot\/jobmonarch-webfrontend-${VERSION}-${RELEASE}/g" \
-	| sed "s/^Version:.*$//Version: ${VERSION}/g" \
-	| sed "s/^Release:.*$//Release: ${RELEASE}/g" \
-	| sed "s+/var/www/ganglia+${WEBDIR}+g" \
-	>jobmonarch-webfrontend-${VERSION}-${RELEASE}/jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec.new; \
-	mv jobmonarch-webfrontend-${VERSION}-${RELEASE}/jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec.new \
-	jobmonarch-webfrontend-${VERSION}-${RELEASE}/jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec )
-	( cd ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}; \
-	${FAKEROOT} rpmbuild -bb jobmonarch-webfrontend-${VERSION}-${RELEASE}.spec )
-	mv ${TMPDIR}/.monarch_buildroot/jobmonarch-webfrontend-${VERSION}-${RELEASE}.rpm ..
+install:  ${REQUIRED}
+	@#
+	@# Set the correct GANGLIA_PATH.
+	@#
+	@echo
+	@echo "Using $(GANGLIA_ROOT) as Ganglia root installation path. If it's not what"
+	@echo "you want, use make GANGLIA_ROOT=/path/to/your/ganglia/root ."
+	@sed -e 's|__GANGLIA_ROOT__|$(GANGLIA_ROOT)/|g' web/conf.php.in > web/addons/job_monarch/conf.php
+	@#
+	@# Set the correct JOBARCHIVE_RRDS in jobarchve.conf and ganglia conf.php
+	@#
+	@echo
+	@echo "Using $(JOBARCHIVE_RRDS) as jobarchive path to  store rrds files. If it's not what"
+	@echo "you want, use make JOBARCHIVE_RRDS=/path/to/you/jobarchived/rrdsfiles ."
+	@sed -i -e 's|__JOBARCHIVE_RRDS__|$(JOBARCHIVE_RRDS)|g' jobarchived/jobarchived.conf web/addons/job_monarch/conf.php
+	@#
+	@# Files in SBIN_DIR
+	@#
+	@echo
+	@echo "Installing jobmond.py and jobarchived.py to $(PREFIX)/sbin"
+	@install -m 0755 -d $(DESTDIR)$(PREFIX)/sbin
+	@install -m 0755 jobmond/jobmond.py $(DESTDIR)$(PREFIX)/sbin/
+	@install -m 0755 jobarchived/jobarchived.py $(DESTDIR)$(PREFIX)/sbin/
+	@(cd $(DESTDIR)$(PREFIX)/sbin/; ln -s jobmond.py jobmond; ln -s jobarchived.py jobarchived)
+	@#
+	@# Files in /etc
+	@#
+	@echo
+	@echo "Installing config files jobmond.conf jobarchived.conf in /etc"
+	@install -m 0755 -d $(DESTDIR)/etc
+	@install -m 0644 jobmond/jobmond.conf $(DESTDIR)/etc/
+	@install -m 0644 jobarchived/jobarchived.conf $(DESTDIR)/etc/
+	@#
+	@# Files specific to distros if /etc/redhat-release => rpm else (/etc/debian_version => debian)
+	@#
+	@if test -r /etc/redhat-release; then \
+		echo; \
+		echo "Red Hat detected: installing RPM service files in /etc"; \
+		sed -i -e 's|DAEMON=.*|DAEMON=$(JOBMOND)|g' pkg/rpm/init.d/jobmond; \
+		sed -i -e 's|DAEMON=.*|DAEMON=$(JOBARCHIVED)|g' pkg/rpm/init.d/jobarchived; \
+		install -m 0755 -d $(DESTDIR)/etc/rc.d/init.d; \
+		install -m 0755 pkg/rpm/init.d/jobmond $(DESTDIR)/etc/rc.d/init.d/; \
+		install -m 0755 pkg/rpm/init.d/jobarchived $(DESTDIR)/etc/rc.d/init.d/; \
+		install -m 0755 -d $(DESTDIR)/etc/sysconfig; \
+		install -m 0755 pkg/rpm/sysconfig/jobmond $(DESTDIR)/etc/sysconfig; \
+		install -m 0755 pkg/rpm/sysconfig/jobarchived $(DESTDIR)/etc/sysconfig; \
+    else \
+		sed -i -e 's|DAEMON=.*|DAEMON=$(JOBMOND)|g' debian/jobmonarch-jobmond.init; \
+		sed -i -e 's|DAEMON=.*|DAEMON=$(JOBARCHIVED)|g' debian/jobmonarch-jobarchived.init; \
+	fi
+	@#
+	@# Files in /usr/share
+	@#
+	@echo
+	@echo "Installing job_dbase.sql in $(PREFIX)/share/jobarchived"
+	@install -m 0755 -d $(DESTDIR)$(PREFIX)/share/jobarchived
+	@install -m 0755 jobarchived/job_dbase.sql $(DESTDIR)$(PREFIX)/share/jobarchived/
+	@#
+	@# Create the /var/lib/jobarchive directory where rrds are stored.
+	@#
+	@echo
+	@echo "Creating the directory where RRDs will be stored: $(JOBARCHIVE_RRDS)"
+	@install -m 0755 -d $(DESTDIR)$(JOBARCHIVE_RRDS)
+	@#
+	@# Files for ganglia
+	@#
+	@echo
+	@echo "Installing Ganglia web interface to $(GANGLIA_ROOT) ."
+	@install -m 0755 -d $(DESTDIR)$(GANGLIA_ROOT)
+	@chown -R $(GANGLIA_USER) ./web
+	@chown $(HTTPD_USER) ./web/addons/job_monarch/dwoo/compiled
+	@chown $(HTTPD_USER) ./web/addons/job_monarch/dwoo/cache
+	@chmod 775 ./web/addons/job_monarch/dwoo/cache
+	@(cd web; rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php ./addons ./templates $(DESTDIR)$(GANGLIA_ROOT)/)
+	@#
+	@echo
+	@echo "Installation complete."
+	@echo
 
-clean:	${TMPDIR}/.monarch_buildroot
-	rm -rf ${TMPDIR}/.monarch_buildroot
+clean:
+	@(cd ./debian; rm -rf files *.log *.substvars jobmonarch/ jobmonarch-jobmond/ jobmonarch-jobarchived/ jobmonarch-webfrontend/ tmp/)
+	@rm -f web/addons/job_monarch/conf.php
+
+clean_all:	clean
+	@# Cannot include this in clean otherwise, dpkg-buildpackage will commit scuicide.
+	@rm -rf ${TMPDIR}/.monarch_buildroot
+

@@ -1,8 +1,0 @@
-#!/bin/sh
-
-PATH=/bin:/sbin:/usr/bin:/usr/sbin
-
-/etc/init.d/jobarchived stop || true
-update-rc.d -f jobarchived remove || true
-
-exit 0
