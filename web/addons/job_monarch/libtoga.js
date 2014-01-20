@@ -18,7 +18,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * SVN $Id: libtoga.js 231 2006-03-10 16:36:38Z bastiaans $
+ * SVN $Id$
  */
 
 function setSort( sortbyval ) {

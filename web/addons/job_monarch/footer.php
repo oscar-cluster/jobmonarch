@@ -3,7 +3,7 @@
  *
  * This file is part of Jobmonarch
  *
- * Copyright (C) 2006  Ramon Bastiaans
+ * Copyright (C) 2006-2013  Ramon Bastiaans
  *
  * Jobmonarch is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * SVN $Id: footer.php 241 2006-04-07 10:42:02Z bastiaans $
+ * SVN $Id$
  */
 
 $tpl = new TemplatePower( "templates/footer.tpl" );
