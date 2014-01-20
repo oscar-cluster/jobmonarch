@@ -1,0 +1,20 @@
+#!/bin/sh
+
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
+set -e
+
+case "$1" in
+    deconfigure)
+        /etc/init.d/jobmonarch-jobmond stop || true
+        ;;
+    remove)
+        # Only on removal (not during upgrade)
+        /etc/init.d/jobmonarch-jobmond stop || true
+        update-rc.d -f jobmonarch-jobmond remove || true
+        ;;
+    *)
+        ;;
+esac
+
+exit 0

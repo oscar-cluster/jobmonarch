@@ -1,0 +1,17 @@
+Functionality TODO (wish) list
+==============================
+
+	*	Improved config file and arguments usage for daemons
+		(also --help and possibly a man page)
+
+	*	Usage of a node's (Ganglia) location in the ClusterImage
+		construction (placement by x,y,z coordinates)
+  
+	*	More advanced and detailed graph's, etc
+
+	*	Usage of regexp's or wildcards at jobsearch
+		i.e. for job name/user/queue
+
+	*	Ability to search by certain node properties
+		instead of job properties. I.e.: a certain node
+		hostname and/or number of nodes/cpus
