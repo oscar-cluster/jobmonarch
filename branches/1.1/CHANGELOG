@@ -1,6 +1,17 @@
 
 	LEGEND	f: fixed - c: changed - a: added - r: removed
 
+1.1.2:
+
+    jobmond)
+
+        c: job info is now escaped: special characters (from for example job 
+           names) are escaped to prevent (XML) errors
+        f: no longer eats up file descriptors and crashing after running out of
+           file descriptors
+        f: no longer crash after Torque/PBS unavailability issue under certain
+           conditions
+
 1.1.1:
 
     packaging)
