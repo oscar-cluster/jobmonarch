@@ -1796,7 +1796,7 @@ class PbsDataGatherer( DataGatherer ):
             joblist        = self.pq.getjobs()
             self.cur_time  = time.time()
 
-        except PBSError, detail:
+        except (PBSError, TypeError), detail:
 
             debug_msg( 10, "PBS server unavailable, skipping until next polling interval: " + str( detail ) )
             return None
