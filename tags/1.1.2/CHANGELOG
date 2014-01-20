@@ -1,0 +1,353 @@
+
+	LEGEND	f: fixed - c: changed - a: added - r: removed
+
+1.1.2:
+
+    jobmond)
+
+        c: job info is now escaped: special characters (from for example job 
+           names) are escaped to prevent (XML) errors
+        f: no longer eats up file descriptors and crashing after running out of
+           file descriptors
+        f: no longer crash after Torque/PBS unavailability issue under certain
+           conditions
+
+1.1.1:
+
+    packaging)
+
+        f: correctly set the JOBARCHIVE_RRDS in both jobarchived.conf and
+           web/conf.php.in
+        f: debian init.d script names in post/pre pkg corrected to new name
+        f: debian postrm was incorrectly trying redhat conditional restart
+
+    web)
+
+        c: column nodes renamed to: hosts
+        a: sorting by hosts now implemented
+
+    jobarchived)
+
+        f: now properly exits on fatal xml errors
+        f: prevent exception to occur when no timed out jobs are found during
+           Housekeeping
+
+    jobmond)
+
+        f: BATCH_HOST_TRANSLATE no longer required in jobmond.conf
+
+1.1:
+
+    web)
+
+        a: archive search now has "include running jobs" option
+        c: rewritten short versus FQDN hostname detection: now works properly 
+           with ganglia hosts not using FQDN hostnames
+        f: display of xml parsetime for overview. no longer display parsetime 
+           for archive (no parsing done)
+        f: down/offline nodes are now properly marked in cluster image again
+        f: bug where "Unavailable" row would not be shown in overview summary 
+           table
+
+    packaging)
+
+        c: completely redone and rewritten by Olivier Lahaye - thanks!
+
+    jobmond)
+
+        a: now supports SLURM Workload Manager!
+        a: warning if connecting to remote BATCH_SERVER is not supported by 
+           selected BATCH_API
+        f: bug where incorrect commandline option would trigger traceback in 
+           usage()
+
+    jobarchived)
+
+        a: now performs regular database Housekeeping every 20 job XML 
+           iterations (previously only once at startup)
+        a: now checks if ARCHIVE_DATASOURCES are present in gmetad.conf
+        f: prevent an Exception to occur when determining datasource polling 
+           interval
+        f: bug where config file handle was not closed
+
+1.0:
+
+    jobmond)
+
+        a: now supports multiple udp send channels
+        a: now supports job arrays
+        c: updated Gmetric XDR protocol to version 3.1+ compatible
+
+        c: gmond.conf parsing has been rewritten to handle include's and 
+           multiple send channels
+        c: METRIC_MAX_VAL_LEN is now determined from gmond.conf
+        c: utilize new job monarch protocol
+
+        f: can now handle new PBSQuery / pbs_python versions
+        f: default gmond.conf search location is now /etc/ganglia/gmond.conf
+        f: fatal error's are now printed to shell upon startup, not just syslog
+        f: more error checking and miscellanious bugfixes
+
+    jobarchived)
+
+        r: no longer use pyPgSQL for postgres database
+        c: now use psycopg2 module for postgres database
+
+        a: job thread now utilizes db commits and rollbacks
+        a: now use USER/PASS authentication to database (in stead of hostbased)
+
+        c: database schema: changed job_id to varchar to support job arrays
+        c: database schema: changed job_name max length to 255, just like 
+           torque
+        c: database schema: added username/password role authentication
+        c: utilize new job monarch protocol
+
+        f: job thread no longer hangs when insert/update of a job in database 
+           fails 
+        f: rewrite of job (finished) detection: all finished jobs again 
+           properly detected
+        f: job checking now done post-parsing not while parsing
+        f: more error checking and miscellanious bugfixes
+
+    web)
+
+        r: removed Pie chart
+        r: removed TemplatePower
+        r: removed php ini_set's and time limit directive: should be handled in
+           php.ini
+        r: removed "Get Fresh Data" button: served no purpose anymore
+        a: now utilize Dwoo templates for html output
+
+        a: now use USER/PASS authentication to database (in stead of hostbased)
+        a: ClusterImage now drops a shadow below nodes
+        a: RRDs now show "Last: Min: Avg: Max:" values in legend
+
+        c: utilize new job monarch protocol
+        c: all templates rewritten from TemplatePower to Dwoo
+        c: graph.php now used for overview and archive
+        c: RRDs job start/finish line is now dashed green/red line with legend
+
+        f: some dbase fields are now CAST to INT for php since postgres now 
+           requires explicit casts
+        f: sort order descending/ascending is now correct
+        f: many, many speed and memory improvements
+        f: more error checking and miscellanious bugfixes
+
+0.4:
+
+	jobmond)
+		a:	SGE support
+			thanks to: Dave Love - d(d.o.t)love(a.t)liverpool(d.o.t)ac(d.o.t)uk
+			for writing it!
+		a:	LSF support
+			thanks to: Mahmoud Hanafi - mhanafi(a.t)csc(d.o.t)com
+			for writing it!
+		a:	GMETRIC_TARGET is now parsed from gmond.conf
+		a:	GMETRIC_BINARY is now looked for in PATH
+		f:	queue selection support is now working
+			thanks to: Craig West - cwest(a.t)astro(d.o.t)umass(d.o.t)edu
+			for the patch
+	web)
+		a:	large graphs link for job report
+			thanks to: Craig West - cwest(a.t)astro(d.o.t)umass(d.o.t)edu
+		a:	SHOW_EMPTY_COLUMN, SHOW_EMPTY_ROW options for ClusterImage hostname parsing
+
+0.3.1:
+
+	other)
+		f:	updated INSTALL since "addons" directory is not included by default anymore in Ganglia
+			thanks to: Steven DuChene linux(d.a.s.h)clusters(a.t)mindspring(d.o.t)com
+			for reporting it
+
+	rpm)
+		f:	add "addons" directory since it's not included by default anymore in Ganglia
+		f:	properly rewrite WEBDIR path in %files when rebuilding rpms with Makefile
+
+	web)
+		f:	typo in empty_cpu variable: causing incorrect 'free cpu' count and similar errors
+			thanks to: Craig West - cwest(a.t)astro(d.o.t)umass(d.o.t)edu
+			for reporting it
+		f:	changed erroneous domain detection a little
+			thanks to: Craig West - cwest(a.t)astro(d.o.t)umass(d.o.t)edu
+			for reporting it
+		a:	now properly detects whether or not to use FQDN or short hostnames w/o domain
+			thanks to: Craig West - cwest(a.t)astro(d.o.t)umass(d.o.t)edu
+			thanks to: Jeffrey Sarlo - JSarlo(a.t)Central(d.o.t)UH(d.o.t)EDU
+			for the many testing and reporting it
+
+			SPECIAL THANKS to the University of Houston for sending me a shirt!
+
+	jobarchived)
+		f:	properly catch postgres exception
+		f:	don't use debug_message while loading config file
+
+0.3:
+
+	web)
+		a:	allow per-cluster settings/override options: see CLUSTER_CONFS option
+		a:	clusterimage can now draw nodes at x,y position parsed from hostname
+			see SORTBY_HOSTNAME for this in clusterconf/example.php
+		a:	clusterimage nodes are now clickable: has link to all jobs from that host
+		a:	clusterimage nodes now have a tooltip: displays hostname and jobids for now
+		a:	jobmonarch logo image
+			thank to: Robin Day
+			for the design
+		a:	rrd graph of running/queued jobs to overview
+		a:	per-cluster settings for archive database
+			thanks to: Alexis Michon - alexis(d.o.t)michon(a.t)ibcp(d.o.t)fr
+			for the patch
+
+		c:	host archive view is now more complete and detailed in the same manner as
+			Ganglia's own host view
+		c:	host archive view available metric list is now compiled from disk,
+			so that the detailed archive host view works even when the node is currently down.
+		c:	removed size restrictions from detailed host archive view
+
+		f:	compatibility: removed php5 call
+			thanks to: Alexis Michon - alexis(d.o.t)michon(a.t)ibcp(d.o.t)fr
+			for the patch
+		f:	prevent negative cpu/node calculation
+			thanks to: aloga(a.t)ifca(d.o.t)unican(d.o.t)es
+			for the patch
+		f:	archive search not properly resetting nodes list
+			thanks to: Alexis Michon - alexis(d.o.t)michon(a.t)ibcp(d.o.t)fr
+			for the patch 
+		f:	detailed host view from jobarchive was broken since hostbased support of 0.2
+			now host view is properly set and parsed again
+			thanks to: Alexis Michon - alexis(d.o.t)michon(a.t)ibcp(d.o.t)fr
+			for reporting the bug and suggesting a patch
+		f:	bug where jobstart redline indicator in host detail graphs was set incorrectly
+			or not at all due to a miscalculation in job times
+		f:	bug where hostimage headertext xoffset was miscalculated, causing the column names
+			to overlap their position when the columnname was longer than the columnvalues
+
+	jobmond)
+
+		a:	syslog support
+		a:	report number of running/queued jobs as seperate metrics
+		a:	native gmetric support, much faster and cleaner!
+			thanks to: Nick Galbreath - nickg(a.t)modp(d.o.t)com
+			for writing it and allowing inclusion in jobmond
+
+		f:	crashing jobmond when multiple nodes amounts are requested in
+			a queued job: numeric_node variable not initialized properly
+			thanks to: aloga(a.t)ifca(d.o.t)unican(d.o.t)es
+			for supplying the patch
+			and many others for reporting and helping debug this
+		f:	hanging/blocked, increased cpu usage and halted reporting
+			thanks to: Bas van der Vlies - basv(a.t)sara(d.o.t)nl
+			for discovering the origin of the bug
+			thanks to: Mickael Gastineau - gastineau(a.t)imcce(d.o.t)fr
+			for reporting it and testing the fix
+			thanks to: Craig West - cwest(a.t)astro(d.o.t)umass(d.o.t)edu
+			for reporting it and testing the fix
+		f:	uninitialized variable in checkGmetricVersion()
+			thanks to: Peter Kruse - pk(a.t)q-leap(d.o.t)com
+			for the patch
+		f:	undefined PBSError
+			thanks to: Peter Kruse - pk(a.t)q-leap(d.o.t)com
+			for reporting it
+
+		r:	SGE support broken
+
+	jobarchived)
+
+		a:	can now use py-rrdtool api instead of pipes, much faster!
+			install py-rrdtool to use this
+			backwards compatible fails back to pipes if module not installed
+
+		c:	all XML input was uniencoded, which could cause errors,
+			now all properly converted to normal strings
+
+		f:	when XML data source (gmetad) is unavailable parsethread didn't return correctly
+			which caused a large number of threads to spawn while consuming large amounts of memory
+		f:	autocreate clusterdirs in archivedir
+		f:	unhandled gather exception
+		f:	incorrect stop_timestamping when jobs finished
+			thanks to: Alexis Michon - alexis(d.o.t)michon(a.t)ibcp(d.o.t)fr
+			for finding and debugging/testing it
+
+0.2:
+
+	web)
+		f:	misc. optimization and bugfixes
+		f:	now fully compatible with latest PHP5 and PHP4
+
+		c:	cluster image now incorporates small text descr.
+		c:	monarch (cluster/host) images no longer displayed
+			for clusters that are not jobmond enabled
+		c:	pie chart percentages are now cpu-based instead of node-based
+
+		a:	host template for Ganglia
+			adds a extra monarch host image to Ganglia's host overview
+			which displays/links to the jobs on that host
+			NOTE!: be sure to copy/install new template from addons/templates
+		a:	(optional) nodes hostnames column
+			thanks to: Daniel Barthel - daniel(d.o.t)barthel(a.t)nottingham(d.o.t)ac(d.o.t)uk
+			for the suggestion
+
+	jobmond)
+
+		f:	when a job metric is longer than maximum metric length,
+			the info is split up amongst multiple metrics
+		f: 	no longer exit when batch server is unavailable
+			thanks to: Peter Kruse - pk(a.t)q-leap(d.o.t)com
+			for the patch
+		f:	fd closure bug causing stderr/stdout to remain open after daemonizing
+
+		c:	rearranged code to allow support for other batch systems
+
+		a:	(experimental) SGE (Sun Grid Engine) support as batch server
+			thanks to: Babu Sundaram - babu(a.t)cs(d.o.t)uh(d.o.t)edu
+			who developed it for a OSCAR's Google-SoC project
+		a:	pidfile support 
+			thanks to: Michael Jeanson - michael(a.t)ccs(d.o.t)usherbrooke(d.o.t)ca
+			for the patch
+		a:	usage display
+			thanks to: Michael Jeanson - michael(a.t)ccs(d.o.t)usherbrooke(d.o.t)ca
+			for the patch
+		a:	queue selection support: ability to specify which QUEUE's to get jobinfo from
+			thanks to: Michael Jeanson - michael(a.t)ccs(d.o.t)usherbrooke(d.o.t)ca
+			for the patch
+
+	jobarchived)
+
+		f:	XML retrieval for Ganglia version >= 3.0.3 working properly again
+		f:	database storing for Ganglia version >= 3.0.3 working properly again
+		f:	fd closure bug causing stderr/stdout to remain open after daemonizing
+
+		c:	misc. bugfixes to optimize XML connections
+		c:	misc. bugfixes for misc. minor issues
+
+		a:	cleaning of stale jobs in dbase: see JOB_TIMEOUT option
+
+0.1.1: 
+
+	web)
+
+		f:	misc. layout bugs for overview & search
+		f:	bug that occured when calculating the number of nodes when there
+			was more than one job running on a machine
+
+		c:	column requested memory is now optional through conf.php
+		c:	search and overview tables are now full screen (100%)
+		c:	overview jobnames are now cutoff at max 9 characters
+			to prevent (layout) scews in the tables
+		c:	overview graphs are no longer downsized
+
+		a:	(optional) column 'queued' (since) in overview
+		a:	search results (can) now have a SEARCH_RESULT_LIMIT
+			this increases performance of the query's significantly!
+		a:	date/time format as displayed is now configurable through conf.php
+
+	jobmond)
+
+		a:	now reports 'queued since' (or creation time) of jobs
+
+	documentation)
+
+		f:	wrong e-mail adress in INSTALL (doh!)
+
+0.1:
+
+	- First public release

@@ -1,0 +1,11 @@
+jobmonarch (__VERSION__-__RELEASE__) sid; urgency=low
+
+  * New upstream version
+
+ -- Job Monarch Development team <jobmonarch-developers@lists.sourceforge.net>  Fri, 17 May 2013 20:47:52 +0200
+
+jobmonarch (1.0-1) sid; urgency=low
+
+  * Initial packaging.
+
+ -- Olivier LAHAYE <olivier.lahaye@cea.fr>  Tue, 24 Apr 2013 14:44:18 +0200

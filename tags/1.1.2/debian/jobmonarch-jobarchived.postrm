@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -e
+
+case "$1" in
+    upgrade)
+        # If the service is running, restart it.
+        /etc/init.d/jobmonarch-jobarchived restart || true
+        ;;
+    *)
+        ;;
+esac
+
+exit 0
