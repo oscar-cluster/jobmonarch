@@ -26,7 +26,7 @@ JOBARCHIVE_RRDS = $(PREFIX)/jobmonarch
 #
 FAKEROOT = fakeroot
 
-VERSION = 1.2.0
+VERSION = 1.1.2
 RELEASE = 1
 
 REQUIRED = ./jobarchived ./jobmond ./web

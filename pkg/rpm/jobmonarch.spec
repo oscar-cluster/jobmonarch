@@ -471,10 +471,10 @@ fi
 %{gangliaaddonsdir}/job_monarch/version.php
 
 %changelog
-* Wed Mar 05 2014 Olivier Lahaye <olivier.lahaye@free.fr> 1.2.0-1
+* Wed Mar 05 2014 Olivier Lahaye <olivier.lahaye@free.fr> 1.1.3-1
 - Update default ganglia root.
 - Add native systemd support.
-- update to 1.2.0
+- update to 1.1.3
 - Add --with switch to allow tunning at rpmbuild. Parameters are similar to ganglia ones.
 
 * Fri Feb 14 2014 Ramon Bastiaans <ramon.bastiaans@surfsara.nl> 1.1.2-1
