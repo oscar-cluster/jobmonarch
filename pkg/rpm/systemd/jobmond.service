@@ -1,0 +1,17 @@
+# SystemD File for jobmond
+# Olivier LAHAYE <olivier.lahaye@cea.fr>
+# Ferbruay 19th 2013.
+
+[Unit]
+Description=Start/Stop the jobmond batch jobs monitoring daemon
+After=syslog.target network.target
+
+[Service]
+Type=forking
+EnvironmentFile=-/etc/sysconfig/jobmond
+ExecStart=/usr/sbin/jobmond --pidfile=/var/run/jobmond.pid $OPTIONS
+PIDFile=/var/run/jobmond.pid
+
+[Install]
+WantedBy=multi-user.target
+
