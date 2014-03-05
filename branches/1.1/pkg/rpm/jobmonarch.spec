@@ -22,11 +22,11 @@
 %define ganglia_group ganglia
 
 # Read the provided --with tags if any (overriding default values).
-%{?_with_httpd_user:%define httpd_user %(set -- %{_with_httpd_user}; echo $1 | grep -v with | sed 's/=//')}
-%{?_with_httpd_group:%define httpd_group %(set -- %{_with_httpd_group}; echo $1 | grep -v with | sed 's/=//')}
-%{?_with_httpd_user:%define ganglia_user %(set -- %{_with_ganglia_user}; echo $1 | grep -v with | sed 's/=//')}
-%{?_with_httpd_group:%define ganglia_group %(set -- %{_with_ganglia_group}; echo $1 | grep -v with | sed 's/=//')}
-%{?_with_web_prefixdir:%define web_prefixdir %(set -- %{_with_web_prefixdir}; echo $1 | grep -v with | sed 's/=//')}
+%{?_with_httpd_user:%define httpd_user %(set -- %{_with_httpd_user}; echo $2 | cut -d= -f2)}
+%{?_with_httpd_group:%define httpd_group %(set -- %{_with_httpd_group}; echo $2 | cut -d= -f2)}
+%{?_with_httpd_user:%define ganglia_user %(set -- %{_with_ganglia_user}; echo $2 | cut -d= -f2)}
+%{?_with_httpd_group:%define ganglia_group %(set -- %{_with_ganglia_group}; echo $2 | cut -d= -f2)}
+%{?_with_web_prefixdir:%define web_prefixdir %(set -- %{_with_web_prefixdir}; echo $2 | cut -d= -f2)}
 
 # Don't need debuginfo RPM
 %define debug_package %{nil}
