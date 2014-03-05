@@ -1,21 +1,40 @@
+
+# The following options are supported:
+#   --with httpd_user=<username>       # defaults to: apache
+#   --with httpd_group=<group>         # defaults to: apache
+#   --with ganglia_user=<username>     # defaults to: ganglia
+#   --with ganglia_group=<group>       # defaults to: ganglia
+#   --with web_prefixdir=<path>        # defaults to: /usr/share/ganglia-webfrontend
+
+# example: rpmbuild -tb jobmonarch-1.1.2.tar.gz --with httpd_user=www-data --with httpd_group=www-data --with web_prefixdir=/srv/www/ganglia
+
+# Default value for web_prefixdir depending on distro.
+%if 0%{?suse_version}
+%define web_prefixdir /srv/www/htdocs/ganglia
+%else
+%define web_prefixdir /usr/share/ganglia-webfrontend
+%endif
+
+# Default value for httpd user and group used by ganglia.
+%define httpd_user apache
+%define httpd_group apache
+%define ganglia_user ganglia
+%define ganglia_group ganglia
+
+# Read the provided --with tags if any (overriding default values).
+%{?_with_httpd_user:%define httpd_user %(set -- %{_with_httpd_user}; echo $1 | grep -v with | sed 's/=//')}
+%{?_with_httpd_group:%define httpd_group %(set -- %{_with_httpd_group}; echo $1 | grep -v with | sed 's/=//')}
+%{?_with_httpd_user:%define ganglia_user %(set -- %{_with_ganglia_user}; echo $1 | grep -v with | sed 's/=//')}
+%{?_with_httpd_group:%define ganglia_group %(set -- %{_with_ganglia_group}; echo $1 | grep -v with | sed 's/=//')}
+%{?_with_web_prefixdir:%define web_prefixdir %(set -- %{_with_web_prefixdir}; echo $1 | grep -v with | sed 's/=//')}
+
 # Don't need debuginfo RPM
 %define debug_package %{nil}
 %define __check_files %{nil}
 
-%if 0%{?suse_version}
-%define web_prefixdir /srv/www/htdocs/ganglia
-%else
-%define web_prefixdir %{custom_web_prefixdir}
-%endif
-
-%{!?custom_web_prefixdir: %define web_prefixdir /usr/share/ganglia}
-
 %define gangliaroot        %{web_prefixdir}
 %define gangliatemplatedir %{gangliaroot}/templates
 %define gangliaaddonsdir   %{gangliaroot}/addons
-
-%define gangliauser        %{custom_gangliauser}
-%{!?custom_gangliauser: %define gangliauser ganglia.ganglia}
 
 Summary: Tools and addons to Ganglia to monitor and archive batch job info
 Name: jobmonarch
@@ -129,8 +148,8 @@ rm -rf $RPM_BUILD_ROOT
 fakeroot %__make install \
         PREFIX=/usr \
         GANGLIA_ROOT=%{gangliaroot} \
-        GANGLIA_USER=%{gangliauser} \
-        HTTPD_USER=apache.apache \
+        GANGLIA_USER=%{ganglia_user}.%{ganglia_group} \
+        HTTPD_USER=%{httpd_user}.%{httpd_group} \
         JOBARCHIVE_RRDS=%{_sharedstatedir}/jobarchive \
         DESTDIR=$RPM_BUILD_ROOT
 
@@ -141,7 +160,11 @@ fakeroot %__make install \
 # $1 = 1 => install ($1 = 2 => upgrade)
 if [ "$1" = 1 ]; then
     # Enable the service
+%if 0%{?_unitdir:1}
+    /usr/bin/systemctl enable jobmond.service
+%else
     /sbin/chkconfig --add jobmond
+%endif
     echo ""
     echo "Additional manual changes are required to setup jobmond:"
     echo ""
@@ -153,14 +176,24 @@ if [ "$1" = 1 ]; then
     echo "   - python-pylsf (for lsf)"
     echo ""
 elif [ "$1" = 2 ]; then
+    echo "Restarting jobmond if needed..."
+%if 0%{?_unitdir:1}
+    /usr/bin/systemctl --system daemon-reload
+    /usr/bin/systemctl reload-or-try-restart jobmond.service
+%else
     /sbin/service jobmond condrestart
+%endif
 fi
 
 %post -n jobmonarch-jobarchived
 # $1 = 1 => install ($1 = 2 => upgrade)
 if [ "$1" = 1 ]; then
     # Enable the service
+%if 0%{?_unitdir:1}
+    /usr/bin/systemctl enable jobarchived.service
+%else
     /sbin/chkconfig --add jobarchived
+%endif
     echo "Generating random password and updating apropriate files"
     # Generate a 8 char password for the database:
     export DB_PASSWD=$(tr -dc A-Za-z0-9_< /dev/urandom |head -c 8 | xargs)
@@ -187,7 +220,12 @@ if [ "$1" = 1 ]; then
     echo ""
 elif [ "$1" = 2 ]; then
     echo "Restarting jobarchived if needed..."
+%if 0%{?_unitdir:1}
+    /usr/bin/systemctl --system daemon-reload
+    /usr/bin/systemctl reload-or-try-restart jobarchived.service
+%else
     /sbin/service jobarchived condrestart
+%endif
     exit 0
 fi
 
@@ -201,18 +239,28 @@ fi
 
 %preun -n jobmonarch-jobmond
 if [ "$1" = 0 ]; then
+%if 0%{?_unitdir:1}
+    /usr/bin/systemctl --no-reload disable jobmond.service
+    /usr/bin/systemctl stop jobmond.service
+%else
     if [ -x /sbin/chkconfig ]; then
 	/sbin/service jobmond stop
 	/sbin/chkconfig --del jobmond
     fi
+%endif
 fi
 
 %preun -n jobmonarch-jobarchived
 if [ "$1" = 0 ]; then
+%if 0%{?_unitdir:1}
+    /usr/bin/systemctl --no-reload disable jobarchived.service
+    /usr/bin/systemctl stop jobarchived.service
+%else
     if [ -x /sbin/chkconfig ]; then
 	/sbin/service jobarchived stop
 	/sbin/chkconfig --del jobarchived
     fi
+%endif
 fi
 
 %preun -n jobmonarch-webfrontend
@@ -228,21 +276,29 @@ fi
 %doc AUTHORS CHANGELOG INSTALL LICENSE README TODO UPGRADE
 %config(noreplace) %{_sysconfdir}/jobmond.conf
 %{_sysconfdir}/sysconfig/jobmond
-%{_initrddir}/jobmond
 %{_sbindir}/jobmond.py
 %{_sbindir}/jobmond
+%%if 0%{?_unitdir:1}
+%{_unitdir}/jobmond.service
+%else
+%{_initrddir}/jobmond
+%endif
 
 %files -n jobmonarch-jobarchived
 %doc jobarchived/examples
 %doc AUTHORS CHANGELOG INSTALL LICENSE README TODO UPGRADE
 %config(noreplace) %{_sysconfdir}/jobarchived.conf
 %{_sysconfdir}/sysconfig/jobarchived
-%{_initrddir}/jobarchived
 %dir %{_datadir}/jobarchived
 %{_sbindir}/jobarchived.py
 %{_sbindir}/jobarchived
 %{_datadir}/jobarchived/*
 %dir %{_sharedstatedir}/jobarchive
+%%if 0%{?_unitdir:1}
+%{_unitdir}/jobarchived.service
+%else
+%{_initrddir}/jobarchived
+%endif
 
 %files -n jobmonarch-webfrontend
 %doc AUTHORS CHANGELOG INSTALL LICENSE README TODO UPGRADE
@@ -415,6 +471,15 @@ fi
 %{gangliaaddonsdir}/job_monarch/version.php
 
 %changelog
+* Wed Mar 05 2014 Olivier Lahaye <olivier.lahaye@free.fr> 1.2.0-1
+- Update default ganglia root.
+- Add native systemd support.
+- update to 1.2.0
+- Add --with switch to allow tunning at rpmbuild. Parameters are similar to ganglia ones.
+
+* Fri Feb 14 2014 Ramon Bastiaans <ramon.bastiaans@surfsara.nl> 1.1.2-1
+- New version
+
 * Fri Sep 20 2013 Olivier Lahaye <olivier.lahaye@free.fr> 1.1.1-1
 - update to 1.1.1
 - Allow for custom ganglia user. (default: ganglia.ganglia)

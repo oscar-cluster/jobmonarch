@@ -26,7 +26,7 @@ JOBARCHIVE_RRDS = $(PREFIX)/jobmonarch
 #
 FAKEROOT = fakeroot
 
-VERSION = 1.1.2
+VERSION = 1.2.0
 RELEASE = 1
 
 REQUIRED = ./jobarchived ./jobmond ./web
@@ -54,15 +54,17 @@ tarball-gzip:	$(TMPDIR)/.monarch_buildroot ${REQUIRED}
 	@( cd ${TMPDIR}/.monarch_buildroot; tar zcf $(TMPDIR)/ganglia_jobmonarch-${VERSION}.tar.gz ./ganglia_jobmonarch-${VERSION} )
 	@mv -f ${TMPDIR}/ganglia_jobmonarch-${VERSION}.tar.gz .. 2> /dev/null || true
 	@echo "Wrote: ../ganglia_jobmonarch-${VERSION}.tar.gz"
+	@rm -rf $(TMPDIR)/.monarch_buildroot
 
 tarball-bzip:	$(TMPDIR)/.monarch_buildroot ${REQUIRED}
 	@( cd ${TMPDIR}/.monarch_buildroot; tar jcf ${TMPDIR}/ganglia_jobmonarch-${VERSION}.tar.bz2 ./ganglia_jobmonarch-${VERSION} )
 	@mv -f ${TMPDIR}/ganglia_jobmonarch-${VERSION}.tar.bz2 .. 2> /dev/null || true
 	@echo "Wrote: ../ganglia_jobmonarch-${VERSION}.tar.bz2"
+	@rm -rf $(TMPDIR)/.monarch_buildroot
 
 rpm: tarball-bzip
 	# Binary package will reflect most distro where ganglia default location is /usr/share/ganglia
-	@LC_ALL=C rpmbuild -tb --define '%custom_web_prefixdir /usr/share/ganglia' ../ganglia_jobmonarch-${VERSION}.tar.bz2|grep "Wrote: "
+	@LC_ALL=C rpmbuild -tb --with web_prefixdir=/usr/share/ganglia-webfrontend ../ganglia_jobmonarch-${VERSION}.tar.bz2|grep "Wrote: "
 
 srpm: tarball-bzip
 	@LC_ALL=C rpmbuild -ts --define '%dist %{nil}' ../ganglia_jobmonarch-${VERSION}.tar.bz2|grep "Wrote: "
@@ -111,16 +113,24 @@ install:  ${REQUIRED}
 	@#
 	@if test -r /etc/redhat-release; then \
 		echo; \
-		echo "Red Hat detected: installing RPM service files in /etc"; \
-		sed -i -e 's|DAEMON=.*|DAEMON=$(JOBMOND)|g' pkg/rpm/init.d/jobmond; \
-		sed -i -e 's|DAEMON=.*|DAEMON=$(JOBARCHIVED)|g' pkg/rpm/init.d/jobarchived; \
-		install -m 0755 -d $(DESTDIR)/etc/rc.d/init.d; \
-		install -m 0755 pkg/rpm/init.d/jobmond $(DESTDIR)/etc/rc.d/init.d/; \
-		install -m 0755 pkg/rpm/init.d/jobarchived $(DESTDIR)/etc/rc.d/init.d/; \
+		echo "Red Hat detected: installing RPM service files."; \
+		if test -d /usr/lib/systemd/system; then \
+			echo "Using systemd service files."; \
+			install -m 0755 -d $(DESTDIR)/usr/lib/systemd/system; \
+			install -m 0755 pkg/rpm/systemd/jobmond.service $(DESTDIR)/usr/lib/systemd/system/; \
+			install -m 0755 pkg/rpm/systemd/jobarchived.service $(DESTDIR)/usr/lib/systemd/system/; \
+		else \
+			echo "Using initscripts service files."; \
+			sed -i -e 's|DAEMON=.*|DAEMON=$(JOBMOND)|g' pkg/rpm/init.d/jobmond; \
+			sed -i -e 's|DAEMON=.*|DAEMON=$(JOBARCHIVED)|g' pkg/rpm/init.d/jobarchived; \
+			install -m 0755 -d $(DESTDIR)/etc/rc.d/init.d; \
+			install -m 0755 pkg/rpm/init.d/jobmond $(DESTDIR)/etc/rc.d/init.d/; \
+			install -m 0755 pkg/rpm/init.d/jobarchived $(DESTDIR)/etc/rc.d/init.d/; \
+		fi; \
 		install -m 0755 -d $(DESTDIR)/etc/sysconfig; \
 		install -m 0755 pkg/rpm/sysconfig/jobmond $(DESTDIR)/etc/sysconfig; \
 		install -m 0755 pkg/rpm/sysconfig/jobarchived $(DESTDIR)/etc/sysconfig; \
-    else \
+	else \
 		sed -i -e 's|DAEMON=.*|DAEMON=$(JOBMOND)|g' debian/jobmonarch-jobmond.init; \
 		sed -i -e 's|DAEMON=.*|DAEMON=$(JOBARCHIVED)|g' debian/jobmonarch-jobarchived.init; \
 	fi

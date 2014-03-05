@@ -1,0 +1,17 @@
+# SystemD File for jobarchived
+# Olivier LAHAYE <olivier.lahaye@cea.fr>
+# Ferbruay 19th 2013.
+
+[Unit]
+Description=Start/Stop the jobarchived batch jobs archiving daemon
+After=syslog.target network.target postgresql.service jobmond.service
+
+[Service]
+Type=forking
+EnvironmentFile=-/etc/sysconfig/jobarchived
+ExecStart=/usr/sbin/jobarchived --pidfile=/var/run/jobarchived.pid $OPTIONS
+PIDFile=/var/run/jobarchived.pid
+
+[Install]
+WantedBy=multi-user.target
+
