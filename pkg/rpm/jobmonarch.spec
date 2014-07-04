@@ -1,32 +1,24 @@
 
 # The following options are supported:
-#   --with httpd_user=<username>       # defaults to: apache
-#   --with httpd_group=<group>         # defaults to: apache
-#   --with ganglia_user=<username>     # defaults to: ganglia
-#   --with ganglia_group=<group>       # defaults to: ganglia
-#   --with web_prefixdir=<path>        # defaults to: /usr/share/ganglia-webfrontend
+#   --define 'httpd_user <username>'       # defaults to: apache
+#   --define 'httpd_group <group>'         # defaults to: apache
+#   --define 'ganglia_user <username>'     # defaults to: ganglia
+#   --define 'ganglia_group <group>'       # defaults to: ganglia
+#   --define 'web_prefixdir <path>'        # defaults to: /usr/share/ganglia-webfrontend
 
-# example: rpmbuild -tb jobmonarch-1.1.2.tar.gz --with httpd_user=www-data --with httpd_group=www-data --with web_prefixdir=/srv/www/ganglia
+# example: rpmbuild -tb jobmonarch-1.1.2.tar.gz --define 'httpd_user www-data' --define 'httpd_group www-data' --define 'web_prefixdir /srv/www/ganglia'
 
-# Default value for web_prefixdir depending on distro.
+# Default values for Above variables.
 %if 0%{?suse_version}
-%define web_prefixdir /srv/www/htdocs/ganglia
+%{!?web_prefixdir: %define web_prefixdir /srv/www/htdocs/ganglia}
 %else
-%define web_prefixdir /usr/share/ganglia-webfrontend
+%{!?web_prefixdir: %define web_prefixdir /usr/share/ganglia-webfrontend}
 %endif
 
-# Default value for httpd user and group used by ganglia.
-%define httpd_user apache
-%define httpd_group apache
-%define ganglia_user ganglia
-%define ganglia_group ganglia
-
-# Read the provided --with tags if any (overriding default values).
-%{?_with_httpd_user:%define httpd_user %(set -- %{_with_httpd_user}; echo $2 | cut -d= -f2)}
-%{?_with_httpd_group:%define httpd_group %(set -- %{_with_httpd_group}; echo $2 | cut -d= -f2)}
-%{?_with_httpd_user:%define ganglia_user %(set -- %{_with_ganglia_user}; echo $2 | cut -d= -f2)}
-%{?_with_httpd_group:%define ganglia_group %(set -- %{_with_ganglia_group}; echo $2 | cut -d= -f2)}
-%{?_with_web_prefixdir:%define web_prefixdir %(set -- %{_with_web_prefixdir}; echo $2 | cut -d= -f2)}
+%{!?httpd_user: %define httpd_user apache}
+%{!?httpd_group: %define httpd_group apache}
+%{!?ganglia_user: %define ganglia_user ganglia}
+%{!?ganglia_group: %define ganglia_group ganglia}
 
 # Don't need debuginfo RPM
 %define debug_package %{nil}
@@ -471,6 +463,10 @@ fi
 %{gangliaaddonsdir}/job_monarch/version.php
 
 %changelog
+* Fri Jul 04 2014 Olivier Lahaye <olivier.lahaye@free.fr> 1.1.3-2
+- Replace --with that doesn't support value assigment in latest
+  rpmbuild version with --define
+
 * Wed Mar 05 2014 Olivier Lahaye <olivier.lahaye@free.fr> 1.1.3-1
 - Update default ganglia root.
 - Add native systemd support.
