@@ -530,6 +530,6 @@ fi
 * Fri Jul 29 2011 Olivier Lahaye <olivier.lahaye1@free.fr> 0.4-0.1
 - Update to V0.4SVN
 
-* Sun Aug 12 2006 Babu Sundaram <babu@cs.uh.edu> 0.3.1-1
+* Sat Aug 12 2006 Babu Sundaram <babu@cs.uh.edu> 0.3.1-1
 - Prepare first rpm for Job Monarch's jobmond Daemon
 
