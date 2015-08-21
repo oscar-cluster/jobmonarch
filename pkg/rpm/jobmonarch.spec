@@ -4,7 +4,7 @@
 #   --define 'httpd_group <group>'         # defaults to: apache
 #   --define 'ganglia_user <username>'     # defaults to: ganglia
 #   --define 'ganglia_group <group>'       # defaults to: ganglia
-#   --define 'web_prefixdir <path>'        # defaults to: /usr/share/ganglia-webfrontend
+#   --define 'web_prefixdir <path>'        # defaults to: /usr/share/ganglia
 
 # example: rpmbuild -tb jobmonarch-1.1.2.tar.gz --define 'httpd_user www-data' --define 'httpd_group www-data' --define 'web_prefixdir /srv/www/ganglia'
 
@@ -12,7 +12,7 @@
 %if 0%{?suse_version}
 %{!?web_prefixdir: %define web_prefixdir /srv/www/htdocs/ganglia}
 %else
-%{!?web_prefixdir: %define web_prefixdir /usr/share/ganglia-webfrontend}
+%{!?web_prefixdir: %define web_prefixdir /usr/share/ganglia}
 %endif
 
 %{!?httpd_user: %define httpd_user apache}

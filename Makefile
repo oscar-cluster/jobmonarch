@@ -64,7 +64,7 @@ tarball-bzip:	$(TMPDIR)/.monarch_buildroot ${REQUIRED}
 
 rpm: tarball-bzip
 	# Binary package will reflect most distro where ganglia default location is /usr/share/ganglia
-	@LC_ALL=C rpmbuild -tb --define 'web_prefixdir /usr/share/ganglia-webfrontend' ../ganglia_jobmonarch-${VERSION}.tar.bz2|grep "Wrote: "
+	@LC_ALL=C rpmbuild -tb --define 'web_prefixdir /usr/share/ganglia' ../ganglia_jobmonarch-${VERSION}.tar.bz2|grep "Wrote: "
 
 srpm: tarball-bzip
 	@LC_ALL=C rpmbuild -ts --define '%dist %{nil}' ../ganglia_jobmonarch-${VERSION}.tar.bz2|grep "Wrote: "
