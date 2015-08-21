@@ -1306,7 +1306,7 @@ class SLURMDataGatherer( DataGatherer ):
 
         for node, attrs in slurm_nodes.items():
 
-            ( num_state, name_state ) = attrs['node_state'] 
+            name_state = attrs['node_state'] 
 
             if name_state == 'DOWN':
 
@@ -1371,7 +1371,7 @@ class SLURMDataGatherer( DataGatherer ):
             else:
                 ppn = min_cpus
 
-            ( something, status_long ) = self.getAttr( attrs, 'job_state' )
+            status_long = self.getAttr( attrs, 'job_state' )
 
             status = 'Q'
 
