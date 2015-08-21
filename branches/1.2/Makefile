@@ -76,7 +76,9 @@ deb: ${REQUIRED} $(TMPDIR)/.monarch_buildroot ./debian
 	@echo "Wrote:"
 	@ls -1 ../jobmonarch*$(VERSION)*.deb
 
-install:  ${REQUIRED}
+install:  install-files install-perms
+
+install-files:  ${REQUIRED}
 	@#
 	@# Set the correct GANGLIA_PATH.
 	@#
@@ -153,15 +155,17 @@ install:  ${REQUIRED}
 	@echo
 	@echo "Installing Ganglia web interface to $(GANGLIA_ROOT) ."
 	@install -m 0755 -d $(DESTDIR)$(GANGLIA_ROOT)
-	@chown -R $(GANGLIA_USER) ./web
-	@chown $(HTTPD_USER) ./web/addons/job_monarch/dwoo/compiled
-	@chown $(HTTPD_USER) ./web/addons/job_monarch/dwoo/cache
 	@chmod 775 ./web/addons/job_monarch/dwoo/cache
 	@(cd web; rsync -a --exclude=.svn --exclude=*_test* --exclude=*-example.php ./addons ./templates $(DESTDIR)$(GANGLIA_ROOT)/)
 	@#
 	@echo
 	@echo "Installation complete."
 	@echo
+
+install-perms:
+	@chown -R $(GANGLIA_USER) $(DESTDIR)$(GANGLIA_ROOT)
+	@chown $(HTTPD_USER) $(DESTDIR)$(GANGLIA_ROOT)/addons/job_monarch/dwoo/compiled
+	@chown $(HTTPD_USER) $(DESTDIR)$(GANGLIA_ROOT)/addons/job_monarch/dwoo/cache
 
 clean:
 	@(cd ./debian; rm -rf files *.log *.substvars jobmonarch/ jobmonarch-jobmond/ jobmonarch-jobarchived/ jobmonarch-webfrontend/ tmp/)

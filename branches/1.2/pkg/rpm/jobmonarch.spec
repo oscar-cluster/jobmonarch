@@ -137,7 +137,7 @@ rm -rf $RPM_BUILD_ROOT
 #sed -i -e 's|http:/www.rrdtool.com/|http:/oss.oetiker.ch/rrdtool/|g' ./web/addons/job_monarch/templates/footer.tpl
 
 # Install files in RPM_BUILD_ROOT
-fakeroot %__make install \
+%__make install-files \
         PREFIX=/usr \
         GANGLIA_ROOT=%{gangliaroot} \
         GANGLIA_USER=%{ganglia_user}.%{ganglia_group} \
@@ -264,6 +264,7 @@ if [ "$1" = 0 ]; then
 fi
 
 %files -n jobmonarch-jobmond
+%defattr(644,root,root,755)
 %doc jobmond/examples
 %doc AUTHORS CHANGELOG INSTALL LICENSE README TODO UPGRADE
 %config(noreplace) %{_sysconfdir}/jobmond.conf
@@ -277,6 +278,7 @@ fi
 %endif
 
 %files -n jobmonarch-jobarchived
+%defattr(644,root,root,755)
 %doc jobarchived/examples
 %doc AUTHORS CHANGELOG INSTALL LICENSE README TODO UPGRADE
 %config(noreplace) %{_sysconfdir}/jobarchived.conf
@@ -293,6 +295,7 @@ fi
 %endif
 
 %files -n jobmonarch-webfrontend
+%defattr(644,%{ganglia_user},%{ganglia_user},755)
 %doc AUTHORS CHANGELOG INSTALL LICENSE README TODO UPGRADE
 %dir %{gangliatemplatedir}/job_monarch
 %dir %{gangliaaddonsdir}/job_monarch
@@ -377,8 +380,6 @@ fi
 %{gangliaaddonsdir}/job_monarch/dwoo/plugins/builtin/functions/whitespace.php
 %{gangliaaddonsdir}/job_monarch/dwoo/plugins/builtin/functions/count_words.php
 %{gangliaaddonsdir}/job_monarch/dwoo/plugins/builtin/functions/date_format.php
-%dir %attr(775,apache,apache) %{gangliaaddonsdir}/job_monarch/dwoo/compiled
-%dir %attr(775,apache,apache) %{gangliaaddonsdir}/job_monarch/dwoo/cache
 %dir %{gangliaaddonsdir}/job_monarch/dwoo/Dwoo
 %{gangliaaddonsdir}/job_monarch/dwoo/Dwoo/IPluginProxy.php
 %{gangliaaddonsdir}/job_monarch/dwoo/Dwoo/Filter.php
@@ -461,8 +462,14 @@ fi
 %{gangliaaddonsdir}/job_monarch/ts_picker.js
 %{gangliaaddonsdir}/job_monarch/ts_validatetime.js
 %{gangliaaddonsdir}/job_monarch/version.php
+%dir %attr(775,%{httpd_user},%{httpd_user}) %{gangliaaddonsdir}/job_monarch/dwoo/compiled
+%dir %attr(775,%{httpd_user},%{httpd_user}) %{gangliaaddonsdir}/job_monarch/dwoo/cache
 
 %changelog
+* Fri Aug 21 2015 Olivier Lahaye <olivier.lahaye@free.fr> 1.2.0-1
+- Avoid using fakeroot to build rpm package by only using install-files rule
+  and use %defattr nd %attr to set correct file permissions.
+
 * Fri Jul 04 2014 Olivier Lahaye <olivier.lahaye@free.fr> 1.1.3-2
 - Replace --with that doesn't support value assigment in latest
   rpmbuild version with --define
@@ -485,7 +492,6 @@ fi
 - set version requirement for Ganglia
 - removed jobmond dep from webfrontend pkg
 
-%changelog
 * Wed Apr 24 2013 Olivier Lahaye <olivier.lahaye@free.fr> 1.0-3
 - Use make install to install the files
 - Fix the correct gangliaroot path
