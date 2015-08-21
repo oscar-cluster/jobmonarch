@@ -269,12 +269,12 @@ fi
 %doc AUTHORS CHANGELOG INSTALL LICENSE README TODO UPGRADE
 %config(noreplace) %{_sysconfdir}/jobmond.conf
 %{_sysconfdir}/sysconfig/jobmond
-%{_sbindir}/jobmond.py
-%{_sbindir}/jobmond
+%attr(755,root,root) %{_sbindir}/jobmond.py
+%attr(755,root,root) %{_sbindir}/jobmond
 %%if 0%{?_unitdir:1}
 %{_unitdir}/jobmond.service
 %else
-%{_initrddir}/jobmond
+%attr(755,root,root) %{_initrddir}/jobmond
 %endif
 
 %files -n jobmonarch-jobarchived
@@ -284,14 +284,14 @@ fi
 %config(noreplace) %{_sysconfdir}/jobarchived.conf
 %{_sysconfdir}/sysconfig/jobarchived
 %dir %{_datadir}/jobarchived
-%{_sbindir}/jobarchived.py
-%{_sbindir}/jobarchived
+%attr(755,root,root) %{_sbindir}/jobarchived.py
+%attr(755,root,root) %{_sbindir}/jobarchived
 %{_datadir}/jobarchived/*
 %dir %{_sharedstatedir}/jobarchive
 %%if 0%{?_unitdir:1}
 %{_unitdir}/jobarchived.service
 %else
-%{_initrddir}/jobarchived
+%attr(755,root,root) %{_initrddir}/jobarchived
 %endif
 
 %files -n jobmonarch-webfrontend
